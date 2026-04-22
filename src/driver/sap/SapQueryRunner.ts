@@ -2224,6 +2224,34 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
+     * Renames a primary key constraint. SAP HANA has no native
+     * `RENAME CONSTRAINT` syntax, so the emitted DDL drops the old constraint
+     * and adds the new one with the same columns.
+     *
+     * @param tableOrName
+     * @param oldName
+     * @param newName
+     */
+    async renamePrimaryKey(
+        tableOrName: Table | string,
+        oldName: string,
+        newName: string,
+    ): Promise<void> {
+        const table = InstanceChecker.isTable(tableOrName)
+            ? tableOrName
+            : await this.getCachedTable(tableOrName)
+
+        const { up, down } = this.renamePrimaryKeySql(table, oldName, newName)
+        await this.executeQueries(up, down)
+
+        table.primaryColumns.forEach((column) => {
+            if (column.primaryKeyConstraintName === oldName) {
+                column.primaryKeyConstraintName = newName
+            }
+        })
+    }
+
+    /**
      * Creates a new unique constraint.
      *
      * @param tableOrName
@@ -2377,6 +2405,43 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             this.dropCheckConstraint(tableOrName, checkConstraint, ifExists),
         )
         await Promise.all(promises)
+    }
+
+    /**
+     * Renames a check constraint. SAP HANA has no native `RENAME CONSTRAINT`
+     * syntax, so the emitted DDL drops the old constraint and adds the new one
+     * with the same expression.
+     *
+     * @param tableOrName
+     * @param checkOrName
+     * @param newName
+     */
+    async renameCheckConstraint(
+        tableOrName: Table | string,
+        checkOrName: TableCheck | string,
+        newName: string,
+    ): Promise<void> {
+        const table = InstanceChecker.isTable(tableOrName)
+            ? tableOrName
+            : await this.getCachedTable(tableOrName)
+        const checkConstraint = InstanceChecker.isTableCheck(checkOrName)
+            ? checkOrName
+            : table.checks.find((c) => c.name === checkOrName)
+        if (!checkConstraint?.name) {
+            throw new TypeORMError(
+                `Supplied check constraint was not found in table ${table.name}`,
+            )
+        }
+        const oldName = checkConstraint.name
+
+        const { up, down } = this.renameCheckConstraintSql(
+            table,
+            checkConstraint,
+            oldName,
+            newName,
+        )
+        await this.executeQueries(up, down)
+        checkConstraint.name = newName
     }
 
     /**
@@ -2544,6 +2609,43 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
+     * Renames a foreign key. SAP HANA has no native `RENAME CONSTRAINT` syntax,
+     * so the emitted DDL drops the old FK and adds the new one with the same
+     * columns, referenced table, and ON DELETE/UPDATE actions.
+     *
+     * @param tableOrName
+     * @param foreignKeyOrName
+     * @param newName
+     */
+    async renameForeignKey(
+        tableOrName: Table | string,
+        foreignKeyOrName: TableForeignKey | string,
+        newName: string,
+    ): Promise<void> {
+        const table = InstanceChecker.isTable(tableOrName)
+            ? tableOrName
+            : await this.getCachedTable(tableOrName)
+        const foreignKey = InstanceChecker.isTableForeignKey(foreignKeyOrName)
+            ? foreignKeyOrName
+            : table.foreignKeys.find((fk) => fk.name === foreignKeyOrName)
+        if (!foreignKey?.name) {
+            throw new TypeORMError(
+                `Supplied foreign key was not found in table ${table.name}`,
+            )
+        }
+        const oldName = foreignKey.name
+
+        const { up, down } = this.renameForeignKeySql(
+            table,
+            foreignKey,
+            oldName,
+            newName,
+        )
+        await this.executeQueries(up, down)
+        foreignKey.name = newName
+    }
+
+    /**
      * Creates a new index.
      *
      * @param tableOrName
@@ -2632,6 +2734,37 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             this.dropIndex(tableOrName, index, ifExists),
         )
         await Promise.all(promises)
+    }
+
+    /**
+     * Renames an index in place via SAP HANA's standalone `RENAME INDEX`
+     * statement. Unlike other constraints, HANA supports a native index
+     * rename; no drop+create fallback is needed.
+     *
+     * @param tableOrName
+     * @param indexOrName
+     * @param newName
+     */
+    async renameIndex(
+        tableOrName: Table | string,
+        indexOrName: TableIndex | string,
+        newName: string,
+    ): Promise<void> {
+        const table = InstanceChecker.isTable(tableOrName)
+            ? tableOrName
+            : await this.getCachedTable(tableOrName)
+        const index = InstanceChecker.isTableIndex(indexOrName)
+            ? indexOrName
+            : table.indices.find((i) => i.name === indexOrName)
+        if (!index?.name) {
+            throw new TypeORMError(
+                `Supplied index was not found in table ${table.name}`,
+            )
+        }
+
+        const { up, down } = this.renameIndexSql(table, index.name, newName)
+        await this.executeQueries(up, down)
+        index.name = newName
     }
 
     /**
@@ -3574,6 +3707,156 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 tableOrName,
             )} DROP CONSTRAINT "${foreignKeyName}"`,
         )
+    }
+
+    /**
+     * Builds up/down queries that rename a primary key. HANA has no native
+     * rename, so the emitted DDL drops the old PK and adds a new one with the
+     * same columns under the new name.
+     *
+     * @param table
+     * @param oldName
+     * @param newName
+     * @returns Reversible up/down query pair (two statements each).
+     */
+    protected renamePrimaryKeySql(
+        table: Table,
+        oldName: string,
+        newName: string,
+    ): { up: Query[]; down: Query[] } {
+        const escaped = this.escapePath(table)
+        const columnNamesString = table.primaryColumns
+            .map((column) => `"${column.name}"`)
+            .join(", ")
+        const dropOld = new Query(
+            `ALTER TABLE ${escaped} DROP CONSTRAINT "${oldName}"`,
+        )
+        const addNew = new Query(
+            `ALTER TABLE ${escaped} ADD CONSTRAINT "${newName}" PRIMARY KEY (${columnNamesString})`,
+        )
+        const dropNew = new Query(
+            `ALTER TABLE ${escaped} DROP CONSTRAINT "${newName}"`,
+        )
+        const addOld = new Query(
+            `ALTER TABLE ${escaped} ADD CONSTRAINT "${oldName}" PRIMARY KEY (${columnNamesString})`,
+        )
+        return { up: [dropOld, addNew], down: [dropNew, addOld] }
+    }
+
+    /**
+     * Builds up/down queries that rename a check constraint. HANA has no
+     * native rename, so the emitted DDL drops the old check and adds a new
+     * one with the same expression under the new name.
+     *
+     * @param table
+     * @param checkConstraint
+     * @param oldName
+     * @param newName
+     * @returns Reversible up/down query pair (two statements each).
+     */
+    protected renameCheckConstraintSql(
+        table: Table,
+        checkConstraint: TableCheck,
+        oldName: string,
+        newName: string,
+    ): { up: Query[]; down: Query[] } {
+        const escaped = this.escapePath(table)
+        const expression = checkConstraint.expression
+        const dropOld = new Query(
+            `ALTER TABLE ${escaped} DROP CONSTRAINT "${oldName}"`,
+        )
+        const addNew = new Query(
+            `ALTER TABLE ${escaped} ADD CONSTRAINT "${newName}" CHECK (${expression})`,
+        )
+        const dropNew = new Query(
+            `ALTER TABLE ${escaped} DROP CONSTRAINT "${newName}"`,
+        )
+        const addOld = new Query(
+            `ALTER TABLE ${escaped} ADD CONSTRAINT "${oldName}" CHECK (${expression})`,
+        )
+        return { up: [dropOld, addNew], down: [dropNew, addOld] }
+    }
+
+    /**
+     * Builds up/down queries that rename a foreign key. HANA has no native
+     * rename, so the emitted DDL drops the old FK and adds a new one with the
+     * same columns, referenced table, and ON DELETE/UPDATE actions under the
+     * new name.
+     *
+     * @param table
+     * @param foreignKey
+     * @param oldName
+     * @param newName
+     * @returns Reversible up/down query pair (two statements each).
+     */
+    protected renameForeignKeySql(
+        table: Table,
+        foreignKey: TableForeignKey,
+        oldName: string,
+        newName: string,
+    ): { up: Query[]; down: Query[] } {
+        const escaped = this.escapePath(table)
+        const columnNames = foreignKey.columnNames
+            .map((column) => `"${column}"`)
+            .join(", ")
+        const referencedColumnNames = foreignKey.referencedColumnNames
+            .map((column) => `"${column}"`)
+            .join(", ")
+        const referencedTable = this.escapePath(this.getTablePath(foreignKey))
+        const buildAdd = (name: string) => {
+            let sql = `ALTER TABLE ${escaped} ADD CONSTRAINT "${name}" FOREIGN KEY (${columnNames}) REFERENCES ${referencedTable}(${referencedColumnNames})`
+            if (foreignKey.onDelete) {
+                const onDelete =
+                    foreignKey.onDelete === "NO ACTION"
+                        ? "RESTRICT"
+                        : foreignKey.onDelete
+                sql += ` ON DELETE ${onDelete}`
+            }
+            if (foreignKey.onUpdate) {
+                const onUpdate =
+                    foreignKey.onUpdate === "NO ACTION"
+                        ? "RESTRICT"
+                        : foreignKey.onUpdate
+                sql += ` ON UPDATE ${onUpdate}`
+            }
+            if (foreignKey.deferrable) sql += ` ${foreignKey.deferrable}`
+            return new Query(sql)
+        }
+        const dropOld = new Query(
+            `ALTER TABLE ${escaped} DROP CONSTRAINT "${oldName}"`,
+        )
+        const dropNew = new Query(
+            `ALTER TABLE ${escaped} DROP CONSTRAINT "${newName}"`,
+        )
+        return {
+            up: [dropOld, buildAdd(newName)],
+            down: [dropNew, buildAdd(oldName)],
+        }
+    }
+
+    /**
+     * Builds up/down queries that rename an index in place via HANA's
+     * standalone `RENAME INDEX` statement. The source identifier can be
+     * schema-qualified; the target is a bare identifier in the same schema
+     * (HANA does not support cross-schema rename).
+     *
+     * @param table
+     * @param oldName
+     * @param newName
+     * @returns Reversible up/down query pair.
+     */
+    protected renameIndexSql(
+        table: Table,
+        oldName: string,
+        newName: string,
+    ): { up: Query; down: Query } {
+        const { schema } = this.driver.parseTableName(table)
+        const qualify = (name: string) =>
+            schema ? `"${schema}"."${name}"` : `"${name}"`
+        return {
+            up: new Query(`RENAME INDEX ${qualify(oldName)} TO "${newName}"`),
+            down: new Query(`RENAME INDEX ${qualify(newName)} TO "${oldName}"`),
+        }
     }
 
     /**

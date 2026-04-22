@@ -28,6 +28,7 @@ describe("query runner > rename constraint", () => {
                 "oracle",
                 "mysql",
                 "mariadb",
+                "sap",
             ],
             entities: [],
             schemaCreate: false,
@@ -68,8 +69,9 @@ describe("query runner > rename constraint", () => {
     it("should rename a unique constraint in place", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                // MySQL doesn't model standalone unique constraints — uniques are indexes.
+                // MySQL and HANA don't model standalone unique constraints — uniques are indexes.
                 if (DriverUtils.isMySQLFamily(dataSource.driver)) return
+                if (dataSource.driver.options.type === "sap") return
                 const queryRunner = await makeTable(dataSource, "rc_unique")
                 try {
                     await queryRunner.createUniqueConstraint(
@@ -299,6 +301,10 @@ describe("query runner > rename constraint", () => {
                 // MySQL primary keys are always named "PRIMARY" at the DB level;
                 // there is no renameable identity.
                 if (DriverUtils.isMySQLFamily(dataSource.driver)) return
+                // SAP HANA's createTable does not honor `primaryKeyConstraintName`;
+                // the DB-side PK name is derived from the naming strategy, so a test
+                // seeded with an explicit name would not match. Covered in P3.
+                if (dataSource.driver.options.type === "sap") return
                 const queryRunner = dataSource.createQueryRunner()
                 try {
                     await queryRunner.createTable(
