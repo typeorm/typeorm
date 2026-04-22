@@ -96,6 +96,40 @@ describe("ast-helpers", () => {
             const root = j('const fs = require("node:fs")')
             expect(fileImportsFrom(root, j, "typeorm")).to.be.false
         })
+
+        it("matches ESM named re-export from the exact module", () => {
+            const root = j('export { DataSource } from "typeorm"')
+            expect(fileImportsFrom(root, j, "typeorm")).to.be.true
+        })
+
+        it("matches ESM named re-export from a sub-path", () => {
+            const root = j(
+                'export { SapDataSourceOptions } from "typeorm/driver/sap/SapDataSourceOptions"',
+            )
+            expect(fileImportsFrom(root, j, "typeorm")).to.be.true
+        })
+
+        it("matches ESM `export *` from the exact module", () => {
+            const root = j('export * from "typeorm"')
+            expect(fileImportsFrom(root, j, "typeorm")).to.be.true
+        })
+
+        it("matches ESM `export *` from a sub-path", () => {
+            const root = j(
+                'export * from "typeorm/driver/sap/SapDataSourceOptions"',
+            )
+            expect(fileImportsFrom(root, j, "typeorm")).to.be.true
+        })
+
+        it("does not match re-exports from a prefix-sharing module", () => {
+            const root = j('export * from "typeorm-extension"')
+            expect(fileImportsFrom(root, j, "typeorm")).to.be.false
+        })
+
+        it("does not match a local re-export without a source", () => {
+            const root = j("const foo = 1; export { foo }")
+            expect(fileImportsFrom(root, j, "typeorm")).to.be.false
+        })
     })
 
     describe("getLocalNamesForImport", () => {

@@ -43,9 +43,13 @@ export const upgradingGuide =
 /**
  * Ordered list of v1 transforms. Order matters — connection renames
  * must run first so subsequent transforms see DataSource, not Connection.
+ * `datasourceName` also runs before `globalFunctions` so it can still see
+ * the `createConnection` import while rewriting `createConnection({ name })`
+ * arguments before the import is stripped.
  */
 export const transforms = [
     connectionToDataSource,
+    datasourceName,
     globalFunctions,
     repositoryFindByIds,
     repositoryFindOneById,
@@ -67,7 +71,6 @@ export const transforms = [
     mongodbTypes,
     datasourceMssql,
     datasourceSap,
-    datasourceName,
     columnUnsignedNumeric,
     repositoryAbstract,
     relationCount,

@@ -88,3 +88,11 @@ const notADataSource = {
     type: "expo",
     driver: require("expo-sqlite"),
 }
+
+// Case 12: TS-asserted default require — `driver: require("expo-sqlite") as any`
+// (or `as SQLiteModule`) is still the default module and should be removed.
+const dataSource12 = new DataSource({
+    type: "expo",
+    database: "asserted.db",
+    driver: require("expo-sqlite") as any,
+})

@@ -29,13 +29,6 @@ const isNullishLiteral = (node: Node | undefined): boolean => {
     return n.type === "Literal" && n.value === null
 }
 
-// Extracts a string from `StringLiteral` or string-valued `Literal`; else null.
-const asStringLiteral = (node: Node): string | null => {
-    const n = node as { type: string; value?: unknown }
-    if (n.type !== "StringLiteral" && n.type !== "Literal") return null
-    return typeof n.value === "string" ? n.value : null
-}
-
 // Locates the `logPath` property in an options object expression, alongside
 // whether the object also contains a spread (which could contribute the key).
 const findLogPathProperty = (
@@ -82,7 +75,7 @@ const inspectOptionsArg = (
     if (isNullishLiteral(value)) {
         return { hasOption: false, isAbsolute: false }
     }
-    const str = asStringLiteral(value)
+    const str = getStringValue(value as Parameters<typeof getStringValue>[0])
     if (str !== null) {
         return { hasOption: true, isAbsolute: isAbsolutePath(str) }
     }

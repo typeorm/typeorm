@@ -1,26 +1,34 @@
 import path from "node:path"
-import type { API, FileInfo, JSCodeshift, ObjectProperty } from "jscodeshift"
-import { fileImportsFrom } from "../ast-helpers"
-import { addTodoComment } from "../todo"
+import type {
+    API,
+    FileInfo,
+    JSCodeshift,
+    ObjectExpression,
+    ObjectProperty,
+} from "jscodeshift"
+import {
+    fileImportsFrom,
+    getObjectPropertyKeyName,
+    getStringValue,
+    unwrapTsExpression,
+} from "../ast-helpers"
+import { addTodoComment, hasTodoComment } from "../todo"
 import { stats } from "../stats"
 
-// Returns the key name for a property keyed by Identifier or StringLiteral;
-// null for computed / numeric / other key shapes.
 const getPropertyKeyName = (prop: ObjectProperty): string | null => {
     if (prop.key.type === "Identifier") return prop.key.name
     if (prop.key.type === "StringLiteral") return prop.key.value
     return null
 }
 
-// Renames a property's key in-place (handles both Identifier and StringLiteral).
 const renamePropertyKey = (prop: ObjectProperty, newName: string): void => {
     if (prop.key.type === "Identifier") prop.key.name = newName
     else if (prop.key.type === "StringLiteral") prop.key.value = newName
 }
 
-// Handles the sslValidate → tlsAllowInvalidCertificates rename, inverting the
-// value when it's a boolean literal and emitting a comment otherwise.
-// Returns true if a comment was emitted.
+// Renames `sslValidate` → `tlsAllowInvalidCertificates`, inverting a boolean
+// literal value in place. Returns true when a comment was emitted because
+// the value was a non-literal we can't safely invert.
 const migrateSslValidate = (prop: ObjectProperty, j: JSCodeshift): boolean => {
     renamePropertyKey(prop, "tlsAllowInvalidCertificates")
     const valueNode = prop.value
@@ -33,12 +41,79 @@ const migrateSslValidate = (prop: ObjectProperty, j: JSCodeshift): boolean => {
         ).value
         return false
     }
-    addTodoComment(
-        prop,
-        "`sslValidate` was renamed to `tlsAllowInvalidCertificates` with inverted boolean logic. Review and invert the value.",
-        j,
-    )
+    const message =
+        "`sslValidate` was renamed to `tlsAllowInvalidCertificates` with inverted boolean logic. Review and invert the value."
+    if (hasTodoComment(prop, message)) return false
+    addTodoComment(prop, message, j)
     return true
+}
+
+// Returns true when `obj` has an `ObjectProperty` with key `type` whose value
+// resolves to the string literal `"mongodb"` — the gate for all mutations in
+// this file.
+const isMongoDbOptions = (obj: ObjectExpression): boolean =>
+    obj.properties.some(
+        (p) =>
+            (p.type === "ObjectProperty" || p.type === "Property") &&
+            getObjectPropertyKeyName(p) === "type" &&
+            getStringValue(unwrapTsExpression(p.value)) === "mongodb",
+    )
+
+const REMOVED_PROPS = new Set([
+    "useNewUrlParser",
+    "useUnifiedTopology",
+    "keepAlive",
+    "keepAliveInitialDelay",
+    "sslCRL",
+])
+
+const SIMPLE_RENAMES: Record<string, string> = {
+    appname: "appName",
+    ssl: "tls",
+    sslCA: "tlsCAFile",
+    sslCert: "tlsCertificateKeyFile",
+    sslKey: "tlsCertificateKeyFile",
+    sslPass: "tlsCertificateKeyFilePassword",
+}
+
+const WRITE_CONCERN_PROPS = new Set([
+    "fsync",
+    "j",
+    "w",
+    "wtimeout",
+    "wtimeoutMS",
+])
+
+type MutationResult = { changed: boolean; addedTodo: boolean; remove: boolean }
+
+// Classifies a single property inside a MongoDB options object. Returns the
+// outcome so the caller can update the bookkeeping flags; `remove: true`
+// means the caller must drop the property from the object.
+const classifyMongoProperty = (
+    prop: ObjectProperty,
+    propName: string,
+    j: JSCodeshift,
+): MutationResult => {
+    if (REMOVED_PROPS.has(propName)) {
+        return { changed: true, addedTodo: false, remove: true }
+    }
+    if (SIMPLE_RENAMES[propName]) {
+        renamePropertyKey(prop, SIMPLE_RENAMES[propName])
+        return { changed: true, addedTodo: false, remove: false }
+    }
+    if (propName === "sslValidate") {
+        const addedTodo = migrateSslValidate(prop, j)
+        return { changed: true, addedTodo, remove: false }
+    }
+    if (WRITE_CONCERN_PROPS.has(propName)) {
+        const message = `\`${propName}\` was removed — migrate to \`writeConcern: { ... }\``
+        if (hasTodoComment(prop, message)) {
+            return { changed: true, addedTodo: false, remove: false }
+        }
+        addTodoComment(prop, message, j)
+        return { changed: true, addedTodo: true, remove: false }
+    }
+    return { changed: false, addedTodo: false, remove: false }
 }
 
 export const name = path.basename(__filename, path.extname(__filename))
@@ -55,58 +130,25 @@ export const datasourceMongodb = (file: FileInfo, api: API) => {
     let hasChanges = false
     let hasTodos = false
 
-    const removeProps = new Set([
-        "useNewUrlParser",
-        "useUnifiedTopology",
-        "keepAlive",
-        "keepAliveInitialDelay",
-        "sslCRL",
-    ])
+    root.find(j.ObjectExpression).forEach((objPath) => {
+        if (!isMongoDbOptions(objPath.node)) return
 
-    const simpleRenames: Record<string, string> = {
-        appname: "appName",
-        ssl: "tls",
-        sslCA: "tlsCAFile",
-        sslCert: "tlsCertificateKeyFile",
-        sslKey: "tlsCertificateKeyFile",
-        sslPass: "tlsCertificateKeyFilePassword",
-    }
+        const toRemove = new Set<ObjectProperty>()
+        for (const prop of objPath.node.properties) {
+            if (prop.type !== "ObjectProperty") continue
+            const propName = getPropertyKeyName(prop)
+            if (propName === null) continue
 
-    const writeConcernProps = new Set([
-        "fsync",
-        "j",
-        "w",
-        "wtimeout",
-        "wtimeoutMS",
-    ])
-
-    root.find(j.ObjectProperty).forEach((astPath) => {
-        const name = getPropertyKeyName(astPath.node)
-        if (name === null) return
-
-        if (removeProps.has(name)) {
-            j(astPath).remove()
-            hasChanges = true
-            return
+            const result = classifyMongoProperty(prop, propName, j)
+            if (result.changed) hasChanges = true
+            if (result.addedTodo) hasTodos = true
+            if (result.remove) toRemove.add(prop)
         }
-        if (simpleRenames[name]) {
-            renamePropertyKey(astPath.node, simpleRenames[name])
-            hasChanges = true
-            return
-        }
-        if (name === "sslValidate") {
-            if (migrateSslValidate(astPath.node, j)) hasTodos = true
-            hasChanges = true
-            return
-        }
-        if (writeConcernProps.has(name)) {
-            addTodoComment(
-                astPath.node,
-                `\`${name}\` was removed — migrate to \`writeConcern: { ... }\``,
-                j,
+
+        if (toRemove.size > 0) {
+            objPath.node.properties = objPath.node.properties.filter(
+                (p) => !toRemove.has(p as ObjectProperty),
             )
-            hasChanges = true
-            hasTodos = true
         }
     })
 

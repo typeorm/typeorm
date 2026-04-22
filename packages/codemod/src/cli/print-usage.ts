@@ -20,6 +20,7 @@ ${colors.bold("Options:")}
   ${colors.blue("--ignore, -i")} <pattern>  Additional glob pattern to exclude ${colors.dim("(repeatable; *.d.ts is always excluded)")}
   ${colors.blue("--list, -l")}              List available transforms
   ${colors.blue("--transform, -t")} <name>  Run a specific transform only
+  ${colors.blue("--version, -v")}           Print the installed @typeorm/codemod version
   ${colors.blue("--workers, -w")} <num>     Number of worker processes ${colors.dim("(default: CPU cores - 1)")}
 
 ${colors.bold("Examples:")}
