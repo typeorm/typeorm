@@ -76,7 +76,7 @@ export const datasourceExpo = (file: FileInfo, api: API) => {
             if (prop.type !== "Property" && prop.type !== "ObjectProperty")
                 return false
             if (getObjectPropertyKeyName(prop) !== "driver") return false
-            return isDefaultExpoSqliteRequire(prop.value as Node)
+            return isDefaultExpoSqliteRequire(prop.value)
         })
         if (removed) hasChanges = true
     })
