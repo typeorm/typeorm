@@ -54,7 +54,7 @@ export class EntityPersistExecutor {
         // save data in the query runner - this is useful functionality to share data from outside of the world
         // with third classes - like subscribers and listener methods
         const oldQueryRunnerData = queryRunner.data
-        if (this.options && this.options.data) {
+        if (this.options?.data) {
             queryRunner.data = this.options.data
         }
 
@@ -64,7 +64,7 @@ export class EntityPersistExecutor {
                 ? this.entity
                 : [this.entity]
             const entitiesInChunks =
-                this.options && this.options.chunk && this.options.chunk > 0
+                this.options?.chunk && this.options.chunk > 0
                     ? OrmUtils.chunk(entities, this.options.chunk)
                     : [entities]
 
@@ -166,7 +166,7 @@ export class EntityPersistExecutor {
                 if (!queryRunner.isTransactionActive) {
                     if (
                         this.dataSource.driver.transactionSupport !== "none" &&
-                        (!this.options || this.options.transaction !== false)
+                        this.options?.transaction !== false
                     ) {
                         // start transaction until it was not explicitly disabled
                         isTransactionStartedByUs = true
