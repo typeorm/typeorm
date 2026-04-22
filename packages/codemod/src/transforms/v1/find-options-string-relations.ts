@@ -156,10 +156,7 @@ export const findOptionsStringRelations = (file: FileInfo, api: API) => {
         // Inline dynamic value (CallExpression, ConditionalExpression, etc.)
         // — wrap with `Object.fromEntries(...)`. Attach the dot-path comment
         // because nesting can't be detected statically.
-        propPath.node.value = wrapDynamicStringArray(
-            j,
-            value as ASTNode,
-        ) as typeof value
+        propPath.node.value = wrapDynamicStringArray(j, value) as typeof value
         hasChanges = true
         walkToStatement(DYNAMIC_RELATIONS_DOT_PATH_NOTE)
     })
