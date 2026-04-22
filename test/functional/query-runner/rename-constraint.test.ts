@@ -20,7 +20,7 @@ describe("query runner > rename constraint", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
-            enabledDrivers: ["postgres", "cockroachdb", "mssql"],
+            enabledDrivers: ["postgres", "cockroachdb", "mssql", "oracle"],
             entities: [],
             schemaCreate: false,
             dropSchema: true,
