@@ -63,6 +63,18 @@ describe("query builder > sql injection", () => {
         "post.id; DELETE FROM post; --",
         "COUNT(*); TRUNCATE post",
         "post.name);DELETE FROM post;--",
+        // Close-preceding-quote injection: the attacker closes a quoted
+        // region and appends a raw `;` outside.
+        "'foo'; DROP TABLE post--",
+        '"foo"; DROP TABLE post--',
+        "`foo`; DROP TABLE post--",
+        "[foo]; DROP TABLE post--",
+        "$$foo$$; DROP TABLE post--",
+        // Backslash-escape is intentionally NOT recognised (cross-driver
+        // safety — see assertNoStatementTerminator JSDoc). On drivers that
+        // treat `\` as literal, this input closes the quote at the real
+        // `'` and the subsequent `;` must be flagged.
+        "'foo\\'; DROP TABLE post--",
     ]
 
     // Legitimate select expressions whose `;` lives inside a quoted literal
@@ -74,14 +86,22 @@ describe("query builder > sql injection", () => {
         "CONCAT('a;', 'b''c;d')",
         // Double-quoted string / identifier.
         'CASE WHEN post.name = "semi;colon" THEN 1 ELSE 0 END',
+        // Double-quoted identifier with doubled-quote escape inside.
+        'CASE WHEN post.name = "a""b;c" THEN 1 ELSE 0 END',
         // Backtick-quoted identifier (MySQL).
         "`column;with;semi`",
+        // Doubled-backtick escape inside a MySQL identifier.
+        "`col``with;embedded;backtick;and;semi`",
         // Bracket-quoted identifier (MSSQL).
         "[column;with;semi]",
+        // Doubled-bracket-close escape inside an MSSQL identifier.
+        "[col]]with;embedded;bracket;and;semi]",
         // Dollar-quoted string (Postgres).
         "$$a;b$$",
         // Tagged dollar-quoted string (Postgres).
         "$tag$a;b$tag$",
+        // Underscore-and-digit tag (Postgres accepts `\w` tags).
+        "$_tag1$a;b$_tag1$",
     ]
 
     function verifyIntegrity(dataSource: DataSource) {
