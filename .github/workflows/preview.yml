@@ -74,4 +74,4 @@ jobs:
         working-directory: packages/codemod
 
       # publish
-      - run: pnpm exec pkg-pr-new publish ${{ env.PACKAGES }} --template='./sample/playground'
+      - run: pnpm exec pkg-pr-new publish ${{ env.PACKAGES }} --template='./playground'
