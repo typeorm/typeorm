@@ -58,7 +58,7 @@ jobs:
         run: |
           find build/compiled/test -name "*.test.js" | sort | awk "NR % $TOTAL_SHARDS == ${{ matrix.shard }} - 1" \
             | jq -R -s 'split("\n") | map(select(length > 0))' \
-            | jq -s '.[0] as $files | .[1] | .spec = $files | .recursive = false' - .mocharc.json > .mocharc.${{ matrix.shard }}.json
+            | jq -s '.[0] as $files | .[1] | .spec = $files | .recursive = false' - <(sed 's|^[[:space:]]*//.*||' .mocharc.json) > .mocharc.${{ matrix.shard }}.json
 
           echo "Shard ${{ matrix.shard }}/$TOTAL_SHARDS: $(jq '.spec | length' .mocharc.${{ matrix.shard }}.json) test files"
 

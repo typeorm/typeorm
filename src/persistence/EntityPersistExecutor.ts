@@ -54,7 +54,7 @@ export class EntityPersistExecutor {
         // save data in the query runner - this is useful functionality to share data from outside of the world
         // with third classes - like subscribers and listener methods
         const oldQueryRunnerData = queryRunner.data
-        if (this.options && this.options.data) {
+        if (this.options?.data) {
             queryRunner.data = this.options.data
         }
 
@@ -63,10 +63,9 @@ export class EntityPersistExecutor {
             const entities: ObjectLiteral[] = Array.isArray(this.entity)
                 ? this.entity
                 : [this.entity]
+            const chunkSize = this.options?.chunk ?? 0
             const entitiesInChunks =
-                this.options && this.options.chunk && this.options.chunk > 0
-                    ? OrmUtils.chunk(entities, this.options.chunk)
-                    : [entities]
+                chunkSize > 0 ? OrmUtils.chunk(entities, chunkSize) : [entities]
 
             // console.time("building subject executors...");
             const executors = await Promise.all(
@@ -166,7 +165,7 @@ export class EntityPersistExecutor {
                 if (!queryRunner.isTransactionActive) {
                     if (
                         this.dataSource.driver.transactionSupport !== "none" &&
-                        (!this.options || this.options.transaction !== false)
+                        this.options?.transaction !== false
                     ) {
                         // start transaction until it was not explicitly disabled
                         isTransactionStartedByUs = true

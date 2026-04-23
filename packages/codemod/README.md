@@ -53,7 +53,7 @@ npx prettier --write src/        # or: npx eslint --fix src/
 
 ### Scoping
 
-Transforms that rename properties or methods (e.g. `.connection` to `.dataSource`) rely on type annotations to identify TypeORM instances. Code that uses TypeORM APIs without type annotations may not be transformed automatically — review `git diff` after running.
+Transforms that rename properties or methods (e.g. `.connection` to `.dataSource`) identify TypeORM instances through type annotations. They also recognize untyped class fields whose initializer is a known accessor chain (e.g. `private manager = this.dataSource.manager`). Code with no typing signal at all may not be transformed automatically — review `git diff` after running.
 
 ## Documentation
 

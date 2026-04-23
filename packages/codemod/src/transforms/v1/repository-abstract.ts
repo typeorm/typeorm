@@ -193,10 +193,7 @@ export const repositoryAbstract = (file: FileInfo, api: API) => {
             "`getCustomRepository()` was removed — use a custom service class with `dataSource.getRepository()`"
         // Walk up to the enclosing statement — comments attached to a bare
         // `CallExpression` are commonly dropped by recast during printing.
-        let current: { node: Node; parent: unknown } | null = callPath as {
-            node: Node
-            parent: unknown
-        }
+        let current: { node: Node; parent: unknown } | null = callPath
         let host: Node | null = null
         while (current) {
             const t = current.node.type

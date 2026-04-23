@@ -68,8 +68,7 @@ describe("run-transforms", () => {
                 // Silence jscodeshift's progress output for the duration of
                 // the run — mocha's reporter doesn't need it.
                 const originalWrite = process.stdout.write.bind(process.stdout)
-                process.stdout.write = (() =>
-                    true) as typeof process.stdout.write
+                process.stdout.write = () => true
                 try {
                     await jscodeshift(transformPath, [tmpDir], {
                         dry: false,

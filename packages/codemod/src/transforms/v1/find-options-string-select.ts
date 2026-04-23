@@ -122,10 +122,7 @@ export const findOptionsStringSelect = (file: FileInfo, api: API) => {
         // Inline dynamic value (CallExpression, ConditionalExpression, etc.)
         // — wrap unconditionally; v0 only accepted `string[]` so the runtime
         // shape is known to be the array form.
-        propPath.node.value = wrapDynamicStringArray(
-            j,
-            value as ASTNode,
-        ) as typeof value
+        propPath.node.value = wrapDynamicStringArray(j, value) as typeof value
         hasChanges = true
     })
 
