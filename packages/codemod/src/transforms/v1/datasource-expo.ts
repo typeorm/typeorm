@@ -41,12 +41,14 @@ const isExpoDataSource = (obj: ObjectExpression): boolean => {
     return hasExpoType && hasDatabase
 }
 
-// Matches the exact default shape `require("expo-sqlite")`. Member accesses
-// (`.default`), different packages, identifiers, and custom wrappers are left
-// alone — users passing those want the override.
+// Matches the exact default shape `require("expo-sqlite")`, including
+// TS-wrapped variants like `require("expo-sqlite") as any`. Member accesses
+// (`.default`), different packages, identifiers, and custom wrappers are
+// left alone — users passing those want the override.
 const isDefaultExpoSqliteRequire = (value: Node): boolean => {
-    if (value.type !== "CallExpression") return false
-    const call = value as CallExpression
+    const unwrapped = unwrapTsExpression(value)
+    if (unwrapped.type !== "CallExpression") return false
+    const call = unwrapped as CallExpression
     if (call.callee.type !== "Identifier" || call.callee.name !== "require") {
         return false
     }
@@ -74,7 +76,7 @@ export const datasourceExpo = (file: FileInfo, api: API) => {
             if (prop.type !== "Property" && prop.type !== "ObjectProperty")
                 return false
             if (getObjectPropertyKeyName(prop) !== "driver") return false
-            return isDefaultExpoSqliteRequire(prop.value as Node)
+            return isDefaultExpoSqliteRequire(prop.value)
         })
         if (removed) hasChanges = true
     })
