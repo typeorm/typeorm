@@ -122,6 +122,15 @@ export const fileImportsFrom = (
  * is `"typeorm"`, imports from `"typeorm/metadata/ColumnMetadata"` are also
  * recognised. TypeORM users reach internal types through deep imports, and
  * the codemod must rewrite them regardless of import shape.
+ *
+ * @param opts.valueOnly When true, skip ESM type-only imports — both the
+ *   declaration-level `import type { X }` and the per-specifier
+ *   `import { type X }` form. Use this when the local is going to appear as
+ *   a *value* in the rewritten code (e.g. callee of `new X(...)` or
+ *   `X.method()`); a type-only import creates no runtime binding and must
+ *   not influence value-level matching. CommonJS `require` destructures and
+ *   TS `import = require` forms always produce value bindings so they are
+ *   included regardless.
  */
 export const getLocalNamesForImport = (
     root: Collection,
@@ -211,6 +220,13 @@ export const getLocalNamesForImport = (
  *
  * Useful when a transform needs to recognise `typeorm.Foo` member-expression
  * references alongside named `Foo` imports handled by `getLocalNamesForImport`.
+ *
+ * @param opts.valueOnly When true, skip ESM type-only namespace imports
+ *   (`import type * as ns from "..."`). Use this when the local name is
+ *   going to appear as a *value* in the rewritten code (e.g. callee of
+ *   `new ns.X(...)`); a type-only import creates no runtime binding. CJS
+ *   `require` and TS `import = require` forms are always value bindings and
+ *   remain included regardless.
  */
 export const getNamespaceLocalNames = (
     root: Collection,
@@ -320,6 +336,11 @@ export const TYPEORM_COLUMN_DECORATORS: ReadonlySet<string> = new Set([
  * the file — covers ESM aliases (`import { Column as C }`) and CJS aliases
  * (`const { Column: C } = require(...)`). Returns a union set suitable for
  * alias-aware identifier matching.
+ *
+ * @param opts.valueOnly Forwarded to `getLocalNamesForImport` — see there
+ *   for semantics. Use when the expanded names will be matched against
+ *   value-level usages (callees, method receivers) rather than type
+ *   annotations.
  */
 export const expandLocalNamesForImports = (
     root: Collection,
