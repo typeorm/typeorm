@@ -89,7 +89,11 @@ export class DebugLogger extends AbstractLogger {
                     this.logger[messageTypeOrLevel](message.message)
                 }
 
-                if (message.parameters?.length) {
+                if (
+                    message.parameters &&
+                    (!Array.isArray(message.parameters) ||
+                        message.parameters.length)
+                ) {
                     this.logger[messageTypeOrLevel](
                         "parameters:",
                         message.parameters,

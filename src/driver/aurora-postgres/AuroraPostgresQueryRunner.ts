@@ -9,6 +9,8 @@ import type { ReplicationMode } from "../types/ReplicationMode"
 import { QueryResult } from "../../query-runner/QueryResult"
 import type { Table } from "../../schema-builder/table/Table"
 import { TypeORMError } from "../../error"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import { NamedPlaceholdersNotSupportedError } from "../../error/NamedPlaceholdersNotSupportedError"
 
 class PostgresQueryRunnerWrapper extends PostgresQueryRunner {
     declare driver: any
@@ -192,10 +194,12 @@ export class AuroraPostgresQueryRunner
      */
     async query(
         query: string,
-        parameters?: any[],
+        parameters?: any[] | ObjectLiteral,
         useStructuredResult = false,
     ): Promise<any> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
+        if (parameters && !Array.isArray(parameters))
+            throw new NamedPlaceholdersNotSupportedError()
 
         const raw = await this.client.query(query, parameters)
 
