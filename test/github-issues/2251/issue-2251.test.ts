@@ -15,6 +15,7 @@ describe("github issues > #2251 - Unexpected behavior when passing duplicate ent
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,

@@ -10,7 +10,7 @@ export interface JoinColumnOptions {
     /**
      * Name of the column in the entity to which this column is referenced.
      */
-    referencedColumnName?: string // TODO rename to referencedColumn
+    referencedColumnName?: string
 
     /**
      * Name of the foreign key constraint.

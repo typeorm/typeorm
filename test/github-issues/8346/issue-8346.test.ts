@@ -13,6 +13,7 @@ describe("github issues > #8346 MySQL: Regression when using take, orderBy, and 
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,

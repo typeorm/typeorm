@@ -56,7 +56,7 @@ export async function importClassesFromDirectories(
     }
     const dirPromises = allFiles
         .filter((file) => {
-            const dtsExtension = file.substring(file.length - 5, file.length)
+            const dtsExtension = file.slice(-5)
             return (
                 formats.indexOf(PlatformTools.pathExtname(file)) !== -1 &&
                 dtsExtension !== ".d.ts"

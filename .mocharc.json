@@ -4,6 +4,8 @@
   "color": true,
   "exit": true,
   "file": ["./build/compiled/test/utils/test-setup.js"],
+  // mongodb@7.2+ leaks `allowedDriverRequire` on globalThis; allowlist it.
+  "globals": ["allowedDriverRequire"],
   "recursive": true,
   "spec": ["./build/compiled/test/**/*.test.{js,ts}"],
   "timeout": 90000

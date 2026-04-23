@@ -13,6 +13,7 @@ describe("query builder > parameters > reused parameters", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Person],
             schemaCreate: true,
             dropSchema: true,

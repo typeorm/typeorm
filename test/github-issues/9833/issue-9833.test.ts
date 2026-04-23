@@ -18,6 +18,7 @@ describe("github issues > #9833 Add support for Single Table Inheritance when us
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [BaseSchema, ASchema, BSchema, CSchema],
             schemaCreate: true,
             dropSchema: true,

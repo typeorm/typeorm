@@ -36,6 +36,8 @@
 - [ ] There are new or updated tests validating the change (`tests/**.test.ts`)
 - [ ] Documentation has been updated to reflect this change (`docs/docs/**.md`)
 
+> 🛡️ **Security fixes:** Do not submit security fixes as public PRs — the diff exposes the vulnerability. Use [GitHub Security Advisories](https://github.com/typeorm/typeorm/security/advisories/new) instead.
+
 <!--
   🎉 Thank you for contributing and making TypeORM even better!
 -->

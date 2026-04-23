@@ -1,23 +1,37 @@
 [github_app]
-pr_commands = ["/agentic_review"]
 feedback_or_draft_pr = false
 handle_push_trigger = true
+pr_commands = ["/agentic_review"]
 push_commands = ["/agentic_review"]
 
 [auto_best_practices]
 enable_auto_best_practices = true
 utilize_auto_best_practices = true
 
-[review_agent]
-enabled = true
-publish_output = true
-comments_location_policy = "summary"
-final_update_message = false
-persistent_comment = true
-persistent_comment_notification = false
-
 [checks]
 enable_auto_checks_feedback = false
 
 [config]
 publish_output_progress = false
+
+[pr_code_suggestions]
+enable_chat_in_code_suggestions = true
+
+[review_agent]
+enabled = true
+approve_pr_on_self_review = true
+comments_location_policy = "summary"
+demand_self_review = true
+final_update_message = false
+persistent_comment = true
+persistent_comment_notification = false
+publish_output = true
+
+[review_agent_ux]
+finding_overflow_count = "all"
+expand_description = true
+expand_code = false
+expand_relevance = false
+expand_evidence = false
+expand_prompt = true
+resolved_overflow_count = "none"

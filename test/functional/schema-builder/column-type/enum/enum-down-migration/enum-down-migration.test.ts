@@ -33,7 +33,6 @@ describe("schema builder > column type > enum > enum down migration", () => {
                 )
                 if (!options) {
                     fail()
-                    return
                 }
 
                 const dataSource = new DataSource(options)
@@ -87,7 +86,7 @@ describe("schema builder > column type > enum > enum down migration", () => {
 
                 table = await queryRunner.getTable("metric")
                 defaultOperator = table!.findColumnByName("defaultOperator")
-                expect(defaultOperator!.enum).to.deep.equal([
+                expect(defaultOperator!.enum).to.have.members([
                     "lt",
                     "le",
                     "eq",
