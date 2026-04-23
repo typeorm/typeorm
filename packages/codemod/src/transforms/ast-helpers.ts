@@ -437,9 +437,30 @@ export const forEachColumnMetadataOptionsArg = (
     )
     if (classLocalNames.size === 0 && namespaceLocalNames.size === 0) return
 
-    const matchesCallee = (callee: ASTNode): boolean => {
+    // Confirms `name` at the call site resolves to a module-level binding (the
+    // import) and not a shadowing declaration in an inner scope — function
+    // parameter, nested `const`/`let`/`var`, class declaration, catch binding,
+    // etc. Without this, name-matching alone would rewrite user code that
+    // happens to reuse `ColumnMetadata`/`typeorm` as a local identifier.
+    interface ScopeLike {
+        parent: ScopeLike | null
+        isGlobal?: boolean
+        lookup(name: string): ScopeLike | null
+    }
+    interface ScopedPath {
+        scope: ScopeLike | null
+    }
+    const resolvesToModuleScope = (path: ASTPath, name: string): boolean => {
+        const pathScope = (path as unknown as ScopedPath).scope
+        const declaringScope = pathScope?.lookup(name)
+        if (!declaringScope) return true
+        return declaringScope.isGlobal === true || !declaringScope.parent
+    }
+
+    const matchesCallee = (callee: ASTNode, path: ASTPath): boolean => {
         if (callee.type === "Identifier") {
-            return classLocalNames.has(callee.name)
+            if (!classLocalNames.has(callee.name)) return false
+            return resolvesToModuleScope(path, callee.name)
         }
         if (
             (callee.type === "MemberExpression" ||
@@ -453,7 +474,8 @@ export const forEachColumnMetadataOptionsArg = (
                 prop.type === "Identifier" &&
                 prop.name === target.className
             ) {
-                return namespaceLocalNames.has(obj.name)
+                if (!namespaceLocalNames.has(obj.name)) return false
+                return resolvesToModuleScope(path, obj.name)
             }
         }
         return false
@@ -481,7 +503,7 @@ export const forEachColumnMetadataOptionsArg = (
     }
 
     root.find(j.NewExpression).forEach((path) => {
-        if (!matchesCallee(path.node.callee)) return
+        if (!matchesCallee(path.node.callee, path)) return
 
         const [firstArg] = path.node.arguments
         const arg = firstArg ? unwrapTsExpression(firstArg) : undefined
