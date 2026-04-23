@@ -380,7 +380,10 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         // Dedupe specifiers that now share the same imported name after the
         // rename — e.g. `import { Connection, DataSource }` would otherwise
         // emit `import { DataSource, DataSource }`. Keep the first occurrence
-        // of each imported name and drop subsequent duplicates.
+        // of each (importKind, imported, local) tuple. Per-specifier
+        // `importKind` ("type" vs unset for value) participates so
+        // `import { DataSource, type DataSource }` keeps both — they are
+        // distinct specifiers TS 4.5+ recognizes.
         if (path.node.specifiers) {
             const seen = new Set<string>()
             path.node.specifiers = path.node.specifiers.filter((spec) => {
@@ -390,7 +393,13 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
                 ) {
                     return true
                 }
-                const key = `${spec.imported.name}::${spec.local?.type === "Identifier" ? spec.local.name : ""}`
+                const specKind =
+                    (spec as { importKind?: string }).importKind === "type"
+                        ? "type:"
+                        : ""
+                const localName =
+                    spec.local?.type === "Identifier" ? spec.local.name : ""
+                const key = `${specKind}${spec.imported.name}::${localName}`
                 if (seen.has(key)) {
                     hasChanges = true
                     return false
@@ -861,15 +870,20 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
     ): { key: string; isThisMember: boolean } | null => {
         const direct = unwrapIdentifierName(node)
         if (direct) return { key: direct, isThisMember: false }
-        const unwrapped = unwrapTsExpression(node)
+        const unwrapped = unwrapTsExpression(node) as {
+            type: string
+            object?: ASTNode
+            property?: ASTNode
+            computed?: boolean
+        }
         if (
             (unwrapped.type === "MemberExpression" ||
                 unwrapped.type === "OptionalMemberExpression") &&
-            (unwrapped as { object: ASTNode }).object.type ===
-                "ThisExpression" &&
-            (unwrapped as { property: ASTNode }).property.type === "Identifier"
+            unwrapped.computed !== true &&
+            unwrapped.object?.type === "ThisExpression" &&
+            unwrapped.property?.type === "Identifier"
         ) {
-            const prop = (unwrapped as { property: Identifier }).property
+            const prop = unwrapped.property
             return { key: prop.name, isThisMember: true }
         }
         return null
@@ -906,16 +920,20 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
     const isDataSourceReceiver = (node: ASTNode): boolean => {
         const direct = unwrapIdentifierName(node)
         if (direct && connectionVarNames.has(direct)) return true
-        const unwrapped = unwrapTsExpression(node)
+        const unwrapped = unwrapTsExpression(node) as {
+            type: string
+            object?: ASTNode
+            property?: ASTNode
+            computed?: boolean
+        }
         if (
             (unwrapped.type === "MemberExpression" ||
                 unwrapped.type === "OptionalMemberExpression") &&
-            (unwrapped as { object: ASTNode }).object.type ===
-                "ThisExpression" &&
-            (unwrapped as { property: ASTNode }).property.type === "Identifier"
+            unwrapped.computed !== true &&
+            unwrapped.object?.type === "ThisExpression" &&
+            unwrapped.property?.type === "Identifier"
         ) {
-            const propName = (unwrapped as { property: { name: string } })
-                .property.name
+            const propName = unwrapped.property.name
             if (thisConnectionMembers.has(propName)) return true
         }
         return false
@@ -1152,11 +1170,18 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         scope?: ScopeLike
     }
 
-    // Cache all `connection` identifier paths once; each shorthand destructure
-    // rename filters this list by scope subtree instead of re-walking the AST.
+    // Cache all `connection` and `dataSource` identifier paths once, then
+    // filter by scope subtree per destructure pass instead of re-walking the
+    // AST. Both caches use the current `node.name` at lookup time, so a
+    // previously-renamed `connection` → `dataSource` node correctly counts
+    // as a `dataSource` reference in subsequent passes.
     const allConnectionRefs: ScopedPath[] = []
+    const allDataSourceRefs: ScopedPath[] = []
     root.find(j.Identifier, { name: "connection" }).forEach((p) => {
         allConnectionRefs.push(p)
+    })
+    root.find(j.Identifier, { name: "dataSource" }).forEach((p) => {
+        allDataSourceRefs.push(p)
     })
 
     const isInSubtree = (
@@ -1173,16 +1198,22 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
 
     // True if any `dataSource` reference lives inside the given subtree — that
     // reference would rebind to the about-to-be-renamed local, so the rename
-    // must fall back to the alias form.
+    // must fall back to the alias form. Checks both caches because a previous
+    // rename pass may have renamed a cached `connection` path to `dataSource`,
+    // creating a sibling-scope conflict that ast-types' scope object — being
+    // built once at parse time — won't reflect.
     const hasDataSourceUsageIn = (scopeBodyNode: ASTNode): boolean => {
-        let found = false
-        root.find(j.Identifier, { name: "dataSource" }).forEach((idPath) => {
-            if (found) return
-            if (!isInSubtree(idPath, scopeBodyNode)) return
-            if (!isReferenceIdentifier(idPath)) return
-            found = true
-        })
-        return found
+        const isDataSourceRefInSubtree = (idPath: ScopedPath): boolean =>
+            idPath.node.name === "dataSource" &&
+            isInSubtree(idPath, scopeBodyNode) &&
+            isReferenceIdentifier(idPath)
+        for (const p of allDataSourceRefs) {
+            if (isDataSourceRefInSubtree(p)) return true
+        }
+        for (const p of allConnectionRefs) {
+            if (isDataSourceRefInSubtree(p)) return true
+        }
+        return false
     }
 
     // Collect every `connection` reference inside `scopeBodyNode` whose
