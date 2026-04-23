@@ -3918,7 +3918,8 @@ export class PostgresQueryRunner
                                         dbTable["table_schema"]
                                     }' AND "t"."typname" = '${
                                         enumName ?? name
-                                    }'`
+                                    }' ` +
+                                    `ORDER BY "e"."enumsortorder"`
                                 const results: ObjectLiteral[] =
                                     await this.query(sql)
 

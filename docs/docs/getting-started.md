@@ -1164,8 +1164,6 @@ Learn more about QueryBuilder [here](./query-builder/1-select-query-builder.md).
 
 ## Samples
 
-Take a look at the samples in [sample](https://github.com/typeorm/typeorm/tree/master/sample) for examples of usage.
-
 There are a few repositories that you can clone and start with:
 
 - [Example how to use TypeORM with TypeScript](https://github.com/typeorm/typescript-example)

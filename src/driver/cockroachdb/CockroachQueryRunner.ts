@@ -3276,7 +3276,7 @@ export class CockroachQueryRunner
             .map((dbTable) => `'${dbTable.table_schema}'`)
             .join(", ")
         const enumsSql =
-            `SELECT "t"."typname" AS "name", string_agg("e"."enumlabel", '|') AS "value" ` +
+            `SELECT "t"."typname" AS "name", string_agg("e"."enumlabel", '|' ORDER BY "e"."enumsortorder") AS "value" ` +
             `FROM "pg_enum" "e" ` +
             `INNER JOIN "pg_type" "t" ON "t"."oid" = "e"."enumtypid" ` +
             `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
