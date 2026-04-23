@@ -322,10 +322,17 @@ describe("ast-helpers", () => {
         })
 
         it("does not fire on type-only named import", () => {
+            // Reuse the imported name at the value level — `valueOnly: true`
+            // must filter the type-only `ColumnMetadata` out of the match
+            // set, so the runtime `new ColumnMetadata(...)` below refers to
+            // the local class and the rewrite must not fire. Testing with a
+            // differently-named runtime (e.g. `const CM = class`) wouldn't
+            // exercise the filter because `CM` is not in classLocalNames to
+            // begin with.
             const src = [
                 'import type { ColumnMetadata } from "typeorm"',
-                "const CM = class { constructor(_o: any) {} }",
-                "new CM({ args: { options: { readonly: true } } })",
+                "const ColumnMetadata = class { constructor(_o: any) {} }",
+                "new ColumnMetadata({ args: { options: { readonly: true } } })",
             ].join("\n")
             expect(countInvocations(src)).to.equal(0)
         })

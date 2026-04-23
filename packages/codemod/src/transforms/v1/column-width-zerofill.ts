@@ -30,6 +30,7 @@ export const columnWidthZerofill = (file: FileInfo, api: API) => {
         j,
         "typeorm",
         TYPEORM_COLUMN_DECORATORS,
+        { valueOnly: true },
     )
     forEachDecoratorObjectArg(
         root,

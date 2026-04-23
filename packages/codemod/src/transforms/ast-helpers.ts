@@ -432,10 +432,26 @@ export const getObjectPropertyKeyName = (
  * removal) must also cover this path. Rare in user code but shows up in
  * multi-tenant / metadata-manipulation patterns.
  *
- * Matches both direct imports (`new ColumnMetadata(...)`, including aliased
- * forms) and namespace-qualified constructors (`new typeorm.ColumnMetadata(...)`).
- * Type-only imports are skipped via `valueOnly` — `new X(...)` needs a runtime
- * binding.
+ * Recognised import / binding shapes, all via
+ * `expandLocalNamesForImports` / `getNamespaceLocalNames`:
+ *
+ *   import { ColumnMetadata } from "typeorm"
+ *   import { ColumnMetadata as CM } from "typeorm"
+ *   import { ColumnMetadata } from "typeorm/metadata/ColumnMetadata"   // sub-path
+ *   import * as typeorm from "typeorm"                                  // namespace
+ *   import typeorm = require("typeorm")                                 // TS import-equals
+ *   const { ColumnMetadata } = require("typeorm")                       // CJS destructure
+ *   const typeorm = require("typeorm")                                  // CJS namespace
+ *
+ * Type-only imports (declaration-level `import type { X }` and per-specifier
+ * `import { type X }`, same for `import type * as`) are filtered via
+ * `valueOnly: true` — `new X(...)` needs a runtime binding, and a type-only
+ * import creates none.
+ *
+ * Name-level matches are further gated by a scope check: the callee
+ * identifier must resolve to the module-level import binding and not a
+ * shadowing declaration in an inner scope (function parameter, nested
+ * `const`/`let`/`var`, class declaration, catch binding).
  */
 export const forEachColumnMetadataOptionsArg = (
     root: Collection,
@@ -463,19 +479,34 @@ export const forEachColumnMetadataOptionsArg = (
     // parameter, nested `const`/`let`/`var`, class declaration, catch binding,
     // etc. Without this, name-matching alone would rewrite user code that
     // happens to reuse `ColumnMetadata`/`typeorm` as a local identifier.
+    //
+    // The walk goes from the innermost path scope outward. If any
+    // intermediate scope declares the name before we reach the module scope,
+    // that's a shadow and we reject. If we reach the module scope without
+    // hitting a declaration, the name comes from the import (caller already
+    // verified it's in `classLocalNames` / `namespaceLocalNames`).
+    //
+    // Note: we cannot use `scope.lookup(name)` directly — ast-types does not
+    // register `import ns = require("…")` bindings at the module scope, so
+    // lookup returns undefined for that import form. Walking manually and
+    // short-circuiting on `isGlobal` keeps the import-equals form working
+    // while still catching every shadow category listed above.
     interface ScopeLike {
         parent: ScopeLike | null
         isGlobal?: boolean
-        lookup(name: string): ScopeLike | null
+        declares(name: string): boolean
     }
     interface ScopedPath {
         scope: ScopeLike | null
     }
     const resolvesToModuleScope = (path: ASTPath, name: string): boolean => {
-        const pathScope = (path as unknown as ScopedPath).scope
-        const declaringScope = pathScope?.lookup(name)
-        if (!declaringScope) return true
-        return declaringScope.isGlobal === true || !declaringScope.parent
+        let scope = (path as unknown as ScopedPath).scope
+        while (scope) {
+            if (scope.isGlobal === true || !scope.parent) return true
+            if (scope.declares(name)) return false
+            scope = scope.parent
+        }
+        return true
     }
 
     const matchesCallee = (callee: ASTNode, path: ASTPath): boolean => {
