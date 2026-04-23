@@ -1,3 +1,7 @@
+import type { CheckMetadata } from "../../metadata/CheckMetadata"
+import type { ExclusionMetadata } from "../../metadata/ExclusionMetadata"
+import type { IndexMetadata } from "../../metadata/IndexMetadata"
+import type { UniqueMetadata } from "../../metadata/UniqueMetadata"
 import type { TableCheck } from "../table/TableCheck"
 import type { TableExclusion } from "../table/TableExclusion"
 import type { TableForeignKey } from "../table/TableForeignKey"
@@ -92,6 +96,58 @@ export function checkSignature(check: TableCheck): string {
  * @returns Deterministic string identifying this exclusion constraint's structure.
  */
 export function exclusionSignature(exclusion: TableExclusion): string {
+    return JSON.stringify([
+        "xc",
+        normalizeExpression(exclusion.expression ?? ""),
+    ])
+}
+
+/**
+ * Structural fingerprint for an `IndexMetadata`, mirroring {@link indexSignature}
+ * but sourced from entity metadata rather than a reflected `TableIndex`.
+ *
+ * @param index Index metadata whose structure should be summarized.
+ * @returns Deterministic string identifying this index's structure.
+ */
+export function indexMetadataSignature(index: IndexMetadata): string {
+    return JSON.stringify([
+        "idx",
+        index.columns.map((c) => c.databaseName),
+        !!index.isUnique,
+        !!index.isSpatial,
+        !!index.isFulltext,
+    ])
+}
+
+/**
+ * Structural fingerprint for a `UniqueMetadata`.
+ *
+ * @param unique Unique metadata whose structure should be summarized.
+ * @returns Deterministic string identifying this unique's structure.
+ */
+export function uniqueMetadataSignature(unique: UniqueMetadata): string {
+    return JSON.stringify(["uq", unique.columns.map((c) => c.databaseName)])
+}
+
+/**
+ * Structural fingerprint for a `CheckMetadata` — based on the normalized expression.
+ *
+ * @param check Check metadata whose structure should be summarized.
+ * @returns Deterministic string identifying this check's structure.
+ */
+export function checkMetadataSignature(check: CheckMetadata): string {
+    return JSON.stringify(["ck", normalizeExpression(check.expression ?? "")])
+}
+
+/**
+ * Structural fingerprint for an `ExclusionMetadata` — based on the normalized expression.
+ *
+ * @param exclusion Exclusion metadata whose structure should be summarized.
+ * @returns Deterministic string identifying this exclusion's structure.
+ */
+export function exclusionMetadataSignature(
+    exclusion: ExclusionMetadata,
+): string {
     return JSON.stringify([
         "xc",
         normalizeExpression(exclusion.expression ?? ""),
