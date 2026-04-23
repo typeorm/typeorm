@@ -407,26 +407,62 @@ export const getObjectPropertyKeyName = (
  * removal) must also cover this path. Rare in user code but shows up in
  * multi-tenant / metadata-manipulation patterns.
  *
- * @param classLocalNames Local identifiers bound to `ColumnMetadata` (from
- *     `expandLocalNamesForImports(root, j, "typeorm", new Set(["ColumnMetadata"]))`).
+ * Matches both direct imports (`new ColumnMetadata(...)`, including aliased
+ * forms) and namespace-qualified constructors (`new typeorm.ColumnMetadata(...)`).
+ * Type-only imports are skipped via `valueOnly` — `new X(...)` needs a runtime
+ * binding.
  */
 export const forEachColumnMetadataOptionsArg = (
     root: Collection,
     j: JSCodeshift,
-    classLocalNames: ReadonlySet<string>,
+    target: { moduleName: string; className: string },
     callback: (optionsObject: ObjectExpression, path: ASTPath) => void,
 ): void => {
-    if (classLocalNames.size === 0) return
+    const classLocalNames = expandLocalNamesForImports(
+        root,
+        j,
+        target.moduleName,
+        new Set([target.className]),
+        { valueOnly: true },
+    )
+    const namespaceLocalNames = getNamespaceLocalNames(
+        root,
+        j,
+        target.moduleName,
+    )
+    if (classLocalNames.size === 0 && namespaceLocalNames.size === 0) return
+
+    const matchesCallee = (callee: ASTNode): boolean => {
+        if (callee.type === "Identifier") {
+            return classLocalNames.has(callee.name)
+        }
+        if (
+            (callee.type === "MemberExpression" ||
+                callee.type === "OptionalMemberExpression") &&
+            (callee as { computed?: boolean }).computed !== true
+        ) {
+            const obj = (callee as { object: ASTNode }).object
+            const prop = (callee as { property: ASTNode }).property
+            if (
+                obj.type === "Identifier" &&
+                prop.type === "Identifier" &&
+                prop.name === target.className
+            ) {
+                return namespaceLocalNames.has(obj.name)
+            }
+        }
+        return false
+    }
 
     // Returns the property value as an ObjectExpression if the property with
     // the given key exists and its value is an ObjectExpression (after peeling
-    // TS wrappers like `as` / `satisfies` / `!` / parens). Accepts both
-    // Identifier and string-literal keys.
+    // TS wrappers like `as` / `satisfies` / `!` / parens). Uses `findLast` so
+    // duplicate keys match JS object-literal semantics (last occurrence wins).
     const findObjectPropertyValue = (
         obj: ObjectExpression,
         keyName: string,
     ): ObjectExpression | null => {
-        const prop = obj.properties.find(
+        const prop = obj.properties.findLast(
             (p) => getObjectPropertyKeyName(p) === keyName,
         )
         if (
@@ -440,9 +476,7 @@ export const forEachColumnMetadataOptionsArg = (
     }
 
     root.find(j.NewExpression).forEach((path) => {
-        const callee = path.node.callee
-        if (callee.type !== "Identifier") return
-        if (!classLocalNames.has(callee.name)) return
+        if (!matchesCallee(path.node.callee)) return
 
         const [firstArg] = path.node.arguments
         const arg = firstArg ? unwrapTsExpression(firstArg) : undefined

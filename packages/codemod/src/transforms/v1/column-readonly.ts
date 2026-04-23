@@ -75,19 +75,12 @@ export const columnReadonly = (file: FileInfo, api: API) => {
 
     // Also rewrite `new ColumnMetadata({ args: { options: { readonly, … } } })`.
     // `ColumnMetadataArgs.options` is typed `ColumnOptions`, so the same
-    // `readonly` → `update` rename applies. `valueOnly` skips `import type`
-    // bindings — `new X(...)` needs a runtime binding, not a type alias.
-    const columnMetadataLocalNames = expandLocalNamesForImports(
-        root,
-        j,
-        "typeorm",
-        new Set(["ColumnMetadata"]),
-        { valueOnly: true },
-    )
+    // `readonly` → `update` rename applies. Covers both direct and namespace-
+    // qualified imports; type-only imports are skipped by the helper.
     forEachColumnMetadataOptionsArg(
         root,
         j,
-        columnMetadataLocalNames,
+        { moduleName: "typeorm", className: "ColumnMetadata" },
         rewriteReadonlyInObject,
     )
 
