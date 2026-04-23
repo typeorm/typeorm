@@ -496,6 +496,12 @@ export const forEachColumnMetadataOptionsArg = (
     // lookup returns undefined for that import form. Walking manually and
     // short-circuiting on `isGlobal` keeps the import-equals form working
     // while still catching every shadow category listed above.
+    // jscodeshift's `ASTPath` type does not surface `.scope`, even though
+    // ast-types populates it on every visited path at runtime. Declare the
+    // minimal shape we touch and read it through a single controlled cast
+    // rather than scattering `any` at each access. The interfaces below are
+    // the narrow contract — if ast-types ever ships proper types, swap the
+    // cast for them and delete these declarations.
     interface ScopeLike {
         parent: ScopeLike | null
         isGlobal?: boolean
