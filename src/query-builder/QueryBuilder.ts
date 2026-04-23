@@ -1718,7 +1718,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         const validNulls = ["NULLS FIRST", "NULLS LAST"]
 
         for (const [key, value] of Object.entries(sort)) {
-            this.assertNoSemicolon(key, "orderBy sort key")
+            this.assertNoSemicolon(key, "orderBy")
             if (typeof value === "string") {
                 if (!validOrders.includes(value))
                     throw new TypeORMError(

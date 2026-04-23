@@ -385,7 +385,7 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
                 this.validateOrderByCondition(sort)
                 this.expressionMap.orderBys = sort
             } else {
-                this.assertNoSemicolon(sort, "orderBy sort key")
+                this.assertNoSemicolon(sort, "orderBy")
                 if (nulls) {
                     this.expressionMap.orderBys = {
                         [sort as string]: { order, nulls },
@@ -412,7 +412,7 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
         order: "ASC" | "DESC" = "ASC",
         nulls?: "NULLS FIRST" | "NULLS LAST",
     ): this {
-        this.assertNoSemicolon(sort, "addOrderBy sort key")
+        this.assertNoSemicolon(sort, "addOrderBy")
         if (nulls) {
             this.expressionMap.orderBys[sort] = { order, nulls }
         } else {

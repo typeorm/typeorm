@@ -1462,7 +1462,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             return this
         }
 
-        this.assertNoSemicolon(sort, "orderBy sort key")
+        this.assertNoSemicolon(sort, "orderBy")
 
         this.expressionMap.orderBys = nulls
             ? { [sort]: { order, nulls } }
@@ -1496,7 +1496,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 `SelectQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`,
             )
 
-        this.assertNoSemicolon(sort, "addOrderBy sort key")
+        this.assertNoSemicolon(sort, "addOrderBy")
 
         if (nulls) {
             this.expressionMap.orderBys[sort] = { order, nulls }
