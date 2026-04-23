@@ -56,12 +56,85 @@ describe("query builder > sql injection", () => {
         "1 OR 1=1",
     ]
 
+    // Attack-shape select expressions whose statement terminator `;` sits
+    // outside any quoted region — these must be rejected by the scanner.
+    const unquotedSemicolonSelects = [
+        "post.id; DROP TABLE post",
+        "post.id; DELETE FROM post; --",
+        "COUNT(*); TRUNCATE post",
+        "post.name);DELETE FROM post;--",
+    ]
+
+    // Legitimate select expressions whose `;` lives inside a quoted literal
+    // or identifier — these must pass through the scanner.
+    const quotedSemicolonSelects = [
+        // Postgres STRING_AGG — the motivating real-world case.
+        "STRING_AGG(post.name, ';' ORDER BY post.name)",
+        // SQL-standard doubled-quote escape inside single-quoted literal.
+        "CONCAT('a;', 'b''c;d')",
+        // Double-quoted string / identifier.
+        'CASE WHEN post.name = "semi;colon" THEN 1 ELSE 0 END',
+        // Backtick-quoted identifier (MySQL).
+        "`column;with;semi`",
+        // Bracket-quoted identifier (MSSQL).
+        "[column;with;semi]",
+        // Dollar-quoted string (Postgres).
+        "$$a;b$$",
+        // Tagged dollar-quoted string (Postgres).
+        "$tag$a;b$tag$",
+    ]
+
     function verifyIntegrity(dataSource: DataSource) {
         return async () => {
             const count = await dataSource.getRepository(Post).count()
             expect(count).to.equal(2)
         }
     }
+
+    describe("addSelect", () => {
+        for (const malicious of unquotedSemicolonSelects) {
+            it(`should reject unquoted semicolon with: ${malicious}`, () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        expect(() =>
+                            dataSource
+                                .getRepository(Post)
+                                .createQueryBuilder("post")
+                                .addSelect(malicious),
+                        ).to.throw(/Semicolons are not allowed/)
+                        await verifyIntegrity(dataSource)()
+                    }),
+                ))
+        }
+
+        for (const allowed of quotedSemicolonSelects) {
+            it(`should accept semicolon inside quoted region with: ${allowed}`, () => {
+                for (const dataSource of dataSources) {
+                    // The scanner only validates the input. We don't execute
+                    // the query because dialect compatibility of these
+                    // expressions varies — the point here is that the call
+                    // reaches the expression map without being rejected.
+                    expect(() =>
+                        dataSource
+                            .getRepository(Post)
+                            .createQueryBuilder("post")
+                            .addSelect(allowed),
+                    ).to.not.throw()
+                }
+            })
+        }
+
+        it("should reject an array where any element contains an unquoted semicolon", () => {
+            for (const dataSource of dataSources) {
+                expect(() =>
+                    dataSource
+                        .getRepository(Post)
+                        .createQueryBuilder("post")
+                        .addSelect(["post.id", "post.name; DROP TABLE post"]),
+                ).to.throw(/Semicolons are not allowed/)
+            }
+        })
+    })
 
     describe("andWhere", () => {
         for (const malicious of maliciousInputs) {
@@ -127,6 +200,44 @@ describe("query builder > sql injection", () => {
                     }),
                 ))
         }
+    })
+
+    describe("select", () => {
+        for (const malicious of unquotedSemicolonSelects) {
+            it(`should reject unquoted semicolon with: ${malicious}`, () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        expect(() =>
+                            dataSource
+                                .createQueryBuilder(Post, "post")
+                                .select(malicious),
+                        ).to.throw(/Semicolons are not allowed/)
+                        await verifyIntegrity(dataSource)()
+                    }),
+                ))
+        }
+
+        for (const allowed of quotedSemicolonSelects) {
+            it(`should accept semicolon inside quoted region with: ${allowed}`, () => {
+                for (const dataSource of dataSources) {
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder(Post, "post")
+                            .select(allowed),
+                    ).to.not.throw()
+                }
+            })
+        }
+
+        it("should reject an array where any element contains an unquoted semicolon", () => {
+            for (const dataSource of dataSources) {
+                expect(() =>
+                    dataSource
+                        .createQueryBuilder(Post, "post")
+                        .select(["post.id", "post.name; DROP TABLE post"]),
+                ).to.throw(/Semicolons are not allowed/)
+            }
+        })
     })
 
     describe("orderBy value injection", () => {

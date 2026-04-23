@@ -785,6 +785,30 @@ The removed type is `FindOptionsRelationByString`.
 
 ## QueryBuilder
 
+### Statement terminators rejected in `select()` and `addSelect()`
+
+`SelectQueryBuilder.select()` and `addSelect()` now reject statement-terminator semicolons in their raw-SQL string arguments to prevent SQL statement stacking attacks. The check is **string-literal-aware**: a `;` that sits inside a quoted string literal or quoted identifier is allowed through, while an unquoted `;` is rejected. The scanner recognises single-quoted strings (including `''` and `\'` escape forms), double-quoted strings / identifiers, backtick identifiers (MySQL), bracket identifiers (MSSQL), and dollar-quoted strings (Postgres `$$…$$` and tagged `$tag$…$tag$`).
+
+```typescript
+// Legitimate expressions continue to work — the `;` is inside a string literal.
+qb.select("STRING_AGG(post.name, ';' ORDER BY post.name) AS tags")
+qb.addSelect(["post.id", "$$tagged; literal$$"])
+
+// Raw statement stacking is rejected.
+qb.select("post.id; DROP TABLE post") // TypeORMError
+qb.addSelect([
+    "post.id",
+    "COUNT(*); TRUNCATE post", // TypeORMError
+])
+
+// Comments are not treated as quoted regions — a `;` inside `-- …` or
+// `/* … */` still trips the check. Rewrite the expression without a
+// semicolon, or move the comment out of the query-builder argument.
+qb.select("col /* ; */") // TypeORMError
+```
+
+For `groupBy()` / `addGroupBy()` / `orderBy()` / `addOrderBy()`, the reject is unconditional: sort and group keys never contain a legitimate `;`.
+
 ### `printSql` removed
 
 The `printSql()` method on query builders has been removed. It was redundant because all executed queries are already automatically logged through the configured logger when query logging is enabled. Use `getSql()` or `getQueryAndParameters()` to inspect the generated SQL instead:

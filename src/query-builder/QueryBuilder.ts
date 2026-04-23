@@ -196,10 +196,14 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     ): SelectQueryBuilder<Entity> {
         this.expressionMap.queryType = "select"
         if (Array.isArray(selection)) {
+            for (const s of selection) {
+                this.assertNoStatementTerminator(s, "select")
+            }
             this.expressionMap.selects = selection.map((selection) => ({
                 selection: selection,
             }))
         } else if (selection) {
+            this.assertNoStatementTerminator(selection, "select")
             this.expressionMap.selects = [
                 { selection: selection, aliasName: selectionAliasName },
             ]
@@ -1691,6 +1695,140 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     protected hasCommonTableExpressions(): boolean {
         return this.expressionMap.commonTableExpressions.length > 0
+    }
+
+    /**
+     * Rejects raw SQL fragments containing a statement-terminator `;` that is
+     * not enclosed in a string literal or quoted identifier. Used by `select()`
+     * and `addSelect()`, where the argument is an arbitrary SQL expression
+     * that may legitimately include `';'` inside quoted literals — e.g.
+     * `STRING_AGG(col, ';' ORDER BY col)`.
+     *
+     * The scanner recognises these quote forms and skips their contents:
+     *
+     *   'foo''bar'         single-quoted, SQL-standard doubled-quote escape
+     *   'foo\\'bar'         single-quoted, MySQL backslash escape
+     *   "foo;bar"          double-quoted string / identifier (Postgres, Oracle,
+     *                      MySQL with ANSI_QUOTES, MSSQL)
+     *   `foo;bar`          backtick-quoted identifier (MySQL)
+     *   [foo;bar]          bracket-quoted identifier (MSSQL)
+     *   $$foo;bar$$        dollar-quoted string (Postgres)
+     *   $tag$foo;bar$tag$  tagged dollar-quoted string (Postgres)
+     *
+     * Comments are intentionally NOT treated as quoted — a `;` inside a
+     * `-- line` or `/* block *\/` still trips the check. Passing comments
+     * through a column-expression API is already unusual and the defence
+     * stays conservative. Callers who really need that shape should compose
+     * the expression without a semicolon.
+     *
+     * Unterminated quotes leave the scanner in "inside" mode until the end
+     * of the input — the runtime SQL parser will reject the malformed query
+     * anyway, so no statement stacking can occur.
+     *
+     * For sort keys, group-by keys, and `OrderByCondition` keys, use the
+     * simpler `assertNoSemicolon` instead — those inputs never contain a
+     * legitimate `;`.
+     *
+     * @param value
+     * @param context
+     */
+    protected assertNoStatementTerminator(
+        value: string,
+        context: string,
+    ): void {
+        let i = 0
+        while (i < value.length) {
+            if (value[i] === ";") {
+                throw new TypeORMError(
+                    `Semicolons are not allowed in ${context} to prevent SQL statement stacking.`,
+                )
+            }
+            i = this.skipQuotedRegion(value, i)
+        }
+    }
+
+    /**
+     * If `value[i]` opens a quoted region recognised by
+     * `assertNoStatementTerminator`, returns the index immediately after the
+     * closing delimiter; otherwise returns `i + 1`. On unterminated regions
+     * returns the end of the string.
+     *
+     * @param value
+     * @param i
+     */
+    private skipQuotedRegion(value: string, i: number): number {
+        const ch = value[i]
+        const n = value.length
+
+        // Single-quoted string: 'foo', 'foo''bar' (SQL standard),
+        // 'foo\\'bar' (MySQL backslash escape).
+        if (ch === "'") {
+            let j = i + 1
+            while (j < n) {
+                const c = value[j]
+                if (c === "\\" && j + 1 < n) {
+                    j += 2
+                    continue
+                }
+                if (c === "'") {
+                    if (value[j + 1] === "'") {
+                        j += 2
+                        continue
+                    }
+                    return j + 1
+                }
+                j++
+            }
+            return n
+        }
+
+        // Double-quoted string / identifier, with doubled-quote escape.
+        if (ch === '"') {
+            let j = i + 1
+            while (j < n) {
+                const c = value[j]
+                if (c === '"') {
+                    if (value[j + 1] === '"') {
+                        j += 2
+                        continue
+                    }
+                    return j + 1
+                }
+                j++
+            }
+            return n
+        }
+
+        // Backtick-quoted MySQL identifier.
+        if (ch === "`") {
+            let j = i + 1
+            while (j < n && value[j] !== "`") j++
+            return j < n ? j + 1 : n
+        }
+
+        // Bracket-quoted MSSQL identifier.
+        if (ch === "[") {
+            let j = i + 1
+            while (j < n && value[j] !== "]") j++
+            return j < n ? j + 1 : n
+        }
+
+        // Dollar-quoted Postgres string: $$…$$ or $tag$…$tag$
+        // Tag characters are [A-Za-z0-9_]; the opening and closing tags must
+        // match exactly. A lone `$` without a closing `$` is a plain char.
+        if (ch === "$") {
+            let tagEnd = i + 1
+            while (tagEnd < n && /[A-Za-z0-9_]/.test(value[tagEnd])) {
+                tagEnd++
+            }
+            if (tagEnd < n && value[tagEnd] === "$") {
+                const tag = value.slice(i, tagEnd + 1)
+                const closeIdx = value.indexOf(tag, tagEnd + 1)
+                return closeIdx === -1 ? n : closeIdx + tag.length
+            }
+        }
+
+        return i + 1
     }
 
     protected validateOrderByCondition(sort: OrderByCondition): void {
