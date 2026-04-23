@@ -1693,11 +1693,34 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         return this.expressionMap.commonTableExpressions.length > 0
     }
 
+    /**
+     * Rejects raw SQL fragments that contain a `;` character. The builder
+     * forwards the value into the emitted query verbatim, so a semicolon in a
+     * `groupBy` / `orderBy` / `addOrderBy` argument would terminate the
+     * intended statement and let a second one piggy-back on the same
+     * execution — classic SQL-statement-stacking. Column names, sort keys
+     * and group-by keys have no legitimate use for `;`, so the check here
+     * is a flat reject; `select`/`addSelect` accept literal-aware parsing
+     * because `STRING_AGG(col, ';' ORDER BY col)` is a valid expression and
+     * handled by a separate helper.
+     *
+     * @param value
+     * @param context
+     */
+    protected assertNoSemicolon(value: string, context: string): void {
+        if (value.includes(";")) {
+            throw new TypeORMError(
+                `Semicolons are not allowed in ${context} to prevent SQL statement stacking.`,
+            )
+        }
+    }
+
     protected validateOrderByCondition(sort: OrderByCondition): void {
         const validOrders = ["ASC", "DESC"]
         const validNulls = ["NULLS FIRST", "NULLS LAST"]
 
         for (const [key, value] of Object.entries(sort)) {
+            this.assertNoSemicolon(key, "orderBy sort key")
             if (typeof value === "string") {
                 if (!validOrders.includes(value))
                     throw new TypeORMError(

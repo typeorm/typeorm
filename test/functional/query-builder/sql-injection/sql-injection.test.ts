@@ -56,12 +56,50 @@ describe("query builder > sql injection", () => {
         "1 OR 1=1",
     ]
 
+    const inputsWithSemicolons = maliciousInputs.filter((input) =>
+        input.includes(";"),
+    )
+
     function verifyIntegrity(dataSource: DataSource) {
         return async () => {
             const count = await dataSource.getRepository(Post).count()
             expect(count).to.equal(2)
         }
     }
+
+    describe("addGroupBy", () => {
+        for (const malicious of inputsWithSemicolons) {
+            it(`should reject semicolons with: ${malicious}`, () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        expect(() =>
+                            dataSource
+                                .getRepository(Post)
+                                .createQueryBuilder("post")
+                                .addGroupBy(malicious),
+                        ).to.throw(/Semicolons are not allowed/)
+                        await verifyIntegrity(dataSource)()
+                    }),
+                ))
+        }
+    })
+
+    describe("addOrderBy", () => {
+        for (const malicious of inputsWithSemicolons) {
+            it(`should reject semicolons with: ${malicious}`, () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        expect(() =>
+                            dataSource
+                                .getRepository(Post)
+                                .createQueryBuilder("post")
+                                .addOrderBy(malicious),
+                        ).to.throw(/Semicolons are not allowed/)
+                        await verifyIntegrity(dataSource)()
+                    }),
+                ))
+        }
+    })
 
     describe("andWhere", () => {
         for (const malicious of maliciousInputs) {
@@ -107,6 +145,23 @@ describe("query builder > sql injection", () => {
         }
     })
 
+    describe("groupBy", () => {
+        for (const malicious of inputsWithSemicolons) {
+            it(`should reject semicolons with: ${malicious}`, () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        expect(() =>
+                            dataSource
+                                .getRepository(Post)
+                                .createQueryBuilder("post")
+                                .groupBy(malicious),
+                        ).to.throw(/Semicolons are not allowed/)
+                        await verifyIntegrity(dataSource)()
+                    }),
+                ))
+        }
+    })
+
     describe("having", () => {
         for (const malicious of maliciousInputs) {
             it(`should prevent injection with: ${malicious}`, () =>
@@ -127,6 +182,57 @@ describe("query builder > sql injection", () => {
                     }),
                 ))
         }
+    })
+
+    describe("orderBy (string sort key)", () => {
+        for (const malicious of inputsWithSemicolons) {
+            it(`should reject semicolons with: ${malicious}`, () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        expect(() =>
+                            dataSource
+                                .getRepository(Post)
+                                .createQueryBuilder("post")
+                                .orderBy(malicious),
+                        ).to.throw(/Semicolons are not allowed/)
+                        await verifyIntegrity(dataSource)()
+                    }),
+                ))
+        }
+
+        it("should reject semicolons in OrderByCondition keys", () => {
+            for (const dataSource of dataSources) {
+                expect(() =>
+                    dataSource.createQueryBuilder(Post, "post").orderBy({
+                        "post.id; DELETE FROM post": "ASC",
+                    }),
+                ).to.throw(/Semicolons are not allowed/)
+            }
+        })
+
+        it("should reject semicolons in UpdateQueryBuilder orderBy sort key", () => {
+            for (const dataSource of dataSources) {
+                expect(() =>
+                    dataSource
+                        .createQueryBuilder()
+                        .update(Post)
+                        .set({ name: "test" })
+                        .orderBy("id; DROP TABLE post"),
+                ).to.throw(/Semicolons are not allowed/)
+            }
+        })
+
+        it("should reject semicolons in SoftDeleteQueryBuilder orderBy sort key", () => {
+            for (const dataSource of dataSources) {
+                expect(() =>
+                    dataSource
+                        .createQueryBuilder()
+                        .softDelete()
+                        .from(Post)
+                        .orderBy("id; DROP TABLE post"),
+                ).to.throw(/Semicolons are not allowed/)
+            }
+        })
     })
 
     describe("orderBy value injection", () => {

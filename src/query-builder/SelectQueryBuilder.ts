@@ -1361,6 +1361,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      */
     groupBy(groupBy?: string): this {
         if (groupBy) {
+            this.assertNoSemicolon(groupBy, "groupBy")
             this.expressionMap.groupBys = [groupBy]
         } else {
             this.expressionMap.groupBys = []
@@ -1374,6 +1375,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * @param groupBy
      */
     addGroupBy(groupBy: string): this {
+        this.assertNoSemicolon(groupBy, "addGroupBy")
         this.expressionMap.groupBys.push(groupBy)
         return this
     }
@@ -1449,22 +1451,23 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 `SelectQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`,
             )
 
-        if (sort) {
-            if (typeof sort === "object") {
-                this.validateOrderByCondition(sort)
-                this.expressionMap.orderBys = sort
-            } else {
-                if (nulls) {
-                    this.expressionMap.orderBys = {
-                        [sort as string]: { order, nulls },
-                    }
-                } else {
-                    this.expressionMap.orderBys = { [sort as string]: order }
-                }
-            }
-        } else {
+        if (!sort) {
             this.expressionMap.orderBys = {}
+            return this
         }
+
+        if (typeof sort === "object") {
+            this.validateOrderByCondition(sort)
+            this.expressionMap.orderBys = sort
+            return this
+        }
+
+        this.assertNoSemicolon(sort, "orderBy sort key")
+
+        this.expressionMap.orderBys = nulls
+            ? { [sort]: { order, nulls } }
+            : { [sort]: order }
+
         return this
     }
 
@@ -1492,6 +1495,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             throw new TypeORMError(
                 `SelectQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`,
             )
+
+        this.assertNoSemicolon(sort, "addOrderBy sort key")
 
         if (nulls) {
             this.expressionMap.orderBys[sort] = { order, nulls }

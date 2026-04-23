@@ -785,6 +785,23 @@ The removed type is `FindOptionsRelationByString`.
 
 ## QueryBuilder
 
+### Semicolons rejected in sort and group expression methods
+
+The `groupBy()`, `addGroupBy()`, `orderBy()`, and `addOrderBy()` methods on all query builders (`SelectQueryBuilder`, `UpdateQueryBuilder`, `SoftDeleteQueryBuilder`) now reject inputs containing semicolons at runtime to prevent SQL statement stacking attacks. The same check also applies to keys of the `OrderByCondition` object form. Group and sort keys are expected to be column names or short expressions — there is no legitimate use of `;` in these inputs:
+
+```typescript
+// All of these now throw TypeORMError
+qb.groupBy("post.id; DROP TABLE post")
+qb.orderBy("post.id; DELETE FROM post")
+qb.addOrderBy("post.id; --")
+qb.orderBy({ "post.id; DROP TABLE post": "ASC" })
+
+// Use parameter binding for any user-controlled value that may contain a semicolon
+qb.where("post.title = :title", { title: "value;with;semicolons" })
+```
+
+The `orderBy()` methods continue to validate that order direction values are `"ASC"` or `"DESC"` and `nulls` values are `"NULLS FIRST"` or `"NULLS LAST"`.
+
 ### `printSql` removed
 
 The `printSql()` method on query builders has been removed. It was redundant because all executed queries are already automatically logged through the configured logger when query logging is enabled. Use `getSql()` or `getQueryAndParameters()` to inspect the generated SQL instead:
