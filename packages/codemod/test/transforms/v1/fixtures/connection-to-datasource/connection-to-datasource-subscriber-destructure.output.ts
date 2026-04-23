@@ -13,8 +13,8 @@ declare class UserProfileEntity {}
 // deprecated `.connection` alias in v1, the canonical name is `.dataSource`.
 class UserProfileSubscriber implements EntitySubscriberInterface<UserProfileEntity> {
     async beforeRemove(event: RemoveEvent<UserProfileEntity>) {
-        const { entity, dataSource: connection } = event
-        return { entity, connection }
+        const { entity, dataSource } = event
+        return { entity, dataSource }
     }
 
     async afterInsert(event: InsertEvent<UserProfileEntity>) {
@@ -29,8 +29,8 @@ class UserProfileSubscriber implements EntitySubscriberInterface<UserProfileEnti
     }
 
     async afterLoad(entity: any, event?: LoadEvent<UserProfileEntity>) {
-        const { dataSource: connection } = event!
-        return connection
+        const { dataSource } = event!
+        return dataSource
     }
 
     async afterRecover(event: RecoverEvent<UserProfileEntity>) {
@@ -49,7 +49,7 @@ const { connection: untouched } = plain
 // iterated element is a tracked receiver type.
 declare const events: RemoveEvent<UserProfileEntity>[]
 async function drain() {
-    for (const { dataSource: connection, entity } of events) {
-        console.log(connection, entity)
+    for (const { dataSource, entity } of events) {
+        console.log(dataSource, entity)
     }
 }
