@@ -91,33 +91,4 @@ describe("schema builder > rename on naming change > index", () => {
                 await expectSyncIsIdempotent(dataSource)
             }),
         ))
-
-    it("falls back to DROP+CREATE when reconcileConstraintNames is disabled", async () => {
-        const optedOutSources = await createTestingConnections({
-            entities: [UserNewNames],
-            schemaCreate: false,
-            dropSchema: true,
-            driverSpecific: { reconcileConstraintNames: false },
-        })
-        try {
-            await Promise.all(
-                optedOutSources.map(async (dataSource) => {
-                    await seedIndexUnderOldName(dataSource, "idx_old")
-
-                    const log = await dataSource.driver
-                        .createSchemaBuilder()
-                        .log()
-                    const upSql = log.upQueries.map((q) => q.query).join(" | ")
-
-                    // Opt-out must produce a DROP (not a rename) of the
-                    // drifted name; different drivers emit this as `DROP
-                    // INDEX`, `DROP CONSTRAINT`, or `ALTER TABLE ... DROP
-                    // INDEX`, so match loosely.
-                    expect(upSql).to.match(/DROP.*idx_old/i)
-                }),
-            )
-        } finally {
-            await closeTestingConnections(optedOutSources)
-        }
-    })
 })

@@ -118,21 +118,6 @@ export interface BaseDataSourceOptions {
     readonly dropSchema?: boolean
 
     /**
-     * Reconciles DB-side and metadata-side constraints by structure before
-     * falling back to name-based matching. When an unmatched DB-side constraint
-     * and an unmatched metadata-side constraint are structurally identical but
-     * named differently, a RENAME is emitted instead of DROP + CREATE.
-     *
-     * Useful when migrating between naming strategies, adding or removing
-     * explicit `name:` options on `@Index`/`@Unique`/`@ForeignKey`, or upgrading
-     * past a change to TypeORM's internal constraint-name hash.
-     *
-     * Enabled by default. Set to `false` to restore the legacy name-only
-     * matching behavior.
-     */
-    readonly reconcileConstraintNames?: boolean
-
-    /**
      * Prefix to use on all tables (collections) of this connection in the database.
      */
     readonly entityPrefix?: string

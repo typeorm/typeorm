@@ -273,13 +273,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * emits RENAME DDL where a pair has identical structure but different
      * names. Runs before the dropOld* pass so that subsequent passes see the
      * renamed constraints and correctly no-op on them.
-     *
-     * Skipped entirely when `reconcileConstraintNames` is set to `false` on
-     * the DataSource options.
      */
     protected async renameMismatchedConstraints(): Promise<void> {
-        if (this.dataSource.options.reconcileConstraintNames === false) return
-
         for (const metadata of this.entityToSyncMetadatas) {
             const table = this.tables.find(
                 (t) => this.getTablePath(t) === this.getTablePath(metadata),
