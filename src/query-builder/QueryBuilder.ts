@@ -1707,19 +1707,28 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * The scanner recognises these quote forms and skips their contents:
      *
      *   'foo''bar'         single-quoted, SQL-standard doubled-quote escape
-     *   'foo\\'bar'         single-quoted, MySQL backslash escape
-     *   "foo;bar"          double-quoted string / identifier (Postgres, Oracle,
-     *                      MySQL with ANSI_QUOTES, MSSQL)
-     *   `foo;bar`          backtick-quoted identifier (MySQL)
-     *   [foo;bar]          bracket-quoted identifier (MSSQL)
-     *   $$foo;bar$$        dollar-quoted string (Postgres)
-     *   $tag$foo;bar$tag$  tagged dollar-quoted string (Postgres)
+     *   "foo""bar"         double-quoted string / identifier with doubled-quote escape
+     *                      (Postgres, Oracle, MySQL with ANSI_QUOTES, MSSQL)
+     *   `foo``bar`         backtick-quoted MySQL identifier, doubled-backtick escape
+     *   [foo]]bar]         bracket-quoted MSSQL identifier, doubled-bracket-close escape
+     *   $$foo;bar$$        dollar-quoted Postgres string (untagged)
+     *   $tag$foo;bar$tag$  tagged dollar-quoted Postgres string
+     *
+     * **Backslash escapes (`'foo\\'bar'`) are deliberately NOT recognised.**
+     * Backslash semantics inside single quotes vary by driver: MySQL with
+     * the default `sql_mode` treats `\'` as an escaped quote, but PostgreSQL,
+     * Oracle, SQLite, MSSQL and MySQL in ANSI / `NO_BACKSLASH_ESCAPES` mode
+     * treat it as a literal backslash followed by a closing quote. Applying
+     * the escape unconditionally would let an attacker craft `'foo\\'; DROP
+     * TABLE users--` and have the scanner walk past the real closing quote
+     * on every non-MySQL-default driver, missing the `;`. The SQL-standard
+     * `''` doubling is portable across all drivers and covers every
+     * legitimate use case.
      *
      * Comments are intentionally NOT treated as quoted — a `;` inside a
      * `-- line` or `/* block *\/` still trips the check. Passing comments
      * through a column-expression API is already unusual and the defence
-     * stays conservative. Callers who really need that shape should compose
-     * the expression without a semicolon.
+     * stays conservative.
      *
      * Unterminated quotes leave the scanner in "inside" mode until the end
      * of the input — the runtime SQL parser will reject the malformed query
@@ -1743,92 +1752,127 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     `Semicolons are not allowed in ${context} to prevent SQL statement stacking.`,
                 )
             }
-            i = this.skipQuotedRegion(value, i)
+            const next = this.skipQuotedRegion(value, i)
+            // Defensive invariant — the per-form helpers must always advance
+            // past `i`. If a future edit regresses that, fail loud instead of
+            // letting the outer loop hang.
+            if (next <= i) {
+                throw new TypeORMError(
+                    `Internal error: statement-terminator scanner failed to advance at index ${i}.`,
+                )
+            }
+            i = next
         }
     }
 
     /**
-     * If `value[i]` opens a quoted region recognised by
-     * `assertNoStatementTerminator`, returns the index immediately after the
-     * closing delimiter; otherwise returns `i + 1`. On unterminated regions
-     * returns the end of the string.
+     * Dispatches to the per-form helper matching `value[i]`. Returns `i + 1`
+     * when the current character doesn't open any recognised quoted region.
      *
      * @param value
      * @param i
      */
     private skipQuotedRegion(value: string, i: number): number {
-        const ch = value[i]
-        const n = value.length
+        switch (value[i]) {
+            case "'":
+                return this.skipDoubledDelimiter(value, i, "'")
+            case '"':
+                return this.skipDoubledDelimiter(value, i, '"')
+            case "`":
+                return this.skipDoubledDelimiter(value, i, "`")
+            case "[":
+                return this.skipBracketQuoted(value, i)
+            case "$":
+                return this.skipDollarQuoted(value, i)
+            default:
+                return i + 1
+        }
+    }
 
-        // Single-quoted string: 'foo', 'foo''bar' (SQL standard),
-        // 'foo\\'bar' (MySQL backslash escape).
-        if (ch === "'") {
-            let j = i + 1
-            while (j < n) {
-                const c = value[j]
-                if (c === "\\" && j + 1 < n) {
+    /**
+     * Skips a symmetrically-delimited quoted region (single quote, double
+     * quote, backtick) starting at `value[i]`. Handles the SQL-standard
+     * doubled-delimiter escape form (`''`, `""`, `` `` ``). Returns the
+     * index immediately after the closing delimiter, or end-of-input on
+     * unterminated regions.
+     *
+     * @param value
+     * @param i
+     * @param delim
+     */
+    private skipDoubledDelimiter(
+        value: string,
+        i: number,
+        delim: string,
+    ): number {
+        const n = value.length
+        let j = i + 1
+        while (j < n) {
+            if (value[j] === delim) {
+                if (value[j + 1] === delim) {
                     j += 2
                     continue
                 }
-                if (c === "'") {
-                    if (value[j + 1] === "'") {
-                        j += 2
-                        continue
-                    }
-                    return j + 1
+                return j + 1
+            }
+            j++
+        }
+        return n
+    }
+
+    /**
+     * Skips a bracket-quoted MSSQL identifier starting at `value[i]`.
+     * Brackets are asymmetric (`[...]`) so this form needs its own scanner.
+     * Handles the doubled-bracket-close escape (`]]`) that MSSQL uses to
+     * embed a literal `]` inside an identifier. Returns the index
+     * immediately after the closing `]`, or end-of-input on unterminated
+     * regions.
+     *
+     * @param value
+     * @param i
+     */
+    private skipBracketQuoted(value: string, i: number): number {
+        const n = value.length
+        let j = i + 1
+        while (j < n) {
+            if (value[j] === "]") {
+                if (value[j + 1] === "]") {
+                    j += 2
+                    continue
                 }
-                j++
+                return j + 1
             }
-            return n
+            j++
         }
+        return n
+    }
 
-        // Double-quoted string / identifier, with doubled-quote escape.
-        if (ch === '"') {
-            let j = i + 1
-            while (j < n) {
-                const c = value[j]
-                if (c === '"') {
-                    if (value[j + 1] === '"') {
-                        j += 2
-                        continue
-                    }
-                    return j + 1
-                }
-                j++
-            }
-            return n
+    /**
+     * Skips a Postgres dollar-quoted string starting at `value[i]`. Covers
+     * the untagged (`$$…$$`) and tagged (`$tag$…$tag$`) forms. Tag
+     * characters are `\w` (the Postgres identifier char set); opening and
+     * closing tags must match exactly. A lone `$` that isn't followed by a
+     * valid close-delimiter character is returned as a plain character
+     * (`i + 1`), not a quoted-region opener.
+     *
+     * When the remainder contains multiple matching close tags (e.g.
+     * `$$abc$$def$$`), `indexOf` returns the FIRST match — correct SQL
+     * semantics: the first close-tag ends the literal, and any subsequent
+     * `$…$` boundary opens a fresh region from plain text.
+     *
+     * @param value
+     * @param i
+     */
+    private skipDollarQuoted(value: string, i: number): number {
+        const n = value.length
+        let tagEnd = i + 1
+        while (tagEnd < n && /\w/.test(value[tagEnd])) {
+            tagEnd++
         }
-
-        // Backtick-quoted MySQL identifier.
-        if (ch === "`") {
-            let j = i + 1
-            while (j < n && value[j] !== "`") j++
-            return j < n ? j + 1 : n
-        }
-
-        // Bracket-quoted MSSQL identifier.
-        if (ch === "[") {
-            let j = i + 1
-            while (j < n && value[j] !== "]") j++
-            return j < n ? j + 1 : n
-        }
-
-        // Dollar-quoted Postgres string: $$…$$ or $tag$…$tag$
-        // Tag characters are [A-Za-z0-9_]; the opening and closing tags must
-        // match exactly. A lone `$` without a closing `$` is a plain char.
-        if (ch === "$") {
-            let tagEnd = i + 1
-            while (tagEnd < n && /[A-Za-z0-9_]/.test(value[tagEnd])) {
-                tagEnd++
-            }
-            if (tagEnd < n && value[tagEnd] === "$") {
-                const tag = value.slice(i, tagEnd + 1)
-                const closeIdx = value.indexOf(tag, tagEnd + 1)
-                return closeIdx === -1 ? n : closeIdx + tag.length
-            }
-        }
-
-        return i + 1
+        if (tagEnd >= n || value[tagEnd] !== "$") return i + 1
+        const tag = value.slice(i, tagEnd + 1)
+        const closeIdx = value.indexOf(tag, tagEnd + 1)
+        return closeIdx === -1 ? n : closeIdx + tag.length
     }
 
     protected validateOrderByCondition(sort: OrderByCondition): void {
