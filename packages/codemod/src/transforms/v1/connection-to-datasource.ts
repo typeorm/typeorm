@@ -380,7 +380,10 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         // Dedupe specifiers that now share the same imported name after the
         // rename — e.g. `import { Connection, DataSource }` would otherwise
         // emit `import { DataSource, DataSource }`. Keep the first occurrence
-        // of each imported name and drop subsequent duplicates.
+        // of each (importKind, imported, local) tuple. Per-specifier
+        // `importKind` ("type" vs unset for value) participates so
+        // `import { DataSource, type DataSource }` keeps both — they are
+        // distinct specifiers TS 4.5+ recognizes.
         if (path.node.specifiers) {
             const seen = new Set<string>()
             path.node.specifiers = path.node.specifiers.filter((spec) => {
@@ -390,7 +393,13 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
                 ) {
                     return true
                 }
-                const key = `${spec.imported.name}::${spec.local?.type === "Identifier" ? spec.local.name : ""}`
+                const specKind =
+                    (spec as { importKind?: string }).importKind === "type"
+                        ? "type:"
+                        : ""
+                const localName =
+                    spec.local?.type === "Identifier" ? spec.local.name : ""
+                const key = `${specKind}${spec.imported.name}::${localName}`
                 if (seen.has(key)) {
                     hasChanges = true
                     return false
@@ -861,15 +870,20 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
     ): { key: string; isThisMember: boolean } | null => {
         const direct = unwrapIdentifierName(node)
         if (direct) return { key: direct, isThisMember: false }
-        const unwrapped = unwrapTsExpression(node)
+        const unwrapped = unwrapTsExpression(node) as {
+            type: string
+            object?: ASTNode
+            property?: ASTNode
+            computed?: boolean
+        }
         if (
             (unwrapped.type === "MemberExpression" ||
                 unwrapped.type === "OptionalMemberExpression") &&
-            (unwrapped as { object: ASTNode }).object.type ===
-                "ThisExpression" &&
-            (unwrapped as { property: ASTNode }).property.type === "Identifier"
+            unwrapped.computed !== true &&
+            unwrapped.object?.type === "ThisExpression" &&
+            unwrapped.property?.type === "Identifier"
         ) {
-            const prop = (unwrapped as { property: Identifier }).property
+            const prop = unwrapped.property
             return { key: prop.name, isThisMember: true }
         }
         return null
@@ -901,19 +915,36 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         createQueryBuilder: "SelectQueryBuilder",
     }
 
+    // Recognizes DataSource receivers: a bare local, or `this.<member>` tracked
+    // by the TSParameterProperty / ClassProperty walks above.
+    const isDataSourceReceiver = (node: ASTNode): boolean => {
+        const direct = unwrapIdentifierName(node)
+        if (direct && connectionVarNames.has(direct)) return true
+        const unwrapped = unwrapTsExpression(node) as {
+            type: string
+            object?: ASTNode
+            property?: ASTNode
+            computed?: boolean
+        }
+        if (
+            (unwrapped.type === "MemberExpression" ||
+                unwrapped.type === "OptionalMemberExpression") &&
+            unwrapped.computed !== true &&
+            unwrapped.object?.type === "ThisExpression" &&
+            unwrapped.property?.type === "Identifier"
+        ) {
+            const propName = unwrapped.property.name
+            if (thisConnectionMembers.has(propName)) return true
+        }
+        return false
+    }
+
     // Returns the TypeORM type that a DataSource accessor chain resolves to
-    // (`ds.manager` → "EntityManager", `ds.getRepository(X)` → "Repository"),
-    // or null when the initializer isn't a recognized accessor-chain pattern.
+    // (`ds.manager` → "EntityManager", etc.), or null if unrecognized.
     const resolveAccessorChainType = (init: ASTNode): string | null => {
         if (init.type === "MemberExpression") {
-            const baseName = unwrapIdentifierName(init.object)
-            if (
-                !baseName ||
-                !connectionVarNames.has(baseName) ||
-                init.property.type !== "Identifier"
-            ) {
-                return null
-            }
+            if (init.property.type !== "Identifier") return null
+            if (!isDataSourceReceiver(init.object)) return null
             return dataSourceMemberAccessors[init.property.name] ?? null
         }
         if (
@@ -921,8 +952,7 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
             init.callee.type === "MemberExpression" &&
             init.callee.property.type === "Identifier"
         ) {
-            const baseName = unwrapIdentifierName(init.callee.object)
-            if (!baseName || !connectionVarNames.has(baseName)) return null
+            if (!isDataSourceReceiver(init.callee.object)) return null
             return dataSourceCallAccessors[init.callee.property.name] ?? null
         }
         return null
@@ -935,6 +965,87 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         const typeName = resolveAccessorChainType(path.node.init)
         if (typeName && typesWithConnectionProp.has(typeName)) {
             connectionPropVarNames.add(path.node.id.name)
+        }
+    })
+
+    // Class fields with no explicit type annotation but an accessor-chain
+    // initializer (`private manager = this.dataSource.manager`). Extends the
+    // earlier ClassProperty walk, which only tracks fields with an explicit
+    // TypeORM type annotation.
+    root.find(j.ClassProperty).forEach((path) => {
+        const keyNode = path.node.key
+        if (keyNode.type !== "Identifier") return
+        const existing = (path.node as { typeAnnotation?: ASTNode })
+            .typeAnnotation
+        if (existing?.type === "TSTypeAnnotation") return
+        const value = (path.node as { value?: ASTNode | null }).value
+        if (!value) return
+        const typeName = resolveAccessorChainType(value)
+        if (typeName && typesWithConnectionProp.has(typeName)) {
+            thisConnectionPropMembers.add(keyNode.name)
+        }
+    })
+
+    // Destructured property → TypeORM type, for `const { queryRunner } = event`
+    // style bindings where the event is already tracked as a receiver.
+    const destructuredPropertyTypes: Record<string, string> = {
+        manager: "EntityManager",
+        mongoManager: "EntityManager",
+        queryRunner: "QueryRunner",
+        metadata: "EntityMetadata",
+    }
+
+    // Local binding name for an ObjectPattern property value. Handles both the
+    // plain `{ queryRunner }` / `{ queryRunner: qr }` forms and defaulted
+    // `{ queryRunner = defaultQr }`.
+    const getPatternBindingName = (value: ASTNode): string | null => {
+        if (value.type === "Identifier") {
+            return (value as { name: string }).name
+        }
+        if (
+            value.type === "AssignmentPattern" &&
+            (value as { left: ASTNode }).left.type === "Identifier"
+        ) {
+            return (value as { left: { name: string } }).left.name
+        }
+        return null
+    }
+
+    const classifyDestructuredProperty = (prop: ASTNode): void => {
+        if (prop.type !== "Property" && prop.type !== "ObjectProperty") return
+        const typed = prop as {
+            key: { type: string; name?: string }
+            value: ASTNode
+        }
+        if (typed.key.type !== "Identifier" || !typed.key.name) return
+        const typeName = destructuredPropertyTypes[typed.key.name]
+        if (!typeName) return
+        const local = getPatternBindingName(typed.value)
+        if (!local) return
+        if (typesWithConnectionProp.has(typeName)) {
+            connectionPropVarNames.add(local)
+        }
+        if (typesWithIndirectDataSource.has(typeName)) {
+            indirectDataSourceVarNames.add(local)
+        }
+    }
+
+    root.find(j.VariableDeclarator).forEach((declPath) => {
+        const init = declPath.node.init
+        if (!init) return
+        if (
+            !receiverIsIn(
+                init,
+                connectionPropVarNames,
+                thisConnectionPropMembers,
+            )
+        ) {
+            return
+        }
+        const id = declPath.node.id
+        if (id.type !== "ObjectPattern") return
+        for (const prop of (id as { properties: ASTNode[] }).properties) {
+            classifyDestructuredProperty(prop)
         }
     })
 
@@ -994,26 +1105,215 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         }
     })
 
-    // Destructuring pattern: `const { connection } = event` / `for (const
-    // { connection } of events)` where `event`/`events[i]` is a tracked
-    // connectionProp receiver (subscriber event, EntityManager, QueryRunner,
-    // Repository, etc.). Rename the `connection` key to `dataSource` and
-    // preserve the local binding name.
-    const renameConnectionInObjectPattern = (id: ASTNode): void => {
+    // True for Identifier paths that represent a value reference to the local
+    // binding, versus a property key, member-access property, import specifier,
+    // etc. Computed property keys (`{ [x]: ... }`) and ObjectExpression
+    // shorthand (`{ x }`) DO count — the identifier is a value-use there.
+    interface IdentifierParent {
+        type: string
+        key?: ASTNode
+        property?: ASTNode
+        imported?: ASTNode
+        exported?: ASTNode
+        computed?: boolean
+    }
+    const isReferenceIdentifier = (idPath: {
+        node: ASTNode
+        parent?: { node: ASTNode }
+    }): boolean => {
+        const parentNode = idPath.parent?.node
+        if (!parentNode) return true
+        const parent = parentNode as IdentifierParent
+        const isPropertyKey =
+            parent.type === "Property" ||
+            parent.type === "ObjectProperty" ||
+            parent.type === "TSPropertySignature" ||
+            parent.type === "ClassProperty" ||
+            parent.type === "ClassMethod" ||
+            parent.type === "MethodDefinition"
+        if (isPropertyKey && parent.key === idPath.node && !parent.computed) {
+            return false
+        }
+        const isMemberProperty =
+            parent.type === "MemberExpression" ||
+            parent.type === "OptionalMemberExpression"
+        if (
+            isMemberProperty &&
+            parent.property === idPath.node &&
+            !parent.computed
+        ) {
+            return false
+        }
+        if (
+            parent.type === "ImportSpecifier" &&
+            parent.imported === idPath.node
+        ) {
+            return false
+        }
+        if (
+            parent.type === "ExportSpecifier" &&
+            parent.exported === idPath.node
+        ) {
+            return false
+        }
+        return true
+    }
+
+    interface ScopeLike {
+        declares(name: string): boolean
+        lookup(name: string): (ScopeLike & { path?: { node?: ASTNode } }) | null
+        path?: { node?: ASTNode }
+    }
+    interface ScopedPath {
+        node: ASTNode & { name?: string }
+        parent?: { node: ASTNode; parent?: unknown }
+        scope?: ScopeLike
+    }
+
+    // Cache all `connection` and `dataSource` identifier paths once, then
+    // filter by scope subtree per destructure pass instead of re-walking the
+    // AST. Both caches use the current `node.name` at lookup time, so a
+    // previously-renamed `connection` → `dataSource` node correctly counts
+    // as a `dataSource` reference in subsequent passes.
+    const allConnectionRefs: ScopedPath[] = []
+    const allDataSourceRefs: ScopedPath[] = []
+    root.find(j.Identifier, { name: "connection" }).forEach((p) => {
+        allConnectionRefs.push(p)
+    })
+    root.find(j.Identifier, { name: "dataSource" }).forEach((p) => {
+        allDataSourceRefs.push(p)
+    })
+
+    const isInSubtree = (
+        idPath: { parent?: { node: ASTNode; parent?: unknown } },
+        root: ASTNode,
+    ): boolean => {
+        let cursor = idPath.parent
+        while (cursor) {
+            if (cursor.node === root) return true
+            cursor = cursor.parent as typeof cursor
+        }
+        return false
+    }
+
+    // True if any `dataSource` reference lives inside the given subtree — that
+    // reference would rebind to the about-to-be-renamed local, so the rename
+    // must fall back to the alias form. Checks both caches because a previous
+    // rename pass may have renamed a cached `connection` path to `dataSource`,
+    // creating a sibling-scope conflict that ast-types' scope object — being
+    // built once at parse time — won't reflect.
+    const hasDataSourceUsageIn = (scopeBodyNode: ASTNode): boolean => {
+        const isDataSourceRefInSubtree = (idPath: ScopedPath): boolean =>
+            idPath.node.name === "dataSource" &&
+            isInSubtree(idPath, scopeBodyNode) &&
+            isReferenceIdentifier(idPath)
+        for (const p of allDataSourceRefs) {
+            if (isDataSourceRefInSubtree(p)) return true
+        }
+        for (const p of allConnectionRefs) {
+            if (isDataSourceRefInSubtree(p)) return true
+        }
+        return false
+    }
+
+    // Collect every `connection` reference inside `scopeBodyNode` whose
+    // resolved binding is `scope`. Skips non-reference positions and paths
+    // whose node was renamed by a previous pass.
+    const collectConnectionRefsInScope = (
+        scope: ScopeLike,
+        scopeBodyNode: ASTNode,
+    ): ScopedPath[] => {
+        const expectedScopeNode = scope.path?.node
+        const refs: ScopedPath[] = []
+        for (const idPath of allConnectionRefs) {
+            if (idPath.node.name !== "connection") continue
+            if (!isInSubtree(idPath, scopeBodyNode)) continue
+            if (!isReferenceIdentifier(idPath)) continue
+            const refScope = idPath.scope
+            if (!refScope) continue
+            const lookup = refScope.lookup("connection")
+            if (!lookup) continue
+            if (
+                lookup !== scope &&
+                (!expectedScopeNode || lookup.path?.node !== expectedScopeNode)
+            ) {
+                continue
+            }
+            refs.push(idPath)
+        }
+        return refs
+    }
+
+    // Attempts a scope-aware rename of a shorthand `{ connection }` binding to
+    // `{ dataSource }`, plus every reference to the local within the scope.
+    // Returns false (caller falls back to the alias form) when the rename
+    // would disturb an existing `dataSource` usage in the subtree.
+    const tryRenameShorthandConnectionBinding = (
+        prop: {
+            key: { name: string }
+            value: ASTNode
+            shorthand?: boolean
+        },
+        declPath: ScopedPath,
+        scopeBodyNode: ASTNode,
+    ): boolean => {
+        const scope = declPath.scope
+        if (!scope) return false
+        if (scope.declares("dataSource")) return false
+        if (hasDataSourceUsageIn(scopeBodyNode)) return false
+
+        const refsToRename = collectConnectionRefsInScope(scope, scopeBodyNode)
+
+        prop.key.name = "dataSource"
+        if (prop.value.type === "Identifier") {
+            ;(prop.value as { name: string }).name = "dataSource"
+        } else if (getPatternBindingName(prop.value) !== null) {
+            ;(prop.value as { left: { name: string } }).left.name = "dataSource"
+        }
+        for (const ref of refsToRename) ref.node.name = "dataSource"
+        return true
+    }
+
+    // `const { connection } = event` / `for (const { connection } of events)`
+    // where the RHS is a tracked receiver. Tries a scope-aware rename of the
+    // local binding; falls back to the alias form `{ dataSource: connection }`
+    // when the rename would collide with an existing `dataSource` binding.
+    const renameConnectionInObjectPattern = (
+        id: ASTNode,
+        declPath: ScopedPath,
+        scopeBodyNode: ASTNode,
+    ): void => {
         if (id.type !== "ObjectPattern") return
         for (const prop of (id as { properties: ASTNode[] }).properties) {
             if (prop.type !== "Property" && prop.type !== "ObjectProperty")
                 continue
             const typed = prop as {
                 key: { type: string; name?: string }
+                value: ASTNode
                 shorthand?: boolean
             }
             if (typed.key.type !== "Identifier") continue
             if (typed.key.name !== "connection") continue
+
+            if (
+                typed.shorthand &&
+                tryRenameShorthandConnectionBinding(
+                    typed as {
+                        key: { name: string }
+                        value: ASTNode
+                        shorthand?: boolean
+                    },
+                    declPath,
+                    scopeBodyNode,
+                )
+            ) {
+                hasChanges = true
+                continue
+            }
+
+            // Fallback: rename only the key, keep the local name.
+            // `{ connection }` expands to `{ dataSource: connection }`.
             typed.key.name = "dataSource"
-            // Shorthand `{ connection }` expands to `{ dataSource: connection }`
-            // to keep the local variable name unchanged — the consumer code
-            // still references `connection`.
             if (typed.shorthand) typed.shorthand = false
             hasChanges = true
         }
@@ -1031,7 +1331,9 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         ) {
             return
         }
-        renameConnectionInObjectPattern(declPath.node.id)
+        const scoped = declPath as ScopedPath
+        const scopeNode = scoped.scope?.path?.node ?? declPath.node
+        renameConnectionInObjectPattern(declPath.node.id, scoped, scopeNode)
     })
 
     // `for (const { connection } of events)` — `ForOfStatement.left` is a
@@ -1081,16 +1383,27 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         return resolved
     }
 
-    const visitForOf = (
-        leftNode: ASTNode | null | undefined,
-        rightNode: ASTNode | null | undefined,
-    ): void => {
-        if (!leftNode || !rightNode) return
+    // Set of VariableDeclarator AST nodes that belong to a tracked for-of /
+    // for-in loop's `left` (i.e. the per-iteration binding). Populated in the
+    // ForOf/ForIn walks below; consumed by the root-wide VariableDeclarator
+    // walk that follows, so declarator paths carry their proper `.scope` info.
+    const forLoopDeclaratorNodes = new Set<ASTNode>()
+    // Maps a tracked declarator node → the loop body to walk for references.
+    const forLoopBodyByDeclarator = new Map<ASTNode, ASTNode>()
+
+    const collectForLoopDeclarators = (forPath: {
+        node: {
+            left?: ASTNode | null
+            right?: ASTNode | null
+            body?: ASTNode
+        }
+    }): void => {
+        const leftNode = forPath.node.left
+        const rightNode = forPath.node.right
+        const bodyNode = forPath.node.body
+        if (!leftNode || !rightNode || !bodyNode) return
         if (leftNode.type !== "VariableDeclaration") return
 
-        // Either: the iterable itself is a tracked receiver (rare but valid
-        // — e.g. a generator that yields the receiver), OR its type is an
-        // array/`Array<T>` of a tracked type.
         const directlyTracked = receiverIsIn(
             rightNode,
             connectionPropVarNames,
@@ -1099,21 +1412,29 @@ export const connectionToDataSource = (file: FileInfo, api: API) => {
         const elementType = elementTypeOf(rightNode)
         const elementTracked =
             elementType !== null && connectionPropLocalNames.has(elementType)
-
         if (!directlyTracked && !elementTracked) return
 
         for (const d of (leftNode as { declarations: ASTNode[] })
             .declarations) {
             if (d.type !== "VariableDeclarator") continue
-            renameConnectionInObjectPattern((d as { id: ASTNode }).id)
+            forLoopDeclaratorNodes.add(d)
+            forLoopBodyByDeclarator.set(d, bodyNode)
         }
     }
-    root.find(j.ForOfStatement).forEach((p) =>
-        visitForOf(p.node.left, p.node.right),
-    )
-    root.find(j.ForInStatement).forEach((p) =>
-        visitForOf(p.node.left, p.node.right),
-    )
+    root.find(j.ForOfStatement).forEach(collectForLoopDeclarators)
+    root.find(j.ForInStatement).forEach(collectForLoopDeclarators)
+
+    if (forLoopDeclaratorNodes.size > 0) {
+        // Walking from the root (rather than `j(forPath.node)`) preserves
+        // `.scope` on the declarator paths — ast-types scope info is only
+        // populated by the top-down traversal that starts at Program.
+        root.find(j.VariableDeclarator).forEach((dPath) => {
+            if (!forLoopDeclaratorNodes.has(dPath.node)) return
+            const bodyNode = forLoopBodyByDeclarator.get(dPath.node)
+            if (!bodyNode) return
+            renameConnectionInObjectPattern(dPath.node.id, dPath, bodyNode)
+        })
+    }
 
     // Rewrite the `connection` option passed to metadata-type constructors:
     //   - `new EntityMetadata({ connection: X, ... })` → rename key to
