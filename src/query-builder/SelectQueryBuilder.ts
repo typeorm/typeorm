@@ -1440,7 +1440,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     ): this {
         if (order !== undefined && order !== "ASC" && order !== "DESC")
             throw new TypeORMError(
-                `SelectQueryBuilder.addOrderBy "order" can accept only "ASC" and "DESC" values.`,
+                `SelectQueryBuilder.orderBy "order" can accept only "ASC" and "DESC" values.`,
             )
         if (
             nulls !== undefined &&
@@ -1448,7 +1448,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             nulls !== "NULLS LAST"
         )
             throw new TypeORMError(
-                `SelectQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`,
+                `SelectQueryBuilder.orderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`,
             )
 
         if (!sort) {
