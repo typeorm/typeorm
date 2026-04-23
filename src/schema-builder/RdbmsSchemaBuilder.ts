@@ -291,7 +291,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     /**
-     * Reconciles primary-key name drift for one table.
+     * Reconciles primary-key name changes for one table.
      *
      * Skipped when column sets differ in count or order — those are structural
      * changes that warrant a full PK rebuild, not a rename. The DB-side PK name
@@ -340,7 +340,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     /**
-     * Reconciles index-constraint name drift for one table + metadata pair.
+     * Reconciles index-constraint name changes for one table + metadata pair.
      *
      * @param table DB-side table (mutated in place when a rename is applied).
      * @param metadata Entity metadata whose indices to reconcile against.
@@ -376,7 +376,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     /**
-     * Reconciles composite unique-constraint name drift for one table.
+     * Reconciles composite unique-constraint name changes for one table.
      *
      * @param table
      * @param metadata
@@ -415,7 +415,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     /**
-     * Reconciles foreign-key name drift for one table. Signature uses the
+     * Reconciles foreign-key name changes for one table. Signature uses the
      * canonical full table path via {@link getTablePath} so that schema-
      * qualified and bare names match.
      *
@@ -465,7 +465,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     /**
-     * Reconciles check-constraint name drift for one table.
+     * Reconciles check-constraint name changes for one table.
      *
      * @param table
      * @param metadata
@@ -501,7 +501,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     }
 
     /**
-     * Reconciles exclusion-constraint name drift for one table. Postgres-only
+     * Reconciles exclusion-constraint name changes for one table. Postgres-only
      * in practice — other drivers don't expose `renameExclusionConstraint`.
      *
      * @param table
