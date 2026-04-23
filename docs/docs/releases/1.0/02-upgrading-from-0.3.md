@@ -787,7 +787,13 @@ The removed type is `FindOptionsRelationByString`.
 
 ### Statement terminators rejected in `select()` and `addSelect()`
 
-`SelectQueryBuilder.select()` and `addSelect()` now reject statement-terminator semicolons in their raw-SQL string arguments to prevent SQL statement stacking attacks. The check is **string-literal-aware**: a `;` that sits inside a quoted string literal or quoted identifier is allowed through, while an unquoted `;` is rejected. The scanner recognises single-quoted strings (including `''` and `\'` escape forms), double-quoted strings / identifiers, backtick identifiers (MySQL), bracket identifiers (MSSQL), and dollar-quoted strings (Postgres `$$…$$` and tagged `$tag$…$tag$`).
+`SelectQueryBuilder.select()` and `addSelect()` now reject statement-terminator semicolons in their raw-SQL string arguments to prevent SQL statement stacking attacks. The check is **string-literal-aware**: a `;` that sits inside a quoted string literal or quoted identifier is allowed through, while an unquoted `;` is rejected. The scanner recognises:
+
+- single-quoted strings with the SQL-standard `''` doubled-quote escape — `'it''s here'`
+- double-quoted strings / identifiers with the `""` doubled-quote escape — `"a""b"`
+- backtick-quoted MySQL identifiers with the ` ` `doubled-backtick escape —` `col``name` ``
+- bracket-quoted MSSQL identifiers with the `]]` doubled-bracket-close escape — `[col]]name]`
+- Postgres dollar-quoted strings in untagged (`$$…$$`) and tagged (`$tag$…$tag$`) forms
 
 ```typescript
 // Legitimate expressions continue to work — the `;` is inside a string literal.
@@ -806,6 +812,8 @@ qb.addSelect([
 // semicolon, or move the comment out of the query-builder argument.
 qb.select("col /* ; */") // TypeORMError
 ```
+
+**Backslash-escaped quotes (`'foo\'bar'`) are not recognised by the scanner.** MySQL with the default `sql_mode` treats `\'` as an escaped quote, but PostgreSQL, Oracle, SQLite, MSSQL and MySQL in ANSI / `NO_BACKSLASH_ESCAPES` mode treat the `\` as a literal character. Interpreting the backslash unconditionally would let an attacker craft inputs that bypass the scanner on every non-MySQL-default driver. If your expression needs a literal quote inside a single-quoted string, use the SQL-standard `''` doubled form instead — it works the same way on every driver.
 
 For `groupBy()` / `addGroupBy()` / `orderBy()` / `addOrderBy()`, the reject is unconditional: sort and group keys never contain a legitimate `;`.
 
