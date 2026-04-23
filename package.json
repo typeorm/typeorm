@@ -78,7 +78,7 @@
   "scripts": {
     "changelog": "standard-changelog",
     "compile": "gulp clean && tsc",
-    "docs:dev": "cd docs && npm run start",
+    "docs:dev": "cd docs && pnpm run start",
     "format": "prettier --cache --write .",
     "format:ci": "prettier --check .",
     "lint": "eslint",
