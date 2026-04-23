@@ -222,6 +222,32 @@ describe("query builder > sql injection", () => {
             }
         })
 
+        it("should reject semicolons in UpdateQueryBuilder addOrderBy sort key", () => {
+            for (const dataSource of dataSources) {
+                expect(() =>
+                    dataSource
+                        .createQueryBuilder()
+                        .update(Post)
+                        .set({ name: "test" })
+                        .addOrderBy("id; DROP TABLE post"),
+                ).to.throw(/Semicolons are not allowed/)
+            }
+        })
+
+        it("should reject semicolons in UpdateQueryBuilder OrderByCondition keys", () => {
+            for (const dataSource of dataSources) {
+                expect(() =>
+                    dataSource
+                        .createQueryBuilder()
+                        .update(Post)
+                        .set({ name: "test" })
+                        .orderBy({
+                            "id; DELETE FROM post": "ASC",
+                        }),
+                ).to.throw(/Semicolons are not allowed/)
+            }
+        })
+
         it("should reject semicolons in SoftDeleteQueryBuilder orderBy sort key", () => {
             for (const dataSource of dataSources) {
                 expect(() =>
@@ -231,6 +257,112 @@ describe("query builder > sql injection", () => {
                         .from(Post)
                         .orderBy("id; DROP TABLE post"),
                 ).to.throw(/Semicolons are not allowed/)
+            }
+        })
+
+        it("should reject semicolons in SoftDeleteQueryBuilder addOrderBy sort key", () => {
+            for (const dataSource of dataSources) {
+                expect(() =>
+                    dataSource
+                        .createQueryBuilder()
+                        .softDelete()
+                        .from(Post)
+                        .addOrderBy("id; DROP TABLE post"),
+                ).to.throw(/Semicolons are not allowed/)
+            }
+        })
+
+        it("should reject semicolons in SoftDeleteQueryBuilder OrderByCondition keys", () => {
+            for (const dataSource of dataSources) {
+                expect(() =>
+                    dataSource
+                        .createQueryBuilder()
+                        .softDelete()
+                        .from(Post)
+                        .orderBy({
+                            "id; DELETE FROM post": "ASC",
+                        }),
+                ).to.throw(/Semicolons are not allowed/)
+            }
+        })
+
+        it("should reject invalid order value in UpdateQueryBuilder orderBy", () => {
+            for (const dataSource of dataSources) {
+                expect(() =>
+                    dataSource
+                        .createQueryBuilder()
+                        .update(Post)
+                        .set({ name: "test" })
+                        .orderBy("id", "ASC; DROP TABLE post" as any),
+                ).to.throw(/"order" can accept only/)
+            }
+        })
+
+        it("should reject invalid order value in UpdateQueryBuilder addOrderBy", () => {
+            for (const dataSource of dataSources) {
+                expect(() =>
+                    dataSource
+                        .createQueryBuilder()
+                        .update(Post)
+                        .set({ name: "test" })
+                        .addOrderBy("id", "ASC; DROP TABLE post" as any),
+                ).to.throw(/"order" can accept only/)
+            }
+        })
+
+        it("should reject invalid nulls value in UpdateQueryBuilder orderBy", () => {
+            for (const dataSource of dataSources) {
+                expect(() =>
+                    dataSource
+                        .createQueryBuilder()
+                        .update(Post)
+                        .set({ name: "test" })
+                        .orderBy(
+                            "id",
+                            "ASC",
+                            "NULLS FIRST; DROP TABLE post" as any,
+                        ),
+                ).to.throw(/"nulls" can accept only/)
+            }
+        })
+
+        it("should reject invalid order value in SoftDeleteQueryBuilder orderBy", () => {
+            for (const dataSource of dataSources) {
+                expect(() =>
+                    dataSource
+                        .createQueryBuilder()
+                        .softDelete()
+                        .from(Post)
+                        .orderBy("id", "ASC; DROP TABLE post" as any),
+                ).to.throw(/"order" can accept only/)
+            }
+        })
+
+        it("should reject invalid order value in SoftDeleteQueryBuilder addOrderBy", () => {
+            for (const dataSource of dataSources) {
+                expect(() =>
+                    dataSource
+                        .createQueryBuilder()
+                        .softDelete()
+                        .from(Post)
+                        .addOrderBy("id", "ASC; DROP TABLE post" as any),
+                ).to.throw(/"order" can accept only/)
+            }
+        })
+
+        it("should reject invalid nulls value in SoftDeleteQueryBuilder orderBy", () => {
+            for (const dataSource of dataSources) {
+                expect(() =>
+                    dataSource
+                        .createQueryBuilder()
+                        .softDelete()
+                        .from(Post)
+                        .orderBy(
+                            "id",
+                            "ASC",
+                            "NULLS FIRST; DROP TABLE post" as any,
+                        ),
+                ).to.throw(/"nulls" can accept only/)
             }
         })
     })

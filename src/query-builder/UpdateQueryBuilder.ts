@@ -413,6 +413,19 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
         order: "ASC" | "DESC" = "ASC",
         nulls?: "NULLS FIRST" | "NULLS LAST",
     ): this {
+        if (order !== undefined && order !== "ASC" && order !== "DESC")
+            throw new TypeORMError(
+                `UpdateQueryBuilder.orderBy "order" can accept only "ASC" and "DESC" values.`,
+            )
+        if (
+            nulls !== undefined &&
+            nulls !== "NULLS FIRST" &&
+            nulls !== "NULLS LAST"
+        )
+            throw new TypeORMError(
+                `UpdateQueryBuilder.orderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`,
+            )
+
         if (sort) {
             if (typeof sort === "object") {
                 this.validateOrderByCondition(sort)
@@ -445,6 +458,19 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
         order: "ASC" | "DESC" = "ASC",
         nulls?: "NULLS FIRST" | "NULLS LAST",
     ): this {
+        if (order !== undefined && order !== "ASC" && order !== "DESC")
+            throw new TypeORMError(
+                `UpdateQueryBuilder.addOrderBy "order" can accept only "ASC" and "DESC" values.`,
+            )
+        if (
+            nulls !== undefined &&
+            nulls !== "NULLS FIRST" &&
+            nulls !== "NULLS LAST"
+        )
+            throw new TypeORMError(
+                `UpdateQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`,
+            )
+
         this.assertNoSemicolon(sort, "addOrderBy")
         if (nulls) {
             this.expressionMap.orderBys[sort] = { order, nulls }

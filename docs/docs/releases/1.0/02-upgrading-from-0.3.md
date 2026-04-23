@@ -800,7 +800,7 @@ qb.orderBy({ "post.id; DROP TABLE post": "ASC" })
 qb.where("post.title = :title", { title: "value;with;semicolons" })
 ```
 
-The `orderBy()` methods continue to validate that order direction values are `"ASC"` or `"DESC"` and `nulls` values are `"NULLS FIRST"` or `"NULLS LAST"`.
+The `orderBy()` and `addOrderBy()` methods on all three query builders also validate that the `order` argument is `"ASC"` or `"DESC"` and the `nulls` argument is `"NULLS FIRST"` or `"NULLS LAST"` — previously only `SelectQueryBuilder` enforced this, leaving `UpdateQueryBuilder` and `SoftDeleteQueryBuilder` open to injection through those parameters.
 
 ### `printSql` removed
 
