@@ -1,8 +1,10 @@
 import { expect } from "chai"
-import jscodeshift, { type ASTNode } from "jscodeshift"
+import jscodeshift, { type ASTNode, type ObjectExpression } from "jscodeshift"
 import {
     fileImportsFrom,
+    forEachColumnMetadataOptionsArg,
     getLocalNamesForImport,
+    getNamespaceLocalNames,
     getStringValue,
     setStringValue,
 } from "../../src/transforms/ast-helpers"
@@ -172,6 +174,199 @@ describe("ast-helpers", () => {
             expect(
                 localNames('import { getManager } from "other-lib"'),
             ).to.deep.equal([])
+        })
+
+        it("includes type-only import by default (no valueOnly)", () => {
+            expect(
+                localNames('import type { getManager } from "typeorm"'),
+            ).to.deep.equal(["getManager"])
+        })
+
+        it("skips declaration-level type-only import when valueOnly is set", () => {
+            const names = [
+                ...getLocalNamesForImport(
+                    j('import type { getManager } from "typeorm"'),
+                    j,
+                    "typeorm",
+                    "getManager",
+                    { valueOnly: true },
+                ),
+            ]
+            expect(names).to.deep.equal([])
+        })
+
+        it("skips per-specifier type-only when valueOnly is set", () => {
+            const names = [
+                ...getLocalNamesForImport(
+                    j(
+                        'import { type getManager, getRepository } from "typeorm"',
+                    ),
+                    j,
+                    "typeorm",
+                    "getManager",
+                    { valueOnly: true },
+                ),
+            ]
+            expect(names).to.deep.equal([])
+        })
+
+        it("includes value imports even when valueOnly is set", () => {
+            const names = [
+                ...getLocalNamesForImport(
+                    j('import { getManager } from "typeorm"'),
+                    j,
+                    "typeorm",
+                    "getManager",
+                    { valueOnly: true },
+                ),
+            ]
+            expect(names).to.deep.equal(["getManager"])
+        })
+    })
+
+    describe("getNamespaceLocalNames", () => {
+        const namespaceNames = (src: string, valueOnly = false) =>
+            [
+                ...getNamespaceLocalNames(j(src), j, "typeorm", {
+                    valueOnly,
+                }),
+            ].sort()
+
+        it("finds ESM namespace import", () => {
+            expect(
+                namespaceNames('import * as typeorm from "typeorm"'),
+            ).to.deep.equal(["typeorm"])
+        })
+
+        it("finds TS import-equals binding", () => {
+            expect(
+                namespaceNames('import typeorm = require("typeorm")'),
+            ).to.deep.equal(["typeorm"])
+        })
+
+        it("finds CommonJS require-assigned binding", () => {
+            expect(
+                namespaceNames('const typeorm = require("typeorm")'),
+            ).to.deep.equal(["typeorm"])
+        })
+
+        it("includes type-only namespace import by default", () => {
+            expect(
+                namespaceNames('import type * as typeorm from "typeorm"'),
+            ).to.deep.equal(["typeorm"])
+        })
+
+        it("skips type-only namespace import when valueOnly is set", () => {
+            expect(
+                namespaceNames('import type * as typeorm from "typeorm"', true),
+            ).to.deep.equal([])
+        })
+
+        it("includes non-type namespace import when valueOnly is set", () => {
+            expect(
+                namespaceNames('import * as typeorm from "typeorm"', true),
+            ).to.deep.equal(["typeorm"])
+        })
+    })
+
+    describe("forEachColumnMetadataOptionsArg", () => {
+        const target = { moduleName: "typeorm", className: "ColumnMetadata" }
+
+        const countInvocations = (src: string): number => {
+            let count = 0
+            forEachColumnMetadataOptionsArg(j(src), j, target, () => {
+                count += 1
+            })
+            return count
+        }
+
+        const capturedKeys = (src: string): string[][] => {
+            const results: string[][] = []
+            forEachColumnMetadataOptionsArg(
+                j(src),
+                j,
+                target,
+                (options: ObjectExpression) => {
+                    results.push(
+                        options.properties.flatMap((p) => {
+                            if (
+                                (p.type === "Property" ||
+                                    p.type === "ObjectProperty") &&
+                                p.key.type === "Identifier"
+                            ) {
+                                return [p.key.name]
+                            }
+                            return []
+                        }),
+                    )
+                },
+            )
+            return results
+        }
+
+        it("fires on direct-import constructor with args.options", () => {
+            const src = [
+                'import { ColumnMetadata } from "typeorm"',
+                "new ColumnMetadata({ args: { options: { readonly: true } } })",
+            ].join("\n")
+            expect(countInvocations(src)).to.equal(1)
+            expect(capturedKeys(src)).to.deep.equal([["readonly"]])
+        })
+
+        it("fires on namespace-qualified constructor", () => {
+            const src = [
+                'import * as typeorm from "typeorm"',
+                "new typeorm.ColumnMetadata({ args: { options: { readonly: true } } })",
+            ].join("\n")
+            expect(countInvocations(src)).to.equal(1)
+        })
+
+        it("does not fire on type-only named import", () => {
+            const src = [
+                'import type { ColumnMetadata } from "typeorm"',
+                "const CM = class { constructor(_o: any) {} }",
+                "new CM({ args: { options: { readonly: true } } })",
+            ].join("\n")
+            expect(countInvocations(src)).to.equal(0)
+        })
+
+        it("does not fire on a shadowed identifier in an inner scope", () => {
+            const src = [
+                'import { ColumnMetadata } from "typeorm"',
+                "function build(ColumnMetadata: any) {",
+                "    return new ColumnMetadata({ args: { options: { readonly: true } } })",
+                "}",
+            ].join("\n")
+            expect(countInvocations(src)).to.equal(0)
+        })
+
+        it("does not fire when no args.options key is present", () => {
+            const src = [
+                'import { ColumnMetadata } from "typeorm"',
+                "new ColumnMetadata({ args: {} })",
+            ].join("\n")
+            expect(countInvocations(src)).to.equal(0)
+        })
+
+        it("does not fire when the first arg is not an object", () => {
+            const src = [
+                'import { ColumnMetadata } from "typeorm"',
+                "new ColumnMetadata('positional')",
+            ].join("\n")
+            expect(countInvocations(src)).to.equal(0)
+        })
+
+        it("uses last occurrence for duplicate options keys", () => {
+            const src = [
+                'import { ColumnMetadata } from "typeorm"',
+                "new ColumnMetadata({",
+                "    args: {",
+                "        options: { readonly: true },",
+                "        options: { update: false },",
+                "    },",
+                "})",
+            ].join("\n")
+            expect(capturedKeys(src)).to.deep.equal([["update"]])
         })
     })
 })
