@@ -2644,7 +2644,7 @@ export class SqlServerQueryRunner
             )
         }
 
-        const { up, down } = this.renameConstraintSql(
+        const { up, down } = this.renameCheckConstraintSql(
             table,
             checkConstraint.name,
             newName,
@@ -4335,8 +4335,8 @@ export class SqlServerQueryRunner
     }
 
     /**
-     * Builds up/down queries that rename a table-scoped constraint (primary key,
-     * unique, check) via `sp_rename`. The identifier is schema-qualified:
+     * Builds up/down queries that rename a table-scoped constraint (primary key
+     * or unique) via `sp_rename`. The identifier is schema-qualified:
      * `<schema>.<table>.<constraint>`.
      *
      * @param table
@@ -4356,6 +4356,34 @@ export class SqlServerQueryRunner
             ),
             down: new Query(
                 `EXEC sp_rename "${qualifiedTable}.${newName}", "${oldName}"`,
+            ),
+        }
+    }
+
+    /**
+     * Builds up/down queries that rename a CHECK constraint via `sp_rename`.
+     * Unlike PRIMARY KEY and UNIQUE (which `sp_rename` resolves when passed a
+     * `<schema>.<table>.<constraint>` identifier), CHECK constraints must be
+     * addressed with a schema-only qualifier: `<schema>.<constraint>`.
+     *
+     * @param table
+     * @param oldName
+     * @param newName
+     * @returns Reversible up/down query pair.
+     */
+    protected renameCheckConstraintSql(
+        table: Table,
+        oldName: string,
+        newName: string,
+    ): { up: Query; down: Query } {
+        const { schema } = this.driver.parseTableName(table)
+        const qualifier = schema ? `${schema}.` : ""
+        return {
+            up: new Query(
+                `EXEC sp_rename "${qualifier}${oldName}", "${newName}"`,
+            ),
+            down: new Query(
+                `EXEC sp_rename "${qualifier}${newName}", "${oldName}"`,
             ),
         }
     }
