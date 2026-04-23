@@ -31,7 +31,21 @@ describe("schema builder > rename on naming change > index", () => {
     let dataSources: DataSource[]
 
     before(async () => {
+        // The seed helper renames the index server-side via `qr.renameIndex`;
+        // drivers without that primitive (sqlite family, spanner, mongodb)
+        // can't participate. Keep this list aligned with the drivers that
+        // implement `renameIndex` in `test/functional/query-runner/rename/
+        // rename-index.test.ts`.
         dataSources = await createTestingConnections({
+            enabledDrivers: [
+                "postgres",
+                "cockroachdb",
+                "mssql",
+                "oracle",
+                "mysql",
+                "mariadb",
+                "sap",
+            ],
             entities: [UserNewNames],
             schemaCreate: false,
             dropSchema: true,
@@ -139,6 +153,15 @@ describe("schema builder > rename on naming change > index (auto-named)", () => 
 
     before(async () => {
         dataSources = await createTestingConnections({
+            enabledDrivers: [
+                "postgres",
+                "cockroachdb",
+                "mssql",
+                "oracle",
+                "mysql",
+                "mariadb",
+                "sap",
+            ],
             entities: [UserAutoIndex],
             schemaCreate: false,
             dropSchema: true,
