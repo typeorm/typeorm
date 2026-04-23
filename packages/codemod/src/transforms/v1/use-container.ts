@@ -84,8 +84,7 @@ export const useContainer = (file: FileInfo, api: API) => {
                 // Non-statement usage (assignment, return, argument, etc.):
                 // leave the call in place but attach a comment to the enclosing
                 // statement so the user can't miss the manual migration.
-                let current: ASTPath<Node> | null =
-                    callPath as unknown as ASTPath<Node>
+                let current: ASTPath<Node> | null = callPath
                 while (current) {
                     const node: Node = current.node
                     if (todoHostTypes.has(node.type)) {

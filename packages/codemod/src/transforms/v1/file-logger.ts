@@ -155,9 +155,7 @@ export const fileLogger = (file: FileInfo, api: API) => {
         })
         .forEach((astPath) => {
             const optionsArg = astPath.node.arguments[1]
-            const { hasOption, isAbsolute } = inspectOptionsArg(
-                optionsArg as Node | undefined,
-            )
+            const { hasOption, isAbsolute } = inspectOptionsArg(optionsArg)
 
             if (hasOption && isAbsolute) return
 
