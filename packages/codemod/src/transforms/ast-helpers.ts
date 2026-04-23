@@ -216,8 +216,10 @@ export const getNamespaceLocalNames = (
     root: Collection,
     j: JSCodeshift,
     moduleName: string,
+    opts: { valueOnly?: boolean } = {},
 ): Set<string> => {
     const localNames = new Set<string>()
+    const { valueOnly = false } = opts
     const prefix = `${moduleName}/`
     const matchesModule = (source: unknown): boolean =>
         typeof source === "string" &&
@@ -226,6 +228,8 @@ export const getNamespaceLocalNames = (
     // ESM: `import * as ns from "moduleName[/subpath]"`
     root.find(j.ImportDeclaration).forEach((importPath) => {
         if (!matchesModule(importPath.node.source.value)) return
+        const declKind = (importPath.node as { importKind?: string }).importKind
+        if (valueOnly && declKind === "type") return
         for (const spec of importPath.node.specifiers ?? []) {
             if (
                 spec.type === "ImportNamespaceSpecifier" &&
@@ -429,6 +433,7 @@ export const forEachColumnMetadataOptionsArg = (
         root,
         j,
         target.moduleName,
+        { valueOnly: true },
     )
     if (classLocalNames.size === 0 && namespaceLocalNames.size === 0) return
 
