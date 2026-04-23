@@ -1698,11 +1698,9 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * forwards the value into the emitted query verbatim, so a semicolon in a
      * `groupBy` / `orderBy` / `addOrderBy` argument would terminate the
      * intended statement and let a second one piggy-back on the same
-     * execution — classic SQL-statement-stacking. Column names, sort keys
-     * and group-by keys have no legitimate use for `;`, so the check here
-     * is a flat reject; `select`/`addSelect` accept literal-aware parsing
-     * because `STRING_AGG(col, ';' ORDER BY col)` is a valid expression and
-     * handled by a separate helper.
+     * execution — classic SQL-statement-stacking. These methods accept
+     * column references and short expressions; `;` has no legitimate meaning
+     * in them, so the check is a flat reject.
      *
      * @param value
      * @param context
