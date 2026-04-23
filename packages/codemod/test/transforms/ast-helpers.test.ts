@@ -5,6 +5,7 @@ import {
     forEachColumnMetadataOptionsArg,
     getLocalNamesForImport,
     getNamespaceLocalNames,
+    getObjectPropertyKeyName,
     getStringValue,
     setStringValue,
 } from "../../src/transforms/ast-helpers"
@@ -266,6 +267,54 @@ describe("ast-helpers", () => {
             expect(
                 namespaceNames('import * as typeorm from "typeorm"', true),
             ).to.deep.equal(["typeorm"])
+        })
+    })
+
+    describe("getObjectPropertyKeyName", () => {
+        type AnyProp = Parameters<typeof getObjectPropertyKeyName>[0]
+
+        const firstProp = (src: string): AnyProp => {
+            const obj: ObjectExpression = j(`const x = ${src}`)
+                .find(j.ObjectExpression)
+                .get().node
+            return obj.properties[0]
+        }
+
+        const keyOf = (src: string): string | null =>
+            getObjectPropertyKeyName(firstProp(src))
+
+        it("reads plain identifier keys", () => {
+            expect(keyOf("{ foo: 1 }")).to.equal("foo")
+        })
+
+        it("reads string-literal keys", () => {
+            expect(keyOf("{ 'foo': 1 }")).to.equal("foo")
+            expect(keyOf('{ "foo": 1 }')).to.equal("foo")
+        })
+
+        it("reads constant computed string-literal keys", () => {
+            // `['foo']: …` has the same runtime key as `foo: …`; we want
+            // transforms to match these so the migration applies to every
+            // equivalent form users may have written.
+            expect(keyOf("{ ['foo']: 1 }")).to.equal("foo")
+            expect(keyOf('{ ["foo"]: 1 }')).to.equal("foo")
+        })
+
+        it("returns null for dynamic computed keys", () => {
+            // `[name]` / `[getKey()]` resolve at runtime; the transform
+            // cannot know the name statically, so the property must not
+            // match any literal target.
+            expect(keyOf("{ [name]: 1 }")).to.be.null
+            expect(keyOf("{ [getKey()]: 1 }")).to.be.null
+        })
+
+        it("returns null for numeric keys", () => {
+            expect(keyOf("{ 0: 1 }")).to.be.null
+            expect(keyOf("{ 42: 'x' }")).to.be.null
+        })
+
+        it("returns null for spread elements", () => {
+            expect(keyOf("{ ...y }")).to.be.null
         })
     })
 

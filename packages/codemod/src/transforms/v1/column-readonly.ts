@@ -23,9 +23,9 @@ export const columnReadonly = (file: FileInfo, api: API) => {
 
     const rewriteReadonlyInObject = (obj: ObjectExpression): void => {
         for (const prop of obj.properties) {
-            // `getObjectPropertyKeyName` returns null for computed keys, so
-            // dynamic `{[readonly]: …}` / `{['readonly']: …}` forms are left
-            // alone — their `readonly` isn't the option literal.
+            // `getObjectPropertyKeyName` returns null for dynamic computed
+            // keys (`{[readonlyVar]: …}`), but recognises constant computed
+            // string literals (`{['readonly']: …}`) as statically knowable.
             if (getObjectPropertyKeyName(prop) !== "readonly") continue
             if (prop.type !== "ObjectProperty" && prop.type !== "Property") {
                 continue
@@ -35,6 +35,9 @@ export const columnReadonly = (file: FileInfo, api: API) => {
             // readonly: false  → update: true
             // readonly: <expr> → update: !<expr>
             prop.key = j.identifier("update")
+            // The identifier replacement doesn't need brackets, so drop the
+            // computed flag in case the input was `['readonly']: …`.
+            prop.computed = false
             if (
                 prop.value.type === "BooleanLiteral" ||
                 (prop.value.type === "Literal" &&

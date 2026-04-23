@@ -410,15 +410,20 @@ export const forEachDecoratorObjectArg = (
 
 /**
  * Returns the key name for an `ObjectProperty` / `Property` node. Handles
- * both identifier keys (`name`) and string-literal keys (`"name"`); returns
- * null for computed, numeric, or otherwise non-string keys, and for node
- * types that don't carry a key at all (spread elements, etc.).
+ * both identifier keys (`name`) and string-literal keys (`"name"`), including
+ * the computed-string form (`['name']: …`) whose runtime key is still
+ * statically knowable. Returns null for dynamic computed keys (`[someVar]`,
+ * `[expr]`), numeric keys, and for node types that don't carry a key at all
+ * (spread elements, etc.).
  */
 export const getObjectPropertyKeyName = (
     prop: ObjectExpression["properties"][number],
 ): string | null => {
     if (prop.type !== "Property" && prop.type !== "ObjectProperty") return null
-    if (prop.computed) return null
+    // Computed keys whose expression is a string literal (`['foo']`) are
+    // equivalent at runtime to the plain-identifier form (`foo`), so match
+    // them. Dynamic computed keys (`[variable]`, `[fn()]`) stay opaque.
+    if (prop.computed) return getStringValue(prop.key)
     if (prop.key.type === "Identifier") return prop.key.name
     return getStringValue(prop.key)
 }
