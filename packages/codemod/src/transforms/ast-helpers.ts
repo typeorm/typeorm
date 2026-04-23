@@ -393,6 +393,7 @@ export const getObjectPropertyKeyName = (
     prop: ObjectExpression["properties"][number],
 ): string | null => {
     if (prop.type !== "Property" && prop.type !== "ObjectProperty") return null
+    if (prop.computed) return null
     if (prop.key.type === "Identifier") return prop.key.name
     return getStringValue(prop.key)
 }

@@ -10,7 +10,7 @@ import {
     expandLocalNamesForImports,
     forEachColumnMetadataOptionsArg,
     forEachDecoratorObjectArg,
-    getStringValue,
+    getObjectPropertyKeyName,
 } from "../ast-helpers"
 
 export const name = path.basename(__filename, path.extname(__filename))
@@ -23,15 +23,13 @@ export const columnReadonly = (file: FileInfo, api: API) => {
 
     const rewriteReadonlyInObject = (obj: ObjectExpression): void => {
         for (const prop of obj.properties) {
+            // `getObjectPropertyKeyName` returns null for computed keys, so
+            // dynamic `{[readonly]: …}` / `{['readonly']: …}` forms are left
+            // alone — their `readonly` isn't the option literal.
+            if (getObjectPropertyKeyName(prop) !== "readonly") continue
             if (prop.type !== "ObjectProperty" && prop.type !== "Property") {
                 continue
             }
-
-            const keyName =
-                prop.key.type === "Identifier"
-                    ? prop.key.name
-                    : getStringValue(prop.key)
-            if (keyName !== "readonly") continue
 
             // readonly: true   → update: false
             // readonly: false  → update: true
