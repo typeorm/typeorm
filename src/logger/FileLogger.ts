@@ -1,9 +1,18 @@
-import type { FileLoggerOptions, LoggerOptions } from "./LoggerOptions"
-import type { LogLevel, LogMessage } from "./Logger"
-import appRootPath from "app-root-path"
-import type { QueryRunner } from "../query-runner/QueryRunner"
 import { PlatformTools } from "../platform/PlatformTools"
+import type { QueryRunner } from "../query-runner/QueryRunner"
 import { AbstractLogger } from "./AbstractLogger"
+import type { LogLevel, LogMessage } from "./Logger"
+import type { LoggerOptions } from "./LoggerOptions"
+
+/**
+ * File logging option.
+ */
+export type FileLoggerOptions = {
+    /**
+     * Specify custom path for the log file
+     */
+    logPath: string
+}
 
 /**
  * Performs logging of the events in TypeORM.
@@ -100,7 +109,6 @@ export class FileLogger extends AbstractLogger {
      */
     protected write(strings: string | string[]) {
         strings = Array.isArray(strings) ? strings : [strings]
-        const basePath = appRootPath.path + "/"
         let logPath = "ormlogs.log"
         if (this.fileLoggerOptions?.logPath) {
             logPath = PlatformTools.pathNormalize(
@@ -110,9 +118,6 @@ export class FileLogger extends AbstractLogger {
         strings = (strings as string[]).map(
             (str) => "[" + new Date().toISOString() + "]" + str,
         )
-        PlatformTools.appendFileSync(
-            basePath + logPath,
-            strings.join("\r\n") + "\r\n",
-        ) // todo: use async or implement promises?
+        PlatformTools.appendFileSync(logPath, strings.join("\r\n") + "\r\n") // todo: use async or implement promises?
     }
 }

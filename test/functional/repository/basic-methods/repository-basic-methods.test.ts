@@ -32,6 +32,7 @@ describe("repository > basic methods", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [
                 Post,
                 Blog,

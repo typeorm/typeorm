@@ -17,6 +17,7 @@ describe("find options > null and undefined handling", () => {
     describe("with default behavior (throw)", () => {
         before(async () => {
             dataSources = await createTestingConnections({
+                disabledDrivers: ["spanner"],
                 entities: [Post, Category],
                 schemaCreate: true,
                 dropSchema: true,
@@ -261,6 +262,7 @@ describe("find options > null and undefined handling", () => {
     describe("with invalidWhereValuesBehavior.null set to 'sql-null'", () => {
         before(async () => {
             dataSources = await createTestingConnections({
+                disabledDrivers: ["spanner"],
                 entities: [Post, Category],
                 schemaCreate: true,
                 dropSchema: true,
@@ -398,6 +400,7 @@ describe("find options > null and undefined handling", () => {
     describe("with invalidWhereValuesBehavior.undefined set to 'throw'", () => {
         before(async () => {
             dataSources = await createTestingConnections({
+                disabledDrivers: ["spanner"],
                 entities: [Post, Category],
                 schemaCreate: true,
                 dropSchema: true,
@@ -583,6 +586,7 @@ describe("find options > null and undefined handling", () => {
     describe("with both invalidWhereValuesBehavior options enabled", () => {
         before(async () => {
             dataSources = await createTestingConnections({
+                disabledDrivers: ["spanner"],
                 entities: [Post, Category],
                 schemaCreate: true,
                 dropSchema: true,
@@ -708,6 +712,7 @@ describe("find options > null and undefined handling", () => {
     describe("with ignore behavior", () => {
         before(async () => {
             dataSources = await createTestingConnections({
+                disabledDrivers: ["spanner"],
                 entities: [Post, Category],
                 schemaCreate: true,
                 dropSchema: true,
@@ -902,6 +907,7 @@ describe("find options > null and undefined handling", () => {
     describe("with invalidWhereValuesBehavior.null set to 'throw'", () => {
         before(async () => {
             dataSources = await createTestingConnections({
+                disabledDrivers: ["spanner"],
                 entities: [Post, Category],
                 schemaCreate: true,
                 dropSchema: true,

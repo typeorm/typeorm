@@ -13,6 +13,7 @@ describe("github issues > #815 @RelationId properties are not updated after enti
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

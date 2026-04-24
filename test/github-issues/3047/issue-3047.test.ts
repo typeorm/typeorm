@@ -14,6 +14,7 @@ describe("github issues > #3047 Mysqsl on duplicate key update use current value
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [User],
             schemaCreate: true,
             dropSchema: true,

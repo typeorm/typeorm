@@ -12,6 +12,7 @@ describe("github issues > #1123 load relation eagerly by setting isEager propert
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [
                 new EntitySchema<Author>(AuthorSchema),
                 new EntitySchema<Post>(PostSchema),

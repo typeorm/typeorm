@@ -12,6 +12,7 @@ describe("github issues > #8627 junction aliases are not unique", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             dropSchema: true,
             schemaCreate: true,

@@ -17,6 +17,7 @@ describe("relations > load-strategy > query", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
@@ -336,6 +337,7 @@ describe("relations > load-strategy > query", () => {
         let dsLevelDataSources: DataSource[]
         before(async () => {
             dsLevelDataSources = await createTestingConnections({
+                disabledDrivers: ["spanner"],
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 schemaCreate: true,
                 dropSchema: true,

@@ -1,0 +1,9 @@
+{
+  "all": true,
+  "cache": false,
+  "exclude": ["**/*.d.ts", "test/**"],
+  "exclude-after-remap": true,
+  "extension": [".ts"],
+  "include": ["src/**"],
+  "reporter": ["lcov"]
+}

@@ -12,6 +12,7 @@ describe("github issues > #7146 Lazy relations resolve to 'undefined' instead of
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,

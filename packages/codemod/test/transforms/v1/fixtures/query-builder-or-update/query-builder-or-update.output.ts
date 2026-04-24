@@ -1,3 +1,5 @@
+import "typeorm"
+
 await queryBuilder
     .insert()
     .into(Post)
