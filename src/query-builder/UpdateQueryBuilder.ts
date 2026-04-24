@@ -379,14 +379,14 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
      *
      * Calling order by without order set will remove all previously set order bys.
      */
-    public orderBy(): this
+    orderBy(): this
 
     /**
      * Sets ORDER BY condition in the query builder.
      * If you had previously ORDER BY expression defined,
      * calling this function will override previously set ORDER BY conditions.
      */
-    public orderBy(
+    orderBy(
         sort: string,
         order?: "ASC" | "DESC",
         nulls?: "NULLS FIRST" | "NULLS LAST",
@@ -397,7 +397,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
      * If you had previously ORDER BY expression defined,
      * calling this function will override previously set ORDER BY conditions.
      */
-    public orderBy(order: OrderByCondition): this
+    orderBy(order: OrderByCondition): this
 
     /**
      * Sets ORDER BY condition in the query builder.
@@ -408,12 +408,12 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
      * @param order
      * @param nulls
      */
-    public orderBy(
+    orderBy(
         sort?: string | OrderByCondition,
         order: "ASC" | "DESC" = "ASC",
         nulls?: "NULLS FIRST" | "NULLS LAST",
     ): this {
-        return super.orderBy(sort as string | undefined, order, nulls)
+        return super.orderBy(sort, order, nulls)
     }
 
     /**
@@ -423,7 +423,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
      * @param order
      * @param nulls
      */
-    public addOrderBy(
+    addOrderBy(
         sort: string,
         order: "ASC" | "DESC" = "ASC",
         nulls?: "NULLS FIRST" | "NULLS LAST",

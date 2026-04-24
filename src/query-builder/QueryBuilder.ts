@@ -1742,6 +1742,14 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             )
     }
 
+    /**
+     * Shared ORDER BY implementation for concrete builders that expose it.
+     * Subclasses delegate here from their own public `orderBy` overloads.
+     *
+     * @param sort
+     * @param order
+     * @param nulls
+     */
     protected orderBy(
         sort?: string | OrderByCondition,
         order: "ASC" | "DESC" = "ASC",
@@ -1769,6 +1777,13 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         return this
     }
 
+    /**
+     * Shared ADD ORDER BY implementation; see {@link orderBy}.
+     *
+     * @param sort
+     * @param order
+     * @param nulls
+     */
     protected addOrderBy(
         sort: string,
         order: "ASC" | "DESC" = "ASC",
