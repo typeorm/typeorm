@@ -123,6 +123,11 @@ export const fileImportsFrom = (
  * recognised. TypeORM users reach internal types through deep imports, and
  * the codemod must rewrite them regardless of import shape.
  *
+ * CommonJS `require` destructures are collected from module scope only; an
+ * inside-function `require` would sit in an inner scope where the call-site
+ * shadow guards reject rewrites, so collecting it would silently mislead
+ * callers. See the inline comment on the CJS branch for details.
+ *
  * @param opts.valueOnly When true, skip ESM type-only imports — both the
  *   declaration-level `import type { X }` and the per-specifier
  *   `import { type X }` form. Use this when the local is going to appear as
@@ -229,6 +234,10 @@ export const getLocalNamesForImport = (
  *
  * Useful when a transform needs to recognise `typeorm.Foo` member-expression
  * references alongside named `Foo` imports handled by `getLocalNamesForImport`.
+ *
+ * CJS namespace `require` bindings are collected from module scope only,
+ * matching the module-scope guard that `getLocalNamesForImport` applies for
+ * destructured requires — same reasoning, see the CJS branch comment there.
  *
  * @param opts.valueOnly When true, skip ESM type-only namespace imports
  *   (`import type * as ns from "..."`). Use this when the local name is
