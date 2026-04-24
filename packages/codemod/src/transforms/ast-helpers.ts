@@ -550,8 +550,8 @@ export const forEachColumnMetadataOptionsArg = (
             const obj = (callee as { object: ASTNode }).object
             const prop = (callee as { property: ASTNode }).property
             if (
-                obj.type === "Identifier" &&
-                prop.type === "Identifier" &&
+                isIdentifier(obj) &&
+                isIdentifier(prop) &&
                 prop.name === target.className
             ) {
                 if (!namespaceLocalNames.has(obj.name)) return false
