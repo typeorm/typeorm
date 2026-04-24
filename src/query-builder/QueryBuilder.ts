@@ -1742,6 +1742,46 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             )
     }
 
+    protected orderBy(
+        sort?: string | OrderByCondition,
+        order: "ASC" | "DESC" = "ASC",
+        nulls?: "NULLS FIRST" | "NULLS LAST",
+    ): this {
+        this.assertValidOrderByOptions(order, nulls)
+
+        if (!sort) {
+            this.expressionMap.orderBys = {}
+            return this
+        }
+
+        if (typeof sort === "object") {
+            this.validateOrderByCondition(sort)
+            this.expressionMap.orderBys = sort
+            return this
+        }
+
+        this.assertNoSemicolon(sort, "orderBy")
+
+        this.expressionMap.orderBys = nulls
+            ? { [sort]: { order, nulls } }
+            : { [sort]: order }
+
+        return this
+    }
+
+    protected addOrderBy(
+        sort: string,
+        order: "ASC" | "DESC" = "ASC",
+        nulls?: "NULLS FIRST" | "NULLS LAST",
+    ): this {
+        this.assertValidOrderByOptions(order, nulls)
+        this.assertNoSemicolon(sort, "addOrderBy")
+
+        this.expressionMap.orderBys[sort] = nulls ? { order, nulls } : order
+
+        return this
+    }
+
     protected validateOrderByCondition(sort: OrderByCondition): void {
         const validOrders = ["ASC", "DESC"]
         const validNulls = ["NULLS FIRST", "NULLS LAST"]

@@ -1404,14 +1404,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      *
      * Calling order by without order set will remove all previously set order bys.
      */
-    orderBy(): this
+    public orderBy(): this
 
     /**
      * Sets ORDER BY condition in the query builder.
      * If you had previously ORDER BY expression defined,
      * calling this function will override previously set ORDER BY conditions.
      */
-    orderBy(
+    public orderBy(
         sort: string,
         order?: "ASC" | "DESC",
         nulls?: "NULLS FIRST" | "NULLS LAST",
@@ -1422,7 +1422,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * If you had previously ORDER BY expression defined,
      * calling this function will override previously set ORDER BY conditions.
      */
-    orderBy(order: OrderByCondition): this
+    public orderBy(order: OrderByCondition): this
 
     /**
      * Sets ORDER BY condition in the query builder.
@@ -1433,31 +1433,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * @param order
      * @param nulls
      */
-    orderBy(
+    public orderBy(
         sort?: string | OrderByCondition,
         order: "ASC" | "DESC" = "ASC",
         nulls?: "NULLS FIRST" | "NULLS LAST",
     ): this {
-        this.assertValidOrderByOptions(order, nulls)
-
-        if (!sort) {
-            this.expressionMap.orderBys = {}
-            return this
-        }
-
-        if (typeof sort === "object") {
-            this.validateOrderByCondition(sort)
-            this.expressionMap.orderBys = sort
-            return this
-        }
-
-        this.assertNoSemicolon(sort, "orderBy")
-
-        this.expressionMap.orderBys = nulls
-            ? { [sort]: { order, nulls } }
-            : { [sort]: order }
-
-        return this
+        return super.orderBy(sort as string | undefined, order, nulls)
     }
 
     /**
@@ -1467,20 +1448,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * @param order
      * @param nulls
      */
-    addOrderBy(
+    public addOrderBy(
         sort: string,
         order: "ASC" | "DESC" = "ASC",
         nulls?: "NULLS FIRST" | "NULLS LAST",
     ): this {
-        this.assertValidOrderByOptions(order, nulls)
-        this.assertNoSemicolon(sort, "addOrderBy")
-
-        if (nulls) {
-            this.expressionMap.orderBys[sort] = { order, nulls }
-        } else {
-            this.expressionMap.orderBys[sort] = order
-        }
-        return this
+        return super.addOrderBy(sort, order, nulls)
     }
 
     /**
