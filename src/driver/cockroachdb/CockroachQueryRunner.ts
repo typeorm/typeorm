@@ -726,28 +726,29 @@ export class CockroachQueryRunner
             (column) => column.generatedType && column.asExpression,
         )
 
-        for (const column of generatedColumns) {
-            const currentSchema = await this.getCurrentSchema()
-            let { schema } = this.driver.parseTableName(table)
-            schema ??= currentSchema
+        if (generatedColumns.length > 0) {
+            const parsedTableName = this.driver.parseTableName(table)
+            parsedTableName.schema ??= await this.getCurrentSchema()
 
-            const insertQuery = this.insertTypeormMetadataSql({
-                schema: schema,
-                table: table.name,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression,
-            })
+            for (const column of generatedColumns) {
+                const insertQuery = this.insertTypeormMetadataSql({
+                    schema: parsedTableName.schema,
+                    table: table.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                    value: column.asExpression,
+                })
 
-            const deleteQuery = this.deleteTypeormMetadataSql({
-                schema: schema,
-                table: table.name,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-            })
+                const deleteQuery = this.deleteTypeormMetadataSql({
+                    schema: parsedTableName.schema,
+                    table: table.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                })
 
-            upQueries.push(insertQuery)
-            downQueries.push(deleteQuery)
+                upQueries.push(insertQuery)
+                downQueries.push(deleteQuery)
+            }
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -825,28 +826,29 @@ export class CockroachQueryRunner
             (column) => column.generatedType && column.asExpression,
         )
 
-        for (const column of generatedColumns) {
-            const currentSchema = await this.getCurrentSchema()
-            let { schema } = this.driver.parseTableName(table)
-            schema ??= currentSchema
+        if (generatedColumns.length > 0) {
+            const parsedTableName = this.driver.parseTableName(table)
+            parsedTableName.schema ??= await this.getCurrentSchema()
 
-            const deleteQuery = this.deleteTypeormMetadataSql({
-                schema: schema,
-                table: table.name,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-            })
+            for (const column of generatedColumns) {
+                const deleteQuery = this.deleteTypeormMetadataSql({
+                    schema: parsedTableName.schema,
+                    table: table.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                })
 
-            const insertQuery = this.insertTypeormMetadataSql({
-                schema: schema,
-                table: table.name,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression,
-            })
+                const insertQuery = this.insertTypeormMetadataSql({
+                    schema: parsedTableName.schema,
+                    table: table.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                    value: column.asExpression,
+                })
 
-            upQueries.push(deleteQuery)
-            downQueries.push(insertQuery)
+                upQueries.push(deleteQuery)
+                downQueries.push(insertQuery)
+            }
         }
 
         await this.executeQueries(upQueries, downQueries)
