@@ -165,6 +165,18 @@ describe("ast-helpers", () => {
             ).to.deep.equal(["gm"])
         })
 
+        it("ignores inside-function CommonJS requires", () => {
+            // Keeping the collector aligned with the shadow guard used by
+            // `forEachColumnMetadataOptionsArg`: bindings declared below the
+            // module scope would be rejected at the call site anyway, so
+            // excluding them here avoids recording names that never match.
+            expect(
+                localNames(
+                    'function f() { const { getManager } = require("typeorm"); return getManager() }',
+                ),
+            ).to.deep.equal([])
+        })
+
         it("returns empty set for a name that is not imported", () => {
             expect(localNames('import { other } from "typeorm"')).to.deep.equal(
                 [],
@@ -249,6 +261,17 @@ describe("ast-helpers", () => {
             expect(
                 namespaceNames('const typeorm = require("typeorm")'),
             ).to.deep.equal(["typeorm"])
+        })
+
+        it("ignores inside-function CommonJS requires", () => {
+            // Aligned with `getLocalNamesForImport`: inner-scope bindings
+            // never match the call-site scope guard, so recording them here
+            // would be a dead entry in the namespace set.
+            expect(
+                namespaceNames(
+                    'function f() { const typeorm = require("typeorm"); return typeorm }',
+                ),
+            ).to.deep.equal([])
         })
 
         it("includes type-only namespace import by default", () => {

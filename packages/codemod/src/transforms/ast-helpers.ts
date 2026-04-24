@@ -169,11 +169,20 @@ export const getLocalNamesForImport = (
     })
 
     // CommonJS: `const { X [: Y] } = require("moduleName[/subpath]")`
+    // Only top-level requires are collected. An inside-function require
+    // creates a binding at non-module scope, and the call-site scope guard
+    // in `forEachColumnMetadataOptionsArg` rejects callees whose declaration
+    // lives in any inner scope (shadow guard). Collecting inner-scope
+    // requires here would make the collector and the guard disagree — the
+    // name would be in `classLocalNames` but the rewrite would never fire.
+    // Users with inside-function requires can hoist them to module scope.
     root.find(j.CallExpression, {
         callee: { type: "Identifier", name: "require" },
     }).forEach((callPath) => {
         const [arg] = callPath.node.arguments
         if (!arg || !matchesModule(getStringValue(arg))) return
+
+        if (callPath.scope?.isGlobal !== true) return
 
         const parent = callPath.parent.node
         if (parent.type !== "VariableDeclarator") return
@@ -267,11 +276,15 @@ export const getNamespaceLocalNames = (
     })
 
     // CommonJS: `const ns = require("moduleName[/subpath]")`
+    // Top-level only — see the note in `getLocalNamesForImport` for why the
+    // collector and the call-site scope guard must agree on module scope.
     root.find(j.CallExpression, {
         callee: { type: "Identifier", name: "require" },
     }).forEach((callPath) => {
         const [arg] = callPath.node.arguments
         if (!arg || !matchesModule(getStringValue(arg))) return
+
+        if (callPath.scope?.isGlobal !== true) return
 
         const parent = callPath.parent.node
         if (
