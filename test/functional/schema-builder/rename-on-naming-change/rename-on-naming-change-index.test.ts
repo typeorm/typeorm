@@ -1,7 +1,7 @@
 import "reflect-metadata"
 import { expect } from "chai"
 import type { DataSource } from "../../../../src"
-import { EntitySchema } from "../../../../src"
+import { EntitySchema, TableIndex } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -216,6 +216,87 @@ describe("schema builder > rename on naming change > index (auto-named)", () => 
                 expect(names, dataSource.driver.options.type).to.not.include(
                     "idx_manual_change",
                 )
+            }),
+        ))
+})
+
+// Duplicate-on-db scenario: the database ends up with two structurally
+// identical indexes (same column set) under different names while metadata
+// declares only one. The reconciler should pair one of them with the
+// metadata name via rename, and leave the other for the follow-up drop pass.
+const UserDuplicateIndex = new EntitySchema({
+    name: "rc_user_dup",
+    tableName: "rc_user_dup",
+    columns: {
+        id: { type: Number, primary: true },
+        email: { type: String, nullable: false },
+    },
+    indices: [{ name: "idx_new", columns: ["email"] }],
+})
+
+describe("schema builder > rename on naming change > index (db duplicates)", () => {
+    let dataSources: DataSource[]
+
+    before(async () => {
+        dataSources = await createTestingConnections({
+            enabledDrivers: [
+                "postgres",
+                "cockroachdb",
+                "mssql",
+                "oracle",
+                "mysql",
+                "mariadb",
+                "sap",
+            ],
+            entities: [UserDuplicateIndex],
+            schemaCreate: false,
+            dropSchema: true,
+        })
+    })
+
+    after(() => closeTestingConnections(dataSources))
+
+    it("renames one duplicate to the metadata name and drops the other", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await dataSource.synchronize()
+
+                // Rename the metadata-named index out of the way, then add
+                // a second structurally-identical index. After this, DB has
+                // [idx_old1, idx_old2] both on (email), metadata has idx_new.
+                const qr = dataSource.createQueryRunner()
+                try {
+                    await qr.renameIndex!("rc_user_dup", "idx_new", "idx_old1")
+                    await qr.createIndex(
+                        "rc_user_dup",
+                        new TableIndex({
+                            name: "idx_old2",
+                            columnNames: ["email"],
+                        }),
+                    )
+                } finally {
+                    await qr.release()
+                }
+
+                // Reconciler sorts remaining DB entries alphabetically and
+                // pairs with metadata, so idx_old1 becomes idx_new and
+                // idx_old2 is left for the drop pass.
+                const log = await dataSource.driver.createSchemaBuilder().log()
+                expectNoDropOfName(log.upQueries, "idx_old1")
+
+                await dataSource.synchronize()
+                const names = await getIndexNames(dataSource, "rc_user_dup")
+                expect(names, dataSource.driver.options.type).to.include(
+                    "idx_new",
+                )
+                expect(names, dataSource.driver.options.type).to.not.include(
+                    "idx_old1",
+                )
+                expect(names, dataSource.driver.options.type).to.not.include(
+                    "idx_old2",
+                )
+
+                await expectSyncIsIdempotent(dataSource)
             }),
         ))
 })
