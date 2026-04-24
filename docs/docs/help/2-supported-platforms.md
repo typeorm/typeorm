@@ -51,13 +51,13 @@ See [Using TypeORM with the Capacitor driver type](https://github.com/capacitor-
 ## Cordova / Ionic apps
 
 TypeORM is able to run on Cordova/Ionic apps using the
-[cordova-sqlite-storage](https://github.com/litehelpers/Cordova-sqlite-storage) plugin
+[cordova-sqlite-storage](https://github.com/litehelpers/Cordova-sqlite-storage) plugin.
 You have the option to choose between module loaders just like in browser package.
-For an example how to use TypeORM in Cordova see [typeorm/cordova-example](https://github.com/typeorm/cordova-example) and for Ionic see [typeorm/ionic-example](https://github.com/typeorm/ionic-example). **Important**: For use with Ionic, a custom webpack config file is needed! Please checkout the example to see the needed changes. Note that there is currently no support for transactions when using the [cordova-sqlite-storage](https://github.com/litehelpers/Cordova-sqlite-storage) plugin. See [Cordova SQLite limitations](https://github.com/storesafe/cordova-sqlite-storage#other-limitations) for more information.
+**Important**: For use with Ionic, a custom webpack config file is needed. Note that there is currently no support for transactions when using the [cordova-sqlite-storage](https://github.com/litehelpers/Cordova-sqlite-storage) plugin. See [Cordova SQLite limitations](https://github.com/storesafe/cordova-sqlite-storage#other-limitations) for more information.
 
 ## Expo
 
-TypeORM is able to run on Expo apps using the [Expo SQLite API](https://docs.expo.io/versions/latest/sdk/sqlite/). For an example how to use TypeORM in Expo see [typeorm/expo-example](https://github.com/typeorm/expo-example).
+TypeORM is able to run on Expo apps using the [Expo SQLite API](https://docs.expo.io/versions/latest/sdk/sqlite/).
 
 ## NativeScript
 
@@ -90,4 +90,4 @@ Checkout example [here](https://github.com/championswimmer/nativescript-vue-type
 
 ## React Native
 
-TypeORM is able to run on React Native apps using the [react-native-sqlite-storage](https://github.com/andpor/react-native-sqlite-storage) plugin. For an example see [typeorm/react-native-example](https://github.com/typeorm/react-native-example).
+TypeORM is able to run on React Native apps using the [react-native-sqlite-storage](https://github.com/andpor/react-native-sqlite-storage) plugin.
