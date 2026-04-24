@@ -787,12 +787,13 @@ The removed type is `FindOptionsRelationByString`.
 
 ### Semicolons rejected in sort and group expression methods
 
-The `groupBy()`, `addGroupBy()`, `orderBy()`, and `addOrderBy()` methods on all query builders (`SelectQueryBuilder`, `UpdateQueryBuilder`, `SoftDeleteQueryBuilder`) now reject inputs containing semicolons at runtime to prevent SQL statement stacking attacks. The same check also applies to keys of the `OrderByCondition` object form. Group and sort keys are expected to be column names or short expressions — there is no legitimate use of `;` in these inputs:
+The `groupBy()`, `addGroupBy()`, `orderBy()`, and `addOrderBy()` methods on all query builders (`SelectQueryBuilder`, `UpdateQueryBuilder`, `SoftDeleteQueryBuilder`) now reject inputs containing semicolons at runtime to prevent SQL injection attacks. Group and sort keys are expected to be column names or short expressions — there is no legitimate use of `;` in these inputs. 
 
 ```typescript
 // All of these now throw TypeORMError
 qb.groupBy("post.id; DROP TABLE post")
 qb.addGroupBy("post.id; DROP TABLE post")
+
 qb.orderBy("post.id; DELETE FROM post")
 qb.orderBy({ "post.id; DROP TABLE post": "ASC" })
 qb.addOrderBy("post.id; --")
