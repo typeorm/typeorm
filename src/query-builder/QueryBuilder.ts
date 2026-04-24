@@ -1694,13 +1694,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Rejects raw SQL fragments that contain a `;` character. The builder
-     * forwards the value into the emitted query verbatim, so a semicolon in a
-     * `groupBy` / `orderBy` / `addOrderBy` argument would terminate the
-     * intended statement and let a second one piggy-back on the same
-     * execution — classic SQL-statement-stacking. These methods accept
-     * column references and short expressions; `;` has no legitimate meaning
-     * in them, so the check is a flat reject.
+     * Rejects a `;` in sort/group expressions to prevent SQL injection.
      *
      * @param value
      * @param context
@@ -1708,18 +1702,13 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     protected assertNoSemicolon(value: string, context: string): void {
         if (value.includes(";")) {
             throw new TypeORMError(
-                `Semicolons are not allowed in ${context} to prevent SQL statement stacking.`,
+                `Semicolons are not allowed in ${context} to prevent SQL injection.`,
             )
         }
     }
 
     /**
-     * Validates the `order` and `nulls` arguments of the string-sort `orderBy`
-     * / `addOrderBy` overloads on every query builder that surfaces them.
-     * TypeScript narrows these parameters to a fixed union at the call site,
-     * but the runtime value can be anything under JS / `as any` / type-erased
-     * boundaries — treating both as plain strings here lets the allow-list
-     * be the single enforcement point for all callers.
+     * Validates OrderBy options against allowed values.
      *
      * @param order
      * @param nulls
@@ -1743,8 +1732,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Shared ORDER BY implementation for concrete builders that expose it.
-     * Subclasses delegate here from their own public `orderBy` overloads.
+     * Sets ORDER BY condition in the query builder.
      *
      * @param sort
      * @param order
@@ -1778,7 +1766,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Shared ADD ORDER BY implementation; see {@link orderBy}.
+     * Adds ORDER BY condition in the query builder.
      *
      * @param sort
      * @param order
