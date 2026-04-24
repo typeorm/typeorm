@@ -38,6 +38,15 @@ export const columnReadonly = (file: FileInfo, api: API) => {
             // The identifier replacement doesn't need brackets, so drop the
             // computed flag in case the input was `['readonly']: …`.
             prop.computed = false
+            // Shorthand (`{ readonly }`) folds key and value into one
+            // Identifier node. After replacing the key we also replace the
+            // value — with the negated boolean / stripped `!` / wrapped
+            // negation — so the node is no longer shorthand. Clear the flag
+            // so the printer doesn't emit `{ update }` with `value === key`
+            // mismatch. Other codemods in this repo follow the same pattern.
+            if ((prop as { shorthand?: boolean }).shorthand) {
+                ;(prop as { shorthand?: boolean }).shorthand = false
+            }
             if (
                 prop.value.type === "BooleanLiteral" ||
                 (prop.value.type === "Literal" &&
