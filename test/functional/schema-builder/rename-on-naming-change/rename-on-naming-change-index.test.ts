@@ -220,6 +220,101 @@ describe("schema builder > rename on naming change > index (auto-named)", () => 
         ))
 })
 
+// Reordered-columns scenario: the two entity versions share a table and
+// index name but differ only in column order. Authored column order is part
+// of the structural signature, so the reconciler must treat these as
+// different structures — drop+create, not rename.
+const ENABLED_DRIVERS_REORDERED = [
+    "postgres",
+    "cockroachdb",
+    "mssql",
+    "oracle",
+    "mysql",
+    "mariadb",
+    "sap",
+] as const
+
+const UserReorderedV1 = new EntitySchema({
+    name: "rc_user_reord",
+    tableName: "rc_user_reord",
+    columns: {
+        id: { type: Number, primary: true },
+        email: { type: String, nullable: false },
+        tenantId: { type: Number, nullable: false },
+    },
+    indices: [{ name: "idx_cols", columns: ["email", "tenantId"] }],
+})
+
+const UserReorderedV2 = new EntitySchema({
+    name: "rc_user_reord",
+    tableName: "rc_user_reord",
+    columns: {
+        id: { type: Number, primary: true },
+        email: { type: String, nullable: false },
+        tenantId: { type: Number, nullable: false },
+    },
+    indices: [{ name: "idx_cols", columns: ["tenantId", "email"] }],
+})
+
+describe("schema builder > rename on naming change > index (reordered columns)", () => {
+    it("reordered column list triggers drop + create, not rename", async () => {
+        const firstRound = await createTestingConnections({
+            enabledDrivers: [...ENABLED_DRIVERS_REORDERED],
+            entities: [UserReorderedV1],
+            schemaCreate: false,
+            dropSchema: true,
+        })
+        try {
+            await Promise.all(
+                firstRound.map((dataSource) => dataSource.synchronize()),
+            )
+        } finally {
+            await closeTestingConnections(firstRound)
+        }
+
+        const secondRound = await createTestingConnections({
+            enabledDrivers: [...ENABLED_DRIVERS_REORDERED],
+            entities: [UserReorderedV2],
+            schemaCreate: false,
+            dropSchema: false,
+        })
+        try {
+            await Promise.all(
+                secondRound.map(async (dataSource) => {
+                    const driverType = dataSource.driver.options.type
+
+                    const log = await dataSource.driver
+                        .createSchemaBuilder()
+                        .log()
+                    const sql = log.upQueries.map((q) => q.query).join(" | ")
+                    expect(sql, driverType).to.match(
+                        /DROP[^|]*idx_cols/i,
+                        "expected a DROP of idx_cols before the recreate",
+                    )
+
+                    await dataSource.synchronize()
+
+                    const qr = dataSource.createQueryRunner()
+                    try {
+                        const table = await qr.getTable("rc_user_reord")
+                        const idx = table?.indices.find(
+                            (i) => i.name === "idx_cols",
+                        )
+                        expect(idx?.columnNames, driverType).to.deep.equal([
+                            "tenantId",
+                            "email",
+                        ])
+                    } finally {
+                        await qr.release()
+                    }
+                }),
+            )
+        } finally {
+            await closeTestingConnections(secondRound)
+        }
+    })
+})
+
 // Duplicate-on-db scenario: the database ends up with two structurally
 // identical indexes (same column set) under different names while metadata
 // declares only one. The reconciler should pair one of them with the
