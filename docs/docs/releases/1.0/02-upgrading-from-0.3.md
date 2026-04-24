@@ -791,11 +791,11 @@ The `groupBy()`, `addGroupBy()`, `orderBy()`, and `addOrderBy()` methods on all 
 
 ```typescript
 // All of these now throw TypeORMError
-qb.addGroupBy("post.id; DROP TABLE post")
-qb.addOrderBy("post.id; --")
 qb.groupBy("post.id; DROP TABLE post")
+qb.addGroupBy("post.id; DROP TABLE post")
 qb.orderBy("post.id; DELETE FROM post")
 qb.orderBy({ "post.id; DROP TABLE post": "ASC" })
+qb.addOrderBy("post.id; --")
 ```
 
 ### `printSql` removed
