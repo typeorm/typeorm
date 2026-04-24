@@ -56,6 +56,12 @@ describe("query builder > sql injection", () => {
         "1 OR 1=1",
     ]
 
+    // Regression coverage for the `;` scanner on select() / addSelect().
+    // See #12209 (original blunt reject), #12396 (revert for the
+    // STRING_AGG(col, ';' …) regression), and #12408 (sibling PR that kept
+    // unconditional `;` reject on group/sort keys where no `;` is ever
+    // legitimate). This table exercises the string-literal-aware scanner.
+
     // Attack-shape select expressions whose statement terminator `;` sits
     // outside any quoted region — these must be rejected by the scanner.
     const unquotedSemicolonSelects = [

@@ -1,6 +1,13 @@
 import { expect } from "chai"
 import { QueryBuilder } from "../../../src/query-builder/QueryBuilder"
 
+// Regression tests for the quote-aware `;` scanner in `select()` /
+// `addSelect()`. Context: #12209 (original blunt `;` reject), #12396
+// (revert that restored legitimate `STRING_AGG(col, ';' …)`), #12408
+// (sibling PR that kept unconditional `;` reject on group/sort keys),
+// and this PR which reinstates a string-literal-aware reject on
+// select/addSelect without breaking the STRING_AGG case.
+
 // The scanner is a pure function of its input, so bypass the constructor
 // (which wants a DataSource) by creating a prototype-only instance and
 // routing calls through a cast. We only ever invoke
