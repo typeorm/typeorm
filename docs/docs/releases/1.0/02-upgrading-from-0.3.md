@@ -791,16 +791,12 @@ The `groupBy()`, `addGroupBy()`, `orderBy()`, and `addOrderBy()` methods on all 
 
 ```typescript
 // All of these now throw TypeORMError
+qb.addGroupBy("post.id; DROP TABLE post")
+qb.addOrderBy("post.id; --")
 qb.groupBy("post.id; DROP TABLE post")
 qb.orderBy("post.id; DELETE FROM post")
-qb.addOrderBy("post.id; --")
 qb.orderBy({ "post.id; DROP TABLE post": "ASC" })
-
-// Use parameter binding for any user-controlled value that may contain a semicolon
-qb.where("post.title = :title", { title: "value;with;semicolons" })
 ```
-
-The `orderBy()` and `addOrderBy()` methods on all three query builders also validate that the `order` argument is `"ASC"` or `"DESC"` and the `nulls` argument is `"NULLS FIRST"` or `"NULLS LAST"` — previously only `SelectQueryBuilder` enforced this, leaving `UpdateQueryBuilder` and `SoftDeleteQueryBuilder` open to injection through those parameters.
 
 ### `printSql` removed
 
