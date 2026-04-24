@@ -1725,10 +1725,12 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * `''` doubling is portable across all drivers and covers every
      * legitimate use case.
      *
-     * Comments are intentionally NOT treated as quoted — a `;` inside a
-     * `-- line` or `/* block *\/` still trips the check. Passing comments
-     * through a column-expression API is already unusual and the defence
-     * stays conservative.
+     * Comments are recognised so that quote characters inside them are not
+     * mis-interpreted as opening a quoted region (e.g. `1/*'*\/; DROP` would
+     * otherwise put the scanner into "inside quote" mode and swallow the
+     * trailing `;`). A `;` that appears inside `-- …` or `/* … *\/` still
+     * trips the check — passing comments through a column-expression API is
+     * unusual enough that the defence stays conservative.
      *
      * Unterminated quotes leave the scanner in "inside" mode until the end
      * of the input — the runtime SQL parser will reject the malformed query
@@ -1751,6 +1753,14 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 throw new TypeORMError(
                     `Semicolons are not allowed in ${context} to prevent SQL statement stacking.`,
                 )
+            }
+            if (value[i] === "-" && value[i + 1] === "-") {
+                i = this.skipLineComment(value, i, context)
+                continue
+            }
+            if (value[i] === "/" && value[i + 1] === "*") {
+                i = this.skipBlockComment(value, i, context)
+                continue
             }
             const next = this.skipQuotedRegion(value, i)
             // Defensive invariant — the per-form helpers must always advance
@@ -1873,6 +1883,67 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         const tag = value.slice(i, tagEnd + 1)
         const closeIdx = value.indexOf(tag, tagEnd + 1)
         return closeIdx === -1 ? n : closeIdx + tag.length
+    }
+
+    /**
+     * Skips an SQL line comment (`-- … <newline>`) starting at `value[i]`.
+     * Quote characters inside the comment are treated as plain text so they
+     * cannot put the outer scanner into "inside quote" mode. A `;` inside
+     * the comment still trips the terminator check. Returns the index
+     * immediately after the terminating newline, or end-of-input on an
+     * unterminated comment.
+     *
+     * @param value
+     * @param i
+     * @param context
+     */
+    private skipLineComment(value: string, i: number, context: string): number {
+        const n = value.length
+        let j = i + 2
+        while (j < n) {
+            if (value[j] === ";") {
+                throw new TypeORMError(
+                    `Semicolons are not allowed in ${context} to prevent SQL statement stacking.`,
+                )
+            }
+            if (value[j] === "\n" || value[j] === "\r") return j + 1
+            j++
+        }
+        return n
+    }
+
+    /**
+     * Skips an SQL block comment (`/* … *\/`) starting at `value[i]`. Quote
+     * characters inside the comment are treated as plain text so they cannot
+     * put the outer scanner into "inside quote" mode. A `;` inside the
+     * comment still trips the terminator check. Nested block comments are
+     * intentionally not supported — the first `*\/` ends the region, which
+     * matches the SQL standard (Postgres supports nesting but treating as
+     * flat is a safe superset for reject-on-`;` purposes). Returns the
+     * index immediately after the closing `*\/`, or end-of-input on an
+     * unterminated comment.
+     *
+     * @param value
+     * @param i
+     * @param context
+     */
+    private skipBlockComment(
+        value: string,
+        i: number,
+        context: string,
+    ): number {
+        const n = value.length
+        let j = i + 2
+        while (j < n) {
+            if (value[j] === ";") {
+                throw new TypeORMError(
+                    `Semicolons are not allowed in ${context} to prevent SQL statement stacking.`,
+                )
+            }
+            if (value[j] === "*" && value[j + 1] === "/") return j + 2
+            j++
+        }
+        return n
     }
 
     protected validateOrderByCondition(sort: OrderByCondition): void {

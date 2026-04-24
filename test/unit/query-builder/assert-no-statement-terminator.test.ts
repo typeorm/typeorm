@@ -158,6 +158,42 @@ describe("QueryBuilder > assertNoStatementTerminator", () => {
         )
     })
 
+    describe("SQL comments", () => {
+        // The scanner recognises `--` line comments and `/* … */` block
+        // comments so that quote chars inside them do not put the outer
+        // loop into "inside quote" mode. Without this, a quote char in a
+        // block comment (`1/*'*/; DROP`) would swallow the trailing `;`.
+
+        it(
+            "rejects a semicolon bypass hidden behind a block-comment quote",
+            rejects("1/*'*/; DROP TABLE post --'"),
+        )
+        it(
+            "rejects a semicolon bypass hidden behind a line-comment quote",
+            rejects("-- '\n1; DROP TABLE post --'"),
+        )
+
+        it(
+            "accepts a line comment containing a quote",
+            accepts("post.id -- it's fine\nAS id"),
+        )
+        it(
+            "accepts a block comment containing a quote",
+            accepts("post.id /* it's fine */ AS id"),
+        )
+        it(
+            "accepts an unterminated line comment",
+            accepts("post.id -- trailing"),
+        )
+        it(
+            "accepts an unterminated block comment",
+            accepts("post.id /* trailing"),
+        )
+
+        it("rejects a semicolon inside a line comment", rejects("-- ;\n"))
+        it("rejects a semicolon inside a block comment", rejects("/* ; */"))
+    })
+
     describe("unterminated quotes", () => {
         // Unterminated quotes leave the scanner "inside" until end-of-input.
         // This is safe because the runtime SQL parser will reject the

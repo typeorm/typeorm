@@ -75,6 +75,11 @@ describe("query builder > sql injection", () => {
         // treat `\` as literal, this input closes the quote at the real
         // `'` and the subsequent `;` must be flagged.
         "'foo\\'; DROP TABLE post--",
+        // Comment-state bypass: a quote char inside `/* … */` or `-- …`
+        // must not put the scanner into "inside quote" mode, or the
+        // subsequent `;` would slip through.
+        "1/*'*/; DROP TABLE post--'",
+        "1 -- '\n; DROP TABLE post--'",
     ]
 
     // Legitimate select expressions whose `;` lives inside a quoted literal
@@ -102,6 +107,10 @@ describe("query builder > sql injection", () => {
         "$tag$a;b$tag$",
         // Underscore-and-digit tag (Postgres accepts `\w` tags).
         "$_tag1$a;b$_tag1$",
+        // Quote chars inside a line or block comment are inert — the
+        // scanner keeps them out of quote mode but no `;` is present.
+        "post.id -- it's harmless\nAS id",
+        "post.id /* it's harmless */ AS id",
     ]
 
     function verifyIntegrity(dataSource: DataSource) {

@@ -807,9 +807,10 @@ qb.addSelect([
     "COUNT(*); TRUNCATE post", // TypeORMError
 ])
 
-// Comments are not treated as quoted regions — a `;` inside `-- …` or
-// `/* … */` still trips the check. Rewrite the expression without a
-// semicolon, or move the comment out of the query-builder argument.
+// SQL comments (`-- …` and `/* … */`) are recognised so that quote chars
+// inside them don't confuse the scanner, but a `;` inside a comment still
+// trips the check. Rewrite the expression without a semicolon, or move
+// the comment out of the query-builder argument.
 qb.select("col /* ; */") // TypeORMError
 ```
 
