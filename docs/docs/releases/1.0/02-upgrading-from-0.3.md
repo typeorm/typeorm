@@ -791,7 +791,7 @@ The removed type is `FindOptionsRelationByString`.
 
 - single-quoted strings with the SQL-standard `''` doubled-quote escape — `'it''s here'`
 - double-quoted strings / identifiers with the `""` doubled-quote escape — `"a""b"`
-- backtick-quoted MySQL identifiers with the ` ` `doubled-backtick escape —` `col``name` ``
+- backtick-quoted MySQL identifiers with the doubled-backtick escape — ``` `col``name` ```
 - bracket-quoted MSSQL identifiers with the `]]` doubled-bracket-close escape — `[col]]name]`
 - Postgres dollar-quoted strings in untagged (`$$…$$`) and tagged (`$tag$…$tag$`) forms
 
