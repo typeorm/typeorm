@@ -1,22 +1,21 @@
-import "reflect-metadata"
 import { expect } from "chai"
+import "reflect-metadata"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import type { DataSource } from "../../../../../src/data-source/DataSource"
-import { User } from "./entity/User"
 import { Group } from "./entity/Group"
+import { User } from "./entity/User"
 
 describe("query-builder > #11483 relation-id > select-behavior", () => {
     let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-            })),
-    )
+    before(async () => {
+        connections = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
     beforeEach(() => reloadTestingDatabases(connections))
     after(() => closeTestingConnections(connections))
 
@@ -46,7 +45,7 @@ describe("query-builder > #11483 relation-id > select-behavior", () => {
                 }
 
                 const foundGroups = await groupRepository.find({
-                    select: ["id"],
+                    select: { id: true },
                 })
 
                 expect(foundGroups.length).to.be.equal(numGroups)

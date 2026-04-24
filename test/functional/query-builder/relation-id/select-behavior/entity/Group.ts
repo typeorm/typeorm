@@ -1,9 +1,9 @@
 import {
-    Entity,
-    PrimaryGeneratedColumn,
     Column,
-    ManyToMany,
+    Entity,
     JoinTable,
+    ManyToMany,
+    PrimaryGeneratedColumn,
     RelationId,
 } from "../../../../../../src"
 import { User } from "./User"

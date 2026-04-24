@@ -74,8 +74,9 @@ export class RelationIdMetadataToAttributeTransformer {
                             this.expressionMap.mainAlias!.name,
                             relationId.propertyName,
                         )
-                    )
+                    ) {
                         return
+                    }
 
                     const attribute = this.metadataToAttribute(
                         this.expressionMap.mainAlias!.name,
@@ -97,8 +98,9 @@ export class RelationIdMetadataToAttributeTransformer {
                         join.alias.name,
                         relationId.propertyName,
                     )
-                )
+                ) {
                     return
+                }
 
                 const attribute = this.metadataToAttribute(
                     join.alias.name,
