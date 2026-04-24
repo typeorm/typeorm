@@ -799,6 +799,8 @@ qb.orderBy({ "post.id; DROP TABLE post": "ASC" })
 qb.addOrderBy("post.id; --")
 ```
 
+`UpdateQueryBuilder` and `SoftDeleteQueryBuilder` also now reject `order` values outside `"ASC"`/`"DESC"` and `nulls` values outside `"NULLS FIRST"`/`"NULLS LAST"` at runtime, matching the validation `SelectQueryBuilder` already enforced. TypeScript callers are unaffected — the types have always restricted these arguments. JavaScript callers or code passing values via `as any` that previously sent lowercase or non-standard strings will now get a `TypeORMError`.
+
 ### `printSql` removed
 
 The `printSql()` method on query builders has been removed. It was redundant because all executed queries are already automatically logged through the configured logger when query logging is enabled. Use `getSql()` or `getQueryAndParameters()` to inspect the generated SQL instead:
