@@ -67,37 +67,88 @@ describe("query builder > sql injection", () => {
         }
     }
 
+    // Builder factories typed `any` so the tests can drive them by method
+    // name and pass loose strings through to the runtime allow-list without
+    // per-call `as any` casts.
+    type BuilderFactory = (dataSource: DataSource) => any
+
+    const selectBuilder: BuilderFactory = (dataSource) =>
+        dataSource.getRepository(Post).createQueryBuilder("post")
+
+    const updateBuilder: BuilderFactory = (dataSource) =>
+        dataSource.createQueryBuilder().update(Post).set({ name: "test" })
+
+    const softDeleteBuilder: BuilderFactory = (dataSource) =>
+        dataSource.createQueryBuilder().softDelete().from(Post)
+
+    /**
+     * Drives the given method with a raw-SQL `input` on every dataSource and
+     * expects the flat-reject semicolon guard to throw. Used by the tests
+     * that exercise `groupBy` / `addGroupBy` / `orderBy` (string form) /
+     * `addOrderBy` across every query builder that surfaces them.
+     */
+    async function expectRejectsSemicolon(
+        factory: BuilderFactory,
+        method: string,
+        input: string,
+    ): Promise<void> {
+        await Promise.all(
+            dataSources.map(async (dataSource) => {
+                expect(() => factory(dataSource)[method](input)).to.throw(
+                    /Semicolons are not allowed/,
+                )
+                await verifyIntegrity(dataSource)()
+            }),
+        )
+    }
+
+    /**
+     * Drives `orderBy` / `addOrderBy` with a deliberately-out-of-enum `order`
+     * or `nulls` value and expects the shared allow-list to throw. Factories
+     * are loose-typed, so the call site passes raw strings without `as any`.
+     */
+    function expectRejectsInvalidOrderOption(
+        factory: BuilderFactory,
+        method: "orderBy" | "addOrderBy",
+        sort: string,
+        order: string,
+        nulls: string | undefined,
+    ): void {
+        const pattern = /"(order|nulls)" can accept only/
+        for (const dataSource of dataSources) {
+            expect(() =>
+                factory(dataSource)[method](sort, order, nulls),
+            ).to.throw(pattern)
+        }
+    }
+
+    /**
+     * Drives the object-form `orderBy` with an `OrderByCondition` whose value
+     * is deliberately outside the expected shape, to exercise
+     * `validateOrderByCondition`. `sort` is typed `unknown` so invalid
+     * values don't need `as any` at the call site.
+     */
+    function expectRejectsOrderByCondition(
+        factory: BuilderFactory,
+        sort: unknown,
+        pattern: RegExp,
+    ): void {
+        for (const dataSource of dataSources) {
+            expect(() => factory(dataSource).orderBy(sort)).to.throw(pattern)
+        }
+    }
+
     describe("addGroupBy", () => {
         for (const malicious of inputsWithSemicolons) {
             it(`should reject semicolons with: ${malicious}`, () =>
-                Promise.all(
-                    dataSources.map(async (dataSource) => {
-                        expect(() =>
-                            dataSource
-                                .getRepository(Post)
-                                .createQueryBuilder("post")
-                                .addGroupBy(malicious),
-                        ).to.throw(/Semicolons are not allowed/)
-                        await verifyIntegrity(dataSource)()
-                    }),
-                ))
+                expectRejectsSemicolon(selectBuilder, "addGroupBy", malicious))
         }
     })
 
     describe("addOrderBy", () => {
         for (const malicious of inputsWithSemicolons) {
             it(`should reject semicolons with: ${malicious}`, () =>
-                Promise.all(
-                    dataSources.map(async (dataSource) => {
-                        expect(() =>
-                            dataSource
-                                .getRepository(Post)
-                                .createQueryBuilder("post")
-                                .addOrderBy(malicious),
-                        ).to.throw(/Semicolons are not allowed/)
-                        await verifyIntegrity(dataSource)()
-                    }),
-                ))
+                expectRejectsSemicolon(selectBuilder, "addOrderBy", malicious))
         }
     })
 
@@ -148,17 +199,7 @@ describe("query builder > sql injection", () => {
     describe("groupBy", () => {
         for (const malicious of inputsWithSemicolons) {
             it(`should reject semicolons with: ${malicious}`, () =>
-                Promise.all(
-                    dataSources.map(async (dataSource) => {
-                        expect(() =>
-                            dataSource
-                                .getRepository(Post)
-                                .createQueryBuilder("post")
-                                .groupBy(malicious),
-                        ).to.throw(/Semicolons are not allowed/)
-                        await verifyIntegrity(dataSource)()
-                    }),
-                ))
+                expectRejectsSemicolon(selectBuilder, "groupBy", malicious))
         }
     })
 
@@ -187,17 +228,7 @@ describe("query builder > sql injection", () => {
     describe("orderBy (string sort key)", () => {
         for (const malicious of inputsWithSemicolons) {
             it(`should reject semicolons with: ${malicious}`, () =>
-                Promise.all(
-                    dataSources.map(async (dataSource) => {
-                        expect(() =>
-                            dataSource
-                                .getRepository(Post)
-                                .createQueryBuilder("post")
-                                .orderBy(malicious),
-                        ).to.throw(/Semicolons are not allowed/)
-                        await verifyIntegrity(dataSource)()
-                    }),
-                ))
+                expectRejectsSemicolon(selectBuilder, "orderBy", malicious))
         }
 
         it("should reject semicolons in OrderByCondition keys", () => {
@@ -210,193 +241,89 @@ describe("query builder > sql injection", () => {
             }
         })
 
-        it("should reject semicolons in UpdateQueryBuilder orderBy sort key", () => {
-            for (const dataSource of dataSources) {
-                expect(() =>
-                    dataSource
-                        .createQueryBuilder()
-                        .update(Post)
-                        .set({ name: "test" })
-                        .orderBy("id; DROP TABLE post"),
-                ).to.throw(/Semicolons are not allowed/)
-            }
-        })
+        // Update / SoftDelete builders share the same sort-key and allow-list
+        // guards via QueryBuilder; loop across both to pin every call path.
+        for (const [name, factory] of [
+            ["UpdateQueryBuilder", updateBuilder] as const,
+            ["SoftDeleteQueryBuilder", softDeleteBuilder] as const,
+        ]) {
+            it(`should reject semicolons in ${name} orderBy sort key`, () =>
+                expectRejectsSemicolon(
+                    factory,
+                    "orderBy",
+                    "id; DROP TABLE post",
+                ))
 
-        it("should reject semicolons in UpdateQueryBuilder addOrderBy sort key", () => {
-            for (const dataSource of dataSources) {
-                expect(() =>
-                    dataSource
-                        .createQueryBuilder()
-                        .update(Post)
-                        .set({ name: "test" })
-                        .addOrderBy("id; DROP TABLE post"),
-                ).to.throw(/Semicolons are not allowed/)
-            }
-        })
+            it(`should reject semicolons in ${name} addOrderBy sort key`, () =>
+                expectRejectsSemicolon(
+                    factory,
+                    "addOrderBy",
+                    "id; DROP TABLE post",
+                ))
 
-        it("should reject semicolons in UpdateQueryBuilder OrderByCondition keys", () => {
-            for (const dataSource of dataSources) {
-                expect(() =>
-                    dataSource
-                        .createQueryBuilder()
-                        .update(Post)
-                        .set({ name: "test" })
-                        .orderBy({
+            it(`should reject semicolons in ${name} OrderByCondition keys`, () => {
+                for (const dataSource of dataSources) {
+                    expect(() =>
+                        factory(dataSource).orderBy({
                             "id; DELETE FROM post": "ASC",
                         }),
-                ).to.throw(/Semicolons are not allowed/)
-            }
-        })
+                    ).to.throw(/Semicolons are not allowed/)
+                }
+            })
 
-        it("should reject semicolons in SoftDeleteQueryBuilder orderBy sort key", () => {
-            for (const dataSource of dataSources) {
-                expect(() =>
-                    dataSource
-                        .createQueryBuilder()
-                        .softDelete()
-                        .from(Post)
-                        .orderBy("id; DROP TABLE post"),
-                ).to.throw(/Semicolons are not allowed/)
-            }
-        })
+            it(`should reject invalid order value in ${name} orderBy`, () =>
+                expectRejectsInvalidOrderOption(
+                    factory,
+                    "orderBy",
+                    "id",
+                    "ASC; DROP TABLE post",
+                    undefined,
+                ))
 
-        it("should reject semicolons in SoftDeleteQueryBuilder addOrderBy sort key", () => {
-            for (const dataSource of dataSources) {
-                expect(() =>
-                    dataSource
-                        .createQueryBuilder()
-                        .softDelete()
-                        .from(Post)
-                        .addOrderBy("id; DROP TABLE post"),
-                ).to.throw(/Semicolons are not allowed/)
-            }
-        })
+            it(`should reject invalid order value in ${name} addOrderBy`, () =>
+                expectRejectsInvalidOrderOption(
+                    factory,
+                    "addOrderBy",
+                    "id",
+                    "ASC; DROP TABLE post",
+                    undefined,
+                ))
 
-        it("should reject semicolons in SoftDeleteQueryBuilder OrderByCondition keys", () => {
-            for (const dataSource of dataSources) {
-                expect(() =>
-                    dataSource
-                        .createQueryBuilder()
-                        .softDelete()
-                        .from(Post)
-                        .orderBy({
-                            "id; DELETE FROM post": "ASC",
-                        }),
-                ).to.throw(/Semicolons are not allowed/)
-            }
-        })
-
-        it("should reject invalid order value in UpdateQueryBuilder orderBy", () => {
-            for (const dataSource of dataSources) {
-                expect(() =>
-                    dataSource
-                        .createQueryBuilder()
-                        .update(Post)
-                        .set({ name: "test" })
-                        .orderBy("id", "ASC; DROP TABLE post" as any),
-                ).to.throw(/"order" can accept only/)
-            }
-        })
-
-        it("should reject invalid order value in UpdateQueryBuilder addOrderBy", () => {
-            for (const dataSource of dataSources) {
-                expect(() =>
-                    dataSource
-                        .createQueryBuilder()
-                        .update(Post)
-                        .set({ name: "test" })
-                        .addOrderBy("id", "ASC; DROP TABLE post" as any),
-                ).to.throw(/"order" can accept only/)
-            }
-        })
-
-        it("should reject invalid nulls value in UpdateQueryBuilder orderBy", () => {
-            for (const dataSource of dataSources) {
-                expect(() =>
-                    dataSource
-                        .createQueryBuilder()
-                        .update(Post)
-                        .set({ name: "test" })
-                        .orderBy(
-                            "id",
-                            "ASC",
-                            "NULLS FIRST; DROP TABLE post" as any,
-                        ),
-                ).to.throw(/"nulls" can accept only/)
-            }
-        })
-
-        it("should reject invalid order value in SoftDeleteQueryBuilder orderBy", () => {
-            for (const dataSource of dataSources) {
-                expect(() =>
-                    dataSource
-                        .createQueryBuilder()
-                        .softDelete()
-                        .from(Post)
-                        .orderBy("id", "ASC; DROP TABLE post" as any),
-                ).to.throw(/"order" can accept only/)
-            }
-        })
-
-        it("should reject invalid order value in SoftDeleteQueryBuilder addOrderBy", () => {
-            for (const dataSource of dataSources) {
-                expect(() =>
-                    dataSource
-                        .createQueryBuilder()
-                        .softDelete()
-                        .from(Post)
-                        .addOrderBy("id", "ASC; DROP TABLE post" as any),
-                ).to.throw(/"order" can accept only/)
-            }
-        })
-
-        it("should reject invalid nulls value in SoftDeleteQueryBuilder orderBy", () => {
-            for (const dataSource of dataSources) {
-                expect(() =>
-                    dataSource
-                        .createQueryBuilder()
-                        .softDelete()
-                        .from(Post)
-                        .orderBy(
-                            "id",
-                            "ASC",
-                            "NULLS FIRST; DROP TABLE post" as any,
-                        ),
-                ).to.throw(/"nulls" can accept only/)
-            }
-        })
+            it(`should reject invalid nulls value in ${name} orderBy`, () =>
+                expectRejectsInvalidOrderOption(
+                    factory,
+                    "orderBy",
+                    "id",
+                    "ASC",
+                    "NULLS FIRST; DROP TABLE post",
+                ))
+        }
     })
 
     describe("orderBy value injection", () => {
-        it("should reject invalid order direction in OrderByCondition", () => {
-            for (const dataSource of dataSources) {
-                expect(() =>
-                    dataSource.createQueryBuilder(Post, "post").orderBy({
-                        "post.id": "ASC; DELETE FROM post;" as any,
-                    }),
-                ).to.throw(/Invalid order direction/)
-            }
-        })
+        it("should reject invalid order direction in OrderByCondition", () =>
+            expectRejectsOrderByCondition(
+                selectBuilder,
+                { "post.id": "ASC; DELETE FROM post;" },
+                /Invalid order direction/,
+            ))
 
-        it("should reject invalid nulls option in OrderByCondition", () => {
-            for (const dataSource of dataSources) {
-                expect(() =>
-                    dataSource.createQueryBuilder(Post, "post").orderBy({
-                        "post.id": {
-                            order: "ASC",
-                            nulls: "NULLS FIRST; DROP TABLE post;" as any,
-                        },
-                    }),
-                ).to.throw(/Invalid nulls option/)
-            }
-        })
+        it("should reject invalid nulls option in OrderByCondition", () =>
+            expectRejectsOrderByCondition(
+                selectBuilder,
+                {
+                    "post.id": {
+                        order: "ASC",
+                        nulls: "NULLS FIRST; DROP TABLE post;",
+                    },
+                },
+                /Invalid nulls option/,
+            ))
 
         it("should accept valid OrderByCondition values", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    await dataSource
-                        .getRepository(Post)
-                        .createQueryBuilder("post")
+                    await selectBuilder(dataSource)
                         .orderBy({
                             "post.id": "DESC",
                             "post.name": "ASC",
@@ -414,8 +341,7 @@ describe("query builder > sql injection", () => {
                     )
                         return
 
-                    await dataSource
-                        .createQueryBuilder(Post, "post")
+                    await selectBuilder(dataSource)
                         .orderBy({
                             "post.id": "DESC",
                             "post.name": {
@@ -427,33 +353,19 @@ describe("query builder > sql injection", () => {
                 }),
             ))
 
-        it("should reject invalid order direction in UpdateQueryBuilder", () => {
-            for (const dataSource of dataSources) {
-                expect(() =>
-                    dataSource
-                        .createQueryBuilder()
-                        .update(Post)
-                        .set({ name: "test" })
-                        .orderBy({
-                            id: "ASC; DROP TABLE post;" as any,
-                        }),
-                ).to.throw(/Invalid order direction/)
-            }
-        })
+        it("should reject invalid order direction in UpdateQueryBuilder", () =>
+            expectRejectsOrderByCondition(
+                updateBuilder,
+                { id: "ASC; DROP TABLE post;" },
+                /Invalid order direction/,
+            ))
 
-        it("should reject invalid order direction in SoftDeleteQueryBuilder", () => {
-            for (const dataSource of dataSources) {
-                expect(() =>
-                    dataSource
-                        .createQueryBuilder()
-                        .softDelete()
-                        .from(Post)
-                        .orderBy({
-                            id: "ASC; DROP TABLE post;" as any,
-                        }),
-                ).to.throw(/Invalid order direction/)
-            }
-        })
+        it("should reject invalid order direction in SoftDeleteQueryBuilder", () =>
+            expectRejectsOrderByCondition(
+                softDeleteBuilder,
+                { id: "ASC; DROP TABLE post;" },
+                /Invalid order direction/,
+            ))
     })
 
     describe("orWhere", () => {

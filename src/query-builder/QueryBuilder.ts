@@ -1713,6 +1713,35 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         }
     }
 
+    /**
+     * Validates the `order` and `nulls` arguments of the string-sort `orderBy`
+     * / `addOrderBy` overloads on every query builder that surfaces them.
+     * TypeScript narrows these parameters to a fixed union at the call site,
+     * but the runtime value can be anything under JS / `as any` / type-erased
+     * boundaries — treating both as plain strings here lets the allow-list
+     * be the single enforcement point for all callers.
+     *
+     * @param order
+     * @param nulls
+     */
+    protected assertValidOrderByOptions(
+        order: string | undefined,
+        nulls: string | undefined,
+    ): void {
+        if (order !== undefined && order !== "ASC" && order !== "DESC")
+            throw new TypeORMError(
+                `"order" can accept only "ASC" and "DESC" values.`,
+            )
+        if (
+            nulls !== undefined &&
+            nulls !== "NULLS FIRST" &&
+            nulls !== "NULLS LAST"
+        )
+            throw new TypeORMError(
+                `"nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`,
+            )
+    }
+
     protected validateOrderByCondition(sort: OrderByCondition): void {
         const validOrders = ["ASC", "DESC"]
         const validNulls = ["NULLS FIRST", "NULLS LAST"]

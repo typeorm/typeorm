@@ -1438,18 +1438,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         order: "ASC" | "DESC" = "ASC",
         nulls?: "NULLS FIRST" | "NULLS LAST",
     ): this {
-        if (order !== undefined && order !== "ASC" && order !== "DESC")
-            throw new TypeORMError(
-                `SelectQueryBuilder.orderBy "order" can accept only "ASC" and "DESC" values.`,
-            )
-        if (
-            nulls !== undefined &&
-            nulls !== "NULLS FIRST" &&
-            nulls !== "NULLS LAST"
-        )
-            throw new TypeORMError(
-                `SelectQueryBuilder.orderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`,
-            )
+        this.assertValidOrderByOptions(order, nulls)
 
         if (!sort) {
             this.expressionMap.orderBys = {}
@@ -1483,19 +1472,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         order: "ASC" | "DESC" = "ASC",
         nulls?: "NULLS FIRST" | "NULLS LAST",
     ): this {
-        if (order !== undefined && order !== "ASC" && order !== "DESC")
-            throw new TypeORMError(
-                `SelectQueryBuilder.addOrderBy "order" can accept only "ASC" and "DESC" values.`,
-            )
-        if (
-            nulls !== undefined &&
-            nulls !== "NULLS FIRST" &&
-            nulls !== "NULLS LAST"
-        )
-            throw new TypeORMError(
-                `SelectQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`,
-            )
-
+        this.assertValidOrderByOptions(order, nulls)
         this.assertNoSemicolon(sort, "addOrderBy")
 
         if (nulls) {
