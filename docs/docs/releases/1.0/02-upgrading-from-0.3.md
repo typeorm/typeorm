@@ -787,7 +787,7 @@ The removed type is `FindOptionsRelationByString`.
 
 ### Semicolons rejected in sort and group expression methods
 
-The `groupBy()`, `addGroupBy()`, `orderBy()`, and `addOrderBy()` methods on all query builders (`SelectQueryBuilder`, `UpdateQueryBuilder`, `SoftDeleteQueryBuilder`) now reject inputs containing semicolons at runtime to prevent SQL injection attacks. Group and sort keys are expected to be column names or short expressions — there is no legitimate use of `;` in these inputs. 
+The `groupBy()`, `addGroupBy()`, `orderBy()`, and `addOrderBy()` methods on all query builders (`SelectQueryBuilder`, `UpdateQueryBuilder`, `SoftDeleteQueryBuilder`) now reject inputs containing semicolons at runtime to prevent SQL injection attacks. Group and sort keys are expected to be column names or short expressions — there is no legitimate use of `;` in these inputs.
 
 ```typescript
 // All of these now throw TypeORMError
