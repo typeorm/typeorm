@@ -887,7 +887,9 @@ export class SapDriver implements Driver {
                 tableColumn.isUnique !==
                     this.normalizeIsUnique(columnMetadata) ||
                 (columnMetadata.generationStrategy !== "uuid" &&
-                    tableColumn.isGenerated !== columnMetadata.isGenerated)
+                    tableColumn.isGenerated !== columnMetadata.isGenerated) ||
+                (tableColumn.asExpression ?? "").trim() !==
+                    (columnMetadata.asExpression ?? "").trim()
             )
         })
     }

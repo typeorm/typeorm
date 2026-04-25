@@ -122,14 +122,30 @@ export const fileImportsFrom = (
  * is `"typeorm"`, imports from `"typeorm/metadata/ColumnMetadata"` are also
  * recognised. TypeORM users reach internal types through deep imports, and
  * the codemod must rewrite them regardless of import shape.
+ *
+ * CommonJS `require` destructures are collected from module scope only; an
+ * inside-function `require` would sit in an inner scope where the call-site
+ * shadow guards reject rewrites, so collecting it would silently mislead
+ * callers. See the inline comment on the CJS branch for details.
+ *
+ * @param opts.valueOnly When true, skip ESM type-only imports — both the
+ *   declaration-level `import type { X }` and the per-specifier
+ *   `import { type X }` form. Use this when the local is going to appear as
+ *   a *value* in the rewritten code (e.g. callee of `new X(...)` or
+ *   `X.method()`); a type-only import creates no runtime binding and must
+ *   not influence value-level matching. CommonJS `require` destructures and
+ *   TS `import = require` forms always produce value bindings so they are
+ *   included regardless.
  */
 export const getLocalNamesForImport = (
     root: Collection,
     j: JSCodeshift,
     moduleName: string,
     importedName: string,
+    opts: { valueOnly?: boolean } = {},
 ): Set<string> => {
     const localNames = new Set<string>()
+    const { valueOnly = false } = opts
     const prefix = `${moduleName}/`
     const matchesModule = (source: unknown): boolean =>
         typeof source === "string" &&
@@ -138,6 +154,8 @@ export const getLocalNamesForImport = (
     // ESM: `import { X [as Y] } from "moduleName[/subpath]"`
     root.find(j.ImportDeclaration).forEach((importPath) => {
         if (!matchesModule(importPath.node.source.value)) return
+        const declKind = (importPath.node as { importKind?: string }).importKind
+        if (valueOnly && declKind === "type") return
         for (const spec of importPath.node.specifiers ?? []) {
             if (
                 spec.type !== "ImportSpecifier" ||
@@ -146,6 +164,8 @@ export const getLocalNamesForImport = (
             ) {
                 continue
             }
+            const specKind = (spec as { importKind?: string }).importKind
+            if (valueOnly && specKind === "type") continue
             const local = spec.local ?? spec.imported
             if (local.type === "Identifier") {
                 localNames.add(local.name)
@@ -154,11 +174,20 @@ export const getLocalNamesForImport = (
     })
 
     // CommonJS: `const { X [: Y] } = require("moduleName[/subpath]")`
+    // Only top-level requires are collected. An inside-function require
+    // creates a binding at non-module scope, and the call-site scope guard
+    // in `forEachColumnMetadataOptionsArg` rejects callees whose declaration
+    // lives in any inner scope (shadow guard). Collecting inner-scope
+    // requires here would make the collector and the guard disagree — the
+    // name would be in `classLocalNames` but the rewrite would never fire.
+    // Users with inside-function requires can hoist them to module scope.
     root.find(j.CallExpression, {
         callee: { type: "Identifier", name: "require" },
     }).forEach((callPath) => {
         const [arg] = callPath.node.arguments
         if (!arg || !matchesModule(getStringValue(arg))) return
+
+        if (callPath.scope?.isGlobal !== true) return
 
         const parent = callPath.parent.node
         if (parent.type !== "VariableDeclarator") return
@@ -205,13 +234,26 @@ export const getLocalNamesForImport = (
  *
  * Useful when a transform needs to recognise `typeorm.Foo` member-expression
  * references alongside named `Foo` imports handled by `getLocalNamesForImport`.
+ *
+ * CJS namespace `require` bindings are collected from module scope only,
+ * matching the module-scope guard that `getLocalNamesForImport` applies for
+ * destructured requires — same reasoning, see the CJS branch comment there.
+ *
+ * @param opts.valueOnly When true, skip ESM type-only namespace imports
+ *   (`import type * as ns from "..."`). Use this when the local name is
+ *   going to appear as a *value* in the rewritten code (e.g. callee of
+ *   `new ns.X(...)`); a type-only import creates no runtime binding. CJS
+ *   `require` and TS `import = require` forms are always value bindings and
+ *   remain included regardless.
  */
 export const getNamespaceLocalNames = (
     root: Collection,
     j: JSCodeshift,
     moduleName: string,
+    opts: { valueOnly?: boolean } = {},
 ): Set<string> => {
     const localNames = new Set<string>()
+    const { valueOnly = false } = opts
     const prefix = `${moduleName}/`
     const matchesModule = (source: unknown): boolean =>
         typeof source === "string" &&
@@ -220,6 +262,8 @@ export const getNamespaceLocalNames = (
     // ESM: `import * as ns from "moduleName[/subpath]"`
     root.find(j.ImportDeclaration).forEach((importPath) => {
         if (!matchesModule(importPath.node.source.value)) return
+        const declKind = (importPath.node as { importKind?: string }).importKind
+        if (valueOnly && declKind === "type") return
         for (const spec of importPath.node.specifiers ?? []) {
             if (
                 spec.type === "ImportNamespaceSpecifier" &&
@@ -241,11 +285,15 @@ export const getNamespaceLocalNames = (
     })
 
     // CommonJS: `const ns = require("moduleName[/subpath]")`
+    // Top-level only — see the note in `getLocalNamesForImport` for why the
+    // collector and the call-site scope guard must agree on module scope.
     root.find(j.CallExpression, {
         callee: { type: "Identifier", name: "require" },
     }).forEach((callPath) => {
         const [arg] = callPath.node.arguments
         if (!arg || !matchesModule(getStringValue(arg))) return
+
+        if (callPath.scope?.isGlobal !== true) return
 
         const parent = callPath.parent.node
         if (
@@ -310,16 +358,28 @@ export const TYPEORM_COLUMN_DECORATORS: ReadonlySet<string> = new Set([
  * the file — covers ESM aliases (`import { Column as C }`) and CJS aliases
  * (`const { Column: C } = require(...)`). Returns a union set suitable for
  * alias-aware identifier matching.
+ *
+ * @param opts.valueOnly Forwarded to `getLocalNamesForImport` — see there
+ *   for semantics. Use when the expanded names will be matched against
+ *   value-level usages (callees, method receivers) rather than type
+ *   annotations.
  */
 export const expandLocalNamesForImports = (
     root: Collection,
     j: JSCodeshift,
     moduleName: string,
     importedNames: ReadonlySet<string>,
+    opts: { valueOnly?: boolean } = {},
 ): Set<string> => {
     const expanded = new Set<string>()
     for (const name of importedNames) {
-        for (const local of getLocalNamesForImport(root, j, moduleName, name)) {
+        for (const local of getLocalNamesForImport(
+            root,
+            j,
+            moduleName,
+            name,
+            opts,
+        )) {
             expanded.add(local)
         }
     }
@@ -372,16 +432,171 @@ export const forEachDecoratorObjectArg = (
 
 /**
  * Returns the key name for an `ObjectProperty` / `Property` node. Handles
- * both identifier keys (`name`) and string-literal keys (`"name"`); returns
- * null for computed, numeric, or otherwise non-string keys, and for node
- * types that don't carry a key at all (spread elements, etc.).
+ * both identifier keys (`name`) and string-literal keys (`"name"`), including
+ * the computed-string form (`['name']: …`) whose runtime key is still
+ * statically knowable. Returns null for dynamic computed keys (`[someVar]`,
+ * `[expr]`), numeric keys, and for node types that don't carry a key at all
+ * (spread elements, etc.).
  */
 export const getObjectPropertyKeyName = (
     prop: ObjectExpression["properties"][number],
 ): string | null => {
     if (prop.type !== "Property" && prop.type !== "ObjectProperty") return null
+    // Computed keys whose expression is a string literal (`['foo']`) are
+    // equivalent at runtime to the plain-identifier form (`foo`), so match
+    // them. Dynamic computed keys (`[variable]`, `[fn()]`) stay opaque.
+    if (prop.computed) return getStringValue(prop.key)
     if (prop.key.type === "Identifier") return prop.key.name
     return getStringValue(prop.key)
+}
+
+/**
+ * Walks `new ColumnMetadata({ args: { options: {...} } })` constructor calls
+ * and invokes `callback` with the inner `options` ObjectExpression. Mirrors
+ * `forEachDecoratorObjectArg` but for the ColumnMetadata class constructor:
+ * its `args.options` object is typed `ColumnOptions`, so transforms that
+ * rewrite `ColumnOptions` fields (`readonly` → `update`, `width`/`zerofill`
+ * removal) must also cover this path. Rare in user code but shows up in
+ * multi-tenant / metadata-manipulation patterns.
+ *
+ * Recognised import / binding shapes, all via
+ * `expandLocalNamesForImports` / `getNamespaceLocalNames`:
+ *
+ *   import { ColumnMetadata } from "typeorm"
+ *   import { ColumnMetadata as CM } from "typeorm"
+ *   import { ColumnMetadata } from "typeorm/metadata/ColumnMetadata"   // sub-path
+ *   import * as typeorm from "typeorm"                                  // namespace
+ *   import typeorm = require("typeorm")                                 // TS import-equals
+ *   const { ColumnMetadata } = require("typeorm")                       // CJS destructure
+ *   const typeorm = require("typeorm")                                  // CJS namespace
+ *
+ * Type-only imports (declaration-level `import type { X }` and per-specifier
+ * `import { type X }`, same for `import type * as`) are filtered via
+ * `valueOnly: true` — `new X(...)` needs a runtime binding, and a type-only
+ * import creates none.
+ *
+ * Name-level matches are further gated by a scope check: the callee
+ * identifier must resolve to the module-level import binding and not a
+ * shadowing declaration in an inner scope (function parameter, nested
+ * `const`/`let`/`var`, class declaration, catch binding).
+ */
+export const forEachColumnMetadataOptionsArg = (
+    root: Collection,
+    j: JSCodeshift,
+    target: { moduleName: string; className: string },
+    callback: (optionsObject: ObjectExpression, path: ASTPath) => void,
+): void => {
+    const classLocalNames = expandLocalNamesForImports(
+        root,
+        j,
+        target.moduleName,
+        new Set([target.className]),
+        { valueOnly: true },
+    )
+    const namespaceLocalNames = getNamespaceLocalNames(
+        root,
+        j,
+        target.moduleName,
+        { valueOnly: true },
+    )
+    if (classLocalNames.size === 0 && namespaceLocalNames.size === 0) return
+
+    // Confirms `name` at the call site resolves to a module-level binding (the
+    // import) and not a shadowing declaration in an inner scope — function
+    // parameter, nested `const`/`let`/`var`, class declaration, catch binding,
+    // etc. Without this, name-matching alone would rewrite user code that
+    // happens to reuse `ColumnMetadata`/`typeorm` as a local identifier.
+    //
+    // The walk goes from the innermost path scope outward. If any
+    // intermediate scope declares the name before we reach the module scope,
+    // that's a shadow and we reject. If we reach the module scope without
+    // hitting a declaration, the name comes from the import (caller already
+    // verified it's in `classLocalNames` / `namespaceLocalNames`).
+    //
+    // Note: we cannot use `scope.lookup(name)` directly — ast-types does not
+    // register `import ns = require("…")` bindings at the module scope, so
+    // lookup returns undefined for that import form. Walking manually and
+    // short-circuiting on `isGlobal` keeps the import-equals form working
+    // while still catching every shadow category listed above.
+    // jscodeshift's `ASTPath` types `.scope` as `any` (inherited from
+    // ast-types' NodePath). Assign it to a named interface so we get proper
+    // type-checking on every access instead of sprinkling `any` through the
+    // walk. No cast needed — `any` widens to anything at assignment.
+    interface ScopeLike {
+        parent: ScopeLike | null
+        isGlobal?: boolean
+        declares(name: string): boolean
+    }
+    const resolvesToModuleScope = (path: ASTPath, name: string): boolean => {
+        let scope: ScopeLike | null = path.scope
+        while (scope) {
+            if (scope.isGlobal === true || !scope.parent) return true
+            if (scope.declares(name)) return false
+            scope = scope.parent
+        }
+        return true
+    }
+
+    const matchesCallee = (callee: ASTNode, path: ASTPath): boolean => {
+        if (callee.type === "Identifier") {
+            if (!classLocalNames.has(callee.name)) return false
+            return resolvesToModuleScope(path, callee.name)
+        }
+        if (
+            (callee.type === "MemberExpression" ||
+                callee.type === "OptionalMemberExpression") &&
+            (callee as { computed?: boolean }).computed !== true
+        ) {
+            const obj = (callee as { object: ASTNode }).object
+            const prop = (callee as { property: ASTNode }).property
+            if (
+                isIdentifier(obj) &&
+                isIdentifier(prop) &&
+                prop.name === target.className
+            ) {
+                if (!namespaceLocalNames.has(obj.name)) return false
+                return resolvesToModuleScope(path, obj.name)
+            }
+        }
+        return false
+    }
+
+    // Returns the property value as an ObjectExpression if the property with
+    // the given key exists and its value is an ObjectExpression (after peeling
+    // TS wrappers like `as` / `satisfies` / `!` / parens). Uses `findLast` so
+    // duplicate keys match JS object-literal semantics (last occurrence wins).
+    const findObjectPropertyValue = (
+        obj: ObjectExpression,
+        keyName: string,
+    ): ObjectExpression | null => {
+        const prop = obj.properties.findLast(
+            (p) => getObjectPropertyKeyName(p) === keyName,
+        )
+        if (
+            !prop ||
+            (prop.type !== "Property" && prop.type !== "ObjectProperty")
+        ) {
+            return null
+        }
+        const value = unwrapTsExpression((prop as { value: ASTNode }).value)
+        return value.type === "ObjectExpression" ? value : null
+    }
+
+    root.find(j.NewExpression).forEach((path) => {
+        if (!matchesCallee(path.node.callee, path)) return
+
+        const [firstArg] = path.node.arguments
+        const arg = firstArg ? unwrapTsExpression(firstArg) : undefined
+        if (arg?.type !== "ObjectExpression") return
+
+        const argsValue = findObjectPropertyValue(arg, "args")
+        if (!argsValue) return
+
+        const optionsValue = findObjectPropertyValue(argsValue, "options")
+        if (!optionsValue) return
+
+        callback(optionsValue, path)
+    })
 }
 
 /**
