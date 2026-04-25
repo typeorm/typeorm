@@ -1315,7 +1315,9 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
             (newColumn.type !== oldColumn.type &&
-                !isSafeAlter(oldColumn, newColumn))
+                !isSafeAlter(oldColumn, newColumn)) ||
+            (newColumn.asExpression ?? "").trim() !==
+                (oldColumn.asExpression ?? "").trim()
         ) {
             // SQL Server does not support changing of IDENTITY column, so we must drop column and recreate it again.
             // Also, we recreate column if column type changed
