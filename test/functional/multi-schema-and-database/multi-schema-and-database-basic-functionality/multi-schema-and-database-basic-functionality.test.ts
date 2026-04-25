@@ -13,6 +13,7 @@ import { Person } from "./entity/Person"
 import { Question } from "./entity/Question"
 import { Answer } from "./entity/Answer"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
+import { PostWithSchema } from "./entity/PostWithSchema"
 
 describe("multi-schema-and-database > basic-functionality", () => {
     describe("custom-table-schema", () => {
@@ -20,7 +21,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
         before(async () => {
             dataSources = await createTestingConnections({
                 entities: [Post, User, Category],
-                enabledDrivers: ["mssql", "postgres"],
+                enabledDrivers: ["mssql", "postgres", "cockroachdb"],
                 schema: "custom",
             })
         })
@@ -30,9 +31,8 @@ describe("multi-schema-and-database > basic-functionality", () => {
         it("should set the table database / schema", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    const queryRunner = dataSource.createQueryRunner()
+                    await using queryRunner = dataSource.createQueryRunner()
                     const table = (await queryRunner.getTable("post"))!
-                    await queryRunner.release()
 
                     expect(table.database).to.not.be.undefined
                     expect(table.schema).to.be.equal("custom")
@@ -42,9 +42,8 @@ describe("multi-schema-and-database > basic-functionality", () => {
         it("should correctly get the table primary keys when custom table schema used", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    const queryRunner = dataSource.createQueryRunner()
+                    await using queryRunner = dataSource.createQueryRunner()
                     const table = (await queryRunner.getTable("post"))!
-                    await queryRunner.release()
 
                     expect(table.primaryColumns).to.have.length(1)
                     expect(table.findColumnByName("id")?.isGenerated).to.be.true
@@ -54,9 +53,8 @@ describe("multi-schema-and-database > basic-functionality", () => {
         it("should correctly create tables when custom table schema used", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    const queryRunner = dataSource.createQueryRunner()
+                    await using queryRunner = dataSource.createQueryRunner()
                     const table = await queryRunner.getTable("post")
-                    await queryRunner.release()
 
                     const post = new Post()
                     post.name = "Post #1"
@@ -67,7 +65,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
                         .where("post.id = :id", { id: 1 })
                         .getSql()
 
-                    if (dataSource.driver.options.type === "postgres")
+                    if (DriverUtils.isPostgresFamily(dataSource.driver))
                         sql.should.be.equal(
                             `SELECT "post"."id" AS "post_id", "post"."name" AS "post_name" FROM "custom"."post" "post" WHERE "post"."id" = $1`,
                         )
@@ -84,9 +82,8 @@ describe("multi-schema-and-database > basic-functionality", () => {
         it("should correctly create tables when custom table schema used in Entity decorator", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    const queryRunner = dataSource.createQueryRunner()
+                    await using queryRunner = dataSource.createQueryRunner()
                     const table = await queryRunner.getTable("userSchema.user")
-                    await queryRunner.release()
 
                     const user = new User()
                     user.name = "User #1"
@@ -97,7 +94,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
                         .where("user.id = :id", { id: 1 })
                         .getSql()
 
-                    if (dataSource.driver.options.type === "postgres")
+                    if (DriverUtils.isPostgresFamily(dataSource.driver))
                         sql.should.be.equal(
                             `SELECT "user"."id" AS "user_id", "user"."name" AS "user_name" FROM "userSchema"."user" "user" WHERE "user"."id" = $1`,
                         )
@@ -114,9 +111,8 @@ describe("multi-schema-and-database > basic-functionality", () => {
         it("should correctly work with cross-schema queries", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    const queryRunner = dataSource.createQueryRunner()
+                    await using queryRunner = dataSource.createQueryRunner()
                     const table = await queryRunner.getTable("guest.category")
-                    await queryRunner.release()
 
                     const post = new Post()
                     post.name = "Post #1"
@@ -143,7 +139,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
                         .where("category.id = :id", { id: 1 })
                         .getSql()
 
-                    if (dataSource.driver.options.type === "postgres")
+                    if (DriverUtils.isPostgresFamily(dataSource.driver))
                         sql.should.be.equal(
                             `SELECT "category"."id" AS "category_id", "category"."name" AS "category_name",` +
                                 ` "category"."postId" AS "category_postId", "post"."id" AS "post_id", "post"."name" AS "post_name"` +
@@ -186,9 +182,9 @@ describe("multi-schema-and-database > basic-functionality", () => {
                         .where("category.id = :id", { id: 1 })
                         .andWhere("post.id = category.post")
 
-                    ;(await query.getRawOne())!.should.be.not.empty
+                    expect(await query.getRawOne()).should.be.not.empty
 
-                    if (dataSource.driver.options.type === "postgres")
+                    if (DriverUtils.isPostgresFamily(dataSource.driver))
                         query
                             .getSql()
                             .should.be.equal(
@@ -207,6 +203,33 @@ describe("multi-schema-and-database > basic-functionality", () => {
             ))
     })
 
+    describe("same tables in different schemas", () => {
+        let dataSources: DataSource[]
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [Post, PostWithSchema],
+                enabledDrivers: ["postgres", "cockroachdb", "mssql", "sap"],
+            })
+        })
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
+
+        it("should create tables in the correct schema", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await using queryRunner = dataSource.createQueryRunner()
+                    const postTable = (await queryRunner.getTable("post"))!
+                    const postWithSchema =
+                        (await queryRunner.getTable("custom.post"))!
+
+                    expect(postTable.name).to.be.equal("post")
+                    expect(postTable.columns).lengthOf(2)
+                    expect(postWithSchema.name).to.be.equal("custom.post")
+                    expect(postWithSchema.columns).lengthOf(2)
+                }),
+            ))
+    })
+
     describe("custom-table-schema-and-database", () => {
         let dataSources: DataSource[]
         before(async () => {
@@ -221,11 +244,10 @@ describe("multi-schema-and-database > basic-functionality", () => {
         it("should set the table database / schema", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    const queryRunner = dataSource.createQueryRunner()
+                    await using queryRunner = dataSource.createQueryRunner()
                     const table = (await queryRunner.getTable(
                         "testDB.questions.question",
                     ))!
-                    await queryRunner.release()
 
                     expect(table.database).to.be.equal("testDB")
                     expect(table.schema).to.be.equal("questions")
@@ -236,11 +258,10 @@ describe("multi-schema-and-database > basic-functionality", () => {
         it("should correctly get the table primary keys when custom table schema used", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    const queryRunner = dataSource.createQueryRunner()
+                    await using queryRunner = dataSource.createQueryRunner()
                     const table = (await queryRunner.getTable(
                         "testDB.questions.question",
                     ))!
-                    await queryRunner.release()
 
                     expect(table.primaryColumns).to.have.length(1)
                     expect(table.findColumnByName("id")?.isGenerated).to.be.true
@@ -250,11 +271,10 @@ describe("multi-schema-and-database > basic-functionality", () => {
         it("should correctly create tables when custom database and custom schema used in Entity decorator", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    const queryRunner = dataSource.createQueryRunner()
+                    await using queryRunner = dataSource.createQueryRunner()
                     const table = await queryRunner.getTable(
                         "testDB.questions.question",
                     )
-                    await queryRunner.release()
 
                     const question = new Question()
                     question.name = "Question #1"
@@ -275,14 +295,13 @@ describe("multi-schema-and-database > basic-functionality", () => {
         it("should correctly work with cross-schema and cross-database queries in QueryBuilder", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    const queryRunner = dataSource.createQueryRunner()
+                    await using queryRunner = dataSource.createQueryRunner()
                     const questionTable = await queryRunner.getTable(
                         "testDB.questions.question",
                     )
                     const answerTable = await queryRunner.getTable(
                         "secondDB.answers.answer",
                     )
-                    await queryRunner.release()
 
                     const question = new Question()
                     question.name = "Question #1"
@@ -337,13 +356,12 @@ describe("multi-schema-and-database > basic-functionality", () => {
         it("should correctly create tables when custom database used in Entity decorator", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    const queryRunner = dataSource.createQueryRunner()
+                    await using queryRunner = dataSource.createQueryRunner()
                     const tablePath =
                         dataSource.driver.options.type === "mssql"
                             ? "secondDB..person"
                             : "secondDB.person"
                     const table = await queryRunner.getTable(tablePath)
-                    await queryRunner.release()
 
                     const person = new Person()
                     person.name = "Person #1"
