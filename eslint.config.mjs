@@ -6,6 +6,8 @@ import { defineConfig, globalIgnores } from "eslint/config"
 import globals from "globals"
 import ts from "typescript-eslint"
 
+const __dirname = import.meta.dirname
+
 export default defineConfig([
     globalIgnores([
         "build/**",
@@ -22,6 +24,7 @@ export default defineConfig([
         languageOptions: {
             parser: ts.parser,
             parserOptions: {
+                tsconfigRootDir: __dirname,
                 project: "tsconfig.json",
             },
             globals: {
