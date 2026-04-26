@@ -318,7 +318,7 @@ describe("query builder > update", () => {
 
     it("should perform update with from correctly", async () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const oldNames = ["Ezekiel Riley", "Neo Ward", "Charis Orozco"]
                 const newNames = ["Jimmy Hanson", "Georgiana Cordova"]
 
@@ -326,7 +326,7 @@ describe("query builder > update", () => {
                     const user = new User()
                     user.name = name
 
-                    await connection.manager.save(user)
+                    await dataSource.manager.save(user)
                 }
 
                 for (let i = 0; i < newNames.length; i++) {
@@ -334,11 +334,11 @@ describe("query builder > update", () => {
                     userNameMap.newName = newNames[i]
                     userNameMap.oldName = oldNames[i]
 
-                    await connection.manager.save(userNameMap)
+                    await dataSource.manager.save(userNameMap)
                 }
 
                 try {
-                    await connection
+                    await dataSource
                         .createQueryBuilder()
                         .update(User)
                         .set({ name: () => 'um."newName"' })
@@ -346,7 +346,7 @@ describe("query builder > update", () => {
                         .where('name = um."oldName"')
                         .execute()
 
-                    const res = await connection.getRepository(User).find({
+                    const res = await dataSource.getRepository(User).find({
                         order: {
                             id: "ASC",
                         },
@@ -360,9 +360,9 @@ describe("query builder > update", () => {
                 } catch (error) {
                     if (
                         !(
-                            DriverUtils.isPostgresFamily(connection.driver) ||
-                            DriverUtils.isSQLiteFamily(connection.driver) ||
-                            connection.driver.options.type === "mssql"
+                            DriverUtils.isPostgresFamily(dataSource.driver) ||
+                            DriverUtils.isSQLiteFamily(dataSource.driver) ||
+                            dataSource.driver.options.type === "mssql"
                         )
                     ) {
                         expect(error).instanceOf(FromOnUpdateNotSupportedError)
@@ -375,18 +375,18 @@ describe("query builder > update", () => {
 
     it("should use main entity column mapping when FROM entity has same property with different column name", async () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const alice = new User()
                 alice.name = "Alice"
-                await connection.manager.save(alice)
+                await dataSource.manager.save(alice)
 
                 const bob = new User()
                 bob.name = "Bob"
-                await connection.manager.save(bob)
+                await dataSource.manager.save(bob)
 
                 const ref = new NameRef()
                 ref.name = "Alice"
-                await connection.manager.save(ref)
+                await dataSource.manager.save(ref)
 
                 try {
                     // NameRef.name maps to DB column "ref_name", while User.name maps
@@ -394,7 +394,7 @@ describe("query builder > update", () => {
                     // would overwrite the User mapping with NameRef's mapping so the WHERE
                     // clause would become `"ref_name" = 'Alice'` (a column on the name_ref
                     // table), causing an implicit cross-join that would update every user row.
-                    await connection
+                    await dataSource
                         .createQueryBuilder()
                         .update(User)
                         .set({ likesCount: 5 })
@@ -402,7 +402,7 @@ describe("query builder > update", () => {
                         .where("name = :name", { name: "Alice" })
                         .execute()
 
-                    const users = await connection.getRepository(User).find({
+                    const users = await dataSource.getRepository(User).find({
                         order: { id: "ASC" },
                     })
 
@@ -411,9 +411,9 @@ describe("query builder > update", () => {
                 } catch (error) {
                     if (
                         !(
-                            DriverUtils.isPostgresFamily(connection.driver) ||
-                            DriverUtils.isSQLiteFamily(connection.driver) ||
-                            connection.driver.options.type === "mssql"
+                            DriverUtils.isPostgresFamily(dataSource.driver) ||
+                            DriverUtils.isSQLiteFamily(dataSource.driver) ||
+                            dataSource.driver.options.type === "mssql"
                         )
                     ) {
                         expect(error).instanceOf(FromOnUpdateNotSupportedError)
@@ -426,7 +426,7 @@ describe("query builder > update", () => {
 
     it("should perform update with from subquery correctly", async () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const oldNames = ["Ezekiel Riley", "Neo Ward", "Charis Orozco"]
                 const newNames = ["Jimmy Hanson", "Georgiana Cordova"]
 
@@ -434,7 +434,7 @@ describe("query builder > update", () => {
                     const user = new User()
                     user.name = name
 
-                    await connection.manager.save(user)
+                    await dataSource.manager.save(user)
                 }
 
                 for (let i = 0; i < newNames.length; i++) {
@@ -442,11 +442,11 @@ describe("query builder > update", () => {
                     userNameMap.newName = newNames[i]
                     userNameMap.oldName = oldNames[i]
 
-                    await connection.manager.save(userNameMap)
+                    await dataSource.manager.save(userNameMap)
                 }
 
                 try {
-                    await connection
+                    await dataSource
                         .createQueryBuilder()
                         .update(User)
                         .set({ name: () => 'um."newName"' })
@@ -459,7 +459,7 @@ describe("query builder > update", () => {
                         .where('name = um."oldName"')
                         .execute()
 
-                    const res = await connection.getRepository(User).find({
+                    const res = await dataSource.getRepository(User).find({
                         order: {
                             id: "ASC",
                         },
@@ -473,9 +473,9 @@ describe("query builder > update", () => {
                 } catch (error) {
                     if (
                         !(
-                            DriverUtils.isPostgresFamily(connection.driver) ||
-                            DriverUtils.isSQLiteFamily(connection.driver) ||
-                            connection.driver.options.type === "mssql"
+                            DriverUtils.isPostgresFamily(dataSource.driver) ||
+                            DriverUtils.isSQLiteFamily(dataSource.driver) ||
+                            dataSource.driver.options.type === "mssql"
                         )
                     ) {
                         expect(error).instanceOf(FromOnUpdateNotSupportedError)
