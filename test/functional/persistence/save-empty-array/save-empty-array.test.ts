@@ -1,0 +1,42 @@
+import "reflect-metadata"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+    reloadTestingDatabases,
+} from "../../../utils/test-utils"
+import type { DataSource } from "../../../../src/data-source/DataSource"
+import { Post } from "./entity/Post"
+import { expect } from "chai"
+
+describe("persistence > save-empty-array", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    it("should persist successfully and return persisted entity", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                const post = new Post()
+                post.title = "Hello Post #1"
+                const returnedPost = await connection.manager.save(post)
+
+                expect(returnedPost).not.to.be.undefined
+                returnedPost.should.be.equal(post)
+            }),
+        ))
+
+    it("should not fail if empty array is given to persist method", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                const posts: Post[] = []
+                const returnedPosts = await connection.manager.save(posts)
+                expect(returnedPosts).not.to.be.undefined
+                returnedPosts.should.be.equal(posts)
+            }),
+        ))
+})

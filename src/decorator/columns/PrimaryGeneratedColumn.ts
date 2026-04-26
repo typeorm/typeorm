@@ -1,9 +1,9 @@
 import { getMetadataArgsStorage } from "../../globals"
-import { PrimaryGeneratedColumnNumericOptions } from "../options/PrimaryGeneratedColumnNumericOptions"
-import { PrimaryGeneratedColumnUUIDOptions } from "../options/PrimaryGeneratedColumnUUIDOptions"
-import { GeneratedMetadataArgs } from "../../metadata-args/GeneratedMetadataArgs"
-import { ColumnOptions } from "../options/ColumnOptions"
-import { PrimaryGeneratedColumnIdentityOptions } from "../options/PrimaryGeneratedColumnIdentityOptions"
+import type { PrimaryGeneratedColumnNumericOptions } from "../options/PrimaryGeneratedColumnNumericOptions"
+import type { PrimaryGeneratedColumnUUIDOptions } from "../options/PrimaryGeneratedColumnUUIDOptions"
+import type { GeneratedMetadataArgs } from "../../metadata-args/GeneratedMetadataArgs"
+import type { ColumnOptions } from "../options/ColumnOptions"
+import type { PrimaryGeneratedColumnIdentityOptions } from "../options/PrimaryGeneratedColumnIdentityOptions"
 import { ObjectUtils } from "../../util/ObjectUtils"
 
 /**
@@ -13,6 +13,7 @@ export function PrimaryGeneratedColumn(): PropertyDecorator
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
+ *
  * @param options
  */
 export function PrimaryGeneratedColumn(
@@ -21,6 +22,7 @@ export function PrimaryGeneratedColumn(
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
+ *
  * @param strategy
  * @param options
  */
@@ -31,6 +33,7 @@ export function PrimaryGeneratedColumn(
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
+ *
  * @param strategy
  * @param options
  */
@@ -41,6 +44,7 @@ export function PrimaryGeneratedColumn(
 
 /**
  * Column decorator is used to mark a specific class property as a table column.
+ *
  * @param strategy
  * @param options
  */
@@ -58,6 +62,7 @@ export function PrimaryGeneratedColumn(
  * Column decorator is used to mark a specific class property as a table column.
  * Only properties decorated with this decorator will be persisted to the database when entity be saved.
  * This column creates an integer PRIMARY COLUMN with generated set to true.
+ *
  * @param strategyOrOptions
  * @param maybeOptions
  */

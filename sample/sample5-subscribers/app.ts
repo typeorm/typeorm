@@ -1,5 +1,6 @@
 import "reflect-metadata"
-import { DataSource, DataSourceOptions } from "../../src"
+import type { DataSourceOptions } from "../../src"
+import { DataSource } from "../../src"
 import { Post } from "./entity/Post"
 import { PostCategory } from "./entity/PostCategory"
 import { PostAuthor } from "./entity/PostAuthor"
@@ -71,12 +72,8 @@ dataSource.initialize().then(
                 console.log("post removed.")
             })
             .catch((error) =>
-                console.log(
-                    "Cannot save. Error: ",
-                    error.stack ? error.stack : error,
-                ),
+                console.log("Cannot save. Error: ", error.stack ?? error),
             )
     },
-    (error) =>
-        console.log("Cannot connect: ", error.stack ? error.stack : error),
+    (error) => console.log("Cannot connect: ", error.stack ?? error),
 )

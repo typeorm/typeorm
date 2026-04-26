@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "inlineSources": true,
+    "lib": ["es2023", "dom"],
+    "outDir": "build/package/browser",
+    "sourceRoot": "../build/browser/src"
+  },
+  "exclude": ["node_modules"],
+  "extends": "./tsconfig.json",
+  "include": ["build/browser/src"]
+}

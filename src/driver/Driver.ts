@@ -1,33 +1,33 @@
-import { QueryRunner } from "../query-runner/QueryRunner"
-import { ColumnMetadata } from "../metadata/ColumnMetadata"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { ColumnType } from "./types/ColumnTypes"
-import { CteCapabilities } from "./types/CteCapabilities"
-import { MappedColumnTypes } from "./types/MappedColumnTypes"
-import { SchemaBuilder } from "../schema-builder/SchemaBuilder"
-import { DataTypeDefaults } from "./types/DataTypeDefaults"
-import { BaseDataSourceOptions } from "../data-source/BaseDataSourceOptions"
-import { TableColumn } from "../schema-builder/table/TableColumn"
-import { EntityMetadata } from "../metadata/EntityMetadata"
-import { ReplicationMode } from "./types/ReplicationMode"
-import { Table } from "../schema-builder/table/Table"
-import { View } from "../schema-builder/view/View"
-import { TableForeignKey } from "../schema-builder/table/TableForeignKey"
-import { UpsertType } from "./types/UpsertType"
-import { OnDeleteType } from "../metadata/types/OnDeleteType"
-import { OnUpdateType } from "../metadata/types/OnUpdateType"
-import { TableIndex } from "../schema-builder/table/TableIndex"
-import { IndexMetadata } from "../metadata/IndexMetadata"
-import { TableIndexTypes } from "../schema-builder/options/TableIndexTypes"
-
-export type ReturningType = "insert" | "update" | "delete"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { BaseDataSourceOptions } from "../data-source/BaseDataSourceOptions"
+import type { ColumnMetadata } from "../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
+import type { IndexMetadata } from "../metadata/IndexMetadata"
+import type { OnDeleteType } from "../metadata/types/OnDeleteType"
+import type { OnUpdateType } from "../metadata/types/OnUpdateType"
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import type { TableIndexTypes } from "../schema-builder/options/TableIndexTypes"
+import type { SchemaBuilder } from "../schema-builder/SchemaBuilder"
+import type { Table } from "../schema-builder/table/Table"
+import type { TableColumn } from "../schema-builder/table/TableColumn"
+import type { TableForeignKey } from "../schema-builder/table/TableForeignKey"
+import type { TableIndex } from "../schema-builder/table/TableIndex"
+import type { View } from "../schema-builder/view/View"
+import type { ColumnType } from "./types/ColumnTypes"
+import type { IsolationLevel } from "./types/IsolationLevel"
+import type { CteCapabilities } from "./types/CteCapabilities"
+import type { DataTypeDefaults } from "./types/DataTypeDefaults"
+import type { MappedColumnTypes } from "./types/MappedColumnTypes"
+import type { ReplicationMode } from "./types/ReplicationMode"
+import type { ReturningType } from "./types/ReturningType"
+import type { UpsertType } from "./types/UpsertType"
 
 /**
  * Driver organizes TypeORM communication with specific database management system.
  */
 export interface Driver {
     /**
-     * Connection options.
+     * Data Source options.
      */
     options: BaseDataSourceOptions
 
@@ -67,6 +67,11 @@ export interface Driver {
      * Gets list of supported column data types by a driver.
      */
     supportedDataTypes: ColumnType[]
+
+    /**
+     * Isolation levels supported by this driver.
+     */
+    supportedIsolationLevels: readonly IsolationLevel[]
 
     /**
      * Returns type of upsert supported by driver if any
@@ -170,7 +175,6 @@ export interface Driver {
     escapeQueryWithParameters(
         sql: string,
         parameters: ObjectLiteral,
-        nativeParameters: ObjectLiteral,
     ): [string, any[]]
 
     /**

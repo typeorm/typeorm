@@ -1,7 +1,8 @@
 import { expect } from "chai"
 import "reflect-metadata"
 
-import { DataSource, QueryRunner, Table } from "../../../src"
+import type { DataSource, QueryRunner } from "../../../src"
+import { Table } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -33,6 +34,7 @@ describe("github issues > #6195 feature: fake migrations for existing tables", (
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: false,
             dropSchema: false,

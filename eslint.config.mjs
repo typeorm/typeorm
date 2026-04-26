@@ -1,6 +1,7 @@
 import js from "@eslint/js"
 import chaiFriendly from "eslint-plugin-chai-friendly"
 import { jsdoc } from "eslint-plugin-jsdoc"
+import unicorn from "eslint-plugin-unicorn"
 import { defineConfig, globalIgnores } from "eslint/config"
 import globals from "globals"
 import ts from "typescript-eslint"
@@ -10,9 +11,10 @@ export default defineConfig([
         "build/**",
         "docs/**",
         "node_modules/**",
+        "packages/**",
         "sample/playground/**",
-        "temp/**",
         "src/driver/mongodb/{typings.ts,bson.typings.ts}",
+        "temp/**",
     ]),
 
     {
@@ -30,9 +32,21 @@ export default defineConfig([
         plugins: {
             js,
             ts,
+            unicorn,
         },
         extends: [js.configs.recommended, ...ts.configs.recommendedTypeChecked],
         rules: {
+            // custom rules
+            "@typescript-eslint/consistent-type-exports": "error",
+            "@typescript-eslint/consistent-type-imports": "error",
+            "@typescript-eslint/prefer-nullish-coalescing": "error",
+            "@typescript-eslint/prefer-optional-chain": "error",
+            "@typescript-eslint/prefer-string-starts-ends-with": "error",
+
+            "unicorn/prefer-string-replace-all": "error",
+            "unicorn/prefer-string-slice": "error",
+            "unicorn/prefer-string-starts-ends-with": "error",
+
             // exceptions from typescript-eslint/recommended
             "@typescript-eslint/ban-ts-comment": "warn",
             "@typescript-eslint/no-empty-object-type": "warn",
@@ -79,13 +93,17 @@ export default defineConfig([
 
             // exceptions for eslint/recommended
             "no-async-promise-executor": "warn",
+            "no-useless-assignment": "warn",
             "no-control-regex": "warn",
             "no-empty": "warn",
             "no-loss-of-precision": "warn",
             "no-prototype-builtins": "warn",
             "no-regex-spaces": "warn",
+            "no-return-assign": ["error", "always"],
+            "preserve-caught-error": "warn",
         },
     },
+
     jsdoc({
         files: ["src/**/*.ts"],
         config: "flat/recommended-typescript", // change to 'flat/recommended-typescript-error' once warnings are fixed
@@ -93,6 +111,14 @@ export default defineConfig([
         // and then remove manual config in favor of `config: "flat/recommended-typescript-error"`
         rules: {
             "jsdoc/valid-types": "error",
+            "jsdoc/tag-lines": [
+                "error",
+                "any",
+                {
+                    startLines: 1,
+                    tags: { example: { lines: "always", count: 1 } },
+                },
+            ],
         },
     }),
 

@@ -4,7 +4,8 @@ import {
     closeTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { AbstractLogger, DataSource, LogLevel, LogMessage } from "../../../src"
+import type { DataSource, LogLevel, LogMessage } from "../../../src"
+import { AbstractLogger } from "../../../src"
 import sinon from "sinon"
 import { expect } from "chai"
 
@@ -33,6 +34,7 @@ describe("github issues > #10322 logMigration of AbstractLogger has wrong loggin
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             migrations: [__dirname + "/migration/*{.js,.ts}"],
             schemaCreate: true,

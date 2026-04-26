@@ -18,12 +18,13 @@ export function toPortablePath(filepath: string): string {
             (match, p1, p2) => `/unc/${p1 ? `.dot/` : ``}${p2}`,
         )
 
-    return filepath.replace(/\\/g, `/`)
+    return filepath.replaceAll("\\", `/`)
 }
 
 /**
  * Create deterministic valid database name (class, database) of fixed length from any filepath. Equivalent paths for windows/posix systems should
  * be equivalent to enable portability
+ *
  * @param filepath
  */
 export function filepathToName(filepath: string): string {
@@ -33,6 +34,7 @@ export function filepathToName(filepath: string): string {
 
 /**
  * Cross platform isAbsolute
+ *
  * @param filepath
  */
 export function isAbsolute(filepath: string): boolean {

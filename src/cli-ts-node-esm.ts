@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { spawnSync } from "child_process"
 
-if ((process.env["NODE_OPTIONS"] || "").includes("--loader ts-node"))
+if ((process.env["NODE_OPTIONS"] ?? "").includes("--loader ts-node"))
     require("./cli")
 else {
     const childProcess = spawnSync(process.argv[0], process.argv.slice(1), {
@@ -19,5 +19,5 @@ else {
         windowsHide: true,
     })
 
-    process.exit(childProcess.status || 0)
+    process.exit(childProcess.status ?? 0)
 }

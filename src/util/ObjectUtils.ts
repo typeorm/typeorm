@@ -1,10 +1,11 @@
-import { MixedList } from "../common/MixedList"
+import type { MixedList } from "../common/MixedList"
 
 export class ObjectUtils {
     /**
      * Checks if given value is an object.
      * We cannot use instanceof because it has problems when running on different contexts.
      * And we don't simply use typeof because typeof null === "object".
+     *
      * @param val
      */
     static isObject(val: any): val is object {
@@ -15,6 +16,7 @@ export class ObjectUtils {
      * Checks if given value is an object.
      * We cannot use instanceof because it has problems when running on different contexts.
      * And we don't simply use typeof because typeof null === "object".
+     *
      * @param val
      */
     static isObjectWithName(val: any): val is object & { name: string } {
@@ -26,6 +28,7 @@ export class ObjectUtils {
     /**
      * Copy the values of all of the enumerable own properties from one or more source objects to a
      * target object.
+     *
      * @param target The target object to copy to.
      * @param source The source object from which to copy properties.
      */
@@ -34,6 +37,7 @@ export class ObjectUtils {
     /**
      * Copy the values of all of the enumerable own properties from one or more source objects to a
      * target object.
+     *
      * @param target The target object to copy to.
      * @param source1 The first source object from which to copy properties.
      * @param source2 The second source object from which to copy properties.
@@ -43,6 +47,7 @@ export class ObjectUtils {
     /**
      * Copy the values of all of the enumerable own properties from one or more source objects to a
      * target object.
+     *
      * @param target The target object to copy to.
      * @param source1 The first source object from which to copy properties.
      * @param source2 The second source object from which to copy properties.
@@ -58,6 +63,7 @@ export class ObjectUtils {
     /**
      * Copy the values of all of the enumerable own properties from one or more source objects to a
      * target object.
+     *
      * @param target The target object to copy to.
      * @param sources One or more source objects from which to copy properties
      */
@@ -71,6 +77,7 @@ export class ObjectUtils {
 
     /**
      * Converts MixedList<T> to strictly an array of its T items.
+     *
      * @param list
      */
     static mixedListToArray<T>(list: MixedList<T>): T[] {

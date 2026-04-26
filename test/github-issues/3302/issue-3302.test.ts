@@ -1,55 +1,57 @@
-import "reflect-metadata"
-import appRootPath from "app-root-path"
 import sinon from "sinon"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
+import { PlatformTools } from "../../../src/platform/PlatformTools"
 import {
+    closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-    closeTestingConnections,
 } from "../../utils/test-utils"
-import { PlatformTools } from "../../../src/platform/PlatformTools"
+import {
+    afterQueryLogPath,
+    beforeQueryLogPath,
+} from "./subscriber/PostSubscriber"
 
 describe("github issues > #3302 Tracking query time for slow queries and statsd timers", () => {
-    let connections: DataSource[]
-    let stub: sinon.SinonStub
+    let dataSources: DataSource[]
+    let appendStub: sinon.SinonStub
     let sandbox: sinon.SinonSandbox
-    const beforeQueryLogPath = appRootPath + "/before-query.log"
-    const afterQueryLogPath = appRootPath + "/after-query.log"
 
     before(async () => {
-        connections = await createTestingConnections({
+        sandbox = sinon.createSandbox()
+        appendStub = sandbox.stub(PlatformTools, "appendFileSync")
+        dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
         })
-        sandbox = sinon.createSandbox()
-        stub = sandbox.stub(PlatformTools, "appendFileSync")
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    afterEach(async () => {
-        stub.resetHistory()
+    beforeEach(async () => {
+        await reloadTestingDatabases(dataSources)
+    })
+    after(async () => {
         sandbox.restore()
-        await closeTestingConnections(connections)
+        await closeTestingConnections(dataSources)
     })
 
-    it("if query executed, should write query to file", async () =>
-        Promise.all(
-            connections.map(async (connection) => {
-                const testQuery = `SELECT COUNT(*) FROM ${connection.driver.escape(
-                    "post",
-                )}`
+    it("if query executed, should write query to file", async () => {
+        for (const dataSource of dataSources) {
+            const testQuery = `SELECT COUNT(*) FROM ${dataSource.driver.escape(
+                "post",
+            )}`
 
-                await connection.query(testQuery)
+            appendStub.resetHistory()
+            await dataSource.query(testQuery)
 
-                sinon.assert.calledWith(
-                    stub,
-                    beforeQueryLogPath,
-                    sinon.match(testQuery),
-                )
-                sinon.assert.calledWith(
-                    stub,
-                    afterQueryLogPath,
-                    sinon.match(testQuery),
-                )
-            }),
-        ))
+            sinon.assert.calledWith(
+                appendStub,
+                beforeQueryLogPath,
+                sinon.match(testQuery),
+            )
+            sinon.assert.calledWith(
+                appendStub,
+                afterQueryLogPath,
+                sinon.match(testQuery),
+            )
+        }
+    })
 })
