@@ -4,6 +4,7 @@ import { TypeORMError } from "../error"
 import type { DataSource } from "../data-source"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { importOrRequireFile } from "../util/ImportUtils"
+import { camelCase } from "../util/StringUtils"
 
 /**
  * Command line utils functions.
@@ -123,5 +124,22 @@ export class CommandUtils {
         return timestampOptionArgument
             ? new Date(Number(timestampOptionArgument)).getTime()
             : Date.now()
+    }
+
+    static getMigrationClassName(name: string, timestamp: number): string {
+        const identifierName = camelCase(
+            name.replaceAll(/[^\p{ID_Continue}$\u200C\u200D]+/gu, " "),
+            true,
+        ).replaceAll(/[^\p{ID_Continue}$\u200C\u200D]+/gu, "")
+
+        if (!identifierName) {
+            return `Migration${timestamp}`
+        }
+
+        if (/^[\p{ID_Start}$_]/u.test(identifierName)) {
+            return `${identifierName}${timestamp}`
+        }
+
+        return `Migration${identifierName}${timestamp}`
     }
 }
