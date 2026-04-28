@@ -7,4 +7,7 @@ export class Item {
 
     @Column({ type: "jsonb" })
     input: { id: string; value: string }[]
+
+    @Column({ type: "jsonb", nullable: true })
+    numbers: number[] | null
 }

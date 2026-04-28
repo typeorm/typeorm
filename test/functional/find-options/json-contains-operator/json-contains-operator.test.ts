@@ -70,4 +70,39 @@ describe("find options > find operators > JsonContains", () => {
                 matched.should.have.length(0)
             }),
         ))
+
+    it("should match jsonb columns storing primitive arrays", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const manager = dataSource.manager
+
+                const item1 = new Item()
+                item1.input = []
+                item1.numbers = [5, 6, 7, 8]
+                await manager.save(item1)
+
+                const item2 = new Item()
+                item2.input = []
+                item2.numbers = [1, 2]
+                await manager.save(item2)
+
+                const matchedSubset = await manager.find(Item, {
+                    where: {
+                        numbers: JsonContains([5, 6]),
+                    },
+                    order: {
+                        id: "asc",
+                    },
+                })
+                matchedSubset.should.have.length(1)
+                matchedSubset[0].numbers!.should.be.eql([5, 6, 7, 8])
+
+                const matchedNone = await manager.find(Item, {
+                    where: {
+                        numbers: JsonContains([9]),
+                    },
+                })
+                matchedNone.should.have.length(0)
+            }),
+        ))
 })
