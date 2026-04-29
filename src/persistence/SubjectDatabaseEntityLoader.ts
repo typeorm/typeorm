@@ -148,7 +148,9 @@ export class SubjectDatabaseEntityLoader {
         const subjectGroups = this.groupByEntityTargets()
 
         // Avoid concurrent queries on the same pg client; see #12238.
-        if (this.queryRunner.dataSource.driver.options.type === "postgres") {
+        // CockroachDB uses the pg package over a single connection too.
+        const driverType = this.queryRunner.dataSource.driver.options.type
+        if (driverType === "postgres" || driverType === "cockroachdb") {
             for (const subjectGroup of subjectGroups) {
                 await loadSubjectGroup(subjectGroup)
             }

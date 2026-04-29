@@ -3716,7 +3716,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             }
 
             // Avoid concurrent queries on the same pg client; see #12238.
-            if (this.dataSource.options.type === "postgres") {
+            // CockroachDB uses the pg package over a single connection too.
+            const driverType = this.dataSource.options.type
+            if (driverType === "postgres" || driverType === "cockroachdb") {
                 for (const relation of this.relationMetadatas) {
                     await loadRelation(relation)
                 }

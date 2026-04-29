@@ -145,8 +145,10 @@ export class EntityPersistExecutor {
 
             // console.time("building subject executors...");
             // Avoid concurrent queries on the same pg client; see #12238.
+            // CockroachDB uses the pg package over a single connection too.
+            const driverType = this.dataSource.options.type
             let executors: SubjectExecutor[]
-            if (this.dataSource.options.type === "postgres") {
+            if (driverType === "postgres" || driverType === "cockroachdb") {
                 executors = []
                 for (const entities of entitiesInChunks) {
                     executors.push(await buildExecutor(entities))

@@ -4,12 +4,12 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
-import type { DataSource } from "../../../src/data-source/DataSource"
+} from "../../../utils/test-utils"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Tag } from "./entity/Tag"
 
-describe("github issues > #12238 pg deprecation: relation-load and persistence paths", () => {
+describe("persistence > pg concurrent query deprecation (#12238)", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
@@ -49,10 +49,12 @@ describe("github issues > #12238 pg deprecation: relation-load and persistence p
             }),
         ))
 
-    it("should not emit pg 'client.query already executing' warning during relationLoadStrategy: 'query' on postgres", () =>
+    it("should not emit pg 'client.query already executing' warning during relationLoadStrategy: 'query' on postgres or cockroachdb", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                if (dataSource.options.type !== "postgres") return
+                const driverType = dataSource.options.type
+                if (driverType !== "postgres" && driverType !== "cockroachdb")
+                    return
 
                 const captured: string[] = []
                 const handler = (warning: Error) => {
