@@ -12,12 +12,12 @@ export interface RelationOptions {
      * You can separately restrict cascades to insertion or updation using following syntax:
      *
      * @example
-     * cascade: ["insert", "update", "remove", "soft-remove", "recover"] // include or exclude one of them
+     * cascade: ["insert", "update", "soft-remove", "recover"] // include or exclude one of them
      *
      */
     cascade?:
         | boolean
-        | ("insert" | "update" | "remove" | "soft-remove" | "recover")[]
+        | ("insert" | "update"  | "soft-remove" | "recover")[]
 
     /**
      * Indicates if relation column value can be nullable or not.
