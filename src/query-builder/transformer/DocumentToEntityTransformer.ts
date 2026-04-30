@@ -17,10 +17,6 @@ export class DocumentToEntityTransformer {
     // Public Methods
     // -------------------------------------------------------------------------
 
-    transformAll(documents: ObjectLiteral[], metadata: EntityMetadata) {
-        return documents.map((document) => this.transform(document, metadata))
-    }
-
     transform(document: ObjectLiteral, metadata: EntityMetadata) {
         const entity: any = metadata.create(undefined, {
             fromDeserializer: true,

@@ -1310,14 +1310,36 @@ export class MongoEntityManager extends EntityManager {
         cursor: FindCursor<Entity> | AggregationCursor<Entity>,
     ) {
         const transformer = new DocumentToEntityTransformer()
-        cursor.transform = async (doc: ObjectLiteral) => {
-            const entity = transformer.transform(doc, metadata)
-            if (entity) {
-                await this.mongoQueryRunner.broadcaster.broadcast(
-                    "Load",
-                    metadata,
-                    [entity],
-                )
+        const broadcaster = this.mongoQueryRunner.broadcaster
+        let isInToArray = false
+
+        // transformer function that converts raw document to entity
+        // used by both next and toArray internally in the MongoDB driver
+        cursor.transform = (doc: ObjectLiteral) => {
+            return transformer.transform(doc, metadata)
+        }
+
+        // override toArray for batch broadcast (skip per-doc broadcast in next)
+        const originalToArray = cursor.toArray.bind(cursor)
+        cursor.toArray = async () => {
+            isInToArray = true
+            try {
+                const entities = await originalToArray()
+                if (entities.length > 0) {
+                    await broadcaster.broadcast("Load", metadata, entities)
+                }
+                return entities
+            } finally {
+                isInToArray = false
+            }
+        }
+
+        // override next for per-doc broadcast (skip if in toArray batch)
+        const originalNext = cursor.next.bind(cursor)
+        cursor.next = async () => {
+            const entity = await originalNext()
+            if (entity && !isInToArray) {
+                await broadcaster.broadcast("Load", metadata, [entity])
             }
             return entity
         }

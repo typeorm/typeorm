@@ -110,4 +110,46 @@ describe("mongodb > entity subscriber", () => {
         })
         expect(subscriber.counter).to.be.eql(2)
     })
+
+    it("should call afterLoad with next", async () => {
+        if (!dataSources.length) return
+        const dataSource = dataSources[0]
+        const subscriber = dataSource.subscribers[0] as MockSubscriber
+        const example1 = new Example()
+        example1.value = 100
+
+        await dataSource.manager.save(example1)
+
+        const cursor = dataSource.mongoManager.createEntityCursor(Example)
+        const loadedExample = await cursor.next()
+        expect(loadedExample).to.be.deep.equal({
+            _id: example1._id,
+            value: 100,
+        })
+        expect(subscriber.counter).to.be.eql(1)
+    })
+
+    it("should call afterLoad with toArray", async () => {
+        if (!dataSources.length) return
+        const dataSource = dataSources[0]
+        const subscriber = dataSource.subscribers[0] as MockSubscriber
+
+        const examples = [1, 2, 3].map((i) => {
+            const example = new Example()
+            example.value = i
+            return example
+        })
+
+        await dataSource.manager.save(examples)
+
+        const cursor = dataSource.mongoManager.createEntityCursor(Example)
+        const loadedExamples = await cursor.toArray()
+        expect(loadedExamples).to.have.length(3)
+        expect(loadedExamples).to.deep.include.members([
+            { _id: examples[0]._id, value: 1 },
+            { _id: examples[1]._id, value: 2 },
+            { _id: examples[2]._id, value: 3 },
+        ])
+        expect(subscriber.counter).to.be.eql(3)
+    })
 })
