@@ -56,8 +56,11 @@ export const datasourceSqliteOptions = (file: FileInfo, api: API) => {
                     : getStringValue(prop.key)
             if (keyName !== "busyTimeout") continue
             // Replace the key with an identifier — `"timeout"` doesn't need
-            // quoting and prettier would strip the quotes anyway.
+            // quoting and prettier would strip the quotes anyway. Clear
+            // `computed` so `["busyTimeout"]: …` rewrites to a plain
+            // `timeout: …` instead of `[timeout]: …`.
             prop.key = j.identifier("timeout")
+            prop.computed = false
             hasChanges = true
         }
 

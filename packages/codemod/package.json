@@ -1,6 +1,6 @@
 {
   "name": "@typeorm/codemod",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "Codemods for migrating between TypeORM versions",
   "repository": {
     "type": "git",
@@ -22,29 +22,29 @@
     "test": "mocha"
   },
   "dependencies": {
-    "jscodeshift": "^17.1.2",
-    "semver": "^7.7.2",
-    "tinyglobby": "^0.2.15"
+    "jscodeshift": "^17.3.0",
+    "semver": "^7.7.4",
+    "tinyglobby": "^0.2.16"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.0",
-    "@types/chai": "^4.3.0",
+    "@eslint/js": "^10.0.1",
+    "@types/chai": "^4.3.20",
     "@types/jscodeshift": "^17.3.0",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^20.19.33",
-    "@types/semver": "^7.7.0",
-    "@types/sinon": "^21.0.0",
+    "@types/node": "^20.19.39",
+    "@types/semver": "^7.7.1",
+    "@types/sinon": "^21.0.1",
     "c8": "^11.0.0",
     "chai": "^4.5.0",
-    "eslint": "^10.0.0",
-    "eslint-plugin-chai-friendly": "^1.1.0",
-    "globals": "^17.4.0",
-    "mocha": "^11.0.0",
-    "prettier": "^3.8.1",
-    "sinon": "^21.0.3",
-    "ts-node": "^10.9.0",
+    "eslint": "^10.2.1",
+    "eslint-plugin-chai-friendly": "^1.2.0",
+    "globals": "^17.5.0",
+    "mocha": "^11.7.5",
+    "prettier": "^3.8.3",
+    "sinon": "^21.1.2",
+    "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.56.1"
+    "typescript-eslint": "^8.59.0"
   },
   "engines": {
     "node": ">=20"

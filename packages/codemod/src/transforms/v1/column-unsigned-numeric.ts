@@ -1,6 +1,11 @@
 import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
-import { getStringValue, removeObjectProperties } from "../ast-helpers"
+import {
+    expandLocalNamesForImports,
+    fileImportsFrom,
+    getStringValue,
+    removeObjectProperties,
+} from "../ast-helpers"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
@@ -12,52 +17,49 @@ const propertyNames = new Set(["unsigned"])
 export const columnUnsignedNumeric = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
+
+    // Only match `Column` bindings that resolve to a TypeORM import — a user
+    // module with its own `Column` helper (e.g. a schema builder) must not
+    // have its second-argument options object touched.
+    if (!fileImportsFrom(root, j, "typeorm")) return undefined
+    const columnNames = expandLocalNamesForImports(
+        root,
+        j,
+        "typeorm",
+        new Set(["Column"]),
+    )
+    if (columnNames.size === 0) return undefined
+
     let hasChanges = false
 
-    // Find @Column("decimal", { unsigned: true }) style calls
-    root.find(j.CallExpression, {
-        callee: { type: "Identifier", name: "Column" },
-    }).forEach((path) => {
+    root.find(j.CallExpression).forEach((path) => {
+        const callee = path.node.callee
+        if (callee.type !== "Identifier" || !columnNames.has(callee.name))
+            return
+
         const args = path.node.arguments
-        if (args.length < 2) return
-
-        // First arg must be a string literal with a numeric type
-        const firstArg = args[0]
-        const typeName = getStringValue(firstArg)
-
-        if (!typeName || !numericTypes.has(typeName)) return
-
-        // Second arg should be an object with unsigned property
-        const secondArg = args[1]
-        if (secondArg.type !== "ObjectExpression") return
-
-        if (removeObjectProperties(secondArg, propertyNames)) {
-            hasChanges = true
+        if (args.length === 2) {
+            const typeName = getStringValue(args[0])
+            if (!typeName || !numericTypes.has(typeName)) return
+            if (args[1].type !== "ObjectExpression") return
+            if (removeObjectProperties(args[1], propertyNames)) {
+                hasChanges = true
+            }
+            return
         }
-    })
 
-    // Also find decorator calls via @Column({ type: "decimal", unsigned: true })
-    root.find(j.CallExpression, {
-        callee: { type: "Identifier", name: "Column" },
-    }).forEach((path) => {
-        const args = path.node.arguments
         if (args.length !== 1) return
-
         const arg = args[0]
         if (arg.type !== "ObjectExpression") return
 
-        // Check if type is a numeric type
         const typeProp = arg.properties.find((p) => {
             if (p.type !== "ObjectProperty") return false
             const keyName =
                 p.key.type === "Identifier" ? p.key.name : getStringValue(p.key)
             return keyName === "type"
         })
-
         if (typeProp?.type !== "ObjectProperty") return
-
         const typeValue = getStringValue(typeProp.value)
-
         if (!typeValue || !numericTypes.has(typeValue)) return
 
         if (removeObjectProperties(arg, propertyNames)) {

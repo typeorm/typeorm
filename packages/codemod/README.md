@@ -33,6 +33,7 @@ npx @typeorm/codemod v1 --list
 | `--ignore <pattern>` | `-i`  | Additional glob pattern to exclude (repeatable; merged with defaults) |
 | `--list`             | `-l`  | List available transforms                                             |
 | `--transform <name>` | `-t`  | Run a specific transform only                                         |
+| `--version`          | `-v`  | Print the installed `@typeorm/codemod` version                        |
 | `--workers <num>`    | `-w`  | Number of worker processes (default: CPU cores - 1)                   |
 
 `**/*.d.ts` is always excluded — ambient type declarations describe the shapes consumers rely on, and rewriting identifiers inside them would silently corrupt published types. User-provided `--ignore` patterns are merged on top of this default.
@@ -52,7 +53,7 @@ npx prettier --write src/        # or: npx eslint --fix src/
 
 ### Scoping
 
-Transforms that rename properties or methods (e.g. `.connection` to `.dataSource`) rely on type annotations to identify TypeORM instances. Code that uses TypeORM APIs without type annotations may not be transformed automatically — review `git diff` after running.
+Transforms that rename properties or methods (e.g. `.connection` to `.dataSource`) identify TypeORM instances through type annotations. They also recognize untyped class fields whose initializer is a known accessor chain (e.g. `private manager = this.dataSource.manager`). Code with no typing signal at all may not be transformed automatically — review `git diff` after running.
 
 ## Documentation
 

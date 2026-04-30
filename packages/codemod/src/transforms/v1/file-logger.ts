@@ -1,8 +1,12 @@
 import path from "node:path"
 import type { API, FileInfo, Node, ObjectExpression } from "jscodeshift"
-import { addTodoComment } from "../todo"
+import { addTodoComment, hasTodoComment } from "../todo"
 import { stats } from "../stats"
-import { getLocalNamesForImport, getStringValue } from "../ast-helpers"
+import {
+    getLocalNamesForImport,
+    getStringValue,
+    unwrapTsExpression,
+} from "../ast-helpers"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
@@ -12,91 +16,71 @@ export const manual = true
 const isAbsolutePath = (literal: string): boolean =>
     path.posix.isAbsolute(literal) || path.win32.isAbsolute(literal)
 
-const inspectOptionsArg = (
-    argNode: Node | undefined,
-): { hasOption: boolean; isAbsolute: boolean } => {
-    // No options argument — flag it (user is using the default logPath)
-    if (argNode === undefined) {
-        return { hasOption: false, isAbsolute: false }
-    }
-
-    // Explicit `undefined` / `null` — same as omitting options, flag
-    const typedArg = argNode as unknown as {
+// Treats `undefined`, `null`, and their literal variants as "no value".
+const isNullishLiteral = (node: Node | undefined): boolean => {
+    if (node === undefined) return true
+    const n = node as {
         type: string
         name?: string
         value?: unknown
     }
-    const isExplicitUndefined =
-        typedArg.type === "Identifier" && typedArg.name === "undefined"
-    const isNullLiteral =
-        typedArg.type === "NullLiteral" ||
-        (typedArg.type === "Literal" && typedArg.value === null)
-    if (isExplicitUndefined || isNullLiteral) {
-        return { hasOption: false, isAbsolute: false }
-    }
+    if (n.type === "Identifier" && n.name === "undefined") return true
+    if (n.type === "NullLiteral") return true
+    return n.type === "Literal" && n.value === null
+}
 
-    // Dynamic options (variable, function call, etc.) — assume the user knows
-    // what they're doing and don't flag it
-    if (argNode.type !== "ObjectExpression") {
-        return { hasOption: true, isAbsolute: true }
-    }
-
+// Locates the `logPath` property in an options object expression, alongside
+// whether the object also contains a spread (which could contribute the key).
+const findLogPathProperty = (
+    obj: ObjectExpression,
+): { value: Node | undefined; hasSpread: boolean } => {
     let hasSpread = false
-
-    for (const prop of (argNode as ObjectExpression).properties) {
+    for (const prop of obj.properties) {
         if (prop.type === "SpreadElement") {
             hasSpread = true
             continue
         }
         if (prop.type !== "ObjectProperty") continue
-
         const keyName =
             prop.key.type === "Identifier"
                 ? prop.key.name
                 : getStringValue(prop.key)
-        if (keyName !== "logPath") continue
+        if (keyName === "logPath") return { value: prop.value, hasSpread }
+    }
+    return { value: undefined, hasSpread }
+}
 
-        const value = prop.value
-        if (value.type === "StringLiteral") {
-            return { hasOption: true, isAbsolute: isAbsolutePath(value.value) }
-        }
-
-        if (
-            value.type === "Literal" &&
-            typeof (value as { value: unknown }).value === "string"
-        ) {
-            return {
-                hasOption: true,
-                isAbsolute: isAbsolutePath((value as { value: string }).value),
-            }
-        }
-
-        // `logPath: undefined` / `logPath: null` behave the same as omitting
-        // the option — flag just like the missing-argument case.
-        if (
-            value.type === "Identifier" &&
-            (value as { name: string }).name === "undefined"
-        ) {
-            return { hasOption: false, isAbsolute: false }
-        }
-        if (
-            value.type === "NullLiteral" ||
-            (value.type === "Literal" &&
-                (value as { value: unknown }).value === null)
-        ) {
-            return { hasOption: false, isAbsolute: false }
-        }
-
-        // Non-literal value (template literal, function call like path.resolve, etc.) —
-        // assume the user knows what they're doing and don't flag it
+const inspectOptionsArg = (
+    argNode: Node | undefined,
+): { hasOption: boolean; isAbsolute: boolean } => {
+    // Missing / explicit nullish → same as omitting options, flag.
+    if (isNullishLiteral(argNode)) {
+        return { hasOption: false, isAbsolute: false }
+    }
+    const unwrapped = unwrapTsExpression(argNode!)
+    // Dynamic options (variable, function call, etc.) — trust the user.
+    if (unwrapped.type !== "ObjectExpression") {
         return { hasOption: true, isAbsolute: true }
     }
-
-    // No explicit logPath property found — if the object spreads another
-    // value we cannot know what it contributes, so leave it alone
-    if (hasSpread) return { hasOption: true, isAbsolute: true }
-
-    return { hasOption: false, isAbsolute: false }
+    const { value, hasSpread } = findLogPathProperty(
+        unwrapped as ObjectExpression,
+    )
+    // No explicit logPath — a spread could contribute one, so leave alone.
+    if (value === undefined) {
+        return hasSpread
+            ? { hasOption: true, isAbsolute: true }
+            : { hasOption: false, isAbsolute: false }
+    }
+    // `logPath: undefined` / `logPath: null` behaves as if omitted.
+    if (isNullishLiteral(value)) {
+        return { hasOption: false, isAbsolute: false }
+    }
+    const str = getStringValue(value as Parameters<typeof getStringValue>[0])
+    if (str !== null) {
+        return { hasOption: true, isAbsolute: isAbsolutePath(str) }
+    }
+    // Non-literal (template, path.resolve(), etc.) — trust the user.
+    return { hasOption: true, isAbsolute: true }
 }
 
 export const fileLogger = (file: FileInfo, api: API) => {
@@ -135,11 +119,10 @@ export const fileLogger = (file: FileInfo, api: API) => {
         },
     }).forEach((p) => {
         const init = p.node.init
-        if (!init || init.type !== "CallExpression") return
+        if (init?.type !== "CallExpression") return
         const [arg] = init.arguments
         if (!arg || getStringValue(arg) !== "typeorm") return
 
-        // Whole-module CJS bind: `const typeorm = require("typeorm")`
         if (p.node.id.type === "Identifier") {
             namespaceNames.add(p.node.id.name)
         }
@@ -172,14 +155,10 @@ export const fileLogger = (file: FileInfo, api: API) => {
         })
         .forEach((astPath) => {
             const optionsArg = astPath.node.arguments[1]
-            const { hasOption, isAbsolute } = inspectOptionsArg(
-                optionsArg as Node | undefined,
-            )
+            const { hasOption, isAbsolute } = inspectOptionsArg(optionsArg)
 
-            // Skip if user explicitly provided an absolute logPath
             if (hasOption && isAbsolute) return
 
-            // Walk up to find the enclosing statement for the TODO comment
             let current = astPath.parent
             while (current) {
                 const node: Node = current.node
@@ -192,15 +171,7 @@ export const fileLogger = (file: FileInfo, api: API) => {
                     node.type === "ClassProperty" ||
                     node.type === "PropertyDefinition"
                 ) {
-                    // Avoid duplicate TODOs when multiple FileLoggers share a statement
-                    const todoLine = ` TODO(typeorm-v1): ${message}`
-                    const nodeWithComments = node as Node & {
-                        comments?: { value: string }[]
-                    }
-                    const hasSameComment = nodeWithComments.comments?.some(
-                        (c) => c.value === todoLine,
-                    )
-                    if (!hasSameComment) {
+                    if (!hasTodoComment(node, message)) {
                         addTodoComment(node, message, j)
                         hasChanges = true
                         hasTodos = true

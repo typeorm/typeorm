@@ -11,9 +11,9 @@ export const manual = true
 const MESSAGE =
     "`getAllMigrations()` was removed — use `getPendingMigrations()`, `getExecutedMigrations()`, or `dataSource.migrations` instead"
 
-// A TODO attached to one of these nodes will survive jscodeshift/recast's
-// printing. Walking up until we reach one of these produces a visible
-// comment above the enclosing statement or declaration.
+// Node types on which a leading line-comment survives jscodeshift/recast
+// printing — walking up to one of these keeps the comment visible above
+// the enclosing statement or declaration.
 const isTodoHost = (type: string): boolean =>
     type.endsWith("Statement") ||
     type === "VariableDeclaration" ||

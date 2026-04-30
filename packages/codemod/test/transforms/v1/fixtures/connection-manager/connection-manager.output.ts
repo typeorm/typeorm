@@ -23,3 +23,8 @@ if (new ConnectionManager()) {
 function create(): ConnectionManager {
     return null as any
 }
+
+// Case 6: CommonJS destructured require — previously unmigrated
+const { ConnectionManager: CjsManager } = require("typeorm")
+// TODO(typeorm-v1): `ConnectionManager` was removed — create and manage `DataSource` instances directly instead — there is no replacement class
+const cjsInstance = new CjsManager()

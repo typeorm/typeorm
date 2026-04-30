@@ -265,20 +265,20 @@ Also note the default behavior changes in pool configuration:
 
 ### Expo
 
-Support for the legacy Expo SQLite driver has been removed. The legacy API was removed by Expo in SDK v52. Upgrade to **Expo SDK v52 or later** and use the modern async SQLite API:
+The minimum supported Expo SDK version is 52, which comes with a modern async SQLite API. TypeORM now loads `expo-sqlite` automatically, so the `driver` option is no longer required:
 
 ```typescript
 // Before
 new DataSource({
     type: "expo",
+    driver: require("expo-sqlite"),
     database: "db.sqlite",
 })
 
-// After — use Expo SDK v52+ with the modern async API
+// After
 new DataSource({
     type: "expo",
     database: "db.sqlite",
-    driver: require("expo-sqlite"),
 })
 ```
 
@@ -784,18 +784,6 @@ const users = await repository.find({
 The removed type is `FindOptionsRelationByString`.
 
 ## QueryBuilder
-
-### Semicolons rejected in raw SQL expression methods
-
-The `select()`, `addSelect()`, `groupBy()`, `addGroupBy()`, `orderBy()`, and `addOrderBy()` methods on all query builders (`SelectQueryBuilder`, `UpdateQueryBuilder`, `SoftDeleteQueryBuilder`, and base `QueryBuilder`) now reject inputs containing semicolons at runtime to prevent SQL statement stacking attacks. The `orderBy()` methods also validate that order direction values are `"ASC"` or `"DESC"` and nulls values are `"NULLS FIRST"` or `"NULLS LAST"`. If you have legitimate SQL expressions that contain semicolons (e.g., inside string literals), use parameter binding instead:
-
-```typescript
-// This now throws
-qb.select("col; DROP TABLE post")
-
-// Use parameter binding for values
-qb.where("post.title = :title", { title: "value;with;semicolons" })
-```
 
 ### `printSql` removed
 

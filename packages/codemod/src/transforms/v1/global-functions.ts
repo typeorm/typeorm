@@ -8,8 +8,12 @@ import type {
     JSCodeshift,
     Node,
 } from "jscodeshift"
-import { getLocalNamesForImport, removeImportSpecifiers } from "../ast-helpers"
-import { addTodoComment } from "../todo"
+import {
+    getLocalNamesForImport,
+    removeImportSpecifiers,
+    removeReExportSpecifiers,
+} from "../ast-helpers"
+import { addTodoComment, hasTodoComment } from "../todo"
 import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
@@ -32,7 +36,27 @@ const removedGlobals = new Set([
     "getMongoRepository",
 ])
 
-// Simple replacements: getX(args) → dataSource.x(args)
+// Removed globals that have NO automatic rewrite — each call site gets a
+// comment explaining the manual migration path. Without this, the import
+// is stripped but the call remains, producing a ReferenceError at runtime
+// with no trace in the codemod output.
+const manualRemovedGlobals: Record<string, string> = {
+    createConnection:
+        "`createConnection()` was removed — instantiate a `DataSource` and call `.initialize()` instead: `const dataSource = new DataSource(options); await dataSource.initialize()`",
+    createConnections:
+        "`createConnections()` was removed — instantiate one `DataSource` per configuration and call `.initialize()` on each; multi-connection setups must be managed explicitly",
+    getConnectionManager:
+        "`getConnectionManager()` was removed — the global `ConnectionManager` singleton no longer exists; hold and share `DataSource` instances directly",
+    getConnectionOptions:
+        "`getConnectionOptions()` was removed — load your ormconfig manually and pass the object into `new DataSource(options)`",
+    getSqljsManager:
+        "`getSqljsManager()` was removed — access the sql.js-specific API via `(dataSource.driver as SqljsDriver)` on your initialized DataSource",
+}
+
+// Simple replacements: `getX()` rewrites to either a property access
+// (`getManager()` → `dataSource.manager`) or a method call
+// (`getRepository(User)` → `dataSource.getRepository(User)`); see
+// `rewriteSimpleCall` for the heuristic that picks the right shape.
 const simpleReplacements: Record<string, string> = {
     getManager: "dataSource.manager",
     getRepository: "dataSource.getRepository",
@@ -46,6 +70,11 @@ const todoHostTypes = new Set([
     "ExpressionStatement",
     "VariableDeclaration",
     "ReturnStatement",
+    // Class field initializer — `conn = createConnection()` inside a class
+    // body has no enclosing Statement/VariableDeclaration, so the walk
+    // must recognise the property itself as a host.
+    "ClassProperty",
+    "PropertyDefinition",
 ])
 
 const rewriteSimpleCall = (
@@ -127,32 +156,87 @@ export const globalFunctions = (file: FileInfo, api: API) => {
 
     let hasNamedConnection = false
 
-    if (callReplacements.size > 0 || getConnectionLocals.size > 0) {
-        root.find(j.CallExpression).forEach((astPath) => {
-            const callee = astPath.node.callee
-            if (callee.type !== "Identifier") return
-
-            // `getConnection()` → `dataSource`. Named connections are gone
-            // in v1 — rewrite `getConnection("name")` to `dataSource` too
-            // (the argument is dropped) and flag so the user knows to
-            // reconfigure for multi-DataSource setups.
-            if (getConnectionLocals.has(callee.name)) {
-                const hadArg = astPath.node.arguments.length > 0
-                j(astPath).replaceWith(j.identifier("dataSource"))
-                hasChanges = true
-                if (hadArg) hasNamedConnection = true
-                return
-            }
-
-            const replacement = callReplacements.get(callee.name)
-            if (replacement && rewriteSimpleCall(j, astPath, replacement)) {
-                hasChanges = true
-            }
-        })
+    // Build lookup: local-name → manual-removal comment message, so aliased
+    // imports like `import { createConnection as cc } from "typeorm"` still
+    // get their call sites flagged.
+    const manualTodos = new Map<string, string>()
+    for (const [funcName, message] of Object.entries(manualRemovedGlobals)) {
+        for (const localName of getLocalNamesForImport(
+            root,
+            j,
+            "typeorm",
+            funcName,
+        )) {
+            manualTodos.set(localName, message)
+        }
     }
 
-    // Remove imports of deprecated globals from "typeorm"
+    // Rewrites `getConnection()` → `dataSource`, stripping the argument.
+    // Sets `hasNamedConnection` when the call had a named-connection arg.
+    const rewriteGetConnection = (
+        astPath: ASTPath<CallExpression>,
+    ): boolean => {
+        const hadArg = astPath.node.arguments.length > 0
+        j(astPath).replaceWith(j.identifier("dataSource"))
+        if (hadArg) hasNamedConnection = true
+        return true
+    }
+
+    // Attaches a manual-migration comment to the enclosing statement of
+    // `astPath`. Returns whether anything changed.
+    const attachManualTodo = (
+        astPath: ASTPath<CallExpression>,
+        manualMessage: string,
+    ): boolean => {
+        let current: ASTPath<Node> | null = astPath
+        while (current) {
+            const node: Node = current.node
+            if (todoHostTypes.has(node.type)) {
+                if (!hasTodoComment(node, manualMessage)) {
+                    addTodoComment(node, manualMessage, j)
+                }
+                return true
+            }
+            current = current.parent
+        }
+        return false
+    }
+
+    const handleCallSite = (astPath: ASTPath<CallExpression>): void => {
+        const callee = astPath.node.callee
+        if (callee.type !== "Identifier") return
+
+        if (getConnectionLocals.has(callee.name)) {
+            if (rewriteGetConnection(astPath)) hasChanges = true
+            return
+        }
+
+        const replacement = callReplacements.get(callee.name)
+        if (replacement && rewriteSimpleCall(j, astPath, replacement)) {
+            hasChanges = true
+            return
+        }
+
+        const manualMessage = manualTodos.get(callee.name)
+        if (manualMessage && attachManualTodo(astPath, manualMessage)) {
+            hasChanges = true
+        }
+    }
+
+    if (
+        callReplacements.size > 0 ||
+        getConnectionLocals.size > 0 ||
+        manualTodos.size > 0
+    ) {
+        root.find(j.CallExpression).forEach(handleCallSite)
+    }
+
     if (removeImportSpecifiers(root, j, "typeorm", removedGlobals)) {
+        hasChanges = true
+    }
+
+    // Remove re-exports of deprecated globals (barrel-file pattern)
+    if (removeReExportSpecifiers(root, j, "typeorm", removedGlobals)) {
         hasChanges = true
     }
 

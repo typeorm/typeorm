@@ -1,9 +1,11 @@
-import { DataSource, DataSourceOptions, QueryRunner } from "typeorm"
-import type { SapDataSourceOptions } from "typeorm/driver/sap/SapDataSourceOptions"
-import type { BetterSqlite3DataSourceOptions } from "typeorm/driver/better-sqlite3/BetterSqlite3DataSourceOptions"
-
-// Cross-directory rename: the `sqlite/` directory was removed in v1
-import type { BetterSqlite3DataSourceOptions } from "typeorm/driver/better-sqlite3/BetterSqlite3DataSourceOptions"
+import {
+    DataSource,
+    DataSourceOptions,
+    QueryRunner,
+    EntityMetadata,
+    ColumnMetadata,
+    IndexMetadata,
+} from "typeorm"
 
 // Deep path whose final segment is NOT an exact rename key must be left alone
 import { something } from "typeorm/driver/sap/ThingsConnectionHelper"
@@ -13,9 +15,19 @@ const options: DataSourceOptions = {
     database: "test",
 }
 
-const sapOptions: SapDataSourceOptions = {
+const sapOptions: Extract<DataSourceOptions, { type: "sap" }> = {
     type: "sap",
     database: "hana",
+}
+
+const sqliteOptions: Extract<DataSourceOptions, { type: "better-sqlite3" }> = {
+    type: "sqlite",
+    database: ":memory:",
+}
+
+const bsOptions: Extract<DataSourceOptions, { type: "better-sqlite3" }> = {
+    type: "better-sqlite3",
+    database: ":memory:",
 }
 
 const connection = new DataSource(options)
@@ -74,13 +86,20 @@ async function bounce(ds: DataSource) {
     return runner.dataSource
 }
 
-// CommonJS require(): destructured identifier + deep-path both rewrite
+// CommonJS require(): destructured identifier rewrite
 const { DataSource: LegacyConn } = require("typeorm")
-const {
-    SapDataSourceOptions: LegacySapOpts,
-} = require("typeorm/driver/sap/SapDataSourceOptions")
 
 const cjs = new DataSource(options)
+
+// Aliased CJS bindings should still get method renames applied
+await cjs.initialize()
+await cjs.destroy()
+
+// Duplicate-rename: user imports both Connection AND DataSource from typeorm.
+// The rename of Connection → DataSource must not produce `{ DataSource, DataSource }`.
+import { DataSource as Conn2, DataSource as DS2 } from "typeorm"
+const both = new Conn2(options)
+const another = new DS2(options)
 
 // Should NOT be transformed — not TypeORM typed
 const ds3 = event.connection
@@ -99,3 +118,21 @@ class ProductService {
 // Should NOT be transformed — not TypeORM
 await app.close()
 await server.close()
+
+// Re-exports from typeorm (barrel files) should also be renamed
+export { DataSource, DataSourceOptions } from "typeorm"
+
+// Aliased re-exports keep the exported name for downstream consumers but
+// rename the local specifier so the (now renamed) symbol is pulled from typeorm
+export { DataSource as DbConnection } from "typeorm"
+
+function inspectOpts(
+    opts: Extract<DataSourceOptions, { type: "mysql" | "mariadb" }>,
+) {
+    // Options-typed parameters are plain value-objects — their `.connect` /
+    // `.close` methods are unrelated to DataSource's and must NOT be renamed
+    // to initialize / destroy.
+    opts.connect()
+    opts.close()
+    return opts
+}

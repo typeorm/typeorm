@@ -448,8 +448,8 @@ List of available options in `ColumnOptions`:
 - `collation: string` - Defines a column collation.
 - `enum: string[]|AnyEnum` - Used in `enum` column type to specify list of allowed enum values. You can specify array of values or specify a enum class.
 - `enumName: string` - Defines the name for the used enum.
-- `asExpression: string` - Generated column expression. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
-- `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html).
+- `asExpression: string` - Generated column expression. Supported by PostgreSQL/CockroachDB, MySQL/MariaDB, Oracle, SAP HANA, Spanner, SQLite, and SQL Server.
+- `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Supported by PostgreSQL (`STORED` only), CockroachDB, MySQL/MariaDB, Oracle (`VIRTUAL` only), Spanner (`STORED` only), SQLite, and SQL Server (`STORED` only, internally mapped to `PERSISTED`).
 - `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
 - `array: boolean` - Used for postgres and cockroachdb column types which can be array (for example int[])
 - `transformer: { from(value: DatabaseType): EntityType, to(value: EntityType): DatabaseType }` - Used to marshal properties of arbitrary type `EntityType` into a type `DatabaseType` supported by the database. Array of transformers are also supported and will be applied in natural order when writing, and in reverse order when reading. e.g. `[lowercase, encrypt]` will first lowercase the string then encrypt it when writing, and will decrypt then do nothing when reading.
