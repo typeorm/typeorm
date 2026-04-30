@@ -1310,25 +1310,17 @@ export class MongoEntityManager extends EntityManager {
         cursor: FindCursor<Entity> | AggregationCursor<Entity>,
     ) {
         const transformer = new DocumentToEntityTransformer()
-        const originalToArray = cursor.toArray.bind(cursor)
-        const originalNext = cursor.next.bind(cursor)
-
-        cursor.toArray = () =>
-            this.toArray(
-                cursor,
-                originalToArray,
-                originalNext,
-                transformer,
-                metadata,
-                this.mongoQueryRunner,
-            )
-        cursor.next = () =>
-            this.next(
-                originalNext,
-                transformer,
-                metadata,
-                this.mongoQueryRunner,
-            )
+        cursor.transform = async (doc: ObjectLiteral) => {
+            const entity = transformer.transform(doc, metadata)
+            if (entity) {
+                await this.mongoQueryRunner.broadcaster.broadcast(
+                    "Load",
+                    metadata,
+                    [entity],
+                )
+            }
+            return entity
+        }
     }
 
     protected filterSoftDeleted<Entity>(
@@ -1497,53 +1489,5 @@ export class MongoEntityManager extends EntityManager {
             this.count(entityClassOrName, query),
         ])
         return [results, parseInt(count)]
-    }
-
-    private async toArray<Entity>(
-        cursor: FindCursor<Entity> | AggregationCursor<Entity>,
-        originalToArray: () => Promise<Entity[]>,
-        originalNext: () => Promise<Entity | null>,
-        transformer: DocumentToEntityTransformer,
-        metadata: EntityMetadata,
-        queryRunner: MongoQueryRunner,
-    ): Promise<Entity[]> {
-        const patchedNext = cursor.next.bind(cursor)
-        cursor.next = originalNext
-
-        let documents: Entity[]
-        try {
-            documents = await originalToArray()
-        } finally {
-            cursor.next = patchedNext
-        }
-
-        const entities = transformer
-            .transformAll(documents as ObjectLiteral[], metadata)
-            .filter((entity) => entity !== null)
-
-        if (entities.length > 0)
-            await queryRunner.broadcaster.broadcast("Load", metadata, entities)
-
-        return entities
-    }
-
-    private async next<Entity>(
-        originalNext: () => Promise<Entity | null>,
-        transformer: DocumentToEntityTransformer,
-        metadata: EntityMetadata,
-        queryRunner: MongoQueryRunner,
-    ): Promise<Entity | null> {
-        const document = await originalNext()
-        if (document === null) return null
-
-        const entity = transformer.transform(
-            document as ObjectLiteral,
-            metadata,
-        )
-        if (entity === null) return null
-
-        await queryRunner.broadcaster.broadcast("Load", metadata, [entity])
-
-        return entity
     }
 }
