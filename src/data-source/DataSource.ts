@@ -1,4 +1,8 @@
 import type { Driver } from "../driver/Driver"
+import {
+    type ValueHandlerResolver,
+    resolveValueHandler,
+} from "../metadata/value-handlers/resolveValueHandler"
 import { registerQueryBuilders } from "../query-builder"
 import type { Repository } from "../repository/Repository"
 import type { EntitySubscriberInterface } from "../subscriber/EntitySubscriberInterface"
@@ -85,6 +89,9 @@ export class DataSource {
      */
     namingStrategy: NamingStrategyInterface
 
+    /** Resolves the value handler for each column during metadata build. */
+    valueHandlerResolver: ValueHandlerResolver
+
     /**
      * Name for the metadata table
      */
@@ -143,6 +150,8 @@ export class DataSource {
         this.manager = this.createEntityManager()
         this.namingStrategy =
             options.namingStrategy ?? new DefaultNamingStrategy()
+        this.valueHandlerResolver =
+            options.valueHandlerResolver ?? resolveValueHandler
         this.metadataTableName = options.metadataTableName ?? "typeorm_metadata"
         this.queryResultCache = options.cache
             ? new QueryResultCacheFactory(this).create()
@@ -209,6 +218,10 @@ export class DataSource {
 
         if (options.namingStrategy) {
             this.namingStrategy = options.namingStrategy
+        }
+
+        if (options.valueHandlerResolver) {
+            this.valueHandlerResolver = options.valueHandlerResolver
         }
 
         if (options.cache) {

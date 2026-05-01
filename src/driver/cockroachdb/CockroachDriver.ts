@@ -461,6 +461,8 @@ export class CockroachDriver implements Driver {
                 : value
 
         // unique_rowid() generates bigint value and should not be converted to number
+        // TODO: "int", "integer", "int8" are missing — pg returns int8 as string
+        // but parseInt risks precision loss for 64-bit values.
         if (
             ([Number, "int4", "smallint", "int2"].some(
                 (v) => v === columnMetadata.type,

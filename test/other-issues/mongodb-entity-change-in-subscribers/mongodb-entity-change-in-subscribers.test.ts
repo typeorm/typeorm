@@ -48,7 +48,7 @@ describe("other issues > mongodb entity change in subscribers should affect pers
                     })
                 expect(loadedUpdatedPost).not.to.be.null
                 expect(loadedUpdatedPost.title).to.equals("hello world!")
-                expect(loadedUpdatedPost.updatedColumns).to.equals(4) // it actually should be 3, but ObjectId column always added
+                expect(loadedUpdatedPost.updatedColumns).to.equals(3)
 
                 await connection.manager.save(loadedPost)
             }),

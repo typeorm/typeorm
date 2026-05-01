@@ -1,10 +1,8 @@
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
-import { DateUtils } from "../util/DateUtils"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { OrmUtils } from "../util/OrmUtils"
 import type { Subject } from "./Subject"
-import { areUint8ArraysEqual, isUint8Array } from "../util/Uint8ArrayUtils"
 
 /**
  * Finds what columns are changed in the subject entities.
@@ -73,7 +71,7 @@ export class SubjectChangedColumnsComputer {
                     column.type !== "json" && column.type !== "jsonb"
 
                 // get database value of the column
-                let databaseValue = column.getEntityValue(
+                const databaseValue = column.getEntityValue(
                     subject.databaseEntity,
                     shouldTransformDatabaseEntity,
                 )
@@ -104,121 +102,7 @@ export class SubjectChangedColumnsComputer {
                     )
                 }
 
-                // if both values are not null, normalize special values to make proper comparision
-                if (normalizedValue !== null && databaseValue !== null) {
-                    switch (column.type) {
-                        case "date":
-                            normalizedValue = column.isArray
-                                ? normalizedValue.map((date: Date) =>
-                                      DateUtils.mixedDateToDateString(date),
-                                  )
-                                : DateUtils.mixedDateToDateString(
-                                      normalizedValue,
-                                  )
-                            databaseValue = column.isArray
-                                ? databaseValue.map((date: Date) =>
-                                      DateUtils.mixedDateToDateString(date),
-                                  )
-                                : DateUtils.mixedDateToDateString(databaseValue)
-                            break
-
-                        case "time":
-                        case "time with time zone":
-                        case "time without time zone":
-                        case "timetz":
-                            normalizedValue = column.isArray
-                                ? normalizedValue.map((date: Date) =>
-                                      DateUtils.mixedDateToTimeString(date),
-                                  )
-                                : DateUtils.mixedDateToTimeString(
-                                      normalizedValue,
-                                  )
-                            databaseValue = column.isArray
-                                ? databaseValue.map((date: Date) =>
-                                      DateUtils.mixedDateToTimeString(date),
-                                  )
-                                : DateUtils.mixedDateToTimeString(databaseValue)
-                            break
-
-                        case "datetime":
-                        case "datetime2":
-                        case Date:
-                        case "timestamp":
-                        case "timestamp without time zone":
-                        case "timestamp with time zone":
-                        case "timestamp with local time zone":
-                        case "timestamptz":
-                            normalizedValue = column.isArray
-                                ? normalizedValue.map((date: Date) =>
-                                      DateUtils.mixedDateToUtcDatetimeString(
-                                          date,
-                                      ),
-                                  )
-                                : DateUtils.mixedDateToUtcDatetimeString(
-                                      normalizedValue,
-                                  )
-
-                            databaseValue = column.isArray
-                                ? databaseValue.map((date: Date) =>
-                                      DateUtils.mixedDateToUtcDatetimeString(
-                                          date,
-                                      ),
-                                  )
-                                : DateUtils.mixedDateToUtcDatetimeString(
-                                      databaseValue,
-                                  )
-
-                            break
-
-                        case "json":
-                        case "jsonb":
-                            // JSON.stringify doesn't work because postgresql sorts jsonb before save.
-                            // If you try to save json '[{"messages": "", "attribute Key": "", "level":""}] ' as jsonb,
-                            // then postgresql will save it as '[{"level": "", "message":"", "attributeKey": ""}]'
-                            if (
-                                OrmUtils.deepCompare(
-                                    normalizedValue,
-                                    databaseValue,
-                                )
-                            )
-                                return
-                            break
-
-                        case "simple-array":
-                            normalizedValue =
-                                DateUtils.simpleArrayToString(normalizedValue)
-                            databaseValue =
-                                DateUtils.simpleArrayToString(databaseValue)
-                            break
-                        case "simple-enum":
-                            normalizedValue =
-                                DateUtils.simpleEnumToString(normalizedValue)
-                            databaseValue =
-                                DateUtils.simpleEnumToString(databaseValue)
-                            break
-                        case "simple-json":
-                            normalizedValue =
-                                DateUtils.simpleJsonToString(normalizedValue)
-                            databaseValue =
-                                DateUtils.simpleJsonToString(databaseValue)
-                            break
-                    }
-                }
-
-                // if value is not changed - then do nothing
-                if (column.isArray) {
-                    if (OrmUtils.deepCompare(normalizedValue, databaseValue))
-                        return
-                } else if (
-                    isUint8Array(normalizedValue) &&
-                    isUint8Array(databaseValue)
-                ) {
-                    if (areUint8ArraysEqual(normalizedValue, databaseValue)) {
-                        return
-                    }
-                } else {
-                    if (normalizedValue === databaseValue) return
-                }
+                if (column.valuesEqual(normalizedValue, databaseValue)) return
             }
 
             if (!subject.diffColumns.includes(column))

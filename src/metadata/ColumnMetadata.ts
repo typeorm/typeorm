@@ -10,8 +10,9 @@ import type { ValueTransformer } from "../decorator/options/ValueTransformer"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
-import { areUint8ArraysEqual, isUint8Array } from "../util/Uint8ArrayUtils"
+import { isUint8Array } from "../util/Uint8ArrayUtils"
 import type { VirtualColumnOptions } from "../decorator/options/VirtualColumnOptions"
+import { type ColumnValueHandler, ValueHandlers } from "./value-handlers"
 
 /**
  * This metadata contains all information about entity's column.
@@ -309,6 +310,12 @@ export class ColumnMetadata {
     transformer?: ValueTransformer | ValueTransformer[]
 
     /**
+     * Handler responsible for value normalization and type-aware comparison.
+     * Resolved per-column at build time via resolveValueHandler().
+     */
+    valueHandler: ColumnValueHandler = ValueHandlers.defaultHandler
+
+    /**
      * Column type in the case if this column is in the closure table.
      * Column can be ancestor or descendant in the closure tables.
      */
@@ -557,14 +564,7 @@ export class ColumnMetadata {
                     return map
                 }
 
-                // this is bugfix for #720 when increment number is bigint we need to make sure its a string
-                if (
-                    (this.generationStrategy === "increment" ||
-                        this.generationStrategy === "rowid") &&
-                    this.type === "bigint" &&
-                    value !== null
-                )
-                    value = String(value)
+                value = this.normalizeValue(value)
 
                 map[useDatabaseName ? this.databaseName : this.propertyName] =
                     value
@@ -572,16 +572,7 @@ export class ColumnMetadata {
             }
             return extractEmbeddedColumnValue(propertyNames, {})
         } else {
-            // no embeds - no problems. Simply return column property name and its value of the entity
-
-            // this is bugfix for #720 when increment number is bigint we need to make sure its a string
-            if (
-                (this.generationStrategy === "increment" ||
-                    this.generationStrategy === "rowid") &&
-                this.type === "bigint" &&
-                value !== null
-            )
-                value = String(value)
+            value = this.normalizeValue(value)
 
             return {
                 [useDatabaseName ? this.databaseName : this.propertyName]:
@@ -660,12 +651,18 @@ export class ColumnMetadata {
 
                 if (isEmbeddedArray && Array.isArray(value)) {
                     return value.map((element) => ({
-                        [this.propertyName]: element[this.propertyName],
+                        [this.propertyName]: this.normalizeValue(
+                            element[this.propertyName],
+                        ),
                     }))
                 }
 
                 if (value[this.propertyName] !== undefined) {
-                    return { [this.propertyName]: value[this.propertyName] }
+                    return {
+                        [this.propertyName]: this.normalizeValue(
+                            value[this.propertyName],
+                        ),
+                    }
                 }
 
                 return {}
@@ -717,7 +714,11 @@ export class ColumnMetadata {
                 return undefined
             } else {
                 if (entity[this.propertyName] !== undefined) {
-                    return { [this.propertyName]: entity[this.propertyName] }
+                    return {
+                        [this.propertyName]: this.normalizeValue(
+                            entity[this.propertyName],
+                        ),
+                    }
                 }
 
                 return undefined
@@ -845,6 +846,8 @@ export class ColumnMetadata {
             }
         }
 
+        value = this.normalizeValue(value)
+
         if (transform && this.transformer)
             value = ApplyValueTransformers.transformTo(this.transformer, value)
 
@@ -908,6 +911,14 @@ export class ColumnMetadata {
         }
     }
 
+    normalizeValue(value: unknown): unknown {
+        return ValueHandlers.normalize(this.valueHandler, value, this.isArray)
+    }
+
+    valuesEqual(a: unknown, b: unknown): boolean {
+        return ValueHandlers.areEqual(this.valueHandler, a, b, this.isArray)
+    }
+
     /**
      * Compares given entity's column value with a given value.
      *
@@ -915,14 +926,7 @@ export class ColumnMetadata {
      * @param valueToCompareWith
      */
     compareEntityValue(entity: any, valueToCompareWith: any) {
-        const columnValue = this.getEntityValue(entity)
-        if (isUint8Array(columnValue) && isUint8Array(valueToCompareWith)) {
-            return areUint8ArraysEqual(columnValue, valueToCompareWith)
-        }
-        if (typeof columnValue?.equals === "function") {
-            return columnValue.equals(valueToCompareWith)
-        }
-        return columnValue === valueToCompareWith
+        return this.valuesEqual(this.getEntityValue(entity), valueToCompareWith)
     }
 
     // ---------------------------------------------------------------------
@@ -938,6 +942,10 @@ export class ColumnMetadata {
             this.propertyName,
             this.givenDatabaseName,
             [],
+        )
+        this.valueHandler = dataSource.valueHandlerResolver(
+            this,
+            dataSource.driver,
         )
         return this
     }

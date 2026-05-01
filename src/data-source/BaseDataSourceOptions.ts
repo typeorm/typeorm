@@ -1,6 +1,7 @@
 import type { EntitySchema } from "../entity-schema/EntitySchema"
 import type { LoggerOptions } from "../logger/LoggerOptions"
 import type { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
+import type { ValueHandlerResolver } from "../metadata/value-handlers/resolveValueHandler"
 import type { DatabaseType } from "../driver/types/DatabaseType"
 import type { IsolationLevel } from "../driver/types/IsolationLevel"
 import type { Logger } from "../logger/Logger"
@@ -66,6 +67,9 @@ export interface BaseDataSourceOptions {
      * Naming strategy to be used to name tables and columns in the database.
      */
     readonly namingStrategy?: NamingStrategyInterface
+
+    /** Custom resolver for column value handlers. */
+    readonly valueHandlerResolver?: ValueHandlerResolver
 
     /**
      * Logging options.
