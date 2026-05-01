@@ -775,7 +775,7 @@ export class PostgresQueryRunner
      */
     async dropView(target: View | string, ifExists?: boolean): Promise<void> {
         const viewName = InstanceChecker.isView(target)
-            ? [target.schema, target.name].filter(Boolean).join(".")
+            ? this.driver.buildTableName(target.name, target.schema)
             : target
 
         let view: View
@@ -3516,7 +3516,7 @@ export class PostgresQueryRunner
                       .map(({ schema, tableName }) => {
                           schema ??= this.driver.options.schema ?? currentSchema
 
-                          return `(COALESCE("v"."schemaname", "mv"."schemaname") = '${schema}' AND "i"."relname" = '${tableName}')`
+                          return `("n"."nspname" = '${schema}' AND "i"."relname" = '${tableName}')`
                       })
                       .join(" OR ")
 
@@ -3546,14 +3546,16 @@ export class PostgresQueryRunner
             `LEFT JOIN "pg_constraint" "cnst" ON "cnst"."conname" = "i"."relname" ` +
             `WHERE "t"."relkind" IN ('m') AND "cnst"."contype" IS NULL AND (${constraintsCondition})`
 
-        const query = `SELECT CASE WHEN "relkind" = 'm' THEN '${MetadataTableType.MATERIALIZED_VIEW}' ELSE '${MetadataTableType.VIEW}' END AS "type",
-                COALESCE(v."schemaname", "mv"."schemaname")   AS "schema",
-                "relname"                                     AS "name",
-                COALESCE("v"."definition", "mv"."definition") AS "value"
-            FROM "pg_class" "i"
-                    LEFT JOIN "pg_views" "v" ON "v"."viewname" = "i"."relname"
-                    LEFT JOIN "pg_matviews" "mv" ON "mv"."matviewname" = "i"."relname"
-            WHERE ${viewsCondition ? `(${viewsCondition})` : ""}`
+        const query =
+            `SELECT CASE WHEN "i"."relkind" = 'm' THEN '${MetadataTableType.MATERIALIZED_VIEW}' ELSE '${MetadataTableType.VIEW}' END AS "type", ` +
+            `"n"."nspname" AS "schema", ` +
+            `"i"."relname" AS "name", ` +
+            `COALESCE("v"."definition", "mv"."definition") AS "value" ` +
+            `FROM "pg_class" "i" ` +
+            `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "i"."relnamespace" ` +
+            `LEFT JOIN "pg_views" "v" ON "v"."viewname" = "i"."relname" AND "v"."schemaname" = "n"."nspname" ` +
+            `LEFT JOIN "pg_matviews" "mv" ON "mv"."matviewname" = "i"."relname" AND "mv"."schemaname" = "n"."nspname" ` +
+            `WHERE "i"."relkind" IN ('v', 'm') ${viewsCondition ? `AND (${viewsCondition})` : ""}`
 
         const dbViews = await this.query(query)
         const dbIndices: ObjectLiteral[] = await this.query(indicesSql)
