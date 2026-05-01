@@ -384,19 +384,13 @@ describe("value-handlers - mysql/mariadb/better-sqlite3", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
-            entities: [
-                BigintParent,
-                BigintChild,
-                DateTimePostDatetime,
-                TypeCoveragePostJson,
-            ],
+            entities: [DateTimePostDatetime, TypeCoveragePostJson],
             enabledDrivers: ["mysql", "mariadb", "better-sqlite3"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    describe("FK relation", () => fkRelationTests(() => dataSources))
     describe("date/datetime", () =>
         dateTimeTests(() => dataSources, DateTimePostDatetime))
     typeCoverageTests(
@@ -405,6 +399,20 @@ describe("value-handlers - mysql/mariadb/better-sqlite3", () => {
         JsonUserRole,
         true,
     )
+})
+
+describe("value-handlers - mysql/mariadb bigint FK", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [BigintParent, BigintChild],
+            enabledDrivers: ["mysql", "mariadb"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    describe("FK relation", () => fkRelationTests(() => dataSources))
 })
 
 describe("value-handlers - postgres", () => {
@@ -495,12 +503,7 @@ describe("value-handlers - valuesEqual metadata checks", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
-            entities: [
-                BigintParent,
-                BigintChild,
-                DateTimePostDatetime,
-                TypeCoveragePostJson,
-            ],
+            entities: [DateTimePostDatetime, TypeCoveragePostJson],
             enabledDrivers: ["better-sqlite3"],
         })
     })
@@ -508,7 +511,7 @@ describe("value-handlers - valuesEqual metadata checks", () => {
 
     it("should use default handler for integer PK", () => {
         for (const ds of dataSources) {
-            const pkCol = ds.getMetadata(BigintParent).primaryColumns[0]
+            const pkCol = ds.getMetadata(TypeCoveragePostJson).primaryColumns[0]
             expect(pkCol.valuesEqual(1, 1)).to.be.true
             expect(pkCol.valuesEqual(1, 2)).to.be.false
         }
@@ -516,7 +519,7 @@ describe("value-handlers - valuesEqual metadata checks", () => {
 
     it("should handle null comparison correctly", () => {
         for (const ds of dataSources) {
-            const pkCol = ds.getMetadata(BigintParent).primaryColumns[0]
+            const pkCol = ds.getMetadata(TypeCoveragePostJson).primaryColumns[0]
             expect(pkCol.valuesEqual(null, null)).to.be.true
             expect(pkCol.valuesEqual(null, 1)).to.be.false
             expect(pkCol.valuesEqual(1, null)).to.be.false

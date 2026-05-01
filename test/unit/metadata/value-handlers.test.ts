@@ -275,6 +275,19 @@ describe("value-handlers", () => {
             expect(handler).to.equal(BigintValueHandler)
         })
 
+        it("returns BigintValueHandler for FK referencing bigint+increment PK", () => {
+            const handler = resolveValueHandler(
+                fakeColumn({
+                    type: "bigint",
+                    referencedColumn: fakeColumn({
+                        type: "bigint",
+                        generationStrategy: "increment",
+                    }),
+                }),
+            )
+            expect(handler).to.equal(BigintValueHandler)
+        })
+
         it("returns ValueHandlers.defaultHandler for bigint without generation strategy", () => {
             const handler = resolveValueHandler(fakeColumn({ type: "bigint" }))
             expect(handler).to.equal(ValueHandlers.defaultHandler)

@@ -846,10 +846,10 @@ export class ColumnMetadata {
             }
         }
 
-        value = this.normalizeValue(value)
-
         if (transform && this.transformer)
             value = ApplyValueTransformers.transformTo(this.transformer, value)
+
+        value = this.normalizeValue(value)
 
         return value
     }

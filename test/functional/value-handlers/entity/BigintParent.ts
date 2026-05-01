@@ -8,8 +8,8 @@ import { BigintChild } from "./BigintChild"
 
 @Entity()
 export class BigintParent {
-    @PrimaryGeneratedColumn()
-    id!: number
+    @PrimaryGeneratedColumn({ type: "bigint" })
+    id!: string
 
     @Column()
     name!: string

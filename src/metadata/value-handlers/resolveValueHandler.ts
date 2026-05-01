@@ -31,17 +31,22 @@ export function resolveValueHandler(
     const override = driver?.resolveValueHandler?.(column)
     if (override) return override
 
+    // TODO: caller should pass the canonical column (referencedColumn when set)
+    // so the resolver doesn't need this fallback. Blocked by initialization
+    // order — referencedColumn is wired after build().
+    const src = column.referencedColumn ?? column
     if (
-        column.type === "bigint" &&
-        (column.generationStrategy === "increment" ||
-            column.generationStrategy === "rowid")
+        src.type === "bigint" &&
+        (src.generationStrategy === "increment" ||
+            src.generationStrategy === "rowid")
     )
         return BigintValueHandler
 
-    // Date constructor used as column type (e.g. @Column({ type: Date }))
-    if (column.type === Date) return DateTimeValueHandler
+    const type = src.type
 
-    switch (column.type) {
+    if (type === Date) return DateTimeValueHandler
+
+    switch (type) {
         case "date":
             return DateValueHandler
         case "time":
