@@ -522,20 +522,20 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         )
 
         if (generatedColumns.length > 0) {
-            const currentDatabase = await this.getCurrentDatabase()
-
+            let { database, tableName } = this.driver.parseTableName(table)
+            database ??= await this.getCurrentDatabase()
             for (const column of generatedColumns) {
                 const insertQuery = this.insertTypeormMetadataSql({
-                    schema: currentDatabase,
-                    table: table.name,
+                    database,
+                    table: tableName,
                     type: MetadataTableType.GENERATED_COLUMN,
                     name: column.name,
                     value: column.asExpression,
                 })
 
                 const deleteQuery = this.deleteTypeormMetadataSql({
-                    schema: currentDatabase,
-                    table: table.name,
+                    database,
+                    table: tableName,
                     type: MetadataTableType.GENERATED_COLUMN,
                     name: column.name,
                 })
@@ -592,19 +592,20 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         )
 
         if (generatedColumns.length > 0) {
-            const currentDatabase = await this.getCurrentDatabase()
+            let { database, tableName } = this.driver.parseTableName(table)
+            database ??= await this.getCurrentDatabase()
 
             for (const column of generatedColumns) {
                 const deleteQuery = this.deleteTypeormMetadataSql({
-                    schema: currentDatabase,
-                    table: table.name,
+                    database,
+                    table: tableName,
                     type: MetadataTableType.GENERATED_COLUMN,
                     name: column.name,
                 })
 
                 const insertQuery = this.insertTypeormMetadataSql({
-                    schema: currentDatabase,
-                    table: table.name,
+                    database,
+                    table: tableName,
                     type: MetadataTableType.GENERATED_COLUMN,
                     name: column.name,
                     value: column.asExpression,
@@ -681,7 +682,9 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             : await this.getCachedTable(oldTableOrName)
         const newTable = oldTable.clone()
 
-        const { database } = this.driver.parseTableName(oldTable)
+        let { database, tableName: oldTableName } =
+            this.driver.parseTableName(oldTable)
+        database ??= await this.getCurrentDatabase()
 
         newTable.name = database ? `${database}.${newTableName}` : newTableName
 
@@ -700,6 +703,29 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 )}`,
             ),
         )
+
+        const hasGeneratedColumns = newTable.columns.some(
+            (col) => col.generatedType && col.asExpression,
+        )
+        if (hasGeneratedColumns) {
+            const { tableName: newTableName } =
+                this.driver.parseTableName(newTable)
+            const updateQuery = this.updateTypeormMetadataSql({
+                database,
+                table: oldTableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                valueToSet: { table: newTableName },
+            })
+            const revertUpdateQuery = this.updateTypeormMetadataSql({
+                database,
+                table: newTableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                valueToSet: { table: oldTableName },
+            })
+
+            upQueries.push(updateQuery)
+            downQueries.push(revertUpdateQuery)
+        }
 
         // rename index constraints
         newTable.indices.forEach((index) => {
@@ -992,18 +1018,19 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         if (column.generatedType && column.asExpression) {
-            const currentDatabase = await this.getCurrentDatabase()
+            let { database, tableName } = this.driver.parseTableName(table)
+            database ??= await this.getCurrentDatabase()
             const insertQuery = this.insertTypeormMetadataSql({
-                schema: currentDatabase,
-                table: table.name,
+                database,
+                table: tableName,
                 type: MetadataTableType.GENERATED_COLUMN,
                 name: column.name,
                 value: column.asExpression,
             })
 
             const deleteQuery = this.deleteTypeormMetadataSql({
-                schema: currentDatabase,
-                table: table.name,
+                database,
+                table: tableName,
                 type: MetadataTableType.GENERATED_COLUMN,
                 name: column.name,
             })
@@ -1177,6 +1204,29 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     ),
                 )
 
+                if (oldColumn.generatedType && oldColumn.asExpression) {
+                    let { database, tableName } =
+                        this.driver.parseTableName(table)
+                    database ??= await this.getCurrentDatabase()
+                    const updateQuery = this.updateTypeormMetadataSql({
+                        database,
+                        table: tableName,
+                        name: oldColumn.name,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        valueToSet: { name: newColumn.name },
+                    })
+                    const revertUpdateQuery = this.updateTypeormMetadataSql({
+                        database,
+                        table: tableName,
+                        name: newColumn.name,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        valueToSet: { name: oldColumn.name },
+                    })
+
+                    upQueries.push(updateQuery)
+                    downQueries.push(revertUpdateQuery)
+                }
+
                 // rename index constraints
                 clonedTable.findColumnIndices(oldColumn).forEach((index) => {
                     const oldUniqueName =
@@ -1337,17 +1387,18 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                 if (oldColumn.generatedType && !newColumn.generatedType) {
                     // if column changed from generated to non-generated, delete record from typeorm metadata
-
-                    const currentDatabase = await this.getCurrentDatabase()
+                    let { database, tableName } =
+                        this.driver.parseTableName(table)
+                    database ??= await this.getCurrentDatabase()
                     const deleteQuery = this.deleteTypeormMetadataSql({
-                        schema: currentDatabase,
-                        table: table.name,
+                        database,
+                        table: tableName,
                         type: MetadataTableType.GENERATED_COLUMN,
                         name: oldColumn.name,
                     })
                     const insertQuery = this.insertTypeormMetadataSql({
-                        schema: currentDatabase,
-                        table: table.name,
+                        database,
+                        table: tableName,
                         type: MetadataTableType.GENERATED_COLUMN,
                         name: oldColumn.name,
                         value: oldColumn.asExpression,
@@ -1361,17 +1412,19 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 ) {
                     // if column changed from non-generated to generated, insert record into typeorm metadata
 
-                    const currentDatabase = await this.getCurrentDatabase()
+                    let { database, tableName } =
+                        this.driver.parseTableName(table)
+                    database ??= await this.getCurrentDatabase()
                     const insertQuery = this.insertTypeormMetadataSql({
-                        schema: currentDatabase,
-                        table: table.name,
+                        database,
+                        table: tableName,
                         type: MetadataTableType.GENERATED_COLUMN,
                         name: newColumn.name,
                         value: newColumn.asExpression,
                     })
                     const deleteQuery = this.deleteTypeormMetadataSql({
-                        schema: currentDatabase,
-                        table: table.name,
+                        database,
+                        table: tableName,
                         type: MetadataTableType.GENERATED_COLUMN,
                         name: newColumn.name,
                     })
@@ -1380,39 +1433,27 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     downQueries.push(deleteQuery)
                 } else if (oldColumn.asExpression !== newColumn.asExpression) {
                     // if only expression changed, just update it in typeorm_metadata table
-                    const currentDatabase = await this.getCurrentDatabase()
-                    const updateQuery = this.dataSource
-                        .createQueryBuilder()
-                        .update(this.getTypeormMetadataTableName())
-                        .set({ value: newColumn.asExpression })
-                        .where("`type` = :type", {
-                            type: MetadataTableType.GENERATED_COLUMN,
-                        })
-                        .andWhere("`name` = :name", { name: oldColumn.name })
-                        .andWhere("`schema` = :schema", {
-                            schema: currentDatabase,
-                        })
-                        .andWhere("`table` = :table", { table: table.name })
-                        .getQueryAndParameters()
+                    let { database, tableName } =
+                        this.driver.parseTableName(table)
+                    database ??= await this.getCurrentDatabase()
+                    const updateQuery = this.updateTypeormMetadataSql({
+                        database,
+                        table: tableName,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        name: oldColumn.name,
+                        valueToSet: { value: newColumn.asExpression },
+                    })
 
-                    const revertUpdateQuery = this.dataSource
-                        .createQueryBuilder()
-                        .update(this.getTypeormMetadataTableName())
-                        .set({ value: oldColumn.asExpression })
-                        .where("`type` = :type", {
-                            type: MetadataTableType.GENERATED_COLUMN,
-                        })
-                        .andWhere("`name` = :name", { name: newColumn.name })
-                        .andWhere("`schema` = :schema", {
-                            schema: currentDatabase,
-                        })
-                        .andWhere("`table` = :table", { table: table.name })
-                        .getQueryAndParameters()
+                    const revertUpdateQuery = this.updateTypeormMetadataSql({
+                        database,
+                        table: tableName,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        name: newColumn.name,
+                        valueToSet: { value: oldColumn.asExpression },
+                    })
 
-                    upQueries.push(new Query(updateQuery[0], updateQuery[1]))
-                    downQueries.push(
-                        new Query(revertUpdateQuery[0], revertUpdateQuery[1]),
-                    )
+                    upQueries.push(updateQuery)
+                    downQueries.push(revertUpdateQuery)
                 }
             }
 
@@ -1865,16 +1906,17 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         )
 
         if (column.generatedType && column.asExpression) {
-            const currentDatabase = await this.getCurrentDatabase()
+            let { database, tableName } = this.driver.parseTableName(table)
+            database ??= await this.getCurrentDatabase()
             const deleteQuery = this.deleteTypeormMetadataSql({
-                schema: currentDatabase,
-                table: table.name,
+                database,
+                table: tableName,
                 type: MetadataTableType.GENERATED_COLUMN,
                 name: column.name,
             })
             const insertQuery = this.insertTypeormMetadataSql({
-                schema: currentDatabase,
-                table: table.name,
+                database,
+                table: tableName,
                 type: MetadataTableType.GENERATED_COLUMN,
                 name: column.name,
                 value: column.asExpression,
@@ -2919,7 +2961,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                                 // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
                                 const asExpressionQuery =
                                     this.selectTypeormMetadataSql({
-                                        schema: dbTable["TABLE_SCHEMA"],
+                                        database:
+                                            table.database ?? currentDatabase,
                                         table: dbTable["TABLE_NAME"],
                                         type: MetadataTableType.GENERATED_COLUMN,
                                         name: tableColumn.name,
