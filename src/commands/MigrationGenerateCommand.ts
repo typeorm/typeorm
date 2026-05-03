@@ -234,13 +234,21 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
      * @param upSqls
      * @param downSqls
      */
+    protected static sanitizeMigrationName(name: string): string {
+        // Replace any character that is not a letter, digit, or underscore with
+        // a space so that camelCase() can turn them into word boundaries.
+        // This prevents special characters such as '#', '@', '.', etc. from
+        // leaking into the generated TypeScript/JavaScript class name.
+        return name.replaceAll(/[^\w]/g, " ").trim()
+    }
+
     protected static getTemplate(
         name: string,
         timestamp: number,
         upSqls: string[],
         downSqls: string[],
     ): string {
-        const migrationName = `${camelCase(name, true)}${timestamp}`
+        const migrationName = `${camelCase(MigrationGenerateCommand.sanitizeMigrationName(name), true)}${timestamp}`
 
         return `import { MigrationInterface, QueryRunner } from "typeorm";
 
@@ -277,7 +285,7 @@ ${downSqls.join(`
         downSqls: string[],
         esm: boolean,
     ): string {
-        const migrationName = `${camelCase(name, true)}${timestamp}`
+        const migrationName = `${camelCase(MigrationGenerateCommand.sanitizeMigrationName(name), true)}${timestamp}`
 
         const exportMethod = esm ? "export" : "module.exports ="
 

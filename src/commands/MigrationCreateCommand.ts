@@ -83,13 +83,19 @@ export class MigrationCreateCommand implements yargs.CommandModule {
      * @param name
      * @param timestamp
      */
+    protected static sanitizeMigrationName(name: string): string {
+        // Replace any character that is not a letter, digit, or underscore with
+        // a space so that camelCase() can turn them into word boundaries.
+        // This prevents special characters such as '#', '@', '.', etc. from
+        // leaking into the generated TypeScript/JavaScript class name.
+        return name.replaceAll(/[^\w]/g, " ").trim()
+    }
+
     protected static getTemplate(name: string, timestamp: number): string {
+        const migrationName = `${camelCase(MigrationCreateCommand.sanitizeMigrationName(name), true)}${timestamp}`
         return `import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class ${camelCase(
-            name,
-            true,
-        )}${timestamp} implements MigrationInterface {
+export class ${migrationName} implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<void> {
     }
@@ -114,6 +120,7 @@ export class ${camelCase(
         esm: boolean,
     ): string {
         const exportMethod = esm ? "export" : "module.exports ="
+        const migrationName = `${camelCase(MigrationCreateCommand.sanitizeMigrationName(name), true)}${timestamp}`
         return `/**
  * @typedef {import('typeorm').MigrationInterface} MigrationInterface
  * @typedef {import('typeorm').QueryRunner} QueryRunner
@@ -123,7 +130,7 @@ export class ${camelCase(
  * @class
  * @implements {MigrationInterface}
  */
-${exportMethod} class ${camelCase(name, true)}${timestamp} {
+${exportMethod} class ${migrationName} {
 
     /**
      * @param {QueryRunner} queryRunner
