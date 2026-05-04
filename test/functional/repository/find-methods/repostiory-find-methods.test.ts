@@ -161,7 +161,7 @@ describe("repository > find methods", () => {
                 }),
             ))
 
-        it("count should support select column in embed", () =>
+        it("should support distinct count with embed", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
                     const repository = dataSource.getRepository(Post)
