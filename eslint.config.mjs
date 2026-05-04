@@ -12,7 +12,7 @@ export default defineConfig([
         "docs/**",
         "node_modules/**",
         "packages/**",
-        "sample/playground/**",
+        "playground/**",
         "src/driver/mongodb/{typings.ts,bson.typings.ts}",
         "temp/**",
     ]),

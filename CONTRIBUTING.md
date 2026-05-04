@@ -18,7 +18,9 @@ If you have a question or want community support:
 
 ## <a name="issue"></a> Found a security vulnerability?
 
-If you find a security vulnerability or something that should be discussed privately, please contact us at [maintainers@typeorm.io](mailto:maintainers@typeorm.io).
+Please report security vulnerabilities through [GitHub Security Advisories](https://github.com/typeorm/typeorm/security/advisories/new).
+If you cannot use GitHub, email [support@typeorm.io](mailto:support@typeorm.io).
+Do not report vulnerabilities through public issues, discussions, or pull requests.
 
 ## <a name="issue"></a> Found a Bug?
 
