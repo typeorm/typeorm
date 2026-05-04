@@ -16,12 +16,15 @@ describe("persistence > pg concurrent query deprecation (#12238)", () => {
             entities: [Post, Tag],
             schemaCreate: true,
             dropSchema: true,
+            // spanner cannot insert two ManyToMany junction rows that share a
+            // generated primary key inside the same mutation batch.
+            disabledDrivers: ["spanner"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should keep relationLoadStrategy: 'query' working with ManyToMany on every supported driver", () =>
+    it("should keep relationLoadStrategy: 'query' working with ManyToMany on every supported driver except spanner", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const tag1 = new Tag()
