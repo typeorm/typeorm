@@ -277,6 +277,16 @@ userRepository.find({
 })
 ```
 
+`count` APIs also accept these find options. When using `select`, you can request distinct counting:
+
+```typescript
+const distinctCount = await userRepository.count({
+    select: {
+        firstName: true,
+    },
+})
+```
+
 Find without arguments:
 
 ```ts

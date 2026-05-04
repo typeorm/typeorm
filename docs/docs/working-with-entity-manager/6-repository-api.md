@@ -343,7 +343,16 @@ const count = await repository.count({
         firstName: "Timber",
     },
 })
+
+const distinctCount = await repository.count({
+    select: {
+        firstName: true,
+    },
+})
 ```
+
+When `select` is provided, counts distinct combinations of selected columns.
+If `select` is not provided, default count behavior is unchanged.
 
 - `countBy` - Counts entities that match `FindOptionsWhere`. Useful for pagination.
 
