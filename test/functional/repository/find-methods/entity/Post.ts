@@ -1,6 +1,7 @@
 import { Entity } from "../../../../../src/decorator/entity/Entity"
 import { Column } from "../../../../../src/decorator/columns/Column"
 import { PrimaryColumn } from "../../../../../src/decorator/columns/PrimaryColumn"
+import { Counters } from "./Counters"
 
 @Entity()
 export class Post {
@@ -15,4 +16,7 @@ export class Post {
 
     @Column()
     isNew: boolean = false
+
+    @Column(() => Counters)
+    counters: Counters
 }

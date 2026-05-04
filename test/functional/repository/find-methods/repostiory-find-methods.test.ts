@@ -7,6 +7,8 @@ import {
 } from "../../../utils/test-utils"
 import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
+import { Category } from "./entity/Category"
+import { Counters } from "./entity/Counters"
 import type { User } from "./model/User"
 import { EntityNotFoundError } from "../../../../src/error/EntityNotFoundError"
 import { UserEntity } from "./schema/UserEntity"
@@ -15,7 +17,7 @@ describe("repository > find methods", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
-            entities: [Post, UserEntity],
+            entities: [Post, Category, UserEntity],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
@@ -130,6 +132,63 @@ describe("repository > find methods", () => {
                         order: { id: "ASC" },
                     })
                     count.should.be.equal(5)
+                }),
+            ))
+
+        it("should support distinct count when select is provided", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const repository = dataSource.getRepository(Category)
+
+                    await repository.save([
+                        { name: "Bears" },
+                        { name: "Bears" },
+                        { name: "Cats" },
+                    ])
+
+                    const count1 = await repository.count({
+                        select: { name: true },
+                    })
+                    const count2 = await repository.count({
+                        select: { name: true },
+                        where: { name: "Bears" },
+                    })
+                    const count3 = await repository.count()
+
+                    expect(count1).to.equal(2)
+                    expect(count2).to.equal(1)
+                    expect(count3).to.equal(3)
+                }),
+            ))
+
+        it("count should support select column in embed", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const repository = dataSource.getRepository(Post)
+                    const firstPost = new Post()
+                    firstPost.id = 1
+                    firstPost.title = "post #1"
+                    firstPost.categoryName = "other"
+                    firstPost.counters = new Counters()
+                    firstPost.counters.likes = 1
+                    await repository.save(firstPost)
+
+                    const secondPost = new Post()
+                    secondPost.id = 2
+                    secondPost.title = "post #2"
+                    secondPost.categoryName = "other"
+                    secondPost.counters = new Counters()
+                    secondPost.counters.likes = 2
+                    await repository.save(secondPost)
+
+                    const count = await repository.count({
+                        select: {
+                            counters: {
+                                likes: true,
+                            },
+                        },
+                    })
+                    count.should.be.equal(2)
                 }),
             ))
     })
