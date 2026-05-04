@@ -3034,12 +3034,17 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         const primaryColumns = metadata.primaryColumns
         const distinctAlias = this.escape(mainAlias)
-        const selectedColumns = metadata.columns.filter((column) =>
-            this.expressionMap.selects.some(
-                (select) =>
-                    select.selection === `${mainAlias}.${column.propertyPath}`,
-            ),
-        )
+        let selectedColumns: ColumnMetadata[] = []
+
+        if (this.findOptions.select) {
+            selectedColumns = metadata.columns.filter((column) =>
+                this.expressionMap.selects.some(
+                    (select) =>
+                        select.selection ===
+                        `${mainAlias}.${column.propertyPath}`,
+                ),
+            )
+        }
 
         if (selectedColumns.length > 0) {
             return this.computeDistinctCountExpression(
