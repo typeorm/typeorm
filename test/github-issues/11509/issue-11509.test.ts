@@ -6,6 +6,7 @@ import {
 } from "../../utils/test-utils"
 import { expect } from "chai"
 import type { DataSource } from "../../../src"
+import { AllGeneratedEntity } from "./entity/AllGeneratedEntity"
 import { StoredGeneratedEntity } from "./entity/StoredGeneratedEntity"
 import { VirtualGeneratedEntity } from "./entity/VirtualGeneratedEntity"
 
@@ -16,7 +17,20 @@ describe("github issues > #11509 generated expression columns should be non-writ
         before(async () => {
             dataSources = await createTestingConnections({
                 entities: [StoredGeneratedEntity],
-                enabledDrivers: ["postgres", "mysql", "aurora-postgres"],
+                schemaCreate: true,
+                dropSchema: true,
+                // The entity uses a numeric transformer to normalize
+                // cockroachdb's `int8`-as-string return into JS numbers so
+                // the same equality assertions hold across all drivers.
+                enabledDrivers: [
+                    "postgres",
+                    "mysql",
+                    "mariadb",
+                    "mssql",
+                    "cockroachdb",
+                    "better-sqlite3",
+                    "sqljs",
+                ],
             })
         })
         beforeEach(() => reloadTestingDatabases(dataSources))
@@ -73,7 +87,20 @@ describe("github issues > #11509 generated expression columns should be non-writ
         before(async () => {
             dataSources = await createTestingConnections({
                 entities: [VirtualGeneratedEntity],
-                enabledDrivers: ["mysql", "mariadb", "aurora-mysql"],
+                schemaCreate: true,
+                dropSchema: true,
+                // postgres and spanner only support STORED generated columns,
+                // so they are omitted here. cockroachdb is included; the
+                // entity uses a numeric transformer to normalize its
+                // `int8`-as-string return.
+                enabledDrivers: [
+                    "mysql",
+                    "mariadb",
+                    "mssql",
+                    "cockroachdb",
+                    "better-sqlite3",
+                    "sqljs",
+                ],
             })
         })
         beforeEach(() => reloadTestingDatabases(dataSources))
@@ -120,6 +147,66 @@ describe("github issues > #11509 generated expression columns should be non-writ
 
                     expect(reloaded.name).to.equal("after-update")
                     expect(reloaded.generated).to.equal(entity.id * 3)
+                }),
+            ))
+    })
+
+    // Regression for the follow-up issue: when every column on an entity is
+    // filtered out of `getInsertedColumns()` (e.g. an auto-increment primary
+    // key on Postgres plus a `STORED` generated expression column), the
+    // InsertQueryBuilder used to fall back to `Object.keys(valueSet)` and
+    // emit non-insertable columns in the SQL. The fix must produce a
+    // `DEFAULT VALUES` INSERT instead, and still let the DB compute the
+    // generated value.
+    describe("query builder with only non-insertable columns", () => {
+        let dataSources: DataSource[]
+
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [AllGeneratedEntity],
+                schemaCreate: true,
+                dropSchema: true,
+                enabledDrivers: ["postgres"],
+            })
+        })
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
+
+        it("should not leak non-insertable columns into generated INSERT SQL", () => {
+            dataSources.forEach((connection) => {
+                const qb = connection
+                    .createQueryBuilder()
+                    .insert()
+                    .into(AllGeneratedEntity)
+                    .values({ generated: 99999 })
+
+                const [sql] = qb.getQueryAndParameters()
+
+                expect(sql).to.not.include('"generated"')
+                expect(sql).to.include("DEFAULT VALUES")
+            })
+        })
+
+        it("should insert successfully and compute generated value from the DB", () =>
+            Promise.all(
+                dataSources.map(async (connection) => {
+                    const result = await connection
+                        .createQueryBuilder()
+                        .insert()
+                        .into(AllGeneratedEntity)
+                        .values({ generated: 99999 })
+                        .returning(["id"])
+                        .execute()
+
+                    const insertedId = result.identifiers[0].id as number
+                    expect(insertedId).to.be.a("number")
+
+                    const reloaded = await connection.manager.findOneByOrFail(
+                        AllGeneratedEntity,
+                        { id: insertedId },
+                    )
+
+                    expect(reloaded.generated).to.equal(2)
                 }),
             ))
     })
