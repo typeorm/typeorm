@@ -521,26 +521,28 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             (column) => column.generatedType && column.asExpression,
         )
 
-        for (const column of generatedColumns) {
+        if (generatedColumns.length > 0) {
             const currentDatabase = await this.getCurrentDatabase()
 
-            const insertQuery = this.insertTypeormMetadataSql({
-                schema: currentDatabase,
-                table: table.name,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression,
-            })
+            for (const column of generatedColumns) {
+                const insertQuery = this.insertTypeormMetadataSql({
+                    schema: currentDatabase,
+                    table: table.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                    value: column.asExpression,
+                })
 
-            const deleteQuery = this.deleteTypeormMetadataSql({
-                schema: currentDatabase,
-                table: table.name,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-            })
+                const deleteQuery = this.deleteTypeormMetadataSql({
+                    schema: currentDatabase,
+                    table: table.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                })
 
-            upQueries.push(insertQuery)
-            downQueries.push(deleteQuery)
+                upQueries.push(insertQuery)
+                downQueries.push(deleteQuery)
+            }
         }
 
         return this.executeQueries(upQueries, downQueries)
@@ -589,26 +591,28 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             (column) => column.generatedType && column.asExpression,
         )
 
-        for (const column of generatedColumns) {
+        if (generatedColumns.length > 0) {
             const currentDatabase = await this.getCurrentDatabase()
 
-            const deleteQuery = this.deleteTypeormMetadataSql({
-                schema: currentDatabase,
-                table: table.name,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-            })
+            for (const column of generatedColumns) {
+                const deleteQuery = this.deleteTypeormMetadataSql({
+                    schema: currentDatabase,
+                    table: table.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                })
 
-            const insertQuery = this.insertTypeormMetadataSql({
-                schema: currentDatabase,
-                table: table.name,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression,
-            })
+                const insertQuery = this.insertTypeormMetadataSql({
+                    schema: currentDatabase,
+                    table: table.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                    value: column.asExpression,
+                })
 
-            upQueries.push(deleteQuery)
-            downQueries.push(insertQuery)
+                upQueries.push(deleteQuery)
+                downQueries.push(insertQuery)
+            }
         }
 
         await this.executeQueries(upQueries, downQueries)
