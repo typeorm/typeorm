@@ -332,6 +332,67 @@ Besides "uuid" there is also "increment", "identity" (Postgres 10+ only) and "ro
 on some database platforms with this type of generation (for example some databases can only have one increment column,
 or some of them require increment to be a primary key).
 
+### Expression-generated columns
+
+TypeORM supports database-native generated columns — columns whose value is computed by the database engine using a SQL expression. These are configured with the `asExpression` and `generatedType` column options on a regular `@Column`:
+
+- `generatedType: "STORED"` — the expression result is computed and **persisted to disk** when a row is inserted (and again on update for databases that support it).
+- `generatedType: "VIRTUAL"` — the expression result is computed **on the fly** each time the row is read; no extra storage is used.
+
+```typescript
+@Entity()
+export class OrderLine {
+    @PrimaryColumn()
+    id: number
+
+    @Column("decimal")
+    price: number
+
+    @Column("decimal")
+    taxRate: number
+
+    @Column({
+        type: "decimal",
+        generatedType: "STORED",
+        asExpression: "price * (1 + taxRate)",
+    })
+    totalPrice: number
+
+    @Column({
+        type: "varchar",
+        generatedType: "VIRTUAL",
+        asExpression: "CONCAT(id, '-', price)",
+    })
+    label: string
+}
+```
+
+**Database support:**
+
+| `generatedType` | Supported databases                                                                                   |
+| --------------- | ----------------------------------------------------------------------------------------------------- |
+| `STORED`        | PostgreSQL, CockroachDB, MySQL/MariaDB, SQL Server (mapped to `PERSISTED`), SAP HANA, Spanner, SQLite |
+| `VIRTUAL`       | MySQL/MariaDB, CockroachDB, Oracle, SAP HANA, SQLite, SQL Server                                      |
+
+> Note: PostgreSQL only supports `STORED`. Oracle only supports `VIRTUAL`.
+
+**Generated columns are read-only.** TypeORM automatically ignores any value you manually assign to a generated column — the database always computes the value from the expression. This applies to both inserts and updates:
+
+```typescript
+const line = new OrderLine()
+line.id = 1
+line.price = 100
+line.taxRate = 0.2
+line.totalPrice = 99999 // ignored — the DB will compute 120
+
+await dataSource.manager.save(line)
+
+const saved = await dataSource.manager.findOneByOrFail(OrderLine, { id: 1 })
+console.log(saved.totalPrice) // 120
+```
+
+When every column on an entity is non-insertable (for example a `@PrimaryGeneratedColumn` combined with a `STORED` generated column), TypeORM will emit a `DEFAULT VALUES` insert so the database can compute all values without any explicit column list in the SQL.
+
 ### Vector columns
 
 Vector columns are supported on MariaDB/MySQL, Microsoft SQL Server, PostgreSQL (via [`pgvector`](https://github.com/pgvector/pgvector) extension) and SAP HANA Cloud, enabling storing and querying vector embeddings for similarity search and machine learning applications.
