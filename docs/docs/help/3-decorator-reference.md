@@ -160,9 +160,8 @@ export class User {
   You can specify array of values or specify a enum class.
 - `enumName: string` - A name for generated enum type. If not specified, TypeORM will generate a enum type from entity and column names - so it's necessary if you intend to use the same enum type in different tables.
 - `primaryKeyConstraintName: string` - A name for the primary key constraint. If not specified, then constraint name is generated from the table name and the names of the involved columns.
-- `asExpression: string` - Generated column expression. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html) and [Postgres](https://www.postgresql.org/docs/12/ddl-generated-columns.html).
-- `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html) and [Postgres (Only "STORED")](https://www.postgresql.org/docs/12/ddl-generated-columns.html).
-- `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
+- `asExpression: string` - Generated column expression. Supported by PostgreSQL/CockroachDB, MySQL/MariaDB, Oracle, SAP HANA, Spanner, SQLite, and SQL Server.
+- `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Supported by PostgreSQL (`STORED` only), CockroachDB, MySQL/MariaDB, Oracle (`VIRTUAL` only), Spanner (`STORED` only), SQLite, and SQL Server (`STORED` only, internally mapped to `PERSISTED`).
 - `array: boolean` - Used for postgres and cockroachdb column types which can be array (for example int[]).
 - `transformer: ValueTransformer|ValueTransformer[]` - Specifies a value transformer (or array of value transformers) that is to be used to (un)marshal this column when reading or writing to the database. In case of an array, the value transformers will be applied in the natural order from entityValue to databaseValue, and in reverse order from databaseValue to entityValue.
 - `spatialFeatureType: string` - Optional feature type (`Point`, `Polygon`, `LineString`, `Geometry`) used as a constraint on a spatial column. If not specified, it will behave as though `Geometry` was provided. Used only in PostgreSQL and CockroachDB.
