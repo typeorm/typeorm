@@ -63,6 +63,9 @@ jobs:
             codemod:
               - packages/codemod/**/*
 
+            legacy-naming-strategies:
+              - packages/legacy-naming-strategies/**/*
+
   docs:
     if: contains(needs.detect-changes.outputs.changes, 'docs')
     needs: detect-changes
@@ -144,6 +147,26 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
+  tests-legacy-naming-strategies:
+    if: contains(needs.detect-changes.outputs.changes, 'legacy-naming-strategies')
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # SonarQube needs full history for blame and PR diffing against master
+      - uses: ./.github/actions/setup-node
+        with:
+          working-directory: packages/legacy-naming-strategies
+      - run: pnpm exec c8 pnpm test
+        working-directory: packages/legacy-naming-strategies
+      - uses: SonarSource/sonarqube-scan-action@v7
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        with:
+          projectBaseDir: packages/legacy-naming-strategies
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
   coverage:
     if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')
     runs-on: ubuntu-latest
@@ -173,6 +196,7 @@ jobs:
       - format
       - lint
       - tests-codemod
+      - tests-legacy-naming-strategies
       - tests-linux
       - tests-windows
     steps:
