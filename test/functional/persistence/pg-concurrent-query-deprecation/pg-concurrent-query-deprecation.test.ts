@@ -9,22 +9,20 @@ import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { Tag } from "./entity/Tag"
 
-describe("persistence > pg concurrent query deprecation (#12238)", () => {
+describe("persistence > pg concurrent query deprecation", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
-            entities: [Post, Tag],
+            disabledDrivers: ["spanner"],
+            entities: [__dirname + "/entity/*{.ts,.js}"],
             schemaCreate: true,
             dropSchema: true,
-            // spanner cannot insert two ManyToMany junction rows that share a
-            // generated primary key inside the same mutation batch.
-            disabledDrivers: ["spanner"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should keep relationLoadStrategy: 'query' working with ManyToMany on every supported driver except spanner", () =>
+    it("should keep relationLoadStrategy: 'query' working with ManyToMany on every supported driver", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const tag1 = new Tag()
@@ -45,10 +43,11 @@ describe("persistence > pg concurrent query deprecation (#12238)", () => {
 
                 expect(found).to.have.length(1)
                 expect(found[0].title).to.equal("Hello")
-                expect(found[0].tags.map((t) => t.name).sort()).to.deep.equal([
-                    "orm",
-                    "ts",
-                ])
+                expect(
+                    found[0].tags
+                        .map((t) => t.name)
+                        .sort((a, b) => a.localeCompare(b)),
+                ).to.deep.equal(["orm", "ts"])
             }),
         ))
 

@@ -639,7 +639,7 @@ export class SubjectExecutor {
 
         // Avoid concurrent queries on the same pg client; see #12238.
         // CockroachDB uses the pg package over a single connection too.
-        const driverType = this.queryRunner.dataSource.driver.options.type
+        const driverType = this.queryRunner.dataSource.options.type
         if (driverType === "postgres" || driverType === "cockroachdb") {
             for (const subject of remainingSubjects) {
                 await updateSubject(subject)
