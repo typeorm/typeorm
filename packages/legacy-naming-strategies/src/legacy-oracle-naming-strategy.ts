@@ -1,12 +1,5 @@
-import type { NamingStrategyInterface } from "./NamingStrategyInterface"
-import { RandomGenerator } from "../util/RandomGenerator"
-import { DefaultNamingStrategy } from "./DefaultNamingStrategy"
-import { TypeORMError } from "../error"
-
-/**
- * Shorten strategy
- */
-export type ShortenStrategy = "truncate" | "hash"
+import { TypeORMError } from "typeorm"
+import { NamingStrategyV03 } from "./naming-strategy-v03"
 
 /**
  * Naming strategy for legacy Oracle database with 30 bytes identifier limit.
@@ -14,17 +7,14 @@ export type ShortenStrategy = "truncate" | "hash"
  * Currently, only column name must be shorten in order to avoid ORA-00972.
  * Issues with other identifiers were fixed.
  */
-export class LegacyOracleNamingStrategy
-    extends DefaultNamingStrategy
-    implements NamingStrategyInterface
-{
+export class LegacyOracleNamingStrategy extends NamingStrategyV03 {
     public readonly IDENTIFIER_MAX_SIZE = 30
     public readonly DEFAULT_COLUMN_PREFIX = "COL_"
-    protected shortenStrategy: ShortenStrategy
 
-    constructor(shortenStrategy: ShortenStrategy = "hash") {
+    constructor(
+        protected readonly shortenStrategy: "truncate" | "hash" = "hash",
+    ) {
         super()
-        this.shortenStrategy = shortenStrategy
     }
 
     columnName(
@@ -54,7 +44,7 @@ export class LegacyOracleNamingStrategy
         }
         return (
             prefix +
-            RandomGenerator.sha1(input).slice(
+            this.hash(input).substring(
                 0,
                 this.IDENTIFIER_MAX_SIZE - prefix.length,
             )
@@ -63,7 +53,7 @@ export class LegacyOracleNamingStrategy
 
     protected truncateIdentifier(input: string): string {
         if (input.length > this.IDENTIFIER_MAX_SIZE) {
-            return input.slice(0, this.IDENTIFIER_MAX_SIZE)
+            return input.substring(0, this.IDENTIFIER_MAX_SIZE)
         } else {
             return input
         }
