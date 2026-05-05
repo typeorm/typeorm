@@ -1,0 +1,60 @@
+{
+  "name": "@typeorm/legacy-naming-strategies",
+  "version": "1.0.0-beta.2",
+  "description": "Legacy naming strategies for TypeORM",
+  "homepage": "https://typeorm.io",
+  "bugs": {
+    "url": "https://github.com/typeorm/typeorm/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/typeorm/typeorm.git",
+    "directory": "packages/legacy-naming-strategies"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "TypeORM",
+    "email": "maintainers@typeorm.io"
+  },
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint",
+    "test": "mocha"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@tsconfig/node20": "^20.1.9",
+    "@types/chai": "^5.2.3",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.19.39",
+    "c8": "^11.0.0",
+    "chai": "^6.2.2",
+    "eslint": "^10.3.0",
+    "eslint-plugin-chai-friendly": "^1.2.0",
+    "mocha": "^11.7.5",
+    "prettier": "^3.8.3",
+    "ts-node": "^10.9.2",
+    "typeorm": "1.0.0-beta.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.59.2"
+  },
+  "peerDependencies": {
+    "typeorm": "^1.0.0-beta.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

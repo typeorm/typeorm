@@ -67,86 +67,97 @@ export class EntityPersistExecutor {
             const entitiesInChunks =
                 chunkSize > 0 ? OrmUtils.chunk(entities, chunkSize) : [entities]
 
-            // console.time("building subject executors...");
-            const executors = await Promise.all(
-                entitiesInChunks.map(async (entities) => {
-                    const subjects: Subject[] = []
+            const buildExecutor = async (
+                entities: ObjectLiteral[],
+            ): Promise<SubjectExecutor> => {
+                const subjects: Subject[] = []
 
-                    // create subjects for all entities we received for the persistence
-                    entities.forEach((entity) => {
-                        const entityTarget = this.target ?? entity.constructor
-                        if (entityTarget === Object)
-                            throw new CannotDetermineEntityError(this.mode)
+                // create subjects for all entities we received for the persistence
+                entities.forEach((entity) => {
+                    const entityTarget = this.target ?? entity.constructor
+                    if (entityTarget === Object)
+                        throw new CannotDetermineEntityError(this.mode)
 
-                        const metadata = this.dataSource
-                            .getMetadata(entityTarget)
-                            .findInheritanceMetadata(entity)
+                    const metadata = this.dataSource
+                        .getMetadata(entityTarget)
+                        .findInheritanceMetadata(entity)
 
-                        subjects.push(
-                            new Subject({
-                                metadata,
-                                entity: entity,
-                                canBeInserted: this.mode === "save",
-                                canBeUpdated: this.mode === "save",
-                                mustBeRemoved: this.mode === "remove",
-                                canBeSoftRemoved: this.mode === "soft-remove",
-                                canBeRecovered: this.mode === "recover",
-                            }),
-                        )
-                    })
-
-                    // console.time("building cascades...");
-                    // go through each entity with metadata and create subjects and subjects by cascades for them
-                    const cascadesSubjectBuilder = new CascadesSubjectBuilder(
-                        subjects,
+                    subjects.push(
+                        new Subject({
+                            metadata,
+                            entity: entity,
+                            canBeInserted: this.mode === "save",
+                            canBeUpdated: this.mode === "save",
+                            mustBeRemoved: this.mode === "remove",
+                            canBeSoftRemoved: this.mode === "soft-remove",
+                            canBeRecovered: this.mode === "recover",
+                        }),
                     )
+                })
+
+                // console.time("building cascades...");
+                // go through each entity with metadata and create subjects and subjects by cascades for them
+                const cascadesSubjectBuilder = new CascadesSubjectBuilder(
+                    subjects,
+                )
+                subjects.forEach((subject) => {
+                    // next step we build list of subjects we will operate with
+                    // these subjects are subjects that we need to insert or update alongside with main persisted entity
+                    cascadesSubjectBuilder.build(subject, this.mode)
+                })
+                // console.timeEnd("building cascades...");
+
+                // load database entities for all subjects we have
+                // next step is to load database entities for all operate subjects
+                // console.time("loading...");
+                await new SubjectDatabaseEntityLoader(
+                    queryRunner,
+                    subjects,
+                ).load(this.mode)
+                // console.timeEnd("loading...");
+
+                // console.time("other subjects...");
+                // build all related subjects and change maps
+                if (
+                    this.mode === "save" ||
+                    this.mode === "soft-remove" ||
+                    this.mode === "recover"
+                ) {
+                    new OneToManySubjectBuilder(subjects).build()
+                    new OneToOneInverseSideSubjectBuilder(subjects).build()
+                    new ManyToManySubjectBuilder(subjects).build()
+                } else {
                     subjects.forEach((subject) => {
-                        // next step we build list of subjects we will operate with
-                        // these subjects are subjects that we need to insert or update alongside with main persisted entity
-                        cascadesSubjectBuilder.build(subject, this.mode)
+                        if (subject.mustBeRemoved) {
+                            new ManyToManySubjectBuilder(
+                                subjects,
+                            ).buildForAllRemoval(subject)
+                        }
                     })
-                    // console.timeEnd("building cascades...");
+                }
+                // console.timeEnd("other subjects...");
+                // console.timeEnd("building subjects...");
+                // console.log("subjects", subjects);
 
-                    // load database entities for all subjects we have
-                    // next step is to load database entities for all operate subjects
-                    // console.time("loading...");
-                    await new SubjectDatabaseEntityLoader(
-                        queryRunner,
-                        subjects,
-                    ).load(this.mode)
-                    // console.timeEnd("loading...");
+                // create a subject executor
+                return new SubjectExecutor(queryRunner, subjects, this.options)
+            }
 
-                    // console.time("other subjects...");
-                    // build all related subjects and change maps
-                    if (
-                        this.mode === "save" ||
-                        this.mode === "soft-remove" ||
-                        this.mode === "recover"
-                    ) {
-                        new OneToManySubjectBuilder(subjects).build()
-                        new OneToOneInverseSideSubjectBuilder(subjects).build()
-                        new ManyToManySubjectBuilder(subjects).build()
-                    } else {
-                        subjects.forEach((subject) => {
-                            if (subject.mustBeRemoved) {
-                                new ManyToManySubjectBuilder(
-                                    subjects,
-                                ).buildForAllRemoval(subject)
-                            }
-                        })
-                    }
-                    // console.timeEnd("other subjects...");
-                    // console.timeEnd("building subjects...");
-                    // console.log("subjects", subjects);
-
-                    // create a subject executor
-                    return new SubjectExecutor(
-                        queryRunner,
-                        subjects,
-                        this.options,
-                    )
-                }),
-            )
+            // console.time("building subject executors...");
+            // Avoid concurrent queries on the same pg client; see #12238.
+            // CockroachDB uses the pg package over a single connection too.
+            const driverType = this.dataSource.options.type
+            let executors: SubjectExecutor[]
+            if (driverType === "postgres" || driverType === "cockroachdb") {
+                executors = []
+                for (const entities of entitiesInChunks) {
+                    executors.push(await buildExecutor(entities))
+                }
+            } else {
+                executors = await Promise.all(
+                    entitiesInChunks.map(buildExecutor),
+                )
+            }
             // console.timeEnd("building subject executors...");
 
             // make sure we have at least one executable operation before we create a transaction and proceed

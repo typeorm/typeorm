@@ -3641,83 +3641,90 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.findOptions.loadEagerRelations,
                 )
 
-            await Promise.all(
-                this.relationMetadatas.map(async (relation) => {
-                    // Prevent infinite recursion from circular eager
-                    // chains (e.g. A→B→C→A). Each branch maintains its
-                    // own visited set so parallel branches don't interfere.
-                    if (relation.isEager) {
-                        const targetEntity =
-                            relation.inverseEntityMetadata.tablePath
-                        if (this.eagerLoadChain.has(targetEntity)) return
-                    }
+            const loadRelation = async (
+                relation: RelationMetadata,
+            ): Promise<void> => {
+                // Prevent infinite recursion from circular eager
+                // chains (e.g. A→B→C→A). Each branch maintains its
+                // own visited set so parallel branches don't interfere.
+                if (relation.isEager) {
+                    const targetEntity =
+                        relation.inverseEntityMetadata.tablePath
+                    if (this.eagerLoadChain.has(targetEntity)) return
+                }
 
-                    const relationTarget = relation.inverseEntityMetadata.target
-                    const relationAlias =
-                        relation.inverseEntityMetadata.targetName
+                const relationTarget = relation.inverseEntityMetadata.target
+                const relationAlias = relation.inverseEntityMetadata.targetName
 
-                    const queryBuilder = this.createQueryBuilder(queryRunner)
-                        .select(relationAlias)
-                        .from(relationTarget, relationAlias)
+                const queryBuilder = this.createQueryBuilder(queryRunner)
+                    .select(relationAlias)
+                    .from(relationTarget, relationAlias)
 
-                    // Propagate eager load chain with current entity
-                    // added, so the child detects cycles in its branch
-                    if (relation.isEager) {
-                        queryBuilder.eagerLoadChain = new Set(
-                            this.eagerLoadChain,
+                // Propagate eager load chain with current entity
+                // added, so the child detects cycles in its branch
+                if (relation.isEager) {
+                    queryBuilder.eagerLoadChain = new Set(this.eagerLoadChain)
+                    queryBuilder.eagerLoadChain.add(
+                        relation.entityMetadata.tablePath,
+                    )
+                }
+
+                queryBuilder.setFindOptions({
+                    select: this.findOptions.select
+                        ? OrmUtils.deepValue(
+                              this.findOptions.select,
+                              relation.propertyPath,
+                          )
+                        : undefined,
+                    order: this.findOptions.order
+                        ? OrmUtils.deepValue(
+                              this.findOptions.order,
+                              relation.propertyPath,
+                          )
+                        : undefined,
+                    relations: this.findOptions.relations
+                        ? OrmUtils.deepValue(
+                              this.findOptions.relations,
+                              relation.propertyPath,
+                          )
+                        : undefined,
+                    withDeleted: this.findOptions.withDeleted,
+                    relationLoadStrategy: this.findOptions.relationLoadStrategy,
+                    loadEagerRelations: this.findOptions.loadEagerRelations,
+                })
+                if (entities.length > 0) {
+                    const relatedEntityGroups: any[] =
+                        await queryStrategyRelationIdLoader.loadManyToManyRelationIdsAndGroup(
+                            relation,
+                            entities,
+                            undefined,
+                            queryBuilder,
                         )
-                        queryBuilder.eagerLoadChain.add(
-                            relation.entityMetadata.tablePath,
+                    entities.forEach((entity) => {
+                        const relatedEntityGroup = relatedEntityGroups.find(
+                            (group) => group.entity === entity,
                         )
-                    }
-
-                    queryBuilder.setFindOptions({
-                        select: this.findOptions.select
-                            ? OrmUtils.deepValue(
-                                  this.findOptions.select,
-                                  relation.propertyPath,
-                              )
-                            : undefined,
-                        order: this.findOptions.order
-                            ? OrmUtils.deepValue(
-                                  this.findOptions.order,
-                                  relation.propertyPath,
-                              )
-                            : undefined,
-                        relations: this.findOptions.relations
-                            ? OrmUtils.deepValue(
-                                  this.findOptions.relations,
-                                  relation.propertyPath,
-                              )
-                            : undefined,
-                        withDeleted: this.findOptions.withDeleted,
-                        relationLoadStrategy:
-                            this.findOptions.relationLoadStrategy,
-                        loadEagerRelations: this.findOptions.loadEagerRelations,
+                        if (relatedEntityGroup) {
+                            const value =
+                                relatedEntityGroup.related === undefined
+                                    ? null
+                                    : relatedEntityGroup.related
+                            relation.setEntityValue(entity, value)
+                        }
                     })
-                    if (entities.length > 0) {
-                        const relatedEntityGroups: any[] =
-                            await queryStrategyRelationIdLoader.loadManyToManyRelationIdsAndGroup(
-                                relation,
-                                entities,
-                                undefined,
-                                queryBuilder,
-                            )
-                        entities.forEach((entity) => {
-                            const relatedEntityGroup = relatedEntityGroups.find(
-                                (group) => group.entity === entity,
-                            )
-                            if (relatedEntityGroup) {
-                                const value =
-                                    relatedEntityGroup.related === undefined
-                                        ? null
-                                        : relatedEntityGroup.related
-                                relation.setEntityValue(entity, value)
-                            }
-                        })
-                    }
-                }),
-            )
+                }
+            }
+
+            // Avoid concurrent queries on the same pg client; see #12238.
+            // CockroachDB uses the pg package over a single connection too.
+            const driverType = this.dataSource.options.type
+            if (driverType === "postgres" || driverType === "cockroachdb") {
+                for (const relation of this.relationMetadatas) {
+                    await loadRelation(relation)
+                }
+            } else {
+                await Promise.all(this.relationMetadatas.map(loadRelation))
+            }
         }
 
         return {

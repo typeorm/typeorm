@@ -61,16 +61,24 @@ Isolation level implementations are _not_ agnostic across all databases. Each dr
 <DatabaseTab value="cockroachdb">
 
 - `READ COMMITTED` — requires the cluster setting `sql.txn.read_committed_isolation.enabled`, which is enabled by default in recent versions
+- `REPEATABLE READ` — requires the cluster setting `sql.txn.repeatable_read_isolation.enabled`, which is disabled by default (introduced in v24.3.0)
 - `SERIALIZABLE` (default)
 
-CockroachDB does not implement weaker isolation levels at all. When you request `READ UNCOMMITTED` or `REPEATABLE READ` via SQL (e.g. `BEGIN TRANSACTION ISOLATION LEVEL READ UNCOMMITTED`), CockroachDB accepts the syntax, silently ignores the requested weakness, and runs the transaction at a stricter level instead — no warning, no error:
+CockroachDB maps weaker SQL isolation requests to stronger levels. The fallback behavior depends on the corresponding cluster settings. For example, when you request `READ UNCOMMITTED`, `READ COMMITTED` or `REPEATABLE READ` via SQL (e.g. `BEGIN TRANSACTION ISOLATION LEVEL READ UNCOMMITTED`), CockroachDB accepts the syntax and may run the transaction at a stricter level instead:
 
-- `READ UNCOMMITTED` → runs as `READ COMMITTED`
-- `REPEATABLE READ` → runs as `SERIALIZABLE`
+- `READ COMMITTED` → runs as:
+    - `SERIALIZABLE` if `sql.txn.read_committed_isolation.enabled` is false and `sql.txn.repeatable_read_isolation.enabled` is false
+    - `REPEATABLE READ` if `sql.txn.repeatable_read_isolation.enabled` is true and `sql.txn.read_committed_isolation.enabled` is false
+- `READ UNCOMMITTED` → runs as:
+    - `SERIALIZABLE` if `sql.txn.read_committed_isolation.enabled` is false and `sql.txn.repeatable_read_isolation.enabled` is false
+    - `READ COMMITTED` if `sql.txn.read_committed_isolation.enabled` is true
+    - `REPEATABLE READ` if `sql.txn.repeatable_read_isolation.enabled` is true and `sql.txn.read_committed_isolation.enabled` is false
+- `REPEATABLE READ` → runs as `SERIALIZABLE` if `sql.txn.repeatable_read_isolation.enabled` is false
 
 :::info Learn more
 
 - [CockroachDB Read Committed](https://www.cockroachlabs.com/docs/stable/read-committed)
+- [CockroachDB Repeatable Read](https://www.cockroachlabs.com/docs/releases/v24.3.html#:~:text=sql.txn.repeatable_read_isolation.enabled%3A%20defaults%20to%20false.%20When%20set%20to%20true%2C%20the%20following%20statements%20configure%20transactions%20to%20run%20under%20REPEATABLE%20READ%20isolation%2C%20rather%20than%20being%20automatically%20interpreted%20as%20SERIALIZABLE)
 - [CockroachDB Transactions](https://www.cockroachlabs.com/docs/stable/transactions)
 
 :::

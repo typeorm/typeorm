@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "outDir": "dist",
+    "noEmit": true
+  },
+  "exclude": ["node_modules", "dist"],
+  "extends": "@tsconfig/node20/tsconfig.json",
+  "include": ["src", "test"]
+}
