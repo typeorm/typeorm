@@ -351,7 +351,7 @@ const distinctCount = await repository.count({
 })
 ```
 
-When `select` is provided, counts distinct combinations of selected columns.
+When `select` is provided, counts distinct combinations of selected columns, including selected relation columns when paired with `relations`.
 If `select` is not provided, default count behavior is unchanged.
 
 - `countBy` - Counts entities that match `FindOptionsWhere`. Useful for pagination.

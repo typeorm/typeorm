@@ -287,6 +287,8 @@ const distinctCount = await userRepository.count({
 })
 ```
 
+When `select` includes relation fields, include matching entries in `relations` and the distinct count will use those selected relation columns.
+
 Find without arguments:
 
 ```ts
