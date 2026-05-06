@@ -467,7 +467,7 @@ export class RelationLoader {
         const dataIndex = "__" + relation.propertyName + "__" // in what property of the entity loaded data will be stored
         const promiseIndex = "__promise_" + relation.propertyName + "__" // in what property of the entity loading promise will be stored
         const resolveIndex = "__has_" + relation.propertyName + "__" // indicates if relation data already was loaded or not, we need this flag if loaded data is empty
-        const parentIndex = "__" + relation.entityMetadata.name + "__" // in what property of the entity its embedded entity will store reference to the main entity
+        const embeddedOwnerIndex = "__" + relation.entityMetadata.name + "__" // in what property of the entity its embedded entity will store reference to the main entity
         const queryRunnerIndex = "__queryRunner__"
 
         const setData = (entity: ObjectLiteral, value: any) => {
@@ -505,13 +505,18 @@ export class RelationLoader {
                     return this[promiseIndex]
 
                 const entityForLoad =
-                    relation.embeddedMetadata && this[parentIndex]
-                        ? this[parentIndex]
+                    relation.embeddedMetadata && this[embeddedOwnerIndex]
+                        ? this[embeddedOwnerIndex]
                         : this
-                const queryRunnerForLoad =
-                    queryRunner ??
-                    entityForLoad[queryRunnerIndex] ??
-                    this[queryRunnerIndex]
+                const queryRunnerForLoad = [
+                    queryRunner,
+                    entityForLoad[queryRunnerIndex],
+                    this[queryRunnerIndex],
+                ].find(
+                    (candidateQueryRunner) =>
+                        candidateQueryRunner &&
+                        candidateQueryRunner.isReleased !== true,
+                )
 
                 // nothing is loaded yet, load relation data and save it in the model once they are loaded
                 const loader = relationLoader

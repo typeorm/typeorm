@@ -520,7 +520,7 @@ export class RelationMetadata {
 
         if (this.embeddedMetadata) {
             // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
-            const parentIndex =
+            const embeddedOwnerIndex =
                 "__" + this.embeddedMetadata.entityMetadata.targetName + "__"
 
             const extractEmbeddedColumnValue = (
@@ -535,14 +535,29 @@ export class RelationMetadata {
                     map[embeddedMetadata.propertyName] ??=
                         embeddedMetadata.create()
                     const embeddedValue = map[embeddedMetadata.propertyName]
-                    if (
-                        embeddedValue &&
-                        ObjectUtils.isObject(embeddedValue) &&
-                        !Object.hasOwn(embeddedValue, parentIndex)
-                    ) {
-                        Object.defineProperty(embeddedValue, parentIndex, {
-                            value: map[parentIndex] ?? entity,
-                        })
+                    const embeddedOwnerEntity =
+                        map[embeddedOwnerIndex] ?? entity
+                    if (embeddedValue && ObjectUtils.isObject(embeddedValue)) {
+                        const embeddedOwnerDescriptor =
+                            Object.getOwnPropertyDescriptor(
+                                embeddedValue,
+                                embeddedOwnerIndex,
+                            )
+                        if (
+                            !embeddedOwnerDescriptor ||
+                            embeddedOwnerDescriptor.value !==
+                                embeddedOwnerEntity
+                        ) {
+                            Object.defineProperty(
+                                embeddedValue,
+                                embeddedOwnerIndex,
+                                {
+                                    value: embeddedOwnerEntity,
+                                    writable: true,
+                                    configurable: true,
+                                },
+                            )
+                        }
                     }
                     if (embeddedValue && ObjectUtils.isObject(embeddedValue)) {
                         embeddedMetadata.relations
