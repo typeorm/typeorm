@@ -86,7 +86,6 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
             )
             dataSource.setOptions({
                 synchronize: false,
-                migrationsRun: false,
                 dropSchema: false,
                 logging: false,
             })
