@@ -12,7 +12,7 @@ import sinon from "sinon"
 import { NestedPost } from "./entity/NestedPost"
 import { PostAuthor } from "./entity/PostAuthor"
 
-describe("lazy relations in embedded entity", () => {
+describe("relations > lazy relations > embedded lazy relations", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
@@ -140,6 +140,64 @@ describe("lazy relations in embedded entity", () => {
                 } finally {
                     stubbedLogQuery.restore()
                 }
+            }),
+        ))
+    it("should successfully load relations within a transaction", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await dataSource.manager.transaction(async (manager) => {
+                    const profile = new Profile()
+                    profile.about = "I am transactional John Doe profile"
+                    await manager.save(profile)
+
+                    const post = new Post()
+                    post.title = "Post with transactional embedded author"
+                    post.author = new Author()
+                    post.author.name = "Transactional John Doe"
+                    post.author.profile = Promise.resolve(profile)
+                    await manager.save(post)
+
+                    const loadedPost = await manager.findOneOrFail(Post, {
+                        where: {
+                            title: "Post with transactional embedded author",
+                        },
+                    })
+
+                    const lazyLoadedProfile = await loadedPost.author.profile
+                    lazyLoadedProfile.about.should.be.equal(
+                        "I am transactional John Doe profile",
+                    )
+                })
+            }),
+        ))
+    it("should successfully load relations outside a transaction with entity generated within a transaction", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const loadedPost = await dataSource.manager.transaction(
+                    async (manager) => {
+                        const profile = new Profile()
+                        profile.about = "I am transactional John Doe profile"
+                        await manager.save(profile)
+
+                        const post = new Post()
+                        post.title = "Post with transactional embedded author"
+                        post.author = new Author()
+                        post.author.name = "Transactional John Doe"
+                        post.author.profile = Promise.resolve(profile)
+                        await manager.save(post)
+
+                        return manager.findOneOrFail(Post, {
+                            where: {
+                                title: "Post with transactional embedded author",
+                            },
+                        })
+                    },
+                )
+
+                const lazyLoadedProfile = await loadedPost.author.profile
+                lazyLoadedProfile.about.should.be.equal(
+                    "I am transactional John Doe profile",
+                )
             }),
         ))
 })

@@ -13,7 +13,7 @@ import UserSchema from "./schema/user.json"
 import ProfileSchema from "./schema/profile.json"
 import sinon from "sinon"
 
-describe("relations > lazy relations > basic-lazy-relations", () => {
+describe("relations > lazy relations > basic lazy relations", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
@@ -380,14 +380,35 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
 
     it("should successfully load relations within a transaction", () =>
         Promise.all(
-            dataSources
-                .filter((dataSource) =>
-                    new Set(["mysql", "better-sqlite3", "postgres"]).has(
-                        dataSource.options.type,
-                    ),
-                )
-                .map(async (dataSource) => {
-                    await dataSource.manager.transaction(async (manager) => {
+            dataSources.map(async (dataSource) => {
+                await dataSource.manager.transaction(async (manager) => {
+                    const category = new Category()
+                    category.name = "category of great post"
+                    await manager.save(category)
+
+                    const post = new Post()
+                    post.title = "post with great category"
+                    post.text = "post with great category and great text"
+                    post.oneCategory = Promise.resolve(category)
+                    await manager.save(post)
+
+                    const loadedCategory = await manager.findOneOrFail(
+                        Category,
+                        {
+                            where: { name: "category of great post" },
+                        },
+                    )
+                    const loadedPost = await loadedCategory.onePost
+                    loadedPost.title.should.be.equal("post with great category")
+                })
+            }),
+        ))
+
+    it("should successfully load relations outside a transaction with entity generated within a transaction", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const loadedCategory = await dataSource.manager.transaction(
+                    async (manager) => {
                         const category = new Category()
                         category.name = "category of great post"
                         await manager.save(category)
@@ -398,50 +419,14 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                         post.oneCategory = Promise.resolve(category)
                         await manager.save(post)
 
-                        const loadedCategory = await manager.findOneOrFail(
-                            Category,
-                            {
-                                where: { name: "category of great post" },
-                            },
-                        )
-                        const loadedPost = await loadedCategory.onePost
-                        loadedPost.title.should.be.equal(
-                            "post with great category",
-                        )
-                    })
-                }),
-        ))
-
-    it("should successfully load relations outside a transaction with entity generated within a transaction", () =>
-        Promise.all(
-            dataSources
-                .filter((dataSource) =>
-                    new Set(["mysql", "better-sqlite3", "postgres"]).has(
-                        dataSource.options.type,
-                    ),
+                        return await manager.findOneByOrFail(Category, {
+                            name: "category of great post",
+                        })
+                    },
                 )
-                .map(async (dataSource) => {
-                    const loadedCategory = await dataSource.manager.transaction(
-                        async (manager) => {
-                            const category = new Category()
-                            category.name = "category of great post"
-                            await manager.save(category)
-
-                            const post = new Post()
-                            post.title = "post with great category"
-                            post.text =
-                                "post with great category and great text"
-                            post.oneCategory = Promise.resolve(category)
-                            await manager.save(post)
-
-                            return await manager.findOneByOrFail(Category, {
-                                name: "category of great post",
-                            })
-                        },
-                    )
-                    const loadedPost = await loadedCategory.onePost
-                    loadedPost.title.should.be.equal("post with great category")
-                }),
+                const loadedPost = await loadedCategory.onePost
+                loadedPost.title.should.be.equal("post with great category")
+            }),
         ))
 
     // GitHub issue #10721 - create() method should not trigger lazy relation loads when an loaded entity is passed
