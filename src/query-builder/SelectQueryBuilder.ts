@@ -2932,49 +2932,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         const allColumns = [...columns, ...nonSelectedPrimaryColumns]
         const finalSelects: SelectQuery[] = []
 
-        const escapedAliasName = this.escape(aliasName)
         allColumns.forEach((column) => {
-            let selectionPath =
-                escapedAliasName + "." + this.escape(column.databaseName)
-
-            if (column.isVirtualProperty && column.query) {
-                selectionPath = `(${column.query(escapedAliasName)})`
-            }
-
-            if (DriverUtils.isSQLiteFamily(this.dataSource.driver)) {
-                selectionPath = (
-                    this.dataSource.driver as
-                        | AbstractSqliteDriver
-                        | ReactNativeDriver
-                ).wrapWithJsonFunction(selectionPath, column, false)
-            }
-
-            if (
-                this.dataSource.driver.spatialTypes.indexOf(column.type) !== -1
-            ) {
-                if (
-                    DriverUtils.isMySQLFamily(this.dataSource.driver) ||
-                    this.dataSource.driver.options.type === "aurora-mysql"
-                ) {
-                    const useLegacy = (
-                        this.dataSource.driver as
-                            | MysqlDriver
-                            | AuroraMysqlDriver
-                    ).options.legacySpatialSupport
-                    const asText = useLegacy ? "AsText" : "ST_AsText"
-                    selectionPath = `${asText}(${selectionPath})`
-                }
-
-                if (DriverUtils.isPostgresFamily(this.dataSource.driver))
-                    if (column.precision) {
-                        // cast to JSON to trigger parsing in the driver
-                        selectionPath = `ST_AsGeoJSON(${selectionPath}, ${column.precision})::json`
-                    } else {
-                        selectionPath = `ST_AsGeoJSON(${selectionPath})::json`
-                    }
-                if (this.dataSource.driver.options.type === "mssql")
-                    selectionPath = `${selectionPath}.ToString()`
-            }
+            const selectionPath = this.buildColumnSelectionExpression(
+                aliasName,
+                column,
+            )
 
             const selections = this.expressionMap.selects.filter(
                 (select) =>
@@ -3011,6 +2973,52 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             }
         })
         return finalSelects
+    }
+
+    private buildColumnSelectionExpression(
+        aliasName: string,
+        column: ColumnMetadata,
+    ): string {
+        const escapedAliasName = this.escape(aliasName)
+        let selectionPath =
+            escapedAliasName + "." + this.escape(column.databaseName)
+
+        if (column.isVirtualProperty && column.query) {
+            selectionPath = `(${column.query(escapedAliasName)})`
+        }
+
+        if (DriverUtils.isSQLiteFamily(this.dataSource.driver)) {
+            selectionPath = (
+                this.dataSource.driver as
+                    | AbstractSqliteDriver
+                    | ReactNativeDriver
+            ).wrapWithJsonFunction(selectionPath, column, false)
+        }
+
+        if (this.dataSource.driver.spatialTypes.indexOf(column.type) !== -1) {
+            if (
+                DriverUtils.isMySQLFamily(this.dataSource.driver) ||
+                this.dataSource.driver.options.type === "aurora-mysql"
+            ) {
+                const useLegacy = (
+                    this.dataSource.driver as MysqlDriver | AuroraMysqlDriver
+                ).options.legacySpatialSupport
+                const asText = useLegacy ? "AsText" : "ST_AsText"
+                selectionPath = `${asText}(${selectionPath})`
+            }
+
+            if (DriverUtils.isPostgresFamily(this.dataSource.driver))
+                if (column.precision) {
+                    // cast to JSON to trigger parsing in the driver
+                    selectionPath = `ST_AsGeoJSON(${selectionPath}, ${column.precision})::json`
+                } else {
+                    selectionPath = `ST_AsGeoJSON(${selectionPath})::json`
+                }
+            if (this.dataSource.driver.options.type === "mssql")
+                selectionPath = `${selectionPath}.ToString()`
+        }
+
+        return selectionPath
     }
 
     protected findEntityColumnSelects(
@@ -3082,7 +3090,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (!column) return
 
             selectedColumns.add(
-                `${this.escape(aliasName)}.${this.escape(column.databaseName)}`,
+                this.buildColumnSelectionExpression(aliasName, column),
             )
         })
 
