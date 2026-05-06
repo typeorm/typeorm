@@ -45,8 +45,8 @@ importers:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@20.19.39)(typescript@5.9.3)
       typeorm:
-        specifier: 1.0.0-beta.2
-        version: 1.0.0-beta.2(ts-node@10.9.2(@types/node@20.19.39)(typescript@5.9.3))
+        specifier: 1.0.0-beta.3
+        version: 1.0.0-beta.3(ts-node@10.9.2(@types/node@20.19.39)(typescript@5.9.3))
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -818,9 +818,9 @@ packages:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
     engines: {node: '>= 0.8.0'}
 
-  typeorm@1.0.0-beta.2:
-    resolution: {integrity: sha512-mGEbsJUn+RNqFAA7dOF1tzJwZd7k59KURxJPDeH2D8cE1ItOTnCwtzRY46FbZigd/C49dEF0UzES2BJmKPiRqA==}
-    engines: {node: ^20.19.0 || ^22.12.0 || >=24.11.0}
+  typeorm@1.0.0-beta.3:
+    resolution: {integrity: sha512-CsyJgP9u9r9tRzVHSECDxNLx98H37sWhE0P80mIqZn/2op6kWKKraUFEXz/BltRcLje9vuEhCuSwSY20vq5CPw==}
+    engines: {node: ^20.19.0 || ^22.13.0 || >=24.11.0}
     hasBin: true
     peerDependencies:
       '@google-cloud/spanner': ^8.0.0
@@ -1688,7 +1688,7 @@ snapshots:
     dependencies:
       prelude-ls: 1.2.1
 
-  typeorm@1.0.0-beta.2(ts-node@10.9.2(@types/node@20.19.39)(typescript@5.9.3)):
+  typeorm@1.0.0-beta.3(ts-node@10.9.2(@types/node@20.19.39)(typescript@5.9.3)):
     dependencies:
       '@sqltools/formatter': 1.2.5
       ansis: 4.2.0

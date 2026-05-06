@@ -1,6 +1,6 @@
 {
   "name": "@typeorm/legacy-naming-strategies",
-  "version": "1.0.0-beta.2",
+  "version": "1.0.0-beta.3",
   "description": "Legacy naming strategies for TypeORM",
   "homepage": "https://typeorm.io",
   "bugs": {
@@ -47,12 +47,12 @@
     "mocha": "^11.7.5",
     "prettier": "^3.8.3",
     "ts-node": "^10.9.2",
-    "typeorm": "1.0.0-beta.2",
+    "typeorm": "1.0.0-beta.3",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.59.2"
   },
   "peerDependencies": {
-    "typeorm": "^1.0.0-beta.2"
+    "typeorm": "^1.0.0-beta.3"
   },
   "engines": {
     "node": ">=20"
