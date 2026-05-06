@@ -2978,6 +2978,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     private buildColumnSelectionExpression(
         aliasName: string,
         column: ColumnMetadata,
+        includeHydrationTransform: boolean = true,
     ): string {
         const escapedAliasName = this.escape(aliasName)
         let selectionPath =
@@ -2987,7 +2988,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             selectionPath = `(${column.query(escapedAliasName)})`
         }
 
-        if (DriverUtils.isSQLiteFamily(this.dataSource.driver)) {
+        if (
+            DriverUtils.isSQLiteFamily(this.dataSource.driver) &&
+            includeHydrationTransform
+        ) {
             selectionPath = (
                 this.dataSource.driver as
                     | AbstractSqliteDriver
@@ -2997,8 +3001,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         if (this.dataSource.driver.spatialTypes.indexOf(column.type) !== -1) {
             if (
-                DriverUtils.isMySQLFamily(this.dataSource.driver) ||
-                this.dataSource.driver.options.type === "aurora-mysql"
+                (DriverUtils.isMySQLFamily(this.dataSource.driver) ||
+                    this.dataSource.driver.options.type === "aurora-mysql") &&
+                includeHydrationTransform
             ) {
                 const useLegacy = (
                     this.dataSource.driver as MysqlDriver | AuroraMysqlDriver
@@ -3007,7 +3012,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 selectionPath = `${asText}(${selectionPath})`
             }
 
-            if (DriverUtils.isPostgresFamily(this.dataSource.driver))
+            if (
+                DriverUtils.isPostgresFamily(this.dataSource.driver) &&
+                includeHydrationTransform
+            )
                 if (column.precision) {
                     // cast to JSON to trigger parsing in the driver
                     selectionPath = `ST_AsGeoJSON(${selectionPath}, ${column.precision})::json`
@@ -3090,7 +3098,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (!column) return
 
             selectedColumns.add(
-                this.buildColumnSelectionExpression(aliasName, column),
+                this.buildColumnSelectionExpression(aliasName, column, false),
             )
         })
 
@@ -4065,32 +4073,33 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     relationValue === true ||
                     typeof relationValue === "object"
                 ) {
+                    const relationSelection =
+                        selection && typeof selection[relationName] === "object"
+                            ? (selection[
+                                  relationName
+                              ] as FindOptionsSelect<any>)
+                            : undefined
+
                     if (this.expressionMap.relationLoadStrategy === "query") {
                         this.concatRelationMetadata(relation)
-                    } else {
+                    }
+
+                    if (
+                        this.expressionMap.relationLoadStrategy !== "query" ||
+                        relationSelection
+                    ) {
                         this.joins.push({
                             type: joinType,
                             select: true,
-                            selection:
-                                selection &&
-                                typeof selection[relationName] === "object"
-                                    ? (selection[
-                                          relationName
-                                      ] as FindOptionsSelect<any>)
-                                    : undefined,
+                            selection: relationSelection,
                             alias: joinAlias,
                             parentAlias: alias,
                             relationMetadata: relation,
                         })
 
-                        if (
-                            selection &&
-                            typeof selection[relationName] === "object"
-                        ) {
+                        if (relationSelection) {
                             this.buildSelect(
-                                selection[
-                                    relationName
-                                ] as FindOptionsSelect<any>,
+                                relationSelection,
                                 relation.inverseEntityMetadata,
                                 joinAlias,
                             )
