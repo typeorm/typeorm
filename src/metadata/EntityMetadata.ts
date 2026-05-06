@@ -598,8 +598,6 @@ export class EntityMetadata {
         if (queryRunner) {
             Object.defineProperty(ret, "__queryRunner__", {
                 value: queryRunner,
-                enumerable: false,
-                configurable: true,
             })
         }
         return ret

@@ -542,8 +542,6 @@ export class RelationMetadata {
                     ) {
                         Object.defineProperty(embeddedValue, parentIndex, {
                             value: map[parentIndex] ?? entity,
-                            enumerable: false,
-                            configurable: true,
                         })
                     }
                     if (embeddedValue && ObjectUtils.isObject(embeddedValue)) {
