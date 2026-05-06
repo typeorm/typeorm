@@ -480,6 +480,11 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
 
                     queryCount.should.be.equal(0)
                     createdPost.title.should.be.equal("About ActiveRecord")
+
+                    await createdPost.twoSideCategory.should.eventually.be.eql(
+                        category,
+                    )
+                    queryCount.should.not.be.eql(0)
                 } finally {
                     loggerStub.restore()
                 }
@@ -523,6 +528,9 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                     queryCount.should.be.equal(0)
                     createdUser.firstName.should.be.equal("Umed")
                     createdUser.secondName.should.be.equal("San")
+
+                    await createdUser.profile.should.eventually.be.eql(profile)
+                    queryCount.should.not.be.eql(0)
                 } finally {
                     loggerStub.restore()
                 }

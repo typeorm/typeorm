@@ -860,23 +860,48 @@ export class ColumnMetadata {
      */
     setEntityValue(entity: ObjectLiteral, value: any): void {
         if (this.embeddedMetadata) {
+            const parentIndex =
+                "__" + this.embeddedMetadata.entityMetadata.targetName + "__"
             // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
             const extractEmbeddedColumnValue = (
                 embeddedMetadatas: EmbeddedMetadata[],
                 map: ObjectLiteral,
             ): any => {
-                // if (!object[embeddedMetadata.propertyName])
-                //     object[embeddedMetadata.propertyName] = embeddedMetadata.create();
-
                 const embeddedMetadata = embeddedMetadatas.shift()
                 if (embeddedMetadata) {
                     map[embeddedMetadata.propertyName] ??=
                         embeddedMetadata.create()
+                    const embeddedValue = map[embeddedMetadata.propertyName]
+                    if (
+                        embeddedValue &&
+                        ObjectUtils.isObject(embeddedValue) &&
+                        !Object.hasOwn(embeddedValue, parentIndex)
+                    ) {
+                        Object.defineProperty(embeddedValue, parentIndex, {
+                            value: map[parentIndex] ?? entity,
+                            enumerable: false,
+                            configurable: true,
+                        })
+                    }
+                    if (embeddedValue && ObjectUtils.isObject(embeddedValue)) {
+                        embeddedMetadata.relations
+                            .filter((relation) => relation.isLazy)
+                            .forEach((relation) => {
+                                if (
+                                    !Object.hasOwn(
+                                        embeddedValue,
+                                        relation.propertyName,
+                                    )
+                                ) {
+                                    this.entityMetadata.dataSource.relationLoader.enableLazyLoad(
+                                        relation,
+                                        embeddedValue,
+                                    )
+                                }
+                            })
+                    }
 
-                    extractEmbeddedColumnValue(
-                        embeddedMetadatas,
-                        map[embeddedMetadata.propertyName],
-                    )
+                    extractEmbeddedColumnValue(embeddedMetadatas, embeddedValue)
                     return map
                 }
                 map[this.propertyName] = value

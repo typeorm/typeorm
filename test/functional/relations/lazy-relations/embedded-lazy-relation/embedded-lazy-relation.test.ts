@@ -71,7 +71,7 @@ describe("lazy relations in embedded entity", () => {
                     createdPost.author.name.should.be.equal("John Doe")
 
                     const createdProfile = await createdPost.author.profile
-                    queryCounter.should.be.greaterThanOrEqual(0)
+                    queryCounter.should.not.be.eql(0)
                     createdProfile.about.should.be.equal(
                         "I am John Doe profile",
                     )
@@ -133,7 +133,7 @@ describe("lazy relations in embedded entity", () => {
 
                     const createdProfile =
                         await createdPost.postAuthor.author.profile
-                    queryCounter.should.be.greaterThanOrEqual(0)
+                    queryCounter.should.not.be.eql(0)
                     createdProfile.about.should.be.equal(
                         "I am nested John Doe profile",
                     )
