@@ -1430,15 +1430,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * @param limit
      */
     limit(limit?: number): this {
-        this.expressionMap.limit = this.normalizeNumber(limit)
-        if (
-            this.expressionMap.limit !== undefined &&
-            isNaN(this.expressionMap.limit)
-        )
-            throw new TypeORMError(
-                `Provided "limit" value is not a number. Please provide a numeric value.`,
-            )
-
+        this.expressionMap.limit = this.validateNumericInput("limit", limit)
         return this
     }
 
@@ -1449,15 +1441,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * @param offset
      */
     offset(offset?: number): this {
-        this.expressionMap.offset = this.normalizeNumber(offset)
-        if (
-            this.expressionMap.offset !== undefined &&
-            isNaN(this.expressionMap.offset)
-        )
-            throw new TypeORMError(
-                `Provided "offset" value is not a number. Please provide a numeric value.`,
-            )
-
+        this.expressionMap.offset = this.validateNumericInput("offset", offset)
         return this
     }
 
@@ -1465,15 +1449,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * Sets maximal number of entities to take.
      */
     take(take?: number): this {
-        this.expressionMap.take = this.normalizeNumber(take)
-        if (
-            this.expressionMap.take !== undefined &&
-            isNaN(this.expressionMap.take)
-        )
-            throw new TypeORMError(
-                `Provided "take" value is not a number. Please provide a numeric value.`,
-            )
-
+        this.expressionMap.take = this.validateNumericInput("take", take)
         return this
     }
 
@@ -1481,15 +1457,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * Sets number of entities to skip.
      */
     skip(skip?: number): this {
-        this.expressionMap.skip = this.normalizeNumber(skip)
-        if (
-            this.expressionMap.skip !== undefined &&
-            isNaN(this.expressionMap.skip)
-        )
-            throw new TypeORMError(
-                `Provided "skip" value is not a number. Please provide a numeric value.`,
-            )
-
+        this.expressionMap.skip = this.validateNumericInput("skip", skip)
         return this
     }
 
@@ -3896,16 +3864,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     ): this {
         ObjectUtils.assign(this.expressionMap, expressionMap)
         return this
-    }
-
-    /**
-     * Normalizes a give number - converts to int if possible.
-     */
-    protected normalizeNumber(num: any) {
-        if (typeof num === "number" || num === undefined || num === null)
-            return num
-
-        return Number(num)
     }
 
     /**
