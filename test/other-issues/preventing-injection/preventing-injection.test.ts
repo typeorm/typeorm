@@ -229,6 +229,46 @@ describe("other issues > preventing-injection", () => {
         })
     })
 
+    it("should not allow non-numeric limit in UpdateQueryBuilder", () => {
+        connections.forEach((connection) => {
+            expect(() => {
+                connection
+                    .createQueryBuilder()
+                    .update(Post)
+                    .set({ title: "test" })
+                    .limit("1; DROP TABLE post" as any)
+            }).to.throw(/not a number/)
+
+            expect(() => {
+                connection
+                    .createQueryBuilder()
+                    .update(Post)
+                    .set({ title: "test" })
+                    .limit(10)
+            }).to.not.throw()
+        })
+    })
+
+    it("should not allow non-numeric limit in SoftDeleteQueryBuilder", () => {
+        connections.forEach((connection) => {
+            expect(() => {
+                connection
+                    .createQueryBuilder()
+                    .softDelete()
+                    .from(Post)
+                    .limit("1; DROP TABLE post" as any)
+            }).to.throw(/not a number/)
+
+            expect(() => {
+                connection
+                    .createQueryBuilder()
+                    .softDelete()
+                    .from(Post)
+                    .limit(10)
+            }).to.not.throw()
+        })
+    })
+
     it("should not allow non-allowed values in order by on SoftDeleteQueryBuilder", () => {
         connections.forEach((connection) => {
             expect(() => {

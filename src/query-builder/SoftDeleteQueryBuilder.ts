@@ -396,7 +396,7 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
      * Sets LIMIT - maximum number of rows to be selected.
      */
     limit(limit?: number): this {
-        this.expressionMap.limit = limit
+        this.expressionMap.limit = this.validateNumericInput("limit", limit)
         return this
     }
 
