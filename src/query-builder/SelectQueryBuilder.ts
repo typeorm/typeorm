@@ -4053,33 +4053,32 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     relationValue === true ||
                     typeof relationValue === "object"
                 ) {
-                    const relationSelection =
-                        selection && typeof selection[relationName] === "object"
-                            ? (selection[
-                                  relationName
-                              ] as FindOptionsSelect<any>)
-                            : undefined
-
                     if (this.expressionMap.relationLoadStrategy === "query") {
                         this.concatRelationMetadata(relation)
-                    }
-
-                    if (
-                        this.expressionMap.relationLoadStrategy !== "query" ||
-                        relationSelection
-                    ) {
+                    } else {
                         this.joins.push({
                             type: joinType,
                             select: true,
-                            selection: relationSelection,
+                            selection:
+                                selection &&
+                                typeof selection[relationName] === "object"
+                                    ? (selection[
+                                          relationName
+                                      ] as FindOptionsSelect<any>)
+                                    : undefined,
                             alias: joinAlias,
                             parentAlias: alias,
                             relationMetadata: relation,
                         })
 
-                        if (relationSelection) {
+                        if (
+                            selection &&
+                            typeof selection[relationName] === "object"
+                        ) {
                             this.buildSelect(
-                                relationSelection,
+                                selection[
+                                    relationName
+                                ] as FindOptionsSelect<any>,
                                 relation.inverseEntityMetadata,
                                 joinAlias,
                             )

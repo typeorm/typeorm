@@ -307,54 +307,6 @@ describe("repository > find methods", () => {
                     count2.should.be.equal(3)
                 }),
             ))
-
-        it("should support distinct count with relation select and query relation load strategy", () =>
-            Promise.all(
-                dataSources.map(async (dataSource) => {
-                    const categoryRepository =
-                        dataSource.getRepository(Category)
-                    const postRepository = dataSource.getRepository(Post)
-
-                    const cat1 = await categoryRepository.save({ name: "Cat1" })
-                    const cat2 = await categoryRepository.save({ name: "Cat2" })
-
-                    const post1 = new Post()
-                    post1.id = 1
-                    post1.title = "post #1"
-                    post1.categoryName = "test"
-                    post1.category = cat1
-                    await postRepository.save(post1)
-
-                    const post2 = new Post()
-                    post2.id = 2
-                    post2.title = "post #2"
-                    post2.categoryName = "test"
-                    post2.category = cat1
-                    await postRepository.save(post2)
-
-                    const post3 = new Post()
-                    post3.id = 3
-                    post3.title = "post #3"
-                    post3.categoryName = "test"
-                    post3.category = cat2
-                    await postRepository.save(post3)
-
-                    // Query strategy with relation select should count distinct relation values
-                    const count = await postRepository.count({
-                        relationLoadStrategy: "query",
-                        select: {
-                            category: {
-                                name: true,
-                            },
-                        },
-                        relations: {
-                            category: true,
-                        },
-                    })
-
-                    count.should.be.equal(2) // 2 distinct categories
-                }),
-            ))
     })
 
     describe("exists", function () {
