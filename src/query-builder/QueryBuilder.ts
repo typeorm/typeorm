@@ -18,6 +18,7 @@ import { ColumnMetadata } from "../metadata/ColumnMetadata"
 import { FindOperator } from "../find-options/FindOperator"
 import { In } from "../find-options/operator/In"
 import { TypeORMError } from "../error"
+import { OrderByCondition } from "../find-options/OrderByCondition"
 import { WhereClause, WhereClauseCondition } from "./WhereClause"
 import { NotBrackets } from "./NotBrackets"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
@@ -1696,5 +1697,45 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
     protected hasCommonTableExpressions(): boolean {
         return this.expressionMap.commonTableExpressions.length > 0
+    }
+
+    protected validateOrderByCondition(sort: OrderByCondition): void {
+        const validOrders = ["ASC", "DESC"]
+        const validNulls = ["NULLS FIRST", "NULLS LAST"]
+
+        for (const [key, value] of Object.entries(sort)) {
+            if (typeof value === "string") {
+                if (!validOrders.includes(value))
+                    throw new TypeORMError(
+                        `Invalid order direction "${value}" for "${key}". Allowed values: ${validOrders.join(
+                            ", ",
+                        )}.`,
+                    )
+            } else if (typeof value === "object" && value !== null) {
+                if (!validOrders.includes(value.order))
+                    throw new TypeORMError(
+                        `Invalid order direction "${
+                            value.order
+                        }" for "${key}". Allowed values: ${validOrders.join(
+                            ", ",
+                        )}.`,
+                    )
+                if (
+                    value.nulls !== undefined &&
+                    !validNulls.includes(value.nulls)
+                )
+                    throw new TypeORMError(
+                        `Invalid nulls option "${
+                            value.nulls
+                        }" for "${key}". Allowed values: ${validNulls.join(
+                            ", ",
+                        )}.`,
+                    )
+            } else {
+                throw new TypeORMError(
+                    `Invalid order-by value for "${key}". Expected "ASC", "DESC", or { order, nulls } object.`,
+                )
+            }
+        }
     }
 }

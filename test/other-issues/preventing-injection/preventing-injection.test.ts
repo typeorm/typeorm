@@ -142,4 +142,156 @@ describe("other issues > preventing-injection", () => {
             }).to.throw(Error)
         })
     })
+
+    it("should not allow non-allowed values in order by on UpdateQueryBuilder", () => {
+        connections.forEach((connection) => {
+            expect(() => {
+                connection
+                    .createQueryBuilder()
+                    .update(Post)
+                    .set({ title: "test" })
+                    // @ts-expect-error intentionally invalid order direction
+                    .orderBy("id", "ASC, (SELECT SLEEP(2))")
+            }).to.throw(/Invalid order direction/)
+
+            expect(() => {
+                connection
+                    .createQueryBuilder()
+                    .update(Post)
+                    .set({ title: "test" })
+                    .orderBy("id")
+                    // @ts-expect-error intentionally invalid order direction
+                    .addOrderBy("title", "DESC; DROP TABLE post")
+            }).to.throw(/Invalid order direction/)
+
+            expect(() => {
+                connection
+                    .createQueryBuilder()
+                    .update(Post)
+                    .set({ title: "test" })
+                    .orderBy(
+                        "id",
+                        "ASC",
+                        // @ts-expect-error intentionally invalid nulls
+                        "NULLS FIRST; DROP TABLE post",
+                    )
+            }).to.throw(/Invalid nulls option/)
+
+            expect(() => {
+                connection
+                    .createQueryBuilder()
+                    .update(Post)
+                    .set({ title: "test" })
+                    .orderBy({ id: "ASC; DROP TABLE post" } as any)
+            }).to.throw(/Invalid order direction/)
+
+            expect(() => {
+                connection
+                    .createQueryBuilder()
+                    .update(Post)
+                    .set({ title: "test" })
+                    .orderBy({
+                        id: {
+                            order: "ASC; DROP TABLE post",
+                            nulls: "NULLS FIRST",
+                        },
+                    } as any)
+            }).to.throw(/Invalid order direction/)
+
+            expect(() => {
+                connection
+                    .createQueryBuilder()
+                    .update(Post)
+                    .set({ title: "test" })
+                    .orderBy({
+                        id: {
+                            order: "ASC",
+                            nulls: "NULLS FIRST; DROP TABLE post",
+                        },
+                    } as any)
+            }).to.throw(/Invalid nulls option/)
+
+            expect(() => {
+                connection
+                    .createQueryBuilder()
+                    .update(Post)
+                    .set({ title: "test" })
+                    .orderBy("id", "ASC")
+            }).to.not.throw()
+
+            expect(() => {
+                connection
+                    .createQueryBuilder()
+                    .update(Post)
+                    .set({ title: "test" })
+                    .orderBy("id", "DESC")
+            }).to.not.throw()
+        })
+    })
+
+    it("should not allow non-allowed values in order by on SoftDeleteQueryBuilder", () => {
+        connections.forEach((connection) => {
+            expect(() => {
+                connection
+                    .createQueryBuilder()
+                    .softDelete()
+                    .from(Post)
+                    // @ts-expect-error intentionally invalid order direction
+                    .orderBy("id", "ASC, (SELECT SLEEP(2))")
+            }).to.throw(/Invalid order direction/)
+
+            expect(() => {
+                connection
+                    .createQueryBuilder()
+                    .softDelete()
+                    .from(Post)
+                    .orderBy("id")
+                    // @ts-expect-error intentionally invalid order direction
+                    .addOrderBy("title", "DESC; DROP TABLE post")
+            }).to.throw(/Invalid order direction/)
+
+            expect(() => {
+                connection.createQueryBuilder().softDelete().from(Post).orderBy(
+                    "id",
+                    "ASC",
+                    // @ts-expect-error intentionally invalid nulls
+                    "NULLS FIRST; DROP TABLE post",
+                )
+            }).to.throw(/Invalid nulls option/)
+
+            expect(() => {
+                connection
+                    .createQueryBuilder()
+                    .softDelete()
+                    .from(Post)
+                    .orderBy({ id: "ASC; DROP TABLE post" } as any)
+            }).to.throw(/Invalid order direction/)
+
+            expect(() => {
+                connection
+                    .createQueryBuilder()
+                    .softDelete()
+                    .from(Post)
+                    .orderBy({
+                        id: {
+                            order: "ASC; DROP TABLE post",
+                            nulls: "NULLS FIRST",
+                        },
+                    } as any)
+            }).to.throw(/Invalid order direction/)
+
+            expect(() => {
+                connection
+                    .createQueryBuilder()
+                    .softDelete()
+                    .from(Post)
+                    .orderBy({
+                        id: {
+                            order: "ASC",
+                            nulls: "NULLS FIRST; DROP TABLE post",
+                        },
+                    } as any)
+            }).to.throw(/Invalid nulls option/)
+        })
+    })
 })

@@ -1385,30 +1385,16 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         order: "ASC" | "DESC" = "ASC",
         nulls?: "NULLS FIRST" | "NULLS LAST",
     ): this {
-        if (order !== undefined && order !== "ASC" && order !== "DESC")
-            throw new TypeORMError(
-                `SelectQueryBuilder.addOrderBy "order" can accept only "ASC" and "DESC" values.`,
-            )
-        if (
-            nulls !== undefined &&
-            nulls !== "NULLS FIRST" &&
-            nulls !== "NULLS LAST"
-        )
-            throw new TypeORMError(
-                `SelectQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`,
-            )
-
         if (sort) {
             if (typeof sort === "object") {
-                this.expressionMap.orderBys = sort as OrderByCondition
+                this.validateOrderByCondition(sort)
+                this.expressionMap.orderBys = sort
             } else {
-                if (nulls) {
-                    this.expressionMap.orderBys = {
-                        [sort as string]: { order, nulls },
-                    }
-                } else {
-                    this.expressionMap.orderBys = { [sort as string]: order }
-                }
+                const condition: OrderByCondition = nulls
+                    ? { [sort as string]: { order, nulls } }
+                    : { [sort as string]: order }
+                this.validateOrderByCondition(condition)
+                this.expressionMap.orderBys = condition
             }
         } else {
             this.expressionMap.orderBys = {}
@@ -1424,18 +1410,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         order: "ASC" | "DESC" = "ASC",
         nulls?: "NULLS FIRST" | "NULLS LAST",
     ): this {
-        if (order !== undefined && order !== "ASC" && order !== "DESC")
-            throw new TypeORMError(
-                `SelectQueryBuilder.addOrderBy "order" can accept only "ASC" and "DESC" values.`,
-            )
-        if (
-            nulls !== undefined &&
-            nulls !== "NULLS FIRST" &&
-            nulls !== "NULLS LAST"
-        )
-            throw new TypeORMError(
-                `SelectQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`,
-            )
+        const condition: OrderByCondition = nulls
+            ? { [sort]: { order, nulls } }
+            : { [sort]: order }
+        this.validateOrderByCondition(condition)
 
         if (nulls) {
             this.expressionMap.orderBys[sort] = { order, nulls }

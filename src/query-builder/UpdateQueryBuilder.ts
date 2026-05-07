@@ -387,15 +387,14 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
     ): this {
         if (sort) {
             if (typeof sort === "object") {
-                this.expressionMap.orderBys = sort as OrderByCondition
+                this.validateOrderByCondition(sort)
+                this.expressionMap.orderBys = sort
             } else {
-                if (nulls) {
-                    this.expressionMap.orderBys = {
-                        [sort as string]: { order, nulls },
-                    }
-                } else {
-                    this.expressionMap.orderBys = { [sort as string]: order }
-                }
+                const condition: OrderByCondition = nulls
+                    ? { [sort as string]: { order, nulls } }
+                    : { [sort as string]: order }
+                this.validateOrderByCondition(condition)
+                this.expressionMap.orderBys = condition
             }
         } else {
             this.expressionMap.orderBys = {}
@@ -411,6 +410,11 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
         order: "ASC" | "DESC" = "ASC",
         nulls?: "NULLS FIRST" | "NULLS LAST",
     ): this {
+        const condition: OrderByCondition = nulls
+            ? { [sort]: { order, nulls } }
+            : { [sort]: order }
+        this.validateOrderByCondition(condition)
+
         if (nulls) {
             this.expressionMap.orderBys[sort] = { order, nulls }
         } else {
@@ -717,7 +721,9 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
      */
     protected createOrderByExpression() {
         const orderBys = this.expressionMap.orderBys
-        if (Object.keys(orderBys).length > 0)
+
+        if (Object.keys(orderBys).length > 0) {
+            this.validateOrderByCondition(orderBys)
             return (
                 " ORDER BY " +
                 Object.keys(orderBys)
@@ -729,17 +735,19 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                                 orderBys[columnName]
                             )
                         } else {
+                            const { order, nulls } = orderBys[columnName] as any
                             return (
                                 this.replacePropertyNames(columnName) +
                                 " " +
-                                (orderBys[columnName] as any).order +
+                                order +
                                 " " +
-                                (orderBys[columnName] as any).nulls
+                                nulls
                             )
                         }
                     })
                     .join(", ")
             )
+        }
 
         return ""
     }
