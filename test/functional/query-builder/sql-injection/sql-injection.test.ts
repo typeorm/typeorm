@@ -218,6 +218,145 @@ describe("query builder > sql injection", () => {
         })
     })
 
+    describe("UpdateQueryBuilder orderBy direction injection", () => {
+        it("should reject invalid order direction string", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ name: "test" })
+                            // @ts-expect-error intentionally invalid order direction
+                            .orderBy("id", "ASC, (SELECT SLEEP(2))"),
+                    ).to.throw(/Invalid order direction/)
+                    await verifyIntegrity(dataSource)()
+                }),
+            ))
+
+        it("should reject invalid order direction in addOrderBy", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ name: "test" })
+                            .orderBy("id")
+                            // @ts-expect-error intentionally invalid order direction
+                            .addOrderBy("name", "DESC; DROP TABLE post"),
+                    ).to.throw(/Invalid order direction/)
+                    await verifyIntegrity(dataSource)()
+                }),
+            ))
+
+        it("should reject invalid nulls value", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ name: "test" })
+                            .orderBy(
+                                "id",
+                                "ASC",
+                                // @ts-expect-error intentionally invalid nulls
+                                "NULLS FIRST; DROP TABLE post",
+                            ),
+                    ).to.throw(/Invalid nulls option/)
+                    await verifyIntegrity(dataSource)()
+                }),
+            ))
+
+        it("should accept valid order directions", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ name: "test" })
+                            .orderBy("id", "ASC"),
+                    ).to.not.throw()
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ name: "test" })
+                            .orderBy("id", "DESC"),
+                    ).to.not.throw()
+                }),
+            ))
+    })
+
+    describe("SoftDeleteQueryBuilder orderBy direction injection", () => {
+        it("should reject invalid order direction string", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .softDelete()
+                            .from(Post)
+                            // @ts-expect-error intentionally invalid order direction
+                            .orderBy("id", "ASC, (SELECT SLEEP(2))"),
+                    ).to.throw(/Invalid order direction/)
+                    await verifyIntegrity(dataSource)()
+                }),
+            ))
+
+        it("should reject invalid order direction in addOrderBy", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .softDelete()
+                            .from(Post)
+                            .orderBy("id")
+                            // @ts-expect-error intentionally invalid order direction
+                            .addOrderBy("name", "DESC; DROP TABLE post"),
+                    ).to.throw(/Invalid order direction/)
+                    await verifyIntegrity(dataSource)()
+                }),
+            ))
+
+        it("should reject invalid nulls value", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .softDelete()
+                            .from(Post)
+                            .orderBy(
+                                "id",
+                                "ASC",
+                                // @ts-expect-error intentionally invalid nulls
+                                "NULLS FIRST; DROP TABLE post",
+                            ),
+                    ).to.throw(/Invalid nulls option/)
+                    await verifyIntegrity(dataSource)()
+                }),
+            ))
+    })
+
     describe("orWhere", () => {
         for (const malicious of maliciousInputs) {
             it(`should prevent injection with: ${malicious}`, () =>

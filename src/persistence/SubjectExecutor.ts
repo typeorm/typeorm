@@ -637,11 +637,20 @@ export class SubjectExecutor {
             }
         }
 
-        // Run all remaining subjects in parallel
-        await Promise.all([
-            ...remainingSubjects.map(updateSubject),
-            updateNestSetSubjects(),
-        ])
+        // Avoid concurrent queries on the same pg client; see #12238.
+        // CockroachDB uses the pg package over a single connection too.
+        const driverType = this.queryRunner.dataSource.options.type
+        if (driverType === "postgres" || driverType === "cockroachdb") {
+            for (const subject of remainingSubjects) {
+                await updateSubject(subject)
+            }
+            await updateNestSetSubjects()
+        } else {
+            await Promise.all([
+                ...remainingSubjects.map(updateSubject),
+                updateNestSetSubjects(),
+            ])
+        }
     }
 
     /**
@@ -719,214 +728,222 @@ export class SubjectExecutor {
      * Soft-removes all given subjects in the database.
      */
     protected async executeSoftRemoveOperations(): Promise<void> {
-        await Promise.all(
-            this.softRemoveSubjects.map(async (subject) => {
-                if (!subject.identifier)
-                    throw new SubjectWithoutIdentifierError(subject)
+        const softRemoveSubject = async (subject: Subject): Promise<void> => {
+            if (!subject.identifier)
+                throw new SubjectWithoutIdentifierError(subject)
 
-                let updateResult: UpdateResult
+            let updateResult: UpdateResult
 
-                // for mongodb we have a bit different updation logic
-                if (
-                    InstanceChecker.isMongoEntityManager(
-                        this.queryRunner.manager,
-                    )
-                ) {
-                    const partialEntity = this.cloneMongoSubjectEntity(subject)
-                    if (subject.metadata.objectIdColumn?.propertyName) {
-                        delete partialEntity[
-                            subject.metadata.objectIdColumn.propertyName
-                        ]
-                    }
+            // for mongodb we have a bit different updation logic
+            if (
+                InstanceChecker.isMongoEntityManager(this.queryRunner.manager)
+            ) {
+                const partialEntity = this.cloneMongoSubjectEntity(subject)
+                if (subject.metadata.objectIdColumn?.propertyName) {
+                    delete partialEntity[
+                        subject.metadata.objectIdColumn.propertyName
+                    ]
+                }
 
-                    if (subject.metadata.createDateColumn?.propertyName) {
-                        delete partialEntity[
-                            subject.metadata.createDateColumn.propertyName
-                        ]
-                    }
+                if (subject.metadata.createDateColumn?.propertyName) {
+                    delete partialEntity[
+                        subject.metadata.createDateColumn.propertyName
+                    ]
+                }
 
-                    if (subject.metadata.updateDateColumn?.propertyName) {
-                        partialEntity[
-                            subject.metadata.updateDateColumn.propertyName
-                        ] = new Date()
-                    }
+                if (subject.metadata.updateDateColumn?.propertyName) {
+                    partialEntity[
+                        subject.metadata.updateDateColumn.propertyName
+                    ] = new Date()
+                }
 
-                    if (subject.metadata.deleteDateColumn?.propertyName) {
-                        partialEntity[
-                            subject.metadata.deleteDateColumn.propertyName
-                        ] = new Date()
-                    }
+                if (subject.metadata.deleteDateColumn?.propertyName) {
+                    partialEntity[
+                        subject.metadata.deleteDateColumn.propertyName
+                    ] = new Date()
+                }
 
-                    const manager = this.queryRunner
-                        .manager as MongoEntityManager
+                const manager = this.queryRunner.manager as MongoEntityManager
 
-                    updateResult = await manager.update(
-                        subject.metadata.target,
-                        subject.identifier,
-                        partialEntity,
-                    )
+                updateResult = await manager.update(
+                    subject.metadata.target,
+                    subject.identifier,
+                    partialEntity,
+                )
+            } else {
+                // here we execute our soft-deletion query
+                // we need to enable entity soft-deletion because we update a subject identifier
+                // which is not same object as our entity that's why we don't need to worry about our entity to get dirty
+                // also, we disable listeners because we call them on our own in persistence layer
+                const softDeleteQueryBuilder = this.queryRunner.manager
+                    .createQueryBuilder()
+                    .softDelete()
+                    .from(subject.metadata.target)
+                    .updateEntity(this.options?.reload !== false)
+                    .callListeners(false)
+
+                if (subject.entity) {
+                    softDeleteQueryBuilder.whereEntity(subject.identifier)
                 } else {
-                    // here we execute our soft-deletion query
-                    // we need to enable entity soft-deletion because we update a subject identifier
-                    // which is not same object as our entity that's why we don't need to worry about our entity to get dirty
-                    // also, we disable listeners because we call them on our own in persistence layer
-                    const softDeleteQueryBuilder = this.queryRunner.manager
-                        .createQueryBuilder()
-                        .softDelete()
-                        .from(subject.metadata.target)
-                        .updateEntity(this.options?.reload !== false)
-                        .callListeners(false)
-
-                    if (subject.entity) {
-                        softDeleteQueryBuilder.whereEntity(subject.identifier)
-                    } else {
-                        // in this case identifier is just conditions object to update by
-                        softDeleteQueryBuilder.where(subject.identifier)
-                    }
-
-                    updateResult = await softDeleteQueryBuilder.execute()
+                    // in this case identifier is just conditions object to update by
+                    softDeleteQueryBuilder.where(subject.identifier)
                 }
 
-                subject.generatedMap = updateResult.generatedMaps[0]
-                if (subject.generatedMap) {
-                    subject.metadata.columns.forEach((column) => {
-                        const value = column.getEntityValue(
-                            subject.generatedMap!,
-                        )
-                        if (value !== undefined && value !== null) {
-                            const preparedValue =
-                                this.queryRunner.dataSource.driver.prepareHydratedValue(
-                                    value,
-                                    column,
-                                )
-                            column.setEntityValue(
-                                subject.generatedMap!,
-                                preparedValue,
+                updateResult = await softDeleteQueryBuilder.execute()
+            }
+
+            subject.generatedMap = updateResult.generatedMaps[0]
+            if (subject.generatedMap) {
+                subject.metadata.columns.forEach((column) => {
+                    const value = column.getEntityValue(subject.generatedMap!)
+                    if (value !== undefined && value !== null) {
+                        const preparedValue =
+                            this.queryRunner.dataSource.driver.prepareHydratedValue(
+                                value,
+                                column,
                             )
-                        }
-                    })
-                }
+                        column.setEntityValue(
+                            subject.generatedMap!,
+                            preparedValue,
+                        )
+                    }
+                })
+            }
 
-                // experiments, remove probably, need to implement tree tables children removal
-                // if (subject.updatedRelationMaps.length > 0) {
-                //     await Promise.all(subject.updatedRelationMaps.map(async updatedRelation => {
-                //         if (!updatedRelation.relation.isTreeParent) return;
-                //         if (!updatedRelation.value !== null) return;
-                //
-                //         if (subject.metadata.treeType === "closure-table") {
-                //             await new ClosureSubjectExecutor(this.queryRunner).deleteChildrenOf(subject);
-                //         }
-                //     }));
-                // }
-            }),
-        )
+            // experiments, remove probably, need to implement tree tables children removal
+            // if (subject.updatedRelationMaps.length > 0) {
+            //     await Promise.all(subject.updatedRelationMaps.map(async updatedRelation => {
+            //         if (!updatedRelation.relation.isTreeParent) return;
+            //         if (!updatedRelation.value !== null) return;
+            //
+            //         if (subject.metadata.treeType === "closure-table") {
+            //             await new ClosureSubjectExecutor(this.queryRunner).deleteChildrenOf(subject);
+            //         }
+            //     }));
+            // }
+        }
+
+        // Avoid concurrent queries on the same pg client; see #12238.
+        // CockroachDB uses the pg package over a single connection too.
+        const driverType = this.queryRunner.dataSource.options.type
+        if (driverType === "postgres" || driverType === "cockroachdb") {
+            for (const subject of this.softRemoveSubjects) {
+                await softRemoveSubject(subject)
+            }
+        } else {
+            await Promise.all(this.softRemoveSubjects.map(softRemoveSubject))
+        }
     }
 
     /**
      * Recovers all given subjects in the database.
      */
     protected async executeRecoverOperations(): Promise<void> {
-        await Promise.all(
-            this.recoverSubjects.map(async (subject) => {
-                if (!subject.identifier)
-                    throw new SubjectWithoutIdentifierError(subject)
+        const recoverSubject = async (subject: Subject): Promise<void> => {
+            if (!subject.identifier)
+                throw new SubjectWithoutIdentifierError(subject)
 
-                let updateResult: UpdateResult
+            let updateResult: UpdateResult
 
-                // for mongodb we have a bit different updation logic
-                if (
-                    InstanceChecker.isMongoEntityManager(
-                        this.queryRunner.manager,
-                    )
-                ) {
-                    const partialEntity = this.cloneMongoSubjectEntity(subject)
-                    if (subject.metadata.objectIdColumn?.propertyName) {
-                        delete partialEntity[
-                            subject.metadata.objectIdColumn.propertyName
-                        ]
-                    }
+            // for mongodb we have a bit different updation logic
+            if (
+                InstanceChecker.isMongoEntityManager(this.queryRunner.manager)
+            ) {
+                const partialEntity = this.cloneMongoSubjectEntity(subject)
+                if (subject.metadata.objectIdColumn?.propertyName) {
+                    delete partialEntity[
+                        subject.metadata.objectIdColumn.propertyName
+                    ]
+                }
 
-                    if (subject.metadata.createDateColumn?.propertyName) {
-                        delete partialEntity[
-                            subject.metadata.createDateColumn.propertyName
-                        ]
-                    }
+                if (subject.metadata.createDateColumn?.propertyName) {
+                    delete partialEntity[
+                        subject.metadata.createDateColumn.propertyName
+                    ]
+                }
 
-                    if (subject.metadata.updateDateColumn?.propertyName) {
-                        partialEntity[
-                            subject.metadata.updateDateColumn.propertyName
-                        ] = new Date()
-                    }
+                if (subject.metadata.updateDateColumn?.propertyName) {
+                    partialEntity[
+                        subject.metadata.updateDateColumn.propertyName
+                    ] = new Date()
+                }
 
-                    if (subject.metadata.deleteDateColumn?.propertyName) {
-                        partialEntity[
-                            subject.metadata.deleteDateColumn.propertyName
-                        ] = null
-                    }
+                if (subject.metadata.deleteDateColumn?.propertyName) {
+                    partialEntity[
+                        subject.metadata.deleteDateColumn.propertyName
+                    ] = null
+                }
 
-                    const manager = this.queryRunner
-                        .manager as MongoEntityManager
+                const manager = this.queryRunner.manager as MongoEntityManager
 
-                    updateResult = await manager.update(
-                        subject.metadata.target,
-                        subject.identifier,
-                        partialEntity,
-                    )
+                updateResult = await manager.update(
+                    subject.metadata.target,
+                    subject.identifier,
+                    partialEntity,
+                )
+            } else {
+                // here we execute our restory query
+                // we need to enable entity restory because we update a subject identifier
+                // which is not same object as our entity that's why we don't need to worry about our entity to get dirty
+                // also, we disable listeners because we call them on our own in persistence layer
+                const softDeleteQueryBuilder = this.queryRunner.manager
+                    .createQueryBuilder()
+                    .restore()
+                    .from(subject.metadata.target)
+                    .updateEntity(this.options?.reload !== false)
+                    .callListeners(false)
+
+                if (subject.entity) {
+                    softDeleteQueryBuilder.whereEntity(subject.identifier)
                 } else {
-                    // here we execute our restory query
-                    // we need to enable entity restory because we update a subject identifier
-                    // which is not same object as our entity that's why we don't need to worry about our entity to get dirty
-                    // also, we disable listeners because we call them on our own in persistence layer
-                    const softDeleteQueryBuilder = this.queryRunner.manager
-                        .createQueryBuilder()
-                        .restore()
-                        .from(subject.metadata.target)
-                        .updateEntity(this.options?.reload !== false)
-                        .callListeners(false)
-
-                    if (subject.entity) {
-                        softDeleteQueryBuilder.whereEntity(subject.identifier)
-                    } else {
-                        // in this case identifier is just conditions object to update by
-                        softDeleteQueryBuilder.where(subject.identifier)
-                    }
-
-                    updateResult = await softDeleteQueryBuilder.execute()
+                    // in this case identifier is just conditions object to update by
+                    softDeleteQueryBuilder.where(subject.identifier)
                 }
 
-                subject.generatedMap = updateResult.generatedMaps[0]
-                if (subject.generatedMap) {
-                    subject.metadata.columns.forEach((column) => {
-                        const value = column.getEntityValue(
-                            subject.generatedMap!,
-                        )
-                        if (value !== undefined && value !== null) {
-                            const preparedValue =
-                                this.queryRunner.dataSource.driver.prepareHydratedValue(
-                                    value,
-                                    column,
-                                )
-                            column.setEntityValue(
-                                subject.generatedMap!,
-                                preparedValue,
+                updateResult = await softDeleteQueryBuilder.execute()
+            }
+
+            subject.generatedMap = updateResult.generatedMaps[0]
+            if (subject.generatedMap) {
+                subject.metadata.columns.forEach((column) => {
+                    const value = column.getEntityValue(subject.generatedMap!)
+                    if (value !== undefined && value !== null) {
+                        const preparedValue =
+                            this.queryRunner.dataSource.driver.prepareHydratedValue(
+                                value,
+                                column,
                             )
-                        }
-                    })
-                }
+                        column.setEntityValue(
+                            subject.generatedMap!,
+                            preparedValue,
+                        )
+                    }
+                })
+            }
 
-                // experiments, remove probably, need to implement tree tables children removal
-                // if (subject.updatedRelationMaps.length > 0) {
-                //     await Promise.all(subject.updatedRelationMaps.map(async updatedRelation => {
-                //         if (!updatedRelation.relation.isTreeParent) return;
-                //         if (!updatedRelation.value !== null) return;
-                //
-                //         if (subject.metadata.treeType === "closure-table") {
-                //             await new ClosureSubjectExecutor(this.queryRunner).deleteChildrenOf(subject);
-                //         }
-                //     }));
-                // }
-            }),
-        )
+            // experiments, remove probably, need to implement tree tables children removal
+            // if (subject.updatedRelationMaps.length > 0) {
+            //     await Promise.all(subject.updatedRelationMaps.map(async updatedRelation => {
+            //         if (!updatedRelation.relation.isTreeParent) return;
+            //         if (!updatedRelation.value !== null) return;
+            //
+            //         if (subject.metadata.treeType === "closure-table") {
+            //             await new ClosureSubjectExecutor(this.queryRunner).deleteChildrenOf(subject);
+            //         }
+            //     }));
+            // }
+        }
+
+        // Avoid concurrent queries on the same pg client; see #12238.
+        // CockroachDB uses the pg package over a single connection too.
+        const driverType = this.queryRunner.dataSource.options.type
+        if (driverType === "postgres" || driverType === "cockroachdb") {
+            for (const subject of this.recoverSubjects) {
+                await recoverSubject(subject)
+            }
+        } else {
+            await Promise.all(this.recoverSubjects.map(recoverSubject))
+        }
     }
 
     /**

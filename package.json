@@ -238,10 +238,12 @@
     ],
     "ignoredBuiltDependencies": [
       "@sap/hana-client",
+      "cpu-features",
       "es5-ext",
       "libpq",
       "oracledb",
-      "protobufjs"
+      "protobufjs",
+      "ssh2"
     ]
   },
   "tags": [
