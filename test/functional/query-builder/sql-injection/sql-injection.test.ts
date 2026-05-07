@@ -357,6 +357,70 @@ describe("query builder > sql injection", () => {
             ))
     })
 
+    describe("UpdateQueryBuilder limit validation", () => {
+        it("should reject non-numeric limit", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (!DriverUtils.isMySQLFamily(dataSource.driver)) return
+
+                    expect(() => {
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ text: "updated" })
+                            .limit("1; DROP TABLE post" as any)
+                    }).to.throw(/not a number/)
+                }),
+            ))
+
+        it("should accept valid numeric limit", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (!DriverUtils.isMySQLFamily(dataSource.driver)) return
+
+                    expect(() => {
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ text: "updated" })
+                            .limit(10)
+                    }).to.not.throw()
+                }),
+            ))
+    })
+
+    describe("SoftDeleteQueryBuilder limit validation", () => {
+        it("should reject non-numeric limit", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (!DriverUtils.isMySQLFamily(dataSource.driver)) return
+
+                    expect(() => {
+                        dataSource
+                            .createQueryBuilder()
+                            .softDelete()
+                            .from(Post)
+                            .limit("1; DROP TABLE post" as any)
+                    }).to.throw(/not a number/)
+                }),
+            ))
+
+        it("should accept valid numeric limit", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (!DriverUtils.isMySQLFamily(dataSource.driver)) return
+
+                    expect(() => {
+                        dataSource
+                            .createQueryBuilder()
+                            .softDelete()
+                            .from(Post)
+                            .limit(10)
+                    }).to.not.throw()
+                }),
+            ))
+    })
+
     describe("orWhere", () => {
         for (const malicious of maliciousInputs) {
             it(`should prevent injection with: ${malicious}`, () =>
