@@ -35,7 +35,7 @@ export class TemporalUtils {
 export class ZonedDateTimeUtils {
     static toTemporal(
         value: Date | string | null | undefined,
-        timeZone: string = "",
+        timeZone: string = "UTC",
     ): Temporal.ZonedDateTime | null {
         if (value === null || value === undefined) return null
 
@@ -44,11 +44,13 @@ export class ZonedDateTimeUtils {
             return t.Instant.fromEpochMilliseconds(
                 value.getTime(),
             ).toZonedDateTimeISO(timeZone)
-        return t.Instant.from(String(value)).toZonedDateTimeISO(timeZone)
+        const valueString =
+            typeof value === "string" ? value.replace(" ", "T") : String(value)
+        return t.Instant.from(valueString).toZonedDateTimeISO(timeZone)
     }
 
     static fromTemporal(value: Temporal.ZonedDateTime): string {
-        return value.toString()
+        return value.toInstant().toString()
     }
 }
 
@@ -134,11 +136,33 @@ export class PlainTimeUtils {
  */
 export class DurationUtils {
     static toTemporal(
-        value: string | null | undefined,
+        value: string | object | null | undefined,
     ): Temporal.Duration | null {
         if (value === null || value === undefined) return null
 
         const t = T()
+        // The `pg` driver parses `interval` (OID 1186) into a
+        // `postgres-interval` object whose default `toString()` returns the
+        // Postgres human-readable form ("1 day 04:05:06"), which
+        // `Temporal.Duration.from` cannot parse. Prefer `toISOString()` when
+        // present, then fall back to a plain components object, and finally
+        // to string coercion for already-ISO inputs.
+        if (typeof value === "object") {
+            const obj = value as {
+                toISOString?: () => string
+                years?: number
+                months?: number
+                days?: number
+                hours?: number
+                minutes?: number
+                seconds?: number
+                milliseconds?: number
+            }
+            if (typeof obj.toISOString === "function") {
+                return t.Duration.from(obj.toISOString())
+            }
+            return t.Duration.from(obj)
+        }
         return t.Duration.from(String(value))
     }
 

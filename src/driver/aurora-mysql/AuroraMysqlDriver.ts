@@ -11,6 +11,12 @@ import type { TableForeignKey } from "../../schema-builder/table/TableForeignKey
 import type { View } from "../../schema-builder/view/View"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DateUtils } from "../../util/DateUtils"
+import {
+    PlainDateTimeUtils,
+    PlainDateUtils,
+    PlainTimeUtils,
+    ZonedDateTimeUtils,
+} from "../../util/TemporalUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
 import type { Driver } from "../Driver"
@@ -557,18 +563,31 @@ export class AuroraMysqlDriver implements Driver {
         if (columnMetadata.type === Boolean) {
             return value === true ? 1 : 0
         } else if (columnMetadata.type === "date") {
+            if (columnMetadata.temporal) {
+                return PlainDateUtils.fromTemporal(value)
+            }
             return DateUtils.mixedDateToDateString(value, {
                 utc: columnMetadata.utc,
             })
         } else if (columnMetadata.type === "time") {
+            if (columnMetadata.temporal) {
+                return PlainTimeUtils.fromTemporal(value)
+            }
             return DateUtils.mixedDateToTimeString(value)
         } else if (columnMetadata.type === "json") {
             return JSON.stringify(value)
+        } else if (columnMetadata.type === "datetime") {
+            if (columnMetadata.temporal) {
+                return PlainDateTimeUtils.fromTemporal(value)
+            }
+            return DateUtils.mixedDateToDate(value)
         } else if (
             columnMetadata.type === "timestamp" ||
-            columnMetadata.type === "datetime" ||
             columnMetadata.type === Date
         ) {
+            if (columnMetadata.temporal) {
+                return ZonedDateTimeUtils.fromTemporal(value)
+            }
             return DateUtils.mixedDateToDate(value)
         } else if (
             columnMetadata.type === "simple-array" ||
@@ -612,19 +631,42 @@ export class AuroraMysqlDriver implements Driver {
             columnMetadata.type === "boolean"
         ) {
             value = value ? true : false
+        } else if (columnMetadata.type === "datetime") {
+            if (columnMetadata.temporal) {
+                value = PlainDateTimeUtils.toTemporal(value)
+            } else {
+                value = DateUtils.normalizeHydratedDate(value)
+            }
         } else if (
-            columnMetadata.type === "datetime" ||
+            columnMetadata.type === "timestamp" ||
             columnMetadata.type === Date
         ) {
-            value = DateUtils.normalizeHydratedDate(value)
+            if (columnMetadata.temporal) {
+                const tz =
+                    typeof columnMetadata.temporal === "object" &&
+                    columnMetadata.temporal.timeZone
+                        ? columnMetadata.temporal.timeZone
+                        : "UTC"
+                value = ZonedDateTimeUtils.toTemporal(value, tz)
+            } else {
+                value = DateUtils.normalizeHydratedDate(value)
+            }
         } else if (columnMetadata.type === "date") {
-            value = DateUtils.mixedDateToDateString(value, {
-                utc: columnMetadata.utc,
-            })
+            if (columnMetadata.temporal) {
+                value = PlainDateUtils.toTemporal(value)
+            } else {
+                value = DateUtils.mixedDateToDateString(value, {
+                    utc: columnMetadata.utc,
+                })
+            }
         } else if (columnMetadata.type === "json") {
             value = typeof value === "string" ? JSON.parse(value) : value
         } else if (columnMetadata.type === "time") {
-            value = DateUtils.mixedTimeToString(value)
+            if (columnMetadata.temporal) {
+                value = PlainTimeUtils.toTemporal(value)
+            } else {
+                value = DateUtils.mixedTimeToString(value)
+            }
         } else if (
             columnMetadata.type === "simple-array" ||
             columnMetadata.type === "set"

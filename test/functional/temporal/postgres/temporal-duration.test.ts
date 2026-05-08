@@ -42,6 +42,10 @@ describe("temporal > Duration", () => {
                 expect(found.span).to.be.instanceOf(T.Duration)
                 expect(found.span.years).to.equal(1)
                 expect(found.span.months).to.equal(2)
+                expect(found.span.days).to.equal(3)
+                expect(found.span.hours).to.equal(4)
+                expect(found.span.minutes).to.equal(5)
+                expect(found.span.seconds).to.equal(6)
             }),
         )
     })

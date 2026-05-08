@@ -774,17 +774,15 @@ export class PostgresDriver implements Driver {
         } else if (columnMetadata.type === "date") {
             if (columnMetadata.temporal) {
                 return PlainDateUtils.fromTemporal(value)
-            } else {
-                return DateUtils.mixedDateToDateString(value, {
-                    utc: columnMetadata.utc,
-                })
             }
+            return DateUtils.mixedDateToDateString(value, {
+                utc: columnMetadata.utc,
+            })
         } else if (columnMetadata.type === "time") {
             if (columnMetadata.temporal) {
                 return PlainTimeUtils.fromTemporal(value)
-            } else {
-                return DateUtils.mixedDateToTimeString(value)
             }
+            return DateUtils.mixedDateToTimeString(value)
         } else if (
             columnMetadata.type === "datetime" ||
             columnMetadata.type === Date ||
@@ -793,18 +791,16 @@ export class PostgresDriver implements Driver {
         ) {
             if (columnMetadata.temporal) {
                 return PlainDateTimeUtils.fromTemporal(value)
-            } else {
-                return DateUtils.mixedDateToDate(value)
             }
+            return DateUtils.mixedDateToDate(value)
         } else if (
             columnMetadata.type === "timestamptz" ||
             columnMetadata.type === "timestamp with time zone"
         ) {
             if (columnMetadata.temporal) {
                 return ZonedDateTimeUtils.fromTemporal(value)
-            } else {
-                return DateUtils.mixedDateToDate(value)
             }
+            return DateUtils.mixedDateToDate(value)
         } else if (columnMetadata.type === "interval") {
             if (columnMetadata.temporal) {
                 return DurationUtils.fromTemporal(value)
@@ -929,7 +925,7 @@ export class PostgresDriver implements Driver {
                 const tz =
                     columnMetadata.temporal !== true
                         ? columnMetadata.temporal.timeZone
-                        : ""
+                        : "UTC"
                 value = ZonedDateTimeUtils.toTemporal(value, tz)
             } else {
                 value = DateUtils.normalizeHydratedDate(value)

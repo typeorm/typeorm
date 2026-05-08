@@ -5,11 +5,11 @@ export class PlainPost {
     @PrimaryGeneratedColumn() id!: number
 
     @Column({ type: "timestamp", temporal: true })
-    happenedAt!: any
+    happenedAt!: Temporal.PlainDateTime
 
     @Column({ type: "date", temporal: true })
-    onDate!: any
+    onDate!: Temporal.PlainDate
 
     @Column({ type: "time", temporal: true })
-    atTime!: any
+    atTime!: Temporal.PlainTime
 }

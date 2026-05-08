@@ -6,7 +6,7 @@ import type { ColumnCommonOptions } from "./ColumnCommonOptions"
  * Opt-in option for hydrating/persisting a column as a TC39 Temporal type
  * instead of `Date`. See `ColumnOptions.temporal`.
  */
-export type TemporalColumnOption = true | false | { timeZone: string }
+export type TemporalColumnOption = boolean | { timeZone: string }
 
 /**
  * Describes all column's options.
@@ -164,11 +164,15 @@ export interface ColumnOptions extends ColumnCommonOptions {
     /**
      * Enables hydration/persistence using TC39 Temporal types instead of `Date`.
      *
+     * Accepts the {@link TemporalColumnOption} shape:
      * - `true`: use the default Temporal kind for the SQL type
      *   (`date` → `PlainDate`, `time` → `PlainTime`, `timestamp` → `PlainDateTime`,
      *    `timestamptz` → `Instant`, `interval` → `Duration`).
      * - `false`: opt out of reflect-metadata auto-inference.
-     * - object form: pick a specific kind (and `timeZone` for `"zoned"`).
+     * - `{ timeZone: string }`: the only object form — there is no `kind` field.
+     *   Supplying `{ timeZone }` on a `timestamptz` column forces it to be
+     *   hydrated/persisted as a `ZonedDateTime` in the given IANA time zone
+     *   instead of the default `Instant`.
      *
      * Requires `globalThis.Temporal` (Node 26+ or polyfill).
      * Currently supported on PostgreSQL only.
