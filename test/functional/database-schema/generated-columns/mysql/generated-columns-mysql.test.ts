@@ -14,7 +14,7 @@ describe("database schema > generated columns > mysql", () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mysql", "mariadb"],
-            schemaCreate: true,
+            schemaCreate: false,
             dropSchema: true,
         })
     })
