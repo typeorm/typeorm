@@ -22,6 +22,6 @@ jobs:
       - run: pnpm run package
       - run: |
           cd build/package
-          pnpm publish --provenance --access public
+          pnpm publish --provenance --access public --publish-branch v0.3
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
