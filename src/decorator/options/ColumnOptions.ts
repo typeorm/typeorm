@@ -4,7 +4,9 @@ import type { ColumnCommonOptions } from "./ColumnCommonOptions"
 
 /**
  * Opt-in option for hydrating/persisting a column as a TC39 Temporal type
- * instead of `Date`. See `ColumnOptions.temporal`.
+ * instead of `Date`.
+ *
+ * @see ColumnOptions.temporal
  */
 export type TemporalColumnOption = boolean | { timeZone: string }
 
@@ -162,22 +164,13 @@ export interface ColumnOptions extends ColumnCommonOptions {
     transformer?: ValueTransformer | ValueTransformer[]
 
     /**
-     * Enables hydration/persistence using TC39 Temporal types instead of `Date`.
+     * `true` picks the default kind for the SQL type (`date` → `PlainDate`,
+     * `time` → `PlainTime`, `timestamp` → `PlainDateTime`, `timestamptz` →
+     * `Instant`, `interval` → `Duration`). `false` opts out of auto-inference.
+     * `{ timeZone }` on a `timestamptz` column uses `ZonedDateTime` in the
+     * given IANA zone instead of `Instant`.
      *
-     * Accepts the {@link TemporalColumnOption} shape:
-     * - `true`: use the default Temporal kind for the SQL type
-     *   (`date` → `PlainDate`, `time` → `PlainTime`, `timestamp` → `PlainDateTime`,
-     *    `timestamptz` → `Instant`, `interval` → `Duration`).
-     * - `false`: opt out of reflect-metadata auto-inference.
-     * - `{ timeZone: string }`: the only object form — there is no `kind` field.
-     *   Supplying `{ timeZone }` on a `timestamptz` column forces it to be
-     *   hydrated/persisted as a `ZonedDateTime` in the given IANA time zone
-     *   instead of the default `Instant`.
-     *
-     * Requires `globalThis.Temporal` (Node 26+ or a Temporal-capable runtime/polyfill).
-     * Supported on PostgreSQL and MySQL/MariaDB. Also available on the Aurora
-     * MySQL data-api driver, but only when `formatOptions.castParameters` is
-     * set to `false` (the default `castParameters: true` path is incompatible).
+     * Requires `globalThis.Temporal`.
      */
     temporal?: TemporalColumnOption
 

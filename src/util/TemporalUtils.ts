@@ -4,11 +4,7 @@ import type { ColumnType } from "../driver/types/ColumnTypes"
 const T = (): any => (globalThis as any).Temporal
 
 /**
- * Cross-cutting Temporal helpers: runtime detection, type-to-kind inference,
- * and a global type guard that ORs all per-kind matchers.
- *
- * Per-kind conversion lives in the per-type Utils classes below
- * (`InstantUtils`, `ZonedDateTimeUtils`, etc.).
+ * Provides Temporal API runtime detection and column-type inference for Temporal-typed entity properties.
  */
 export class TemporalUtils {
     static isSupported(): boolean {
@@ -29,8 +25,7 @@ export class TemporalUtils {
 }
 
 /**
- * Converts to/from `Temporal.ZonedDateTime`. Used when a `timestamptz` column
- * should hydrate in a specific IANA timezone instead of as a bare instant.
+ * Converts between database values and `Temporal.ZonedDateTime`. Used for `timestamptz` columns when a specific IANA time zone is configured.
  */
 export class ZonedDateTimeUtils {
     static toTemporal(
@@ -55,9 +50,7 @@ export class ZonedDateTimeUtils {
 }
 
 /**
- * Converts to/from `Temporal.PlainDateTime`. Used for `timestamp without time
- * zone` columns. `Date` inputs are read as wall-clock components in the
- * runtime's local timezone (matching what the `pg` driver returns).
+ * Converts between database values and `Temporal.PlainDateTime`. Used for `timestamp without time zone` columns; `Date` inputs are read as wall-clock components in the runtime's local time zone.
  */
 export class PlainDateTimeUtils {
     static toTemporal(
@@ -88,7 +81,7 @@ export class PlainDateTimeUtils {
 }
 
 /**
- * Converts to/from `Temporal.PlainDate`. Used for `date` columns.
+ * Converts between database values and `Temporal.PlainDate`. Used for `date` columns.
  */
 export class PlainDateUtils {
     static toTemporal(
@@ -113,8 +106,7 @@ export class PlainDateUtils {
 }
 
 /**
- * Converts to/from `Temporal.PlainTime`. Used for `time without time zone`
- * columns.
+ * Converts between database values and `Temporal.PlainTime`. Used for `time without time zone` columns.
  */
 export class PlainTimeUtils {
     static toTemporal(
@@ -132,7 +124,7 @@ export class PlainTimeUtils {
 }
 
 /**
- * Converts to/from `Temporal.Duration`. Used for `interval` columns.
+ * Converts between database values and `Temporal.Duration`. Used for `interval` columns.
  */
 export class DurationUtils {
     static toTemporal(
@@ -141,12 +133,7 @@ export class DurationUtils {
         if (value === null || value === undefined) return null
 
         const t = T()
-        // The `pg` driver parses `interval` (OID 1186) into a
-        // `postgres-interval` object whose default `toString()` returns the
-        // Postgres human-readable form ("1 day 04:05:06"), which
-        // `Temporal.Duration.from` cannot parse. Prefer `toISOString()` when
-        // present, then fall back to a plain components object, and finally
-        // to string coercion for already-ISO inputs.
+        // `pg` driver returns `interval` as a `postgres-interval` object whose `toString()` is non-ISO ("1 day 04:05:06"); prefer its `toISOString()` when available.
         if (typeof value === "object") {
             const obj = value as {
                 toISOString?: () => string

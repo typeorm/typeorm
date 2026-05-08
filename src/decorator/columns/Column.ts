@@ -200,11 +200,7 @@ export function Column(
 
         if (!type && reflectMetadataType) {
             if (options.temporal !== false && TemporalUtils.isSupported()) {
-                // Temporal auto-inference (best-effort).
-                // If reflect-metadata reports a Temporal class and the user did not
-                // explicitly opt out via `temporal: false`, infer a default SQL type.
-                // This runs even when the user passes `temporal: true` or
-                // `{ timeZone }` so they don't have to also spell out the SQL type.
+                // Temporal auto-inference
                 type =
                     TemporalUtils.inferKindFromReflectType(
                         reflectMetadataType,

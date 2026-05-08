@@ -1,14 +1,4 @@
-// Ambient type stub for the TC39 Temporal proposal.
-//
-// Required because the project's tsconfig targets Node 20's lib, which does
-// not yet include `lib.temporal.d.ts`. Remove this file once the project
-// upgrades to a TypeScript lib that ships Temporal types natively
-// (TypeScript 6.0+ when configured for esnext.temporal).
-//
-// The runtime implementation is whatever `globalThis.Temporal` provides
-// (Node 26+ native, or a Temporal-capable polyfill).
-//
-// Only the surface used by TypeORM's `TemporalUtils` is declared here.
+// Ambient stub for TC39 Temporal. Remove once the minimum supported Node version is 26+ (which ships Temporal types natively).
 
 export {}
 

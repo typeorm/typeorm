@@ -310,7 +310,9 @@ export class ColumnMetadata {
     transformer?: ValueTransformer | ValueTransformer[]
 
     /**
-     * Temporal opt-in option (see `ColumnOptions.temporal`).
+     * Temporal opt-in option
+     *
+     * @see ColumnOptions.temporal
      */
     temporal?: TemporalColumnOption
 

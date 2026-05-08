@@ -273,12 +273,7 @@ export class EntityMetadataValidator {
     }
 
     /**
-     * Validates that the runtime supports the Temporal API when any column
-     * opts in via `temporal`. SQL-type compatibility (e.g. `temporal` set on
-     * a non-temporal SQL type) is intentionally NOT enforced here, in line
-     * with TypeORM's convention of not validating DB-type ↔ entity-type
-     * matches at metadata build time. Mismatches simply fall through to the
-     * driver's existing branches and behave as if `temporal` were unset.
+     * Throws if any column opts into `temporal` but the runtime lacks the Temporal API.
      *
      * @param entityMetadata
      */
