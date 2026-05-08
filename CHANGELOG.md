@@ -1,3 +1,31 @@
+## [0.3.29](https://github.com/typeorm/typeorm/compare/0.3.28...0.3.29) (2026-05-08)
+
+
+### Bug Fixes
+
+* add async to the method using setFindOptions() ([#10787](https://github.com/typeorm/typeorm/issues/10787)) ([cc07c90](https://github.com/typeorm/typeorm/commit/cc07c90f1de51bd31c0c450fae3a200f355c37f1))
+* change import for process dependency  ([#11248](https://github.com/typeorm/typeorm/issues/11248)) ([1c67c3b](https://github.com/typeorm/typeorm/commit/1c67c3b02632c92cac33f5cfd6895a92e93571d8))
+* **cli:** init command loading non-existing package.json ([#11947](https://github.com/typeorm/typeorm/issues/11947)) ([4d9d1a6](https://github.com/typeorm/typeorm/commit/4d9d1a61c68ecc9b8161abbd59594e69fe052a80))
+* fix up aggregate methods ambiguous column ([#11822](https://github.com/typeorm/typeorm/issues/11822)) ([6e34756](https://github.com/typeorm/typeorm/commit/6e34756b9d6cc8b7b96cfeab869483ef62b2a7e6))
+* fix up limit with joins ([#11987](https://github.com/typeorm/typeorm/issues/11987)) ([3657db8](https://github.com/typeorm/typeorm/commit/3657db86b9c26cd3fcb839279ad0e2f2165305fa))
+* getPendingMigrations unnecessarily creating migrations table ([#11672](https://github.com/typeorm/typeorm/issues/11672)) ([1dbc224](https://github.com/typeorm/typeorm/commit/1dbc22428bdfd0b33760afe7bcbb5456d9eab8be))
+* **postgres:** execute queries sequentially to avoid pg 8.19.0 deprecation warning ([#12105](https://github.com/typeorm/typeorm/issues/12105)) ([79829a0](https://github.com/typeorm/typeorm/commit/79829a0f63cb4620a95d73841a77099b988cc1be))
+* prevent columns with select false from being returned ([#11944](https://github.com/typeorm/typeorm/issues/11944)) ([6b20831](https://github.com/typeorm/typeorm/commit/6b20831bb7bc285a9accbdfca6563e73d818d435))
+* prevent eager-loaded entities from overwriting manual relations ([#11267](https://github.com/typeorm/typeorm/issues/11267)) ([2d8c515](https://github.com/typeorm/typeorm/commit/2d8c5158db1aef458cd909db05059fff9129305a))
+* propagate schema and database to closure junction table ([#12110](https://github.com/typeorm/typeorm/issues/12110)) ([58b403f](https://github.com/typeorm/typeorm/commit/58b403f04cfe1e0aae17e6064279cee5e1a33eb3))
+* **redis:** redis cache version detection ([#11936](https://github.com/typeorm/typeorm/issues/11936)) ([f22c7a2](https://github.com/typeorm/typeorm/commit/f22c7a2358108c6656f15470250d937bf440f71d))
+* release query runner when there is no migration to revert ([#11232](https://github.com/typeorm/typeorm/issues/11232)) ([a46eb0a](https://github.com/typeorm/typeorm/commit/a46eb0a7e18df52a39e5f39ae2c4e67a89c945d9))
+* **sap:** `QueryBuilder` parameter of type JS `Date` not escaped correctly ([#11867](https://github.com/typeorm/typeorm/issues/11867)) ([5153436](https://github.com/typeorm/typeorm/commit/51534362daed2f1cc9ce72ee0886e894892face7))
+* **security:** validate limit() in Update/SoftDelete query builders ([#12437](https://github.com/typeorm/typeorm/issues/12437)) ([0d7991a](https://github.com/typeorm/typeorm/commit/0d7991a27a13a9af7818505e51dddb52c8299d0a))
+* virtual property handling in schema builder ([#11000](https://github.com/typeorm/typeorm/issues/11000)) ([5bd3255](https://github.com/typeorm/typeorm/commit/5bd3255dbd992387c5b7940cb95295570ae56c86))
+
+
+### Features
+
+* add `returning` option to update/upsert operations ([#11782](https://github.com/typeorm/typeorm/issues/11782)) ([11d9767](https://github.com/typeorm/typeorm/commit/11d9767212e95e9e36e09af5e1eac4668c326551))
+* **sap:** add pool timeout ([#11868](https://github.com/typeorm/typeorm/issues/11868)) ([b4e2ad2](https://github.com/typeorm/typeorm/commit/b4e2ad2a6cbd941a8a665b5d7fde6bb28546ffef))
+* **sap:** support locking in select ([#11996](https://github.com/typeorm/typeorm/issues/11996)) ([86a9e3e](https://github.com/typeorm/typeorm/commit/86a9e3e1d8e019ef036ccd4935bdc6c25898cf75))
+
 ## [0.3.28](https://github.com/typeorm/typeorm/compare/0.3.27...0.3.28) (2025-12-02)
 
 

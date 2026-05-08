@@ -1,6 +1,6 @@
 {
   "name": "typeorm",
-  "version": "0.3.28",
+  "version": "0.3.29",
   "description": "Data-Mapper ORM for TypeScript and ES2021+. Supports MySQL/MariaDB, PostgreSQL, MS SQL Server, Oracle, SAP HANA, SQLite, MongoDB databases.",
   "homepage": "https://typeorm.io",
   "bugs": {
@@ -242,6 +242,13 @@
   "engines": {
     "node": ">=16.13.0"
   },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "^10.26.2",
+      "onFail": "error"
+    }
+  },
   "pnpm": {
     "onlyBuiltDependencies": [
       "better-sqlite3",
@@ -261,13 +268,6 @@
     "type": "opencollective",
     "url": "https://opencollective.com/typeorm",
     "logo": "https://opencollective.com/opencollective/logo.txt"
-  },
-  "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": "^10.26.2",
-      "onFail": "error"
-    }
   },
   "readmeFilename": "README.md",
   "tags": [
