@@ -1264,14 +1264,10 @@ export class PostgresDriver implements Driver {
             return this.compareJsonDefaults(columnMetadata, tableColumn)
         }
 
-        const normalizedMetadataDefault = this.lowerDefaultValueIfNecessary(
+        const columnDefault = this.lowerDefaultValueIfNecessary(
             this.normalizeDefault(columnMetadata),
         )
-        const normalizedTableDefault = this.lowerDefaultValueIfNecessary(
-            tableColumn.default,
-        )
-
-        return normalizedMetadataDefault === normalizedTableDefault
+        return columnDefault === tableColumn.default
     }
 
     /**
@@ -1855,7 +1851,7 @@ export class PostgresDriver implements Driver {
         const upperCaseValue = value.trim().toUpperCase()
 
         // extract precision, e.g. "(3)"
-        const precision = new RegExp(/\(\d+\)/).exec(value)
+        const precision = value.match(/\(\d+\)/)
 
         if (/^CURRENT_TIMESTAMP(\(\d+\))?$/.test(upperCaseValue)) {
             return precision

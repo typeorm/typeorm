@@ -7,7 +7,7 @@ export class Event {
 
     @Column({
         type: "tstzrange",
-        default: () => "tstzrange(current_timestamp, null)",
+        default: () => "tstzrange(CURRENT_TIMESTAMP, 'infinity')",
     })
     sysPeriod: string
 }
