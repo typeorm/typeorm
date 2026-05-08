@@ -19,11 +19,12 @@ function makeColumn(opts: {
 function makeEntity(
     columns: ColumnMetadata[],
     name = "TestEntity",
+    primaryColumns: ColumnMetadata[] = [],
 ): EntityMetadata {
     return {
         name,
         columns,
-        primaryColumns: columns,
+        primaryColumns,
     } as unknown as EntityMetadata
 }
 

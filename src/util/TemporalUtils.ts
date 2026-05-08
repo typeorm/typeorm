@@ -24,7 +24,7 @@ export class TemporalUtils {
         if (reflectType === t.PlainDate) return "date"
         if (reflectType === t.PlainTime) return "time"
         if (reflectType === t.Duration) return "interval"
-        return reflectType
+        return undefined
     }
 }
 

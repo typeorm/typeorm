@@ -206,7 +206,9 @@ export function Column(
                 // This runs even when the user passes `temporal: true` or
                 // `{ timeZone }` so they don't have to also spell out the SQL type.
                 type =
-                    TemporalUtils.inferKindFromReflectType(reflectMetadataType)
+                    TemporalUtils.inferKindFromReflectType(
+                        reflectMetadataType,
+                    ) ?? reflectMetadataType
             } else {
                 // if type is not given explicitly then try to guess it
                 type = reflectMetadataType

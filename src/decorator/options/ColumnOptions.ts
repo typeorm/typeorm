@@ -174,8 +174,10 @@ export interface ColumnOptions extends ColumnCommonOptions {
      *   hydrated/persisted as a `ZonedDateTime` in the given IANA time zone
      *   instead of the default `Instant`.
      *
-     * Requires `globalThis.Temporal` (Node 26+ or polyfill).
-     * Currently supported on PostgreSQL only.
+     * Requires `globalThis.Temporal` (Node 26+ or a Temporal-capable runtime/polyfill).
+     * Supported on PostgreSQL and MySQL/MariaDB. Also available on the Aurora
+     * MySQL data-api driver, but only when `formatOptions.castParameters` is
+     * set to `false` (the default `castParameters: true` path is incompatible).
      */
     temporal?: TemporalColumnOption
 

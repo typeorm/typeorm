@@ -46,6 +46,7 @@ describe("temporal > Duration", () => {
                 expect(found.span.hours).to.equal(4)
                 expect(found.span.minutes).to.equal(5)
                 expect(found.span.seconds).to.equal(6)
+                expect(found.span.milliseconds).to.equal(0)
             }),
         )
     })

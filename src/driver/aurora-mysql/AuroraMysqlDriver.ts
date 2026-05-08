@@ -643,8 +643,7 @@ export class AuroraMysqlDriver implements Driver {
         ) {
             if (columnMetadata.temporal) {
                 const tz =
-                    typeof columnMetadata.temporal === "object" &&
-                    columnMetadata.temporal.timeZone
+                    columnMetadata.temporal !== true
                         ? columnMetadata.temporal.timeZone
                         : "UTC"
                 value = ZonedDateTimeUtils.toTemporal(value, tz)

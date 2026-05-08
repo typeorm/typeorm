@@ -16,29 +16,6 @@ describe("temporal > reflect-metadata inference", () => {
         if (typeof (globalThis as any).Temporal === "undefined") return
         const T = (globalThis as any).Temporal
 
-        // Build a target object whose property metadata we can pre-populate
-        // BEFORE the @Column decorator runs.
-        const target: any = function () {}
-        target.prototype = {}
-        Reflect.defineMetadata(
-            "design:type",
-            T.PlainDateTime,
-            target.prototype,
-            "createdAt",
-        )
-        Reflect.defineMetadata(
-            "design:type",
-            T.PlainDate,
-            target.prototype,
-            "onDate",
-        )
-
-        // Now declare the entity. Since the metadata is on
-        // target.prototype, we must base the class on that prototype.
-        // We achieve this by declaring the class normally and calling
-        // Reflect.defineMetadata directly on its prototype just before
-        // the decorators run — but the easier way is to define the
-        // metadata on a class declared in this scope.
         class _InferredPost {
             id!: number
             createdAt!: any
