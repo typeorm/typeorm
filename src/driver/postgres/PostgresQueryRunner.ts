@@ -717,7 +717,7 @@ export class PostgresQueryRunner
 
         // if table had columns with generated type, we must remove the expression from the metadata table
         const generatedColumns = table.columns.filter(
-            (column) => column.generatedType && column.asExpression,
+            (column) => column.generatedType,
         )
         if (generatedColumns.length > 0) {
             const parsedTableName = this.driver.parseTableName(table)
@@ -816,8 +816,9 @@ export class PostgresQueryRunner
             : await this.getCachedTable(oldTableOrName)
         const newTable = oldTable.clone()
 
-        const { schema: schemaName, tableName: oldTableName } =
+        let { schema: schemaName, tableName: oldTableName } =
             this.driver.parseTableName(oldTable)
+        schemaName ??= await this.getCurrentSchema()
 
         newTable.name = schemaName
             ? `${schemaName}.${newTableName}`
@@ -839,21 +840,19 @@ export class PostgresQueryRunner
         )
 
         const hasGeneratedColumns = oldTable.columns.some(
-            (col) => col.generatedType === "STORED" && col.asExpression,
+            (col) => col.generatedType === "STORED",
         )
         if (hasGeneratedColumns) {
-            const tableSchema = schemaName ?? (await this.getCurrentSchema())
-
             const updateQuery = this.updateTypeormMetadataSql({
                 database: this.driver.database,
-                schema: tableSchema,
+                schema: schemaName,
                 table: oldTableName,
                 type: MetadataTableType.GENERATED_COLUMN,
                 valueToSet: { table: newTableName },
             })
             const revertUpdateQuery = this.updateTypeormMetadataSql({
                 database: this.driver.database,
-                schema: tableSchema,
+                schema: schemaName,
                 table: newTableName,
                 type: MetadataTableType.GENERATED_COLUMN,
                 valueToSet: { table: oldTableName },
@@ -1379,10 +1378,7 @@ export class PostgresQueryRunner
                     ),
                 )
 
-                if (
-                    oldColumn.generatedType === "STORED" &&
-                    oldColumn.asExpression
-                ) {
+                if (oldColumn.generatedType === "STORED") {
                     const parsedTableName = this.driver.parseTableName(table)
                     parsedTableName.schema ??= await this.getCurrentSchema()
 
@@ -2701,7 +2697,7 @@ export class PostgresQueryRunner
             }
         }
 
-        if (column.generatedType === "STORED" && column.asExpression) {
+        if (column.generatedType === "STORED") {
             const parsedTableName = this.driver.parseTableName(table)
             parsedTableName.schema ??= await this.getCurrentSchema()
 

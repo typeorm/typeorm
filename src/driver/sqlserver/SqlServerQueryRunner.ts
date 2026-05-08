@@ -796,7 +796,7 @@ export class SqlServerQueryRunner
 
         // if table had columns with generated type, we must remove the expression from the metadata table
         const generatedColumns = table.columns.filter(
-            (column) => column.generatedType && column.asExpression,
+            (column) => column.generatedType,
         )
 
         if (generatedColumns.length > 0) {
@@ -935,7 +935,7 @@ export class SqlServerQueryRunner
         )
 
         const hasGeneratedColumns = oldTable.columns.some(
-            (col) => col.generatedType && col.asExpression,
+            (col) => col.generatedType,
         )
         if (hasGeneratedColumns) {
             const updateQuery = this.updateTypeormMetadataSql({
@@ -1437,7 +1437,7 @@ export class SqlServerQueryRunner
                     ),
                 )
 
-                if (oldColumn.generatedType && oldColumn.asExpression) {
+                if (oldColumn.generatedType) {
                     const updateQuery = this.updateTypeormMetadataSql({
                         database: dbName,
                         schema: schemaName,
@@ -2211,7 +2211,7 @@ export class SqlServerQueryRunner
             )
         }
 
-        if (column.generatedType && column.asExpression) {
+        if (column.generatedType) {
             const parsedTableName = this.driver.parseTableName(table)
             parsedTableName.schema ??= await this.getCurrentSchema()
             parsedTableName.database ??= await this.getCurrentDatabase()
