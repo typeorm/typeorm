@@ -558,6 +558,24 @@ export abstract class AbstractSqliteQueryRunner
             )
         })
 
+        const hasGeneratedColumns = oldTable.columns.some(
+            (col) => col.generatedType && col.asExpression,
+        )
+        if (hasGeneratedColumns) {
+            const updateQuery = this.updateTypeormMetadataSql({
+                table: oldTable.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                valueToSet: { table: newTable.name },
+            })
+            const revertUpdateQuery = this.updateTypeormMetadataSql({
+                table: newTable.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                valueToSet: { table: oldTable.name },
+            })
+
+            await this.executeQueries(updateQuery, revertUpdateQuery)
+        }
+
         // rename old table;
         oldTable.name = newTable.name
 
