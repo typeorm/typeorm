@@ -8,5 +8,5 @@ export class ZonedPost {
         type: "timestamptz",
         temporal: { timeZone: "Asia/Seoul" },
     })
-    scheduledAt!: any
+    scheduledAt!: Temporal.ZonedDateTime
 }

@@ -21,18 +21,18 @@ describe("TemporalUtils", () => {
         if (!supported) this.skip()
         expect(
             TemporalUtils.inferKindFromReflectType(T().ZonedDateTime),
-        ).to.equal("zoned")
+        ).to.equal("timestamptz")
         expect(
             TemporalUtils.inferKindFromReflectType(T().PlainDateTime),
-        ).to.equal("plainDateTime")
+        ).to.equal("timestamp")
         expect(TemporalUtils.inferKindFromReflectType(T().PlainDate)).to.equal(
-            "plainDate",
+            "date",
         )
         expect(TemporalUtils.inferKindFromReflectType(T().PlainTime)).to.equal(
-            "plainTime",
+            "time",
         )
         expect(TemporalUtils.inferKindFromReflectType(T().Duration)).to.equal(
-            "duration",
+            "interval",
         )
         expect(TemporalUtils.inferKindFromReflectType(Date)).to.equal(undefined)
     })

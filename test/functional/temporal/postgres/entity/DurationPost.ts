@@ -5,5 +5,5 @@ export class DurationPost {
     @PrimaryGeneratedColumn() id!: number
 
     @Column({ type: "interval", temporal: true })
-    span!: any
+    span!: Temporal.Duration
 }
