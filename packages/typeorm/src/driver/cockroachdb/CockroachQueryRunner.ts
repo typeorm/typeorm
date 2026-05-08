@@ -823,7 +823,7 @@ export class CockroachQueryRunner
 
         // if table had columns with generated type, we must remove the expression from the metadata table
         const generatedColumns = table.columns.filter(
-            (column) => column.generatedType && column.asExpression,
+            (column) => column.generatedType,
         )
 
         if (generatedColumns.length > 0) {
@@ -940,7 +940,7 @@ export class CockroachQueryRunner
         )
 
         const hasGeneratedColumns = oldTable.columns.some(
-            (col) => col.generatedType && col.asExpression,
+            (col) => col.generatedType,
         )
         if (hasGeneratedColumns) {
             const updateQuery = this.updateTypeormMetadataSql({
@@ -1453,7 +1453,7 @@ export class CockroachQueryRunner
                     ),
                 )
 
-                if (oldColumn.generatedType && oldColumn.asExpression) {
+                if (oldColumn.generatedType) {
                     let { schema, tableName } =
                         this.driver.parseTableName(table)
                     schema ??= await this.getCurrentSchema()
@@ -2403,7 +2403,7 @@ export class CockroachQueryRunner
             )
         }
 
-        if (column.generatedType && column.asExpression) {
+        if (column.generatedType) {
             let { schema, tableName } = this.driver.parseTableName(table)
             schema ??= await this.getCurrentSchema()
             const deleteQuery = this.deleteTypeormMetadataSql({

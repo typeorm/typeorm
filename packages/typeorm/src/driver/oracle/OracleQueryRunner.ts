@@ -642,7 +642,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // if table had columns with generated type, we must remove the expression from the metadata table
         const generatedColumns = table.columns.filter(
-            (column) => column.generatedType && column.asExpression,
+            (column) => column.generatedType,
         )
 
         if (generatedColumns.length > 0) {
@@ -755,7 +755,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         )
 
         const hasGeneratedColumns = oldTable.columns.some(
-            (col) => col.generatedType && col.asExpression,
+            (col) => col.generatedType,
         )
         if (hasGeneratedColumns) {
             const updateQuery = this.updateTypeormMetadataSql({
@@ -1215,7 +1215,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     ),
                 )
 
-                if (oldColumn.generatedType && oldColumn.asExpression) {
+                if (oldColumn.generatedType) {
                     let { database, tableName } =
                         this.driver.parseTableName(table)
                     database ??= await this.getCurrentDatabase()
@@ -1836,7 +1836,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             ),
         )
 
-        if (column.generatedType && column.asExpression) {
+        if (column.generatedType) {
             let { database, tableName } = this.driver.parseTableName(table)
             database ??= await this.getCurrentDatabase()
             const deleteQuery = this.deleteTypeormMetadataSql({

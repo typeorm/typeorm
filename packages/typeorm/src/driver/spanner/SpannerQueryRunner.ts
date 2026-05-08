@@ -739,7 +739,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // if table had columns with generated type, we must remove the expression from the metadata table
         const generatedColumns = table.columns.filter(
-            (column) => column.generatedType && column.asExpression,
+            (column) => column.generatedType,
         )
 
         for (const column of generatedColumns) {
@@ -1199,7 +1199,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             ),
         )
 
-        if (column.generatedType && column.asExpression) {
+        if (column.generatedType) {
             const deleteQuery = this.deleteTypeormMetadataSql({
                 table: table.name,
                 type: MetadataTableType.GENERATED_COLUMN,

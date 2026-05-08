@@ -409,7 +409,7 @@ export abstract class AbstractSqliteQueryRunner
 
         // if table had columns with generated type, we must remove the expression from the metadata table
         const generatedColumns = table.columns.filter(
-            (column) => column.generatedType && column.asExpression,
+            (column) => column.generatedType,
         )
 
         for (const column of generatedColumns) {
@@ -559,7 +559,7 @@ export abstract class AbstractSqliteQueryRunner
         })
 
         const hasGeneratedColumns = oldTable.columns.some(
-            (col) => col.generatedType && col.asExpression,
+            (col) => col.generatedType,
         )
         if (hasGeneratedColumns) {
             const updateQuery = this.updateTypeormMetadataSql({
@@ -2345,7 +2345,6 @@ export abstract class AbstractSqliteQueryRunner
                 // or it was changed to non-generated
                 return (
                     column.generatedType &&
-                    column.asExpression &&
                     (!newTableColumn ||
                         (!newTableColumn.generatedType &&
                             !newTableColumn.asExpression))
@@ -2397,7 +2396,7 @@ export abstract class AbstractSqliteQueryRunner
 
         // Step 3: update changed expressions
         newTable.columns
-            .filter((column) => column.generatedType && column.asExpression)
+            .filter((column) => column.generatedType)
             .forEach((column) => {
                 const oldColumn = oldTable.columns.find(
                     (c) =>

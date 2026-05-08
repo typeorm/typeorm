@@ -754,7 +754,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // if table has column with generated type, we must add the expression to the metadata table
         const generatedColumns = table.columns.filter(
-            (column) => column.asExpression,
+            (column) => column.asExpression != null,
         )
 
         if (generatedColumns.length > 0) {
@@ -875,7 +875,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         )
 
         const hasGeneratedColumns = oldTable.columns.some(
-            (col) => col.asExpression,
+            (col) => col.asExpression != null,
         )
 
         if (hasGeneratedColumns) {
@@ -1455,7 +1455,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     )
                 }
 
-                if (oldColumn.asExpression) {
+                if (oldColumn.asExpression != null) {
                     const parsedTableName = this.driver.parseTableName(table)
                     parsedTableName.schema ??= await this.getCurrentSchema()
 
@@ -2038,7 +2038,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             downQueries.push(this.createCheckConstraintSql(table, columnCheck))
         }
 
-        if (column.asExpression) {
+        if (column.asExpression != null) {
             const deleteQuery = this.deleteTypeormMetadataSql({
                 schema: parsedTableName.schema,
                 table: parsedTableName.tableName,
