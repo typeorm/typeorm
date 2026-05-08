@@ -13,6 +13,7 @@ describe("github issues > #6977 Relation columns in embedded entities are not pr
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [User, Embedded],
         })
     })

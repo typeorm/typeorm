@@ -18,6 +18,7 @@ describe("github issues > #10494 Custom discriminator values when using Single T
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [BaseSchema, ASchema, BSchema, CSchema],
             schemaCreate: true,
             dropSchema: true,

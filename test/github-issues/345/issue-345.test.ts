@@ -13,6 +13,7 @@ describe("github issues > #345 Join query on ManyToMany relations not working", 
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

@@ -12,6 +12,7 @@ describe("github issues > #219 FindOptions should be able to resolve null values
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

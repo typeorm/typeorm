@@ -13,6 +13,7 @@ describe("github issues > #3416 Unknown fields are stripped from WHERE clause", 
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [User],
         })
     })

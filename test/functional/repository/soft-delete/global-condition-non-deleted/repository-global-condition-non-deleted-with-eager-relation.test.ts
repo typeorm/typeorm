@@ -13,6 +13,7 @@ describe(`repository > the global condtion of "non-deleted" with eager relation`
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

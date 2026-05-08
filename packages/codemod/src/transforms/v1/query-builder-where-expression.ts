@@ -1,5 +1,10 @@
 import path from "node:path"
 import type { API, FileInfo } from "jscodeshift"
+import {
+    expandLocalNamesForImports,
+    fileImportsFrom,
+    renameReExportSpecifiers,
+} from "../ast-helpers"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
@@ -10,28 +15,53 @@ export const queryBuilderWhereExpression = (file: FileInfo, api: API) => {
     const root = j(file.source)
     let hasChanges = false
 
-    // Rename in imports
+    if (!fileImportsFrom(root, j, "typeorm")) return undefined
+
+    // Only rename TS type references that resolve to a TypeORM import —
+    // a local `interface WhereExpression {}` or an import from another
+    // package must not be rewritten.
+    const whereExpressionLocalNames = expandLocalNamesForImports(
+        root,
+        j,
+        "typeorm",
+        new Set(["WhereExpression"]),
+    )
+
     root.find(j.ImportSpecifier, {
         imported: { name: "WhereExpression" },
-    }).forEach((path) => {
-        path.node.imported.name = "WhereExpressionBuilder"
+    }).forEach((importPath) => {
+        const parent = importPath.parent.node
         if (
-            path.node.local?.type === "Identifier" &&
-            path.node.local?.name === "WhereExpression"
+            parent.type !== "ImportDeclaration" ||
+            parent.source.value !== "typeorm"
         ) {
-            path.node.local.name = "WhereExpressionBuilder"
+            return
+        }
+        importPath.node.imported.name = "WhereExpressionBuilder"
+        if (
+            importPath.node.local?.type === "Identifier" &&
+            importPath.node.local?.name === "WhereExpression"
+        ) {
+            importPath.node.local.name = "WhereExpressionBuilder"
         }
         hasChanges = true
     })
 
-    // Rename in type references
+    if (
+        renameReExportSpecifiers(root, j, "typeorm", {
+            WhereExpression: "WhereExpressionBuilder",
+        })
+    ) {
+        hasChanges = true
+    }
+
     root.find(j.TSTypeReference, {
         typeName: { name: "WhereExpression" },
-    }).forEach((path) => {
-        if (path.node.typeName.type === "Identifier") {
-            path.node.typeName.name = "WhereExpressionBuilder"
-            hasChanges = true
-        }
+    }).forEach((refPath) => {
+        if (refPath.node.typeName.type !== "Identifier") return
+        if (!whereExpressionLocalNames.has(refPath.node.typeName.name)) return
+        refPath.node.typeName.name = "WhereExpressionBuilder"
+        hasChanges = true
     })
 
     return hasChanges ? root.toSource() : undefined

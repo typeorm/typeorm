@@ -66,3 +66,50 @@ describe("view entity > mysql", () => {
             }),
         ))
 })
+
+// Refer to: https://github.com/typeorm/typeorm/issues/8828
+describe("view entity > mysql with named placeholders", () => {
+    let dataSources: DataSource[]
+
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["mysql"],
+            driverSpecific: {
+                extra: {
+                    namedPlaceholders: true,
+                },
+            },
+        })
+    })
+
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    it("can use named placeholders in a sql query", async () => {
+        await Promise.all(
+            dataSources.map(async (dataSource) => {
+                const category = new Category()
+                category.name = "Cars"
+                await dataSource.manager.save(category)
+
+                const foo = new Post()
+                foo.name = "foo"
+                foo.categoryId = category.id
+                await dataSource.manager.save(foo)
+
+                const bar = new Post()
+                bar.name = "bar"
+                bar.categoryId = category.id
+                await dataSource.manager.save(bar)
+
+                const examples = await dataSource.manager.query(
+                    `SELECT * FROM post WHERE name = :name`,
+                    { name: "bar" },
+                )
+
+                expect(examples[0].name).to.equal("bar")
+            }),
+        )
+    })
+})

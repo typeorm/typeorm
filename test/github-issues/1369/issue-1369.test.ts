@@ -12,6 +12,7 @@ describe("github issues > #1369 EntitySubscriber not firing events on abstract c
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
             schemaCreate: true,

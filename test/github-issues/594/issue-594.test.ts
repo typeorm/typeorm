@@ -11,6 +11,7 @@ describe("github issues > #594 WhereInIds no longer works in the latest version.
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

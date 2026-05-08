@@ -14,7 +14,7 @@ const queryRunner = manager.queryRunner
 ```
 
 - `transaction` - Provides a transaction where multiple database requests will be executed in a single database transaction.
-  Learn more [Transactions](../transactions.md).
+  Learn more [Transactions](../transactions.mdx).
 
 ```typescript
 await manager.transaction(async (manager) => {

@@ -58,7 +58,7 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 ### `expo` data source options
 
 - `database` - Name of the database. For example, "mydb".
-- `driver` - The Expo SQLite module. For example, `require('expo-sqlite')`.
+- `driver` - The Expo SQLite module. Optional — TypeORM loads `expo-sqlite` automatically. Pass explicitly only when you need a custom instance (for example, a patched fork).
 
 ### `nativescript` data source options
 

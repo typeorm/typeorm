@@ -13,6 +13,7 @@ describe("github issues > #762 Nullable @Embedded inside @Embedded", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

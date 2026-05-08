@@ -145,13 +145,13 @@ const users = await dataSource
     .from(User, "user")
     .addFrom(Photo, "photo")
     .andWhere("photo.userId = user.id")
-    .getMany() // userId is not a foreign key since its cross-database request
+    .getMany()
 ```
 
 This code will produce following SQL query (depend on database type):
 
 ```sql
-SELECT * FROM "secondSchema"."question" "question", "thirdSchema"."photo" "photo"
+SELECT * FROM "secondSchema"."user" "user", "thirdSchema"."photo" "photo"
     WHERE "photo"."userId" = "user"."id"
 ```
 

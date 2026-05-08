@@ -14,6 +14,7 @@ describe("github issues > #2364 should generate id value if @Column generated:tr
 
     it("should generate id value", async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,

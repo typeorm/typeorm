@@ -1,1 +1,0 @@
-[ -x .git/hooks/commit-msg ] && .git/hooks/commit-msg "$1"
