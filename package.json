@@ -141,7 +141,7 @@
     "oracledb": "^6.10.0",
     "pg": "^8.20.0",
     "pg-query-stream": "^4.14.0",
-    "pkg-pr-new": "^0.0.66",
+    "pkg-pr-new": "^0.0.71",
     "prettier": "^3.8.3",
     "prettier-plugin-packagejson": "^3.0.2",
     "prettier-plugin-toml": "^2.0.6",
