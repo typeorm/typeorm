@@ -20,6 +20,7 @@ import type { ColumnOptions } from "../options/ColumnOptions"
 import type { ColumnUnsignedOptions } from "../options/ColumnUnsignedOptions"
 import type { ColumnWithLengthOptions } from "../options/ColumnWithLengthOptions"
 import type { SpatialColumnOptions } from "../options/SpatialColumnOptions"
+import { TemporalUtils } from "../../util/TemporalUtils"
 
 /**
  * Column decorator is used to mark a specific class property as a table column. Only properties decorated with this
@@ -196,9 +197,21 @@ export function Column(
                       propertyName,
                   )
                 : undefined
-        if (!type && reflectMetadataType)
-            // if type is not given explicitly then try to guess it
-            type = reflectMetadataType
+
+        if (!type && reflectMetadataType) {
+            if (options.temporal !== false && TemporalUtils.isSupported()) {
+                // Temporal auto-inference (best-effort).
+                // If reflect-metadata reports a Temporal class and the user did not
+                // explicitly opt out via `temporal: false`, infer a default SQL type.
+                // This runs even when the user passes `temporal: true` or
+                // `{ timeZone }` so they don't have to also spell out the SQL type.
+                type =
+                    TemporalUtils.inferKindFromReflectType(reflectMetadataType)
+            } else {
+                // if type is not given explicitly then try to guess it
+                type = reflectMetadataType
+            }
+        }
 
         // check if there is no type in column options then set type from first function argument, or guessed one
         if (!options.type && type) options.type = type

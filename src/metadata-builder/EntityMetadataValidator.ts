@@ -9,6 +9,7 @@ import { NoConnectionOptionError } from "../error/NoConnectionOptionError"
 import { InitializedRelationError } from "../error/InitializedRelationError"
 import { TypeORMError } from "../error"
 import { DriverUtils } from "../driver/DriverUtils"
+import { TemporalUtils } from "../util/TemporalUtils"
 
 /// todo: add check if there are multiple tables with the same name
 /// todo: add checks when generated column / table names are too long for the specific driver
@@ -64,6 +65,8 @@ export class EntityMetadataValidator {
         // check if table metadata has an id
         if (!entityMetadata.primaryColumns.length && !entityMetadata.isJunction)
             throw new MissingPrimaryColumnError(entityMetadata)
+
+        this.validateTemporalColumns(entityMetadata)
 
         // if entity has multiple primary keys and uses custom constraint name,
         // then all primary keys should have the same constraint name
@@ -267,6 +270,32 @@ export class EntityMetadataValidator {
                         `This may lead to unexpected circular removals. Please set cascade remove only from one side of relationship.`,
                 )
         }) // todo: maybe better just deny removal from one to one relation without join column?
+    }
+
+    /**
+     * Validates that the runtime supports the Temporal API when any column
+     * opts in via `temporal`. SQL-type compatibility (e.g. `temporal` set on
+     * a non-temporal SQL type) is intentionally NOT enforced here, in line
+     * with TypeORM's convention of not validating DB-type ↔ entity-type
+     * matches at metadata build time. Mismatches simply fall through to the
+     * driver's existing branches and behave as if `temporal` were unset.
+     *
+     * @param entityMetadata
+     */
+    protected validateTemporalColumns(entityMetadata: EntityMetadata): void {
+        for (const column of entityMetadata.columns) {
+            if (column.temporal === undefined || column.temporal === false)
+                continue
+
+            if (!TemporalUtils.isSupported()) {
+                throw new TypeORMError(
+                    `Column "${entityMetadata.name}.${column.propertyName}" ` +
+                        `uses Temporal, but globalThis.Temporal is not ` +
+                        `available in this runtime. Use Node 26+ or a ` +
+                        `Temporal-capable runtime.`,
+                )
+            }
+        }
     }
 
     /**

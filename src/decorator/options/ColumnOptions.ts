@@ -3,6 +3,12 @@ import type { ValueTransformer } from "./ValueTransformer"
 import type { ColumnCommonOptions } from "./ColumnCommonOptions"
 
 /**
+ * Opt-in option for hydrating/persisting a column as a TC39 Temporal type
+ * instead of `Date`. See `ColumnOptions.temporal`.
+ */
+export type TemporalColumnOption = true | false | { timeZone: string }
+
+/**
  * Describes all column's options.
  */
 export interface ColumnOptions extends ColumnCommonOptions {
@@ -154,6 +160,20 @@ export interface ColumnOptions extends ColumnCommonOptions {
      * this column when reading or writing to the database.
      */
     transformer?: ValueTransformer | ValueTransformer[]
+
+    /**
+     * Enables hydration/persistence using TC39 Temporal types instead of `Date`.
+     *
+     * - `true`: use the default Temporal kind for the SQL type
+     *   (`date` → `PlainDate`, `time` → `PlainTime`, `timestamp` → `PlainDateTime`,
+     *    `timestamptz` → `Instant`, `interval` → `Duration`).
+     * - `false`: opt out of reflect-metadata auto-inference.
+     * - object form: pick a specific kind (and `timeZone` for `"zoned"`).
+     *
+     * Requires `globalThis.Temporal` (Node 26+ or polyfill).
+     * Currently supported on PostgreSQL only.
+     */
+    temporal?: TemporalColumnOption
 
     /**
      * Spatial Feature Type (Geometry, Point, Polygon, etc.)

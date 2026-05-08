@@ -19,6 +19,13 @@ import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DateUtils } from "../../util/DateUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
+import {
+    DurationUtils,
+    PlainDateTimeUtils,
+    PlainDateUtils,
+    PlainTimeUtils,
+    ZonedDateTimeUtils,
+} from "../../util/TemporalUtils"
 import { VersionUtils } from "../../util/VersionUtils"
 import type { Driver } from "../Driver"
 import { DriverUtils } from "../DriverUtils"
@@ -765,20 +772,43 @@ export class PostgresDriver implements Driver {
         if (columnMetadata.type === Boolean) {
             return value === true ? 1 : 0
         } else if (columnMetadata.type === "date") {
-            return DateUtils.mixedDateToDateString(value, {
-                utc: columnMetadata.utc,
-            })
+            if (columnMetadata.temporal) {
+                return PlainDateUtils.fromTemporal(value)
+            } else {
+                return DateUtils.mixedDateToDateString(value, {
+                    utc: columnMetadata.utc,
+                })
+            }
         } else if (columnMetadata.type === "time") {
-            return DateUtils.mixedDateToTimeString(value)
+            if (columnMetadata.temporal) {
+                return PlainTimeUtils.fromTemporal(value)
+            } else {
+                return DateUtils.mixedDateToTimeString(value)
+            }
         } else if (
             columnMetadata.type === "datetime" ||
             columnMetadata.type === Date ||
             columnMetadata.type === "timestamp" ||
-            columnMetadata.type === "timestamptz" ||
-            columnMetadata.type === "timestamp with time zone" ||
             columnMetadata.type === "timestamp without time zone"
         ) {
-            return DateUtils.mixedDateToDate(value)
+            if (columnMetadata.temporal) {
+                return PlainDateTimeUtils.fromTemporal(value)
+            } else {
+                return DateUtils.mixedDateToDate(value)
+            }
+        } else if (
+            columnMetadata.type === "timestamptz" ||
+            columnMetadata.type === "timestamp with time zone"
+        ) {
+            if (columnMetadata.temporal) {
+                return ZonedDateTimeUtils.fromTemporal(value)
+            } else {
+                return DateUtils.mixedDateToDate(value)
+            }
+        } else if (columnMetadata.type === "interval") {
+            if (columnMetadata.temporal) {
+                return DurationUtils.fromTemporal(value)
+            }
         } else if (columnMetadata.type === "point") {
             if (
                 typeof value === "object" &&
@@ -884,17 +914,44 @@ export class PostgresDriver implements Driver {
             columnMetadata.type === "datetime" ||
             columnMetadata.type === Date ||
             columnMetadata.type === "timestamp" ||
-            columnMetadata.type === "timestamptz" ||
-            columnMetadata.type === "timestamp with time zone" ||
             columnMetadata.type === "timestamp without time zone"
         ) {
-            value = DateUtils.normalizeHydratedDate(value)
+            if (columnMetadata.temporal) {
+                value = PlainDateTimeUtils.toTemporal(value)
+            } else {
+                value = DateUtils.normalizeHydratedDate(value)
+            }
+        } else if (
+            columnMetadata.type === "timestamptz" ||
+            columnMetadata.type === "timestamp with time zone"
+        ) {
+            if (columnMetadata.temporal) {
+                const tz =
+                    columnMetadata.temporal !== true
+                        ? columnMetadata.temporal.timeZone
+                        : ""
+                value = ZonedDateTimeUtils.toTemporal(value, tz)
+            } else {
+                value = DateUtils.normalizeHydratedDate(value)
+            }
         } else if (columnMetadata.type === "date") {
-            value = DateUtils.mixedDateToDateString(value, {
-                utc: columnMetadata.utc,
-            })
+            if (columnMetadata.temporal) {
+                value = PlainDateUtils.toTemporal(value)
+            } else {
+                value = DateUtils.mixedDateToDateString(value, {
+                    utc: columnMetadata.utc,
+                })
+            }
         } else if (columnMetadata.type === "time") {
-            value = DateUtils.mixedTimeToString(value)
+            if (columnMetadata.temporal) {
+                value = PlainTimeUtils.toTemporal(value)
+            } else {
+                value = DateUtils.mixedTimeToString(value)
+            }
+        } else if (columnMetadata.type === "interval") {
+            if (columnMetadata.temporal) {
+                value = DurationUtils.toTemporal(value)
+            }
         } else if (
             columnMetadata.type === "vector" ||
             columnMetadata.type === "halfvec"
