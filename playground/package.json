@@ -11,7 +11,7 @@
   "dependencies": {
     "sql.js": "^1.13.0",
     "ts-node": "^10.9.2",
-    "typeorm": "*"
+    "typeorm": "file:.."
   },
   "devDependencies": {
     "@types/node": "^22.18.6",

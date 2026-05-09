@@ -248,6 +248,18 @@ new DataSource({
 })
 ```
 
+### Oracle
+
+The `LegacyOracleNamingStrategy` is no longer exported in the main TypeORM package. You can import it from `@typeorm/legacy-naming-strategies` if you still need it.
+
+```typescript
+// Before
+import { LegacyOracleNamingStrategy } from "typeorm"
+
+// After
+import { LegacyOracleNamingStrategy } from "@typeorm/legacy-naming-strategies"
+```
+
 ### SAP HANA
 
 Several deprecated SAP HANA connection aliases were removed.
@@ -443,7 +455,21 @@ This setting guards all high-level APIs — find operations, repository/manager 
 
 ### Hashing
 
-The internal hashing implementation has been replaced with Node.js built-in `crypto`. If you use TypeORM's query result cache, existing cached entries will be invalidated after upgrading because the hash function produces different output. Caches will be rebuilt automatically — you may see a brief increase in cache misses.
+In TypeORM v1, the SHA1 hashing algorithm used for hashing is applied directly to the input. In the previous versions (v0.3), the input was first encoded using [encodeURIComponent](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent).
+
+If you use TypeORM's query result cache, existing cached entries will be invalidated after upgrading because the hash function produces different output. Caches will be rebuilt automatically — you may see a brief increase in cache misses.
+
+If you have table and columns names containing special characters, you can use `@typeorm/legacy-naming-strategies` to avoid changes in the database:
+
+```typescript
+import { NamingStrategyV03 } from "@typeorm/legacy-naming-strategies"
+
+const dataSource = new DataSource({
+    ...
+    namingStrategy: new NamingStrategyV03(),
+    ...
+})
+```
 
 ### Glob patterns
 
