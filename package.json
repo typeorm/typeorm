@@ -104,7 +104,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@google-cloud/spanner": "^8.6.0",
+    "@google-cloud/spanner": "^8.7.1",
     "@sap/hana-client": "^2.28.20",
     "@stryker-mutator/core": "^9.6.1",
     "@stryker-mutator/mocha-runner": "^9.6.1",
@@ -115,7 +115,7 @@
     "@types/gulp": "^4.0.18",
     "@types/gulp-rename": "^2.0.7",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^20.19.39",
+    "@types/node": "^20.19.40",
     "@types/sinon": "^21.0.1",
     "@types/sinon-chai": "^4.0.0",
     "@types/source-map-support": "^0.5.10",
@@ -125,23 +125,23 @@
     "chai": "^6.2.2",
     "chai-as-promised": "^8.0.2",
     "class-transformer": "^0.5.1",
-    "eslint": "^10.2.1",
+    "eslint": "^10.3.0",
     "eslint-plugin-chai-friendly": "^1.2.0",
     "eslint-plugin-jsdoc": "^62.9.0",
     "eslint-plugin-unicorn": "^64.0.0",
-    "globals": "^17.5.0",
+    "globals": "17.6.0",
     "gulp": "^5.0.1",
     "gulp-rename": "^2.1.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
     "mocha": "^11.7.5",
     "mongodb": "^7.2.0",
-    "mssql": "^12.3.1",
-    "mysql2": "^3.22.2",
+    "mssql": "^12.5.2",
+    "mysql2": "^3.22.3",
     "oracledb": "^6.10.0",
     "pg": "^8.20.0",
     "pg-query-stream": "^4.14.0",
-    "pkg-pr-new": "^0.0.66",
+    "pkg-pr-new": "^0.0.71",
     "prettier": "^3.8.3",
     "prettier-plugin-packagejson": "^3.0.2",
     "prettier-plugin-toml": "^2.0.6",
@@ -155,7 +155,7 @@
     "testcontainers": "^11.14.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.59.0"
+    "typescript-eslint": "^8.59.2"
   },
   "peerDependencies": {
     "@google-cloud/spanner": "^8.0.0",
@@ -221,14 +221,14 @@
       "optional": true
     }
   },
-  "packageManager": "pnpm@10.33.1",
+  "packageManager": "pnpm@10.33.4",
   "engines": {
     "node": "^20.19.0 || ^22.13.0 || >=24.11.0"
   },
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
-      "version": "^10.30.1",
+      "version": "^10.33.4",
       "onFail": "error"
     }
   },
@@ -238,10 +238,11 @@
     ],
     "ignoredBuiltDependencies": [
       "@sap/hana-client",
-      "es5-ext",
+      "cpu-features",
       "libpq",
       "oracledb",
-      "protobufjs"
+      "protobufjs",
+      "ssh2"
     ]
   },
   "tags": [

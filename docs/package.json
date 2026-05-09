@@ -1,6 +1,6 @@
 {
-  "name": "type-orm-docs",
-  "version": "0.0.0",
+  "name": "@typeorm/docs",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "build": "docusaurus build",
@@ -26,35 +26,31 @@
     ]
   },
   "dependencies": {
-    "@docusaurus/core": "^3.10.0",
-    "@docusaurus/plugin-client-redirects": "^3.10.0",
-    "@docusaurus/preset-classic": "^3.10.0",
+    "@docusaurus/core": "^3.10.1",
+    "@docusaurus/plugin-client-redirects": "^3.10.1",
+    "@docusaurus/preset-classic": "^3.10.1",
     "@mdx-js/react": "^3.1.1",
     "@signalwire/docusaurus-plugin-llms-txt": "^1.2.2",
     "clsx": "^2.1.1",
     "docusaurus-lunr-search": "^3.6.0",
-    "lucide-react": "^1.8.0",
+    "lucide-react": "^1.14.0",
     "lunr": "^2.3.9",
     "prism-react-renderer": "^2.4.1",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5"
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "^3.10.0",
-    "@docusaurus/tsconfig": "^3.10.0",
-    "@docusaurus/types": "^3.10.0",
+    "@docusaurus/module-type-aliases": "^3.10.1",
+    "@docusaurus/tsconfig": "^3.10.1",
+    "@docusaurus/types": "^3.10.1",
     "typescript": "^5.9.3"
   },
-  "packageManager": "pnpm@10.33.1",
+  "packageManager": "pnpm@10.33.4",
   "engines": {
     "node": ">=20.0"
   },
   "pnpm": {
-    "overrides": {
-      "webpackbar": "^7.0.0"
-    },
     "ignoredBuiltDependencies": [
-      "core-js-pure",
       "core-js"
     ]
   }
