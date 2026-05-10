@@ -38,47 +38,124 @@ describe("schema builder > collation > collation changes", () => {
                 const OLD_COLLATION = col.collation
                 col.collation = NEW_COLLATION
 
-                // capture generated up queries
-                const sqlInMemory = await connection.driver
-                    .createSchemaBuilder()
-                    .log()
-                const tableName = meta.tableName
-                const expectedUp = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(100) COLLATE "${NEW_COLLATION}"`
-                const expectedDown = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(100) COLLATE "${OLD_COLLATION}"`
+                try {
+                    // capture generated up queries
+                    const sqlInMemory = await connection.driver
+                        .createSchemaBuilder()
+                        .log()
+                    const tableName = meta.tableName
+                    const expectedUp = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(100) COLLATE "${NEW_COLLATION}"`
+                    const expectedDown = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(100) COLLATE "${OLD_COLLATION}"`
 
-                // assert that the expected queries are in the generated SQL
-                const upJoined = sqlInMemory.upQueries
-                    .map((q) => q.query.replaceAll(/\s+/g, " ").trim())
-                    .join(" ")
-                expect(upJoined).to.include(expectedUp)
-                const downJoined = sqlInMemory.downQueries
-                    .map((q) => q.query.replaceAll(/\s+/g, " ").trim())
-                    .join(" ")
-                expect(downJoined).to.include(expectedDown)
+                    // assert that the expected queries are in the generated SQL
+                    const upJoined = sqlInMemory.upQueries
+                        .map((q) => q.query.replaceAll(/\s+/g, " ").trim())
+                        .join(" ")
+                    expect(upJoined).to.include(expectedUp)
+                    const downJoined = sqlInMemory.downQueries
+                        .map((q) => q.query.replaceAll(/\s+/g, " ").trim())
+                        .join(" ")
+                    expect(downJoined).to.include(expectedDown)
 
-                // assert that collation changes are applied to the database
-                const queryRunner = connection.createQueryRunner()
+                    // assert that collation changes are applied to the database
+                    const queryRunner = connection.createQueryRunner()
+
+                    try {
+                        let table = await queryRunner.getTable(meta.tableName)
+                        const originColumn = table!.columns.find(
+                            (c) => c.name === COLUMN_NAME,
+                        )!
+                        // old collation should be appeared
+                        expect(originColumn.collation).to.equal(OLD_COLLATION)
+
+                        await connection.synchronize()
+
+                        table = await queryRunner.getTable(meta.tableName)
+                        const appliedColumn = table!.columns.find(
+                            (c) => c.name === COLUMN_NAME,
+                        )!
+                        // new collation should be appeared
+                        expect(appliedColumn.collation).to.equal(NEW_COLLATION)
+                        // changing collation should not drop the varchar length modifier
+                        expect(appliedColumn.length).to.equal("100")
+                    } finally {
+                        await queryRunner.release()
+                    }
+                } finally {
+                    col.collation = OLD_COLLATION
+                }
+            }),
+        )
+    })
+
+    it("ALTER ... COLLATE query should be valid when collation is removed", async () => {
+        await Promise.all(
+            dataSources.map(async (connection) => {
+                const meta = connection.getMetadata(Item)
+                const col = meta.columns.find(
+                    (c) => c.propertyName === COLUMN_NAME,
+                )!
+                const OLD_COLLATION = col.collation
+                col.collation = undefined
 
                 try {
-                    let table = await queryRunner.getTable(meta.tableName)
-                    const originColumn = table!.columns.find(
-                        (c) => c.name === COLUMN_NAME,
-                    )!
-                    // old collation should be appeared
-                    expect(originColumn.collation).to.equal(OLD_COLLATION)
+                    const sqlInMemory = await connection.driver
+                        .createSchemaBuilder()
+                        .log()
+                    const tableName = meta.tableName
+                    const expectedUp = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(100) COLLATE pg_catalog."default"`
+                    const expectedDown = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(100) COLLATE "${OLD_COLLATION}"`
 
-                    await connection.synchronize()
+                    const upJoined = sqlInMemory.upQueries
+                        .map((q) => q.query.replaceAll(/\s+/g, " ").trim())
+                        .join(" ")
+                    expect(upJoined).to.include(expectedUp)
+                    expect(upJoined).not.to.include(`COLLATE "undefined"`)
 
-                    table = await queryRunner.getTable(meta.tableName)
-                    const appliedColumn = table!.columns.find(
-                        (c) => c.name === COLUMN_NAME,
-                    )!
-                    // new collation should be appeared
-                    expect(appliedColumn.collation).to.equal(NEW_COLLATION)
-                    // changing collation should not drop the varchar length modifier
-                    expect(appliedColumn.length).to.equal("100")
+                    const downJoined = sqlInMemory.downQueries
+                        .map((q) => q.query.replaceAll(/\s+/g, " ").trim())
+                        .join(" ")
+                    expect(downJoined).to.include(expectedDown)
                 } finally {
-                    await queryRunner.release()
+                    col.collation = OLD_COLLATION
+                }
+            }),
+        )
+    })
+
+    it("should combine varchar length and collation changes in one ALTER TYPE query", async () => {
+        await Promise.all(
+            dataSources.map(async (connection) => {
+                const meta = connection.getMetadata(Item)
+                const col = meta.columns.find(
+                    (c) => c.propertyName === COLUMN_NAME,
+                )!
+                const OLD_COLLATION = col.collation
+                const OLD_LENGTH = col.length
+                col.collation = NEW_COLLATION
+                col.length = "101"
+
+                try {
+                    const sqlInMemory = await connection.driver
+                        .createSchemaBuilder()
+                        .log()
+                    const tableName = meta.tableName
+                    const expectedUp = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(101) COLLATE "${NEW_COLLATION}"`
+
+                    const upQueries = sqlInMemory.upQueries.map((q) =>
+                        q.query.replaceAll(/\s+/g, " ").trim(),
+                    )
+                    expect(upQueries).to.include(expectedUp)
+                    expect(
+                        upQueries.filter((query) =>
+                            query.includes(
+                                `ALTER COLUMN "${COLUMN_NAME}" TYPE`,
+                            ),
+                        ),
+                    ).to.have.length(1)
+                } finally {
+                    col.collation = OLD_COLLATION
+                    col.length = OLD_LENGTH
                 }
             }),
         )
