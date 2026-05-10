@@ -43,8 +43,8 @@ describe("schema builder > collation > collation changes", () => {
                     .createSchemaBuilder()
                     .log()
                 const tableName = meta.tableName
-                const expectedUp = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying COLLATE "${NEW_COLLATION}"`
-                const expectedDown = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying COLLATE "${OLD_COLLATION}"`
+                const expectedUp = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(100) COLLATE "${NEW_COLLATION}"`
+                const expectedDown = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(100) COLLATE "${OLD_COLLATION}"`
 
                 // assert that the expected queries are in the generated SQL
                 const upJoined = sqlInMemory.upQueries
@@ -75,6 +75,8 @@ describe("schema builder > collation > collation changes", () => {
                     )!
                     // new collation should be appeared
                     expect(appliedColumn.collation).to.equal(NEW_COLLATION)
+                    // changing collation should not drop the varchar length modifier
+                    expect(appliedColumn.length).to.equal("100")
                 } finally {
                     await queryRunner.release()
                 }
