@@ -506,7 +506,7 @@ export class DataSource {
      */
     async query<T = any>(
         query: string,
-        parameters?: any[],
+        parameters?: any[] | ObjectLiteral,
         queryRunner?: QueryRunner,
     ): Promise<T> {
         if (InstanceChecker.isMongoEntityManager(this.manager))

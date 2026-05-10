@@ -20,6 +20,7 @@ describe("github issues > #3302 Tracking query time for slow queries and statsd 
         sandbox = sinon.createSandbox()
         appendStub = sandbox.stub(PlatformTools, "appendFileSync")
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
         })

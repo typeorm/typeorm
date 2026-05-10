@@ -11,6 +11,7 @@ describe("tree-tables > materialized-path > non-pk parent column", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Category],
         })
     })

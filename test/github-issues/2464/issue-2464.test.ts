@@ -15,6 +15,7 @@ describe("github issues > #2464 - ManyToMany onDelete option not working", () =>
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

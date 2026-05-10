@@ -1,10 +1,39 @@
 import path from "node:path"
-import type { API, FileInfo } from "jscodeshift"
-import { fileImportsFrom } from "../ast-helpers"
+import type { API, ASTNode, FileInfo, ObjectExpression } from "jscodeshift"
+import {
+    fileImportsFrom,
+    getStringValue,
+    setStringValue,
+    unwrapTsExpression,
+} from "../ast-helpers"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
     "rename and remove deprecated SAP HANA connection options"
+
+const getKeyName = (key: ASTNode): string | null => {
+    if (key.type === "Identifier") return key.name
+    return getStringValue(key)
+}
+
+const renameKey = (key: ASTNode, newName: string): void => {
+    if (key.type === "Identifier") {
+        key.name = newName
+    } else {
+        setStringValue(key, newName)
+    }
+}
+
+// Matches `{ type: "sap", ... }` objects — only then are SAP-specific
+// option renames safe to apply (avoids clobbering unrelated user code).
+// Peels TS wrappers so `type: "sap" as const` also matches.
+const isSapOptions = (obj: ObjectExpression): boolean =>
+    obj.properties.some(
+        (p) =>
+            (p.type === "ObjectProperty" || p.type === "Property") &&
+            getKeyName(p.key) === "type" &&
+            getStringValue(unwrapTsExpression(p.value)) === "sap",
+    )
 
 export const datasourceSap = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
@@ -26,39 +55,39 @@ export const datasourceSap = (file: FileInfo, api: API) => {
 
     const poolRemoves = new Set(["min", "maxWaitingRequests", "checkInterval"])
 
-    // Rename top-level options
-    root.find(j.ObjectProperty).forEach((path) => {
-        if (path.node.key.type !== "Identifier") return
+    root.find(j.ObjectExpression).forEach((objPath) => {
+        if (!isSapOptions(objPath.node)) return
 
-        const name = path.node.key.name
+        for (const prop of objPath.node.properties) {
+            if (prop.type !== "ObjectProperty") continue
+            const propName = getKeyName(prop.key)
+            if (propName === null) continue
 
-        // Top-level renames
-        if (topLevelRenames[name]) {
-            path.node.key.name = topLevelRenames[name]
-            hasChanges = true
-            return
-        }
-
-        // Pool property handling — check if inside a pool object
-        if (poolRenames[name] || poolRemoves.has(name)) {
-            const parent = path.parent
-            if (parent.node.type !== "ObjectExpression") return
-
-            const grandparent = parent.parent
-            if (
-                grandparent.node.type !== "ObjectProperty" ||
-                grandparent.node.key.type !== "Identifier" ||
-                grandparent.node.key.name !== "pool"
-            ) {
-                return
+            if (topLevelRenames[propName]) {
+                renameKey(prop.key, topLevelRenames[propName])
+                hasChanges = true
+                continue
             }
 
-            if (poolRemoves.has(name)) {
-                j(path).remove()
-                hasChanges = true
-            } else if (poolRenames[name]) {
-                path.node.key.name = poolRenames[name]
-                hasChanges = true
+            if (propName === "pool" && prop.value.type === "ObjectExpression") {
+                const poolObj = prop.value
+                const filtered = poolObj.properties.filter((inner) => {
+                    if (inner.type !== "ObjectProperty") return true
+                    const innerName = getKeyName(inner.key)
+                    if (innerName === null) return true
+                    if (poolRemoves.has(innerName)) {
+                        hasChanges = true
+                        return false
+                    }
+                    if (poolRenames[innerName]) {
+                        renameKey(inner.key, poolRenames[innerName])
+                        hasChanges = true
+                    }
+                    return true
+                })
+                if (filtered.length !== poolObj.properties.length) {
+                    poolObj.properties = filtered
+                }
             }
         }
     })

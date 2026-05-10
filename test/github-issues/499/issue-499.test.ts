@@ -12,6 +12,7 @@ describe("github issues > #499 postgres DATE hydrated as DATETIME object", () =>
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

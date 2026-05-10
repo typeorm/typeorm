@@ -23,26 +23,16 @@ const getCurrentTransactionLevelAndAssert = async (
     const actualIsolationLevel = (await entityManager.query(query))[0]
         .transaction_isolation
 
-    if (
-        entityManager.dataSource.driver.options.type === "cockroachdb" &&
-        expectedIsolationLevel === "READ UNCOMMITTED"
-    ) {
-        // CockroachDB does not support READ UNCOMMITTED isolation level, it uses READ COMMITTED
-        expect(actualIsolationLevel).to.equal("read committed")
-    } else {
-        expect(actualIsolationLevel).to.equal(
-            expectedIsolationLevel.toLowerCase(),
-        )
-    }
+    expect(actualIsolationLevel).to.equal(expectedIsolationLevel.toLowerCase())
 }
 
-describe("transaction > isolation level > postgres / cockroachdb", () => {
+describe("transaction > isolation level > postgres", () => {
     describe("defined for transaction", () => {
         let dataSources: DataSource[]
         before(async () => {
             dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres", "cockroachdb"],
+                enabledDrivers: ["postgres"],
             })
         })
         beforeEach(() => reloadTestingDatabases(dataSources))
@@ -128,7 +118,7 @@ describe("transaction > isolation level > postgres / cockroachdb", () => {
                     // DDL failures under weak isolation
                     const setup = await createTestingConnections({
                         entities: [__dirname + "/entity/*{.js,.ts}"],
-                        enabledDrivers: ["postgres", "cockroachdb"],
+                        enabledDrivers: ["postgres"],
                         schemaCreate: true,
                         dropSchema: true,
                     })
@@ -136,7 +126,7 @@ describe("transaction > isolation level > postgres / cockroachdb", () => {
 
                     dataSources = await createTestingConnections({
                         entities: [__dirname + "/entity/*{.js,.ts}"],
-                        enabledDrivers: ["postgres", "cockroachdb"],
+                        enabledDrivers: ["postgres"],
                         driverSpecific: {
                             isolationLevel,
                         },

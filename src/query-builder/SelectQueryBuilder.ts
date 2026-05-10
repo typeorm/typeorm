@@ -162,9 +162,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     ): SelectQueryBuilder<Entity> {
         this.expressionMap.queryType = "select"
         if (Array.isArray(selection)) {
-            for (const s of selection) {
-                this.assertNoSemicolon(s, "select")
-            }
             this.expressionMap.selects = selection.map((selection) => ({
                 selection: selection,
             }))
@@ -176,7 +173,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 aliasName: selectionAliasName,
             })
         } else if (selection) {
-            this.assertNoSemicolon(selection, "select")
             this.expressionMap.selects = [
                 { selection: selection, aliasName: selectionAliasName },
             ]
@@ -219,9 +215,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         if (!selection) return this
 
         if (Array.isArray(selection)) {
-            for (const s of selection) {
-                this.assertNoSemicolon(s, "addSelect")
-            }
             this.expressionMap.selects = this.expressionMap.selects.concat(
                 selection.map((selection) => ({ selection: selection })),
             )
@@ -233,7 +226,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 aliasName: selectionAliasName,
             })
         } else if (selection) {
-            this.assertNoSemicolon(selection, "addSelect")
             this.expressionMap.selects.push({
                 selection: selection,
                 aliasName: selectionAliasName,
@@ -1369,7 +1361,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      */
     groupBy(groupBy?: string): this {
         if (groupBy) {
-            this.assertNoSemicolon(groupBy, "groupBy")
             this.expressionMap.groupBys = [groupBy]
         } else {
             this.expressionMap.groupBys = []
@@ -1383,7 +1374,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * @param groupBy
      */
     addGroupBy(groupBy: string): this {
-        this.assertNoSemicolon(groupBy, "addGroupBy")
         this.expressionMap.groupBys.push(groupBy)
         return this
     }
@@ -1446,19 +1436,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         order: "ASC" | "DESC" = "ASC",
         nulls?: "NULLS FIRST" | "NULLS LAST",
     ): this {
-        if (order !== undefined && order !== "ASC" && order !== "DESC")
-            throw new TypeORMError(
-                `SelectQueryBuilder.addOrderBy "order" can accept only "ASC" and "DESC" values.`,
-            )
-        if (
-            nulls !== undefined &&
-            nulls !== "NULLS FIRST" &&
-            nulls !== "NULLS LAST"
-        )
-            throw new TypeORMError(
-                `SelectQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`,
-            )
-
         if (!sort) {
             this.expressionMap.orderBys = {}
             return this
@@ -1470,11 +1447,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             return this
         }
 
-        this.assertNoSemicolon(sort, "orderBy sort key")
-
-        this.expressionMap.orderBys = nulls
+        const condition: OrderByCondition = nulls
             ? { [sort]: { order, nulls } }
             : { [sort]: order }
+        this.validateOrderByCondition(condition)
+        this.expressionMap.orderBys = condition
 
         return this
     }
@@ -1491,20 +1468,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         order: "ASC" | "DESC" = "ASC",
         nulls?: "NULLS FIRST" | "NULLS LAST",
     ): this {
-        if (order !== undefined && order !== "ASC" && order !== "DESC")
-            throw new TypeORMError(
-                `SelectQueryBuilder.addOrderBy "order" can accept only "ASC" and "DESC" values.`,
-            )
-        if (
-            nulls !== undefined &&
-            nulls !== "NULLS FIRST" &&
-            nulls !== "NULLS LAST"
-        )
-            throw new TypeORMError(
-                `SelectQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`,
-            )
-
-        this.assertNoSemicolon(sort, "orderBy sort key")
+        const condition: OrderByCondition = nulls
+            ? { [sort]: { order, nulls } }
+            : { [sort]: order }
+        this.validateOrderByCondition(condition)
 
         if (nulls) {
             this.expressionMap.orderBys[sort] = { order, nulls }
@@ -3105,7 +3072,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             primaryColumn.databaseName,
                         )}`,
                 )
-                .join(", '|:|', ")
+                .join(", '|;|', ")
 
             if (primaryColumns.length === 1) {
                 return `COUNT(DISTINCT(${columnsExpression}))`
@@ -3131,7 +3098,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             primaryColumn.databaseName,
                         )} AS STRING)`,
                 )
-                .join(", '|:|', ")
+                .join(", '|;|', ")
             return `COUNT(DISTINCT(CONCAT(${columnsExpression})))`
         }
 
@@ -3146,7 +3113,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             `COUNT(DISTINCT(` +
             primaryColumns
                 .map((c) => `${distinctAlias}.${this.escape(c.databaseName)}`)
-                .join(" || '|:|' || ") +
+                .join(" || '|;|' || ") +
             "))"
         )
     }
@@ -3654,83 +3621,90 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.findOptions.loadEagerRelations,
                 )
 
-            await Promise.all(
-                this.relationMetadatas.map(async (relation) => {
-                    // Prevent infinite recursion from circular eager
-                    // chains (e.g. A→B→C→A). Each branch maintains its
-                    // own visited set so parallel branches don't interfere.
-                    if (relation.isEager) {
-                        const targetEntity =
-                            relation.inverseEntityMetadata.tablePath
-                        if (this.eagerLoadChain.has(targetEntity)) return
-                    }
+            const loadRelation = async (
+                relation: RelationMetadata,
+            ): Promise<void> => {
+                // Prevent infinite recursion from circular eager
+                // chains (e.g. A→B→C→A). Each branch maintains its
+                // own visited set so parallel branches don't interfere.
+                if (relation.isEager) {
+                    const targetEntity =
+                        relation.inverseEntityMetadata.tablePath
+                    if (this.eagerLoadChain.has(targetEntity)) return
+                }
 
-                    const relationTarget = relation.inverseEntityMetadata.target
-                    const relationAlias =
-                        relation.inverseEntityMetadata.targetName
+                const relationTarget = relation.inverseEntityMetadata.target
+                const relationAlias = relation.inverseEntityMetadata.targetName
 
-                    const queryBuilder = this.createQueryBuilder(queryRunner)
-                        .select(relationAlias)
-                        .from(relationTarget, relationAlias)
+                const queryBuilder = this.createQueryBuilder(queryRunner)
+                    .select(relationAlias)
+                    .from(relationTarget, relationAlias)
 
-                    // Propagate eager load chain with current entity
-                    // added, so the child detects cycles in its branch
-                    if (relation.isEager) {
-                        queryBuilder.eagerLoadChain = new Set(
-                            this.eagerLoadChain,
+                // Propagate eager load chain with current entity
+                // added, so the child detects cycles in its branch
+                if (relation.isEager) {
+                    queryBuilder.eagerLoadChain = new Set(this.eagerLoadChain)
+                    queryBuilder.eagerLoadChain.add(
+                        relation.entityMetadata.tablePath,
+                    )
+                }
+
+                queryBuilder.setFindOptions({
+                    select: this.findOptions.select
+                        ? OrmUtils.deepValue(
+                              this.findOptions.select,
+                              relation.propertyPath,
+                          )
+                        : undefined,
+                    order: this.findOptions.order
+                        ? OrmUtils.deepValue(
+                              this.findOptions.order,
+                              relation.propertyPath,
+                          )
+                        : undefined,
+                    relations: this.findOptions.relations
+                        ? OrmUtils.deepValue(
+                              this.findOptions.relations,
+                              relation.propertyPath,
+                          )
+                        : undefined,
+                    withDeleted: this.findOptions.withDeleted,
+                    relationLoadStrategy: this.findOptions.relationLoadStrategy,
+                    loadEagerRelations: this.findOptions.loadEagerRelations,
+                })
+                if (entities.length > 0) {
+                    const relatedEntityGroups: any[] =
+                        await queryStrategyRelationIdLoader.loadManyToManyRelationIdsAndGroup(
+                            relation,
+                            entities,
+                            undefined,
+                            queryBuilder,
                         )
-                        queryBuilder.eagerLoadChain.add(
-                            relation.entityMetadata.tablePath,
+                    entities.forEach((entity) => {
+                        const relatedEntityGroup = relatedEntityGroups.find(
+                            (group) => group.entity === entity,
                         )
-                    }
-
-                    queryBuilder.setFindOptions({
-                        select: this.findOptions.select
-                            ? OrmUtils.deepValue(
-                                  this.findOptions.select,
-                                  relation.propertyPath,
-                              )
-                            : undefined,
-                        order: this.findOptions.order
-                            ? OrmUtils.deepValue(
-                                  this.findOptions.order,
-                                  relation.propertyPath,
-                              )
-                            : undefined,
-                        relations: this.findOptions.relations
-                            ? OrmUtils.deepValue(
-                                  this.findOptions.relations,
-                                  relation.propertyPath,
-                              )
-                            : undefined,
-                        withDeleted: this.findOptions.withDeleted,
-                        relationLoadStrategy:
-                            this.findOptions.relationLoadStrategy,
-                        loadEagerRelations: this.findOptions.loadEagerRelations,
+                        if (relatedEntityGroup) {
+                            const value =
+                                relatedEntityGroup.related === undefined
+                                    ? null
+                                    : relatedEntityGroup.related
+                            relation.setEntityValue(entity, value)
+                        }
                     })
-                    if (entities.length > 0) {
-                        const relatedEntityGroups: any[] =
-                            await queryStrategyRelationIdLoader.loadManyToManyRelationIdsAndGroup(
-                                relation,
-                                entities,
-                                undefined,
-                                queryBuilder,
-                            )
-                        entities.forEach((entity) => {
-                            const relatedEntityGroup = relatedEntityGroups.find(
-                                (group) => group.entity === entity,
-                            )
-                            if (relatedEntityGroup) {
-                                const value =
-                                    relatedEntityGroup.related === undefined
-                                        ? null
-                                        : relatedEntityGroup.related
-                                relation.setEntityValue(entity, value)
-                            }
-                        })
-                    }
-                }),
-            )
+                }
+            }
+
+            // Avoid concurrent queries on the same pg client; see #12238.
+            // CockroachDB uses the pg package over a single connection too.
+            const driverType = this.dataSource.options.type
+            if (driverType === "postgres" || driverType === "cockroachdb") {
+                for (const relation of this.relationMetadatas) {
+                    await loadRelation(relation)
+                }
+            } else {
+                await Promise.all(this.relationMetadatas.map(loadRelation))
+            }
         }
 
         return {

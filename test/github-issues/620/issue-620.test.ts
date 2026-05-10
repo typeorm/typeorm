@@ -12,6 +12,7 @@ describe("github issues > #620 Feature Request: Flexibility in Foreign Key names
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

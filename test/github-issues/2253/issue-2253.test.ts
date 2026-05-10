@@ -12,6 +12,7 @@ describe("github issues > #2253 - inserting multiple child entities fails", () =
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,

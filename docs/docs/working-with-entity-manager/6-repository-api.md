@@ -488,6 +488,13 @@ const rawData = await repository.query(
     "SELECT * FROM USERS WHERE name = @0 and age = @1",
     ["John", 24],
 )
+
+// mysql2 additionally supports named placeholders
+// when extra.namedPlaceholders is true
+const rawData = await repository.query(
+    "SELECT * FROM USERS WHERE name = :name and age = :age",
+    { name: "John", age: 24 },
+)
 ```
 
 - `clear` - Clears all the data from (truncates) the given table. Supports cascade option to also clear all the data from the tables that have foreign keys to this table (supported by PostgreSQL/CockroachDB and Oracle only; other databases throw an error if cascade option is set to true).

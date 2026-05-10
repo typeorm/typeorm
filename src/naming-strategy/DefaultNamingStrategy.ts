@@ -1,25 +1,14 @@
 import type { NamingStrategyInterface } from "./NamingStrategyInterface"
-import { RandomGenerator } from "../util/RandomGenerator"
-import { camelCase, snakeCase, titleCase } from "../util/StringUtils"
+import { camelCase, hash, snakeCase, titleCase } from "../util/StringUtils"
 import type { Table } from "../schema-builder/table/Table"
 
 /**
  * Naming strategy that is used by default.
  */
 export class DefaultNamingStrategy implements NamingStrategyInterface {
-    protected getTableName(tableOrName: Table | string): string {
-        if (typeof tableOrName !== "string") {
-            tableOrName = tableOrName.name
-        }
+    materializedPathColumnName = "mpath"
+    nestedSetColumnNames = { left: "nsleft", right: "nsright" }
 
-        return tableOrName.split(".").pop()!
-    }
-    /**
-     * Normalizes table name.
-     *
-     * @param targetName Name of the target entity that can be used to generate a table name.
-     * @param userSpecifiedName For example if user specified a table name in a decorator, e.g. `@Entity("name")`
-     */
     tableName(
         targetName: string,
         userSpecifiedName: string | undefined,
@@ -27,11 +16,6 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return userSpecifiedName ?? snakeCase(targetName)
     }
 
-    /**
-     * Creates a table name for a junction table of a closure table.
-     *
-     * @param originalClosureTableName Name of the closure table which owns this junction table.
-     */
     closureJunctionTableName(originalClosureTableName: string): string {
         return originalClosureTableName + "_closure"
     }
@@ -60,7 +44,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         const tableName = this.getTableName(tableOrName)
         const replacedTableName = tableName.replace(".", "_")
         const key = `${replacedTableName}_${clonedColumnNames.join("_")}`
-        return "PK_" + RandomGenerator.sha1(key).slice(0, 27)
+        return "PK_" + this.hash(key).slice(0, 27)
     }
 
     uniqueConstraintName(
@@ -73,7 +57,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         const tableName = this.getTableName(tableOrName)
         const replacedTableName = tableName.replace(".", "_")
         const key = `${replacedTableName}_${clonedColumnNames.join("_")}`
-        return "UQ_" + RandomGenerator.sha1(key).slice(0, 27)
+        return "UQ_" + this.hash(key).slice(0, 27)
     }
 
     relationConstraintName(
@@ -89,7 +73,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         let key = `${replacedTableName}_${clonedColumnNames.join("_")}`
         if (where) key += `_${where}`
 
-        return "REL_" + RandomGenerator.sha1(key).slice(0, 26)
+        return "REL_" + this.hash(key).slice(0, 26)
     }
 
     defaultConstraintName(
@@ -99,7 +83,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         const tableName = this.getTableName(tableOrName)
         const replacedTableName = tableName.replace(".", "_")
         const key = `${replacedTableName}_${columnName}`
-        return "DF_" + RandomGenerator.sha1(key).slice(0, 27)
+        return "DF_" + this.hash(key).slice(0, 27)
     }
 
     foreignKeyName(
@@ -114,7 +98,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         const tableName = this.getTableName(tableOrName)
         const replacedTableName = tableName.replace(".", "_")
         const key = `${replacedTableName}_${clonedColumnNames.join("_")}`
-        return "FK_" + RandomGenerator.sha1(key).slice(0, 27)
+        return "FK_" + this.hash(key).slice(0, 27)
     }
 
     indexName(
@@ -130,7 +114,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         let key = `${replacedTableName}_${clonedColumnNames.join("_")}`
         if (where) key += `_${where}`
 
-        return "IDX_" + RandomGenerator.sha1(key).slice(0, 26)
+        return "IDX_" + this.hash(key).slice(0, 26)
     }
 
     checkConstraintName(
@@ -141,7 +125,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         const tableName = this.getTableName(tableOrName)
         const replacedTableName = tableName.replace(".", "_")
         const key = `${replacedTableName}_${expression}`
-        const name = "CHK_" + RandomGenerator.sha1(key).slice(0, 26)
+        const name = "CHK_" + this.hash(key).slice(0, 26)
         return isEnum ? `${name}_ENUM` : name
     }
 
@@ -152,7 +136,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         const tableName = this.getTableName(tableOrName)
         const replacedTableName = tableName.replace(".", "_")
         const key = `${replacedTableName}_${expression}`
-        return "XCL_" + RandomGenerator.sha1(key).slice(0, 26)
+        return "XCL_" + this.hash(key).slice(0, 26)
     }
 
     joinColumnName(relationName: string, referencedColumnName: string): string {
@@ -197,19 +181,19 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         return this.joinTableColumnName(tableName, propertyName, columnName)
     }
 
-    /**
-     * Adds globally set prefix to the table name.
-     * This method is executed no matter if prefix was set or not.
-     * Table name is either user's given table name, either name generated from entity target.
-     * Note that table name comes here already normalized by #tableName method.
-     *
-     * @param prefix
-     * @param tableName
-     */
     prefixTableName(prefix: string, tableName: string): string {
         return prefix + tableName
     }
 
-    nestedSetColumnNames = { left: "nsleft", right: "nsright" }
-    materializedPathColumnName = "mpath"
+    protected getTableName(tableOrName: Table | string): string {
+        if (typeof tableOrName !== "string") {
+            tableOrName = tableOrName.name
+        }
+
+        return tableOrName.split(".").pop()!
+    }
+
+    protected hash(input: string): string {
+        return hash(input)
+    }
 }
