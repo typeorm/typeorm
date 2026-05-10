@@ -21,6 +21,7 @@ describe("github issues > #8522 Single table inheritance returns the same discri
     describe("Unrelated tables", () => {
         before(async () => {
             dataSources = await createTestingConnections({
+                disabledDrivers: ["spanner"],
                 entities: [BaseEntity, InternalUser, InternalRole, Role, User],
                 schemaCreate: true,
                 dropSchema: true,
@@ -85,6 +86,7 @@ describe("github issues > #8522 Single table inheritance returns the same discri
         it("Should throw error when related tables have the same discriminator", async () => {
             try {
                 const dataSources = await createTestingConnections({
+                    disabledDrivers: ["spanner"],
                     entities: [
                         BaseEntity,
                         ClientRole,

@@ -196,14 +196,10 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     ): SelectQueryBuilder<Entity> {
         this.expressionMap.queryType = "select"
         if (Array.isArray(selection)) {
-            for (const s of selection) {
-                this.assertNoSemicolon(s, "select")
-            }
             this.expressionMap.selects = selection.map((selection) => ({
                 selection: selection,
             }))
         } else if (selection) {
-            this.assertNoSemicolon(selection, "select")
             this.expressionMap.selects = [
                 { selection: selection, aliasName: selectionAliasName },
             ]
@@ -793,7 +789,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             .join("|")
 
         if (replacementKeys.length > 0) {
-            statement = statement.replace(
+            statement = statement.replaceAll(
                 new RegExp(
                     // Avoid a lookbehind here since it's not well supported
                     `([ =(]|^.{0})` + // any of ' =(' or start of line
@@ -816,7 +812,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
                         if (replacements[matches[2]][p]) {
                             return `${pre}${this.escape(
-                                matches[2].substring(0, matches[2].length - 1),
+                                matches[2].slice(0, -1),
                             )}.${this.escape(replacements[matches[2]][p])}`
                         }
                     } else {
@@ -846,7 +842,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         // to scrub "ending" characters from the SQL but otherwise we can leave everything else
         // as-is and it should be valid.
 
-        return `/* ${this.expressionMap.comment.replace(/\*\//g, "")} */ `
+        return `/* ${this.expressionMap.comment.replaceAll("*/", "")} */ `
     }
 
     /**
@@ -1697,20 +1693,11 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         return this.expressionMap.commonTableExpressions.length > 0
     }
 
-    protected assertNoSemicolon(value: string, context: string): void {
-        if (value.includes(";")) {
-            throw new TypeORMError(
-                `Semicolons are not allowed in ${context} to prevent SQL statement stacking.`,
-            )
-        }
-    }
-
     protected validateOrderByCondition(sort: OrderByCondition): void {
         const validOrders = ["ASC", "DESC"]
         const validNulls = ["NULLS FIRST", "NULLS LAST"]
 
         for (const [key, value] of Object.entries(sort)) {
-            this.assertNoSemicolon(key, "orderBy sort key")
             if (typeof value === "string") {
                 if (!validOrders.includes(value))
                     throw new TypeORMError(

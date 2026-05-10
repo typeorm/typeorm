@@ -61,6 +61,11 @@ export class CockroachDriver implements Driver {
     readonly dataSource: DataSource
 
     /**
+     * Isolation levels supported by this driver.
+     */
+    supportedIsolationLevels = CockroachDriver.supportedIsolationLevels
+
+    /**
      * DataSource used by the driver.
      *
      * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
@@ -502,7 +507,7 @@ export class CockroachDriver implements Driver {
                         if (val.startsWith(`"`) && val.endsWith(`"`))
                             val = val.slice(1, -1)
                         // replace escaped backslash and double quotes
-                        return val.replace(/\\(\\|")/g, "$1")
+                        return val.replaceAll(/\\(\\|")/g, "$1")
                     })
 
                 // convert to number if that exists in possible enum options
@@ -547,7 +552,7 @@ export class CockroachDriver implements Driver {
             return [sql, escapedParameters]
 
         const parameterIndexMap = new Map<string, number>()
-        sql = sql.replace(
+        sql = sql.replaceAll(
             /:(\.\.\.)?([A-Za-z0-9_.]+)/g,
             (full, isArray: string, key: string): string => {
                 if (!parameters.hasOwnProperty(key)) {
@@ -1231,7 +1236,7 @@ export class CockroachDriver implements Driver {
     protected escapeComment(comment?: string) {
         if (!comment) return comment
 
-        comment = comment.replace(/'/g, "''").replace(/\u0000/g, "") // Null bytes aren't allowed in comments
+        comment = comment.replaceAll("'", "''").replaceAll("\u0000", "") // Null bytes aren't allowed in comments
 
         return comment
     }

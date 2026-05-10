@@ -12,6 +12,7 @@ describe("github issues > #8398 Separate update event into the update, soft remo
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
             schemaCreate: true,

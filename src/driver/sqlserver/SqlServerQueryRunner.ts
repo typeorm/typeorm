@@ -1,5 +1,6 @@
 import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { TypeORMError } from "../../error"
+import { NamedPlaceholdersNotSupportedError } from "../../error/NamedPlaceholdersNotSupportedError"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
@@ -28,7 +29,7 @@ import { validateIsolationLevel } from "../validate-isolation-level"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { MssqlParameter } from "./MssqlParameter"
-import { SqlServerDriver } from "./SqlServerDriver"
+import type { SqlServerDriver } from "./SqlServerDriver"
 
 /**
  * Runs queries on a single SQL Server database connection.
@@ -91,8 +92,10 @@ export class SqlServerQueryRunner
      * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
+        isolationLevel ??= this.dataSource.options.isolationLevel
+
         validateIsolationLevel(
-            SqlServerDriver.supportedIsolationLevels,
+            this.driver.supportedIsolationLevels,
             isolationLevel,
         )
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
@@ -213,10 +216,12 @@ export class SqlServerQueryRunner
      */
     async query(
         query: string,
-        parameters?: any[],
+        parameters?: any[] | ObjectLiteral,
         useStructuredResult = false,
     ): Promise<any> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
+        if (parameters && !Array.isArray(parameters))
+            throw new NamedPlaceholdersNotSupportedError()
 
         const release = await this.lock.acquire()
 
@@ -224,6 +229,8 @@ export class SqlServerQueryRunner
         await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
         const broadcasterResult = new BroadcasterResult()
+        const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime
+        let queryStartTime: number | undefined
 
         try {
             const pool = await (this.mode === "slave"
@@ -252,45 +259,36 @@ export class SqlServerQueryRunner
                     }
                 })
             }
-            const queryStartTime = Date.now()
+            queryStartTime = Date.now()
 
-            const raw = await new Promise<any>((ok, fail) => {
-                request.query(query, (err: any, raw: any) => {
-                    // log slow queries if maxQueryExecution time is set
-                    const maxQueryExecutionTime =
-                        this.driver.options.maxQueryExecutionTime
-                    const queryEndTime = Date.now()
-                    const queryExecutionTime = queryEndTime - queryStartTime
-
-                    this.broadcaster.broadcastAfterQueryEvent(
-                        broadcasterResult,
-                        query,
-                        parameters,
-                        true,
-                        queryExecutionTime,
-                        raw,
-                        undefined,
-                    )
-
-                    if (
-                        maxQueryExecutionTime &&
-                        queryExecutionTime > maxQueryExecutionTime
-                    ) {
-                        this.driver.dataSource.logger.logQuerySlow(
-                            queryExecutionTime,
-                            query,
-                            parameters,
-                            this,
-                        )
-                    }
-
-                    if (err) {
-                        fail(new QueryFailedError(query, parameters, err))
-                    }
-
-                    ok(raw)
-                })
+            const raw = await request.query(query).catch((err: Error) => {
+                throw new QueryFailedError(query, parameters, err)
             })
+
+            // log slow queries if maxQueryExecution time is set
+            const queryExecutionTime = Date.now() - queryStartTime
+
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                true,
+                queryExecutionTime,
+                raw,
+                undefined,
+            )
+
+            if (
+                maxQueryExecutionTime &&
+                queryExecutionTime > maxQueryExecutionTime
+            ) {
+                this.driver.dataSource.logger.logQuerySlow(
+                    queryExecutionTime,
+                    query,
+                    parameters,
+                    this,
+                )
+            }
 
             const result = new QueryResult()
 
@@ -312,12 +310,25 @@ export class SqlServerQueryRunner
                     result.raw = raw.recordset
             }
 
-            if (useStructuredResult) {
-                return result
-            } else {
-                return result.raw
-            }
+            return useStructuredResult ? result : result.raw
         } catch (err) {
+            const queryExecutionTime = queryStartTime
+                ? Date.now() - queryStartTime
+                : undefined
+
+            if (
+                maxQueryExecutionTime &&
+                queryExecutionTime !== undefined &&
+                queryExecutionTime > maxQueryExecutionTime
+            ) {
+                this.driver.dataSource.logger.logQuerySlow(
+                    queryExecutionTime,
+                    query,
+                    parameters,
+                    this,
+                )
+            }
+
             this.driver.dataSource.logger.logQueryError(
                 err,
                 query,
@@ -705,30 +716,31 @@ export class SqlServerQueryRunner
             (column) => column.generatedType && column.asExpression,
         )
 
-        for (const column of generatedColumns) {
+        if (generatedColumns.length > 0) {
             const parsedTableName = this.driver.parseTableName(table)
-
             parsedTableName.schema ??= await this.getCurrentSchema()
 
-            const insertQuery = this.insertTypeormMetadataSql({
-                database: parsedTableName.database,
-                schema: parsedTableName.schema,
-                table: parsedTableName.tableName,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression,
-            })
+            for (const column of generatedColumns) {
+                const insertQuery = this.insertTypeormMetadataSql({
+                    database: parsedTableName.database,
+                    schema: parsedTableName.schema,
+                    table: parsedTableName.tableName,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                    value: column.asExpression,
+                })
 
-            const deleteQuery = this.deleteTypeormMetadataSql({
-                database: parsedTableName.database,
-                schema: parsedTableName.schema,
-                table: parsedTableName.tableName,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-            })
+                const deleteQuery = this.deleteTypeormMetadataSql({
+                    database: parsedTableName.database,
+                    schema: parsedTableName.schema,
+                    table: parsedTableName.tableName,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                })
 
-            upQueries.push(insertQuery)
-            downQueries.push(deleteQuery)
+                upQueries.push(insertQuery)
+                downQueries.push(deleteQuery)
+            }
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -786,30 +798,31 @@ export class SqlServerQueryRunner
             (column) => column.generatedType && column.asExpression,
         )
 
-        for (const column of generatedColumns) {
+        if (generatedColumns.length > 0) {
             const parsedTableName = this.driver.parseTableName(table)
-
             parsedTableName.schema ??= await this.getCurrentSchema()
 
-            const deleteQuery = this.deleteTypeormMetadataSql({
-                database: parsedTableName.database,
-                schema: parsedTableName.schema,
-                table: parsedTableName.tableName,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-            })
+            for (const column of generatedColumns) {
+                const deleteQuery = this.deleteTypeormMetadataSql({
+                    database: parsedTableName.database,
+                    schema: parsedTableName.schema,
+                    table: parsedTableName.tableName,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                })
 
-            const insertQuery = this.insertTypeormMetadataSql({
-                database: parsedTableName.database,
-                schema: parsedTableName.schema,
-                table: parsedTableName.tableName,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression,
-            })
+                const insertQuery = this.insertTypeormMetadataSql({
+                    database: parsedTableName.database,
+                    schema: parsedTableName.schema,
+                    table: parsedTableName.tableName,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                    value: column.asExpression,
+                })
 
-            upQueries.push(deleteQuery)
-            downQueries.push(insertQuery)
+                upQueries.push(deleteQuery)
+                downQueries.push(insertQuery)
+            }
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -3160,7 +3173,9 @@ export class SqlServerQueryRunner
                 return (
                     `SELECT "COLUMNS".*, "cc"."is_persisted", "cc"."definition" ` +
                     `FROM "${TABLE_CATALOG}"."INFORMATION_SCHEMA"."COLUMNS" ` +
-                    `LEFT JOIN "sys"."computed_columns" "cc" ON COL_NAME("cc"."object_id", "cc"."column_id") = "column_name" ` +
+                    `LEFT JOIN "${TABLE_CATALOG}"."sys"."computed_columns" "cc" ON COL_NAME("cc"."object_id", "cc"."column_id") = "COLUMN_NAME" ` +
+                    `AND OBJECT_NAME("cc"."object_id", DB_ID('${TABLE_CATALOG}')) = "TABLE_NAME" ` +
+                    `AND OBJECT_SCHEMA_NAME("cc"."object_id", DB_ID('${TABLE_CATALOG}')) = "TABLE_SCHEMA" ` +
                     `WHERE (${condition})`
                 )
             })
@@ -4253,7 +4268,7 @@ export class SqlServerQueryRunner
         if (!defaultValue.startsWith("(")) return defaultValue
         const end = defaultValue.lastIndexOf(")")
         if (!defaultValue.endsWith(")") || end <= 0) return defaultValue
-        const normalizedDefault = defaultValue.substring(1, end)
+        const normalizedDefault = defaultValue.slice(1, end)
         return this.removeParenthesisFromDefault(normalizedDefault)
     }
 

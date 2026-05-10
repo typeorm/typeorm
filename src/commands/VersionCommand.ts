@@ -13,7 +13,7 @@ export class VersionCommand implements yargs.CommandModule {
             await VersionCommand.executeCommand("npm list --depth=0")
         const localMatches = localNpmList.match(/ typeorm@(.*)\n/)
         const localNpmVersion = (localMatches?.[1] ?? "")
-            .replace(/"invalid"/gi, "")
+            .replaceAll(/"invalid"/gi, "")
             .trim()
 
         const globalNpmList = await VersionCommand.executeCommand(
@@ -21,7 +21,7 @@ export class VersionCommand implements yargs.CommandModule {
         )
         const globalMatches = globalNpmList.match(/ typeorm@(.*)\n/)
         const globalNpmVersion = (globalMatches?.[1] ?? "")
-            .replace(/"invalid"/gi, "")
+            .replaceAll(/"invalid"/gi, "")
             .trim()
 
         if (localNpmVersion) {

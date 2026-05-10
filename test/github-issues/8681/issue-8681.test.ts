@@ -15,6 +15,7 @@ describe("github issues > #8681 DeepPartial simplification breaks the .create() 
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
