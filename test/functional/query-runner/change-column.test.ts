@@ -6,7 +6,7 @@ import {
     createTestingConnections,
     createTypeormMetadataTable,
 } from "../../utils/test-utils"
-import { TableColumn } from "../../../src"
+import { Table, TableColumn } from "../../../src"
 import type { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
@@ -101,6 +101,72 @@ describe("query runner > change column", () => {
                 table!.findColumnByName("text")!.isPrimary.should.be.false
                 expect(table!.findColumnByName("text")!.default).to.be.undefined
 
+                await queryRunner.release()
+            }),
+        ))
+
+    it("should preserve postgres character column data when changing length", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (dataSource.driver.options.type !== "postgres") return
+
+                // Regression test for #3357: changing varchar length should not drop and recreate the column.
+                const queryRunner = dataSource.createQueryRunner()
+
+                await queryRunner.createTable(
+                    new Table({
+                        name: "change_column_length",
+                        columns: [
+                            {
+                                name: "id",
+                                type: "int",
+                                isPrimary: true,
+                            },
+                            {
+                                name: "example",
+                                type: "character varying",
+                                length: "50",
+                            },
+                        ],
+                    }),
+                    true,
+                )
+                await queryRunner.query(
+                    `INSERT INTO "change_column_length"("id", "example") VALUES (1, 'kept')`,
+                )
+
+                let table = await queryRunner.getTable("change_column_length")
+                const exampleColumn = table!.findColumnByName("example")!
+                const changedExampleColumn = exampleColumn.clone()
+                changedExampleColumn.length = "51"
+
+                await queryRunner.changeColumn(
+                    table!,
+                    exampleColumn,
+                    changedExampleColumn,
+                )
+
+                table = await queryRunner.getTable("change_column_length")
+                table!
+                    .findColumnByName("example")!
+                    .length!.should.be.equal("51")
+
+                const rows = await queryRunner.query(
+                    `SELECT "example" FROM "change_column_length" WHERE "id" = 1`,
+                )
+                rows[0].example.should.be.equal("kept")
+
+                const upQueries = queryRunner
+                    .getMemorySql()
+                    .upQueries.map((query) => query.query)
+                expect(upQueries).to.include(
+                    `ALTER TABLE "change_column_length" ALTER COLUMN "example" TYPE character varying(51)`,
+                )
+                expect(upQueries).not.to.include(
+                    `ALTER TABLE "change_column_length" DROP COLUMN "example"`,
+                )
+
+                await queryRunner.dropTable("change_column_length", true)
                 await queryRunner.release()
             }),
         ))
