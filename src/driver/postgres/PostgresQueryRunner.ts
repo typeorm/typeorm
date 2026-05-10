@@ -1330,11 +1330,15 @@ export class PostgresQueryRunner
             this.isCharacterType(oldColumn.type) &&
             this.isCharacterType(newColumn.type) &&
             oldColumn.isArray === newColumn.isArray
+        const typeOrLengthChanged =
+            oldColumn.type !== newColumn.type ||
+            oldColumn.length !== newColumn.length
+        const characterTypeChanged =
+            isSafeCharacterTypeChange && typeOrLengthChanged
+        const collationChanged = newColumn.collation !== oldColumn.collation
 
         if (
-            (!isSafeCharacterTypeChange &&
-                (oldColumn.type !== newColumn.type ||
-                    oldColumn.length !== newColumn.length)) ||
+            (!characterTypeChanged && typeOrLengthChanged) ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1624,29 +1628,43 @@ export class PostgresQueryRunner
                 oldColumn.name = newColumn.name
             }
 
-            if (
-                isSafeCharacterTypeChange &&
-                (oldColumn.type !== newColumn.type ||
-                    oldColumn.length !== newColumn.length)
-            ) {
+            if (characterTypeChanged) {
                 const column = clonedTable.columns.find(
                     (column) => column.name === newColumn.name,
                 )
                 column!.type = newColumn.type
                 column!.length = newColumn.length
+                if (collationChanged) {
+                    column!.collation = newColumn.collation
+                }
+
+                const newCollation = collationChanged
+                    ? newColumn.collation
+                        ? ` COLLATE "${newColumn.collation}"`
+                        : ` COLLATE pg_catalog."default"`
+                    : ""
+                const oldCollation = collationChanged
+                    ? oldColumn.collation
+                        ? ` COLLATE "${oldColumn.collation}"`
+                        : ` COLLATE pg_catalog."default"`
+                    : ""
 
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                        }" TYPE ${this.driver.createFullType(
+                            newColumn,
+                        )}${newCollation}`,
                     ),
                 )
                 downQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                        }" TYPE ${this.driver.createFullType(
+                            oldColumn,
+                        )}${oldCollation}`,
                     ),
                 )
             }
@@ -2376,11 +2394,15 @@ export class PostgresQueryRunner
             }
 
             // update column collation
-            if (newColumn.collation !== oldColumn.collation) {
+            if (collationChanged && !characterTypeChanged) {
                 const column = clonedTable.columns.find(
                     (column) => column.name === newColumn.name,
                 )
                 column!.collation = newColumn.collation
+
+                const newCollation = newColumn.collation
+                    ? `"${newColumn.collation}"`
+                    : `pg_catalog."default"`
 
                 upQueries.push(
                     new Query(
@@ -2388,7 +2410,7 @@ export class PostgresQueryRunner
                             newColumn.name
                         }" TYPE ${this.driver.createFullType(
                             newColumn,
-                        )} COLLATE "${newColumn.collation}"`,
+                        )} COLLATE ${newCollation}`,
                     ),
                 )
 
