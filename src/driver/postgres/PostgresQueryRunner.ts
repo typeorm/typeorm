@@ -1326,9 +1326,15 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        const isSafeCharacterTypeChange =
+            this.isCharacterType(oldColumn.type) &&
+            this.isCharacterType(newColumn.type) &&
+            oldColumn.isArray === newColumn.isArray
+
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
+            (!isSafeCharacterTypeChange &&
+                (oldColumn.type !== newColumn.type ||
+                    oldColumn.length !== newColumn.length)) ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1616,6 +1622,33 @@ export class PostgresQueryRunner
                     clonedTable.columns.indexOf(oldTableColumn!)
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
+            }
+
+            if (
+                isSafeCharacterTypeChange &&
+                (oldColumn.type !== newColumn.type ||
+                    oldColumn.length !== newColumn.length)
+            ) {
+                const column = clonedTable.columns.find(
+                    (column) => column.name === newColumn.name,
+                )
+                column!.type = newColumn.type
+                column!.length = newColumn.length
+
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                    ),
+                )
             }
 
             if (
@@ -5186,6 +5219,17 @@ export class PostgresQueryRunner
             c += ` DEFAULT ${this.driver.uuidGenerator}`
 
         return c
+    }
+
+    protected isCharacterType(type: string): boolean {
+        type = type.toLowerCase()
+
+        return [
+            "character varying",
+            "varchar",
+            "character",
+            "char",
+        ].includes(type)
     }
 
     /**
