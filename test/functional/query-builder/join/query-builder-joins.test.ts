@@ -1,5 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
+import sinon from "sinon"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -1717,6 +1718,81 @@ describe("query builder > joins", () => {
                     rows.map((row: { user_id: string }) => row.user_id),
                 )
                 expect(uniqueIds.size).to.equal(3)
+            }),
+        ))
+
+    it("should use distinct-id pagination when limit is used with leftJoinAndMapOne over a one-to-many relation", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const manager = dataSource.manager
+
+                for (let i = 1; i <= 7; i++) {
+                    const user = new User()
+                    user.name = `User ${i}`
+                    await manager.save(user)
+
+                    for (let j = 1; j <= 2; j++) {
+                        const photo = new Photo()
+                        photo.name = `Photo ${i}-${j}`
+                        photo.user = user
+                        await manager.save(photo)
+                    }
+                }
+
+                const queryRunner = dataSource.createQueryRunner()
+                const querySpy = sinon.spy(queryRunner, "query")
+
+                try {
+                    const users = await manager
+                        .createQueryBuilder(User, "user")
+                        .leftJoinAndMapOne("user.photo", "user.photos", "photo")
+                        .orderBy("user.id")
+                        .limit(5)
+                        .setQueryRunner(queryRunner)
+                        .getMany()
+
+                    expect(users).to.have.lengthOf(5)
+                    expect(querySpy.callCount).to.equal(2)
+                } finally {
+                    querySpy.restore()
+                    await queryRunner.release()
+                }
+            }),
+        ))
+
+    it("github issues > #12445 should execute a single query when limit and offset are used with non-multiplying joins", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const user = new User()
+                user.name = "User 1"
+                await dataSource.manager.save(user)
+
+                for (let i = 1; i <= 4; i++) {
+                    const photo = new Photo()
+                    photo.name = `Photo ${i}`
+                    photo.user = user
+                    await dataSource.manager.save(photo)
+                }
+
+                const queryRunner = dataSource.createQueryRunner()
+                const querySpy = sinon.spy(queryRunner, "query")
+
+                try {
+                    const photos = await dataSource.manager
+                        .createQueryBuilder(Photo, "photo")
+                        .innerJoinAndSelect("photo.user", "user")
+                        .orderBy("photo.id")
+                        .offset(1)
+                        .limit(2)
+                        .setQueryRunner(queryRunner)
+                        .getMany()
+
+                    expect(photos).to.have.lengthOf(2)
+                    expect(querySpy.callCount).to.equal(1)
+                } finally {
+                    querySpy.restore()
+                    await queryRunner.release()
+                }
             }),
         ))
 })

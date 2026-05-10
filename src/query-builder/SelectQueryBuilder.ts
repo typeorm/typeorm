@@ -1483,8 +1483,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Sets LIMIT - maximum number of rows to be selected.
-     * When joins are present, a two-query distinct-id strategy is used
-     * so that LIMIT applies to root entities rather than raw joined rows.
+     * When joins that can multiply root rows are present, a two-query distinct-id
+     * strategy is used so that LIMIT applies to root entities rather than raw joined rows.
      *
      * @param limit
      */
@@ -1503,8 +1503,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Sets OFFSET - selection offset.
-     * When joins are present, a two-query distinct-id strategy is used
-     * so that OFFSET applies to root entities rather than raw joined rows.
+     * When joins that can multiply root rows are present, a two-query distinct-id
+     * strategy is used so that OFFSET applies to root entities rather than raw joined rows.
      *
      * @param offset
      */
@@ -3442,16 +3442,29 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         let rawResults: any[],
             entities: any[] = []
 
+        const { skip, take, offset, limit } = this.expressionMap
+        const hasSkip = typeof skip === "number" && skip > 0
+        const hasTake = take != null
+        const hasOffset = typeof offset === "number" && offset > 0
+        const hasLimit = limit != null
+        const hasSkipOrTake = hasSkip || hasTake
+        const hasLimitOrOffset = hasOffset || hasLimit
+        const hasJoins = this.expressionMap.joinAttributes.length > 0
+        const hasMultiplyingJoins = this.expressionMap.joinAttributes.some(
+            (join) =>
+                !join.relation ||
+                join.relation.isOneToMany ||
+                join.relation.isManyToMany ||
+                join.isMappingMany === true,
+        )
+
         // for pagination enabled (e.g. skip and take) its much more complicated - its a special process
         // where we make two queries to find the data we need
         // first query find ids in skip and take range
         // and second query loads the actual data in given ids range
         if (
-            (this.expressionMap.skip ||
-                this.expressionMap.take ||
-                this.expressionMap.offset ||
-                this.expressionMap.limit) &&
-            this.expressionMap.joinAttributes.length > 0
+            (hasSkipOrTake || (hasLimitOrOffset && hasMultiplyingJoins)) &&
+            hasJoins
         ) {
             // we are skipping order by here because its not working in subqueries anyway
             // to make order by working we need to apply it on a distinct query
