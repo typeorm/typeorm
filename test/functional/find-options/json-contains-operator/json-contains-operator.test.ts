@@ -13,7 +13,7 @@ describe("find options > find operators > JsonContains", () => {
     before(async () => {
         dataSources = await createTestingConnections({
             __dirname,
-            enabledDrivers: ["postgres"],
+            enabledDrivers: ["postgres", "cockroachdb"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
