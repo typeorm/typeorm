@@ -2642,7 +2642,7 @@ export class CockroachQueryRunner
             )
             uniqueConstraint.name =
                 match?.name ??
-                this.connection.namingStrategy.uniqueConstraintName(
+                this.dataSource.namingStrategy.uniqueConstraintName(
                     table,
                     uniqueConstraint.columnNames,
                 )

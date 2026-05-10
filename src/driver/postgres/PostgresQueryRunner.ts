@@ -2924,7 +2924,7 @@ export class PostgresQueryRunner
             )
             uniqueConstraint.name =
                 match?.name ??
-                this.connection.namingStrategy.uniqueConstraintName(
+                this.dataSource.namingStrategy.uniqueConstraintName(
                     table,
                     uniqueConstraint.columnNames,
                 )

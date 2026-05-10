@@ -2035,7 +2035,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             )
             uniqueConstraint.name =
                 match?.name ??
-                this.connection.namingStrategy.uniqueConstraintName(
+                this.dataSource.namingStrategy.uniqueConstraintName(
                     table,
                     uniqueConstraint.columnNames,
                 )

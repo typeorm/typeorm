@@ -956,8 +956,8 @@ export abstract class AbstractSqliteQueryRunner
         // clone original table and add unique constraints in to cloned table
         const changedTable = table.clone()
         uniqueConstraints.forEach((uniqueConstraint) => {
-            uniqueConstraint.name ||=
-                this.connection.namingStrategy.uniqueConstraintName(
+            uniqueConstraint.name ??=
+                this.dataSource.namingStrategy.uniqueConstraintName(
                     table,
                     uniqueConstraint.columnNames,
                 )
@@ -1002,7 +1002,7 @@ export abstract class AbstractSqliteQueryRunner
             )
             uniqueConstraint.name =
                 match?.name ??
-                this.connection.namingStrategy.uniqueConstraintName(
+                this.dataSource.namingStrategy.uniqueConstraintName(
                     table,
                     uniqueConstraint.columnNames,
                 )
@@ -1030,8 +1030,8 @@ export abstract class AbstractSqliteQueryRunner
         // clone original table and remove unique constraints from cloned table
         const changedTable = table.clone()
         uniqueConstraints.forEach((uniqueConstraint) => {
-            uniqueConstraint.name ||=
-                this.connection.namingStrategy.uniqueConstraintName(
+            uniqueConstraint.name ??=
+                this.dataSource.namingStrategy.uniqueConstraintName(
                     table,
                     uniqueConstraint.columnNames,
                 )
@@ -1975,7 +1975,7 @@ export abstract class AbstractSqliteQueryRunner
         if (table.uniques.length > 0) {
             const uniquesSql = table.uniques
                 .map((unique) => {
-                    unique.name ||=
+                    unique.name ??=
                         this.dataSource.namingStrategy.uniqueConstraintName(
                             newTableName,
                             unique.columnNames,
