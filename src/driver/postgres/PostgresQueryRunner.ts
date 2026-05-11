@@ -1326,9 +1326,14 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        const isVarcharLengthOnlyChange =
+            this.isVarcharLengthOnlyChange(oldColumn, newColumn)
+
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
+            (oldColumn.type !== newColumn.type &&
+                !isVarcharLengthOnlyChange) ||
+            (oldColumn.length !== newColumn.length &&
+                !isVarcharLengthOnlyChange) ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1620,7 +1625,8 @@ export class PostgresQueryRunner
 
             if (
                 newColumn.precision !== oldColumn.precision ||
-                newColumn.scale !== oldColumn.scale
+                newColumn.scale !== oldColumn.scale ||
+                oldColumn.length !== newColumn.length
             ) {
                 upQueries.push(
                     new Query(
@@ -5186,6 +5192,28 @@ export class PostgresQueryRunner
             c += ` DEFAULT ${this.driver.uuidGenerator}`
 
         return c
+    }
+
+    private isVarcharLengthOnlyChange(
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+    ): boolean {
+        return (
+            oldColumn.length !== newColumn.length &&
+            !oldColumn.isArray &&
+            !newColumn.isArray &&
+            !oldColumn.generatedType &&
+            !newColumn.generatedType &&
+            oldColumn.asExpression === newColumn.asExpression &&
+            this.isVarcharColumn(oldColumn) &&
+            this.isVarcharColumn(newColumn)
+        )
+    }
+
+    private isVarcharColumn(column: TableColumn): boolean {
+        return (
+            column.type === "character varying" || column.type === "varchar"
+        )
     }
 
     /**
