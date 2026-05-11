@@ -44,6 +44,14 @@ describe("database schema > column length > postgres", () => {
     it("all types should update their size", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
+                await dataSource.getRepository(Post).save({
+                    id: 1,
+                    characterVarying: "character varying value",
+                    varchar: "varchar value",
+                    character: "character value",
+                    char: "char value",
+                })
+
                 const metadata = dataSource.getMetadata(Post)
                 metadata.findColumnWithPropertyName(
                     "characterVarying",
@@ -51,6 +59,27 @@ describe("database schema > column length > postgres", () => {
                 metadata.findColumnWithPropertyName("varchar")!.length = "100"
                 metadata.findColumnWithPropertyName("character")!.length = "100"
                 metadata.findColumnWithPropertyName("char")!.length = "100"
+
+                const sqlInMemory = await dataSource.driver
+                    .createSchemaBuilder()
+                    .log()
+                const upQueries = sqlInMemory.upQueries
+                    .map((query) => query.query)
+                    .join(" ")
+
+                expect(upQueries).to.include(
+                    `ALTER TABLE "post" ALTER COLUMN "characterVarying" TYPE character varying(100)`,
+                )
+                expect(upQueries).to.include(
+                    `ALTER TABLE "post" ALTER COLUMN "varchar" TYPE character varying(100)`,
+                )
+                expect(upQueries).to.include(
+                    `ALTER TABLE "post" ALTER COLUMN "character" TYPE character(100)`,
+                )
+                expect(upQueries).to.include(
+                    `ALTER TABLE "post" ALTER COLUMN "char" TYPE character(100)`,
+                )
+                expect(upQueries).not.to.include("DROP COLUMN")
 
                 await dataSource.synchronize(false)
 
@@ -70,6 +99,17 @@ describe("database schema > column length > postgres", () => {
                 expect(table!.findColumnByName("char")!.length).to.be.equal(
                     "100",
                 )
+
+                const post = await dataSource
+                    .getRepository(Post)
+                    .findOneByOrFail({ id: 1 })
+
+                expect(post.characterVarying).to.equal(
+                    "character varying value",
+                )
+                expect(post.varchar).to.equal("varchar value")
+                expect(post.character.trim()).to.equal("character value")
+                expect(post.char.trim()).to.equal("char value")
             }),
         ))
 })
