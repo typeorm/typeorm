@@ -121,4 +121,65 @@ describe("github issues > #3357 postgres varchar length changes", () => {
                 }
             }),
         ))
+
+    it("should keep cached column length after altering varchar length", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+
+                try {
+                    await queryRunner.createTable(
+                        new Table({
+                            name: "bug3357_cached_length",
+                            columns: [
+                                {
+                                    name: "example",
+                                    type: "character varying",
+                                    length: "50",
+                                },
+                            ],
+                        }),
+                        true,
+                    )
+
+                    const table = await queryRunner.getTable(
+                        "bug3357_cached_length",
+                    )
+                    const column = table!.findColumnByName("example")!
+                    const lengthChangedColumn = column.clone()
+                    lengthChangedColumn.length = "51"
+
+                    queryRunner.enableSqlMemory()
+                    await queryRunner.changeColumn(
+                        table!,
+                        column,
+                        lengthChangedColumn,
+                    )
+                    queryRunner.clearSqlMemory()
+
+                    const collationChangedColumn = lengthChangedColumn.clone()
+                    collationChangedColumn.collation = "C"
+
+                    await queryRunner.changeColumn(
+                        "bug3357_cached_length",
+                        "example",
+                        collationChangedColumn,
+                    )
+                    const sqlInMemory = queryRunner.getMemorySql()
+
+                    expect(
+                        sqlInMemory.upQueries.map((query) => query.query),
+                    ).to.eql([
+                        'ALTER TABLE "bug3357_cached_length" ALTER COLUMN "example" TYPE character varying(51) COLLATE "C"',
+                    ])
+                    expect(
+                        sqlInMemory.downQueries.map((query) => query.query),
+                    ).to.eql([
+                        'ALTER TABLE "bug3357_cached_length" ALTER COLUMN "example" TYPE character varying(51) COLLATE pg_catalog."default"',
+                    ])
+                } finally {
+                    await queryRunner.release()
+                }
+            }),
+        ))
 })

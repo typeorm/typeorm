@@ -1636,6 +1636,13 @@ export class PostgresQueryRunner
                         }" TYPE ${this.driver.createFullType(oldColumn)}`,
                     ),
                 )
+
+                const column = clonedTable.columns.find(
+                    (column) => column.name === newColumn.name,
+                )
+                column!.length = newColumn.length
+                column!.precision = newColumn.precision
+                column!.scale = newColumn.scale
             }
 
             if (
