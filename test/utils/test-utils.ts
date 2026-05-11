@@ -25,7 +25,7 @@ export type TestingConnectionOptions = DataSourceOptions & {
     skip?: boolean
 
     /**
-     * If set to true then tests for this driver wont run until implicitly defined "enabledDrivers" section.
+     * If set to true then tests for this driver won't run until implicitly defined "enabledDrivers" section.
      */
     disabledIfNotEnabledImplicitly?: boolean
 }

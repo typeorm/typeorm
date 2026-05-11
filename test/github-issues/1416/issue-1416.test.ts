@@ -29,7 +29,7 @@ describe("github issue > #1416 Wrong behavior when fetching an entity that has a
                 metadata.width = 480
                 metadata.compressed = true
                 metadata.comment = "cybershoot"
-                metadata.orientation = "portait"
+                metadata.orientation = "portrait"
                 await connection.manager.save(metadata)
 
                 const photo = new Photo()

@@ -9,7 +9,7 @@ export interface AzureActiveDirectoryMsiAppServiceAuthentication {
          */
         clientId?: string
         /**
-         * A msi app service environment need to provide `msiEndpoint` for retriving the accesstoken.
+         * A msi app service environment need to provide `msiEndpoint` for retrieving the accesstoken.
          */
         msiEndpoint?: string
         /**

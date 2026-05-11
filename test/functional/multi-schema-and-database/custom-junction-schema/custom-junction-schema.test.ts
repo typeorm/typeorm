@@ -24,24 +24,24 @@ describe("multi-schema-and-database > custom-junction-schema", () => {
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const queryRunner = dataSource.createQueryRunner()
-                const postTable = await queryRunner.getTable("yoman.post")
+                const postTable = await queryRunner.getTable("yeoman.post")
                 const categoryTable =
-                    await queryRunner.getTable("yoman.category")
+                    await queryRunner.getTable("yeoman.category")
                 const junctionMetadata = dataSource.getManyToManyMetadata(
                     Post,
                     "categories",
                 )!
                 const junctionTable = await queryRunner.getTable(
-                    "yoman." + junctionMetadata.tableName,
+                    "yeoman." + junctionMetadata.tableName,
                 )
                 await queryRunner.release()
                 expect(postTable).not.to.be.undefined
-                postTable!.name!.should.be.equal("yoman.post")
+                postTable!.name!.should.be.equal("yeoman.post")
                 expect(categoryTable).not.to.be.undefined
-                categoryTable!.name!.should.be.equal("yoman.category")
+                categoryTable!.name!.should.be.equal("yeoman.category")
                 expect(junctionTable).not.to.be.undefined
                 junctionTable!.name!.should.be.equal(
-                    "yoman." + junctionMetadata.tableName,
+                    "yeoman." + junctionMetadata.tableName,
                 )
             }),
         ))

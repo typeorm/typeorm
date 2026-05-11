@@ -147,7 +147,7 @@ export class Post {
         cascade: ["insert", "update"],
     })
     @JoinTable()
-    informations: PostInformation[]
+    information: PostInformation[]
 }
 ```
 

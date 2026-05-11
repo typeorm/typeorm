@@ -203,7 +203,7 @@ export class SqljsDriver extends AbstractSqliteDriver {
 
     /**
      * This gets called by the QueryRunner when a change to the database is made.
-     * If a custom autoSaveCallback is specified, it get's called with the database as Uint8Array,
+     * If a custom autoSaveCallback is specified, it gets called with the database as Uint8Array,
      * otherwise the save method is called which saves it to file (Node.js), local storage (browser)
      * or indexedDB (browser with enabled useLocalForage option).
      * Don't auto-save when in transaction as the call to export will end the current transaction

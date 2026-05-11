@@ -21,7 +21,7 @@ describe("github issues > #3363 Isolation Level in transaction() from Connection
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should execute operations in READ UNCOMMITED isolation level", () =>
+    it("should execute operations in READ UNCOMMITTED isolation level", () =>
         Promise.all(
             dataSources.map(async function (connection) {
                 // SAP, Oracle does not support READ UNCOMMITTED isolation level

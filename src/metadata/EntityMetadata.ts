@@ -1143,7 +1143,7 @@ export class EntityMetadata {
 
     /**
      * Checks if entity has any column which rely on returning data,
-     * e.g. columns with auto generated value, DEFAULT values considered as dependant of returning data.
+     * e.g. columns with auto generated value, DEFAULT values considered as dependent of returning data.
      * For example, if we need to have RETURNING after INSERT (or we need returned id for DBs not supporting RETURNING),
      * it means we cannot execute bulk inserts in some cases.
      */

@@ -7,7 +7,7 @@ import {
     OneToOne,
     PrimaryGeneratedColumn,
 } from "../../../../../src"
-import { OptionA } from "./OptionA"
+import { optional } from "./optional"
 import { OptionB } from "./OptionB"
 import { RelatedEntity } from "./RelatedEntity"
 
@@ -21,13 +21,13 @@ export class MainEntity {
     optionId: number | null
 
     // Multiple relations pointing to the same column
-    @OneToOne(() => OptionA, (a) => a.main, {
+    @OneToOne(() => optional, (a) => a.main, {
         lazy: true,
         createForeignKeyConstraints: false,
         persistence: false,
     })
     @JoinColumn({ name: "option_id" })
-    optionA: Promise<OptionA | null>
+    optionA: Promise<optional | null>
 
     @OneToOne(() => OptionB, (b) => b.main, {
         lazy: true,

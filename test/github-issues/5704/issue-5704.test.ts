@@ -9,7 +9,7 @@ import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { assert } from "chai"
 
-describe("github issues > #5704 Many-to-many gives error ER_DUP_ENTRY everytime I save. This one also related to inverseJoinColumn.", () => {
+describe("github issues > #5704 Many-to-many gives error ER_DUP_ENTRY every time I save. This one also related to inverseJoinColumn.", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({

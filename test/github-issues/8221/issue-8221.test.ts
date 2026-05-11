@@ -32,9 +32,9 @@ describe("github issues > #8221", () => {
         // const settingRepo = connection.getRepository(Setting);
 
         const user = new User(1, "FooGuy")
-        const settingA = new Setting(1, "A", "foo")
+        const settings = new Setting(1, "A", "foo")
         const settingB = new Setting(1, "B", "bar")
-        user.settings = [settingA, settingB]
+        user.settings = [settings, settingB]
 
         return userRepo.save(user)
     }

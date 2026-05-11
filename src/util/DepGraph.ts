@@ -1,7 +1,7 @@
 /**
  * This source code is from https://github.com/jriecken/dependency-graph
  * Just added "any" types here, wrapper everything into exported class.
- * We cant use a package itself because we want to package "everything-in-it" for the frontend users of TypeORM.
+ * We can't use a package itself because we want to package "everything-in-it" for the frontend users of TypeORM.
  */
 
 /**
@@ -49,7 +49,7 @@ function createDFS(edges: any, leavesOnly: any, result: any) {
 export class DepGraph {
     nodes: any = {}
     outgoingEdges: any = {} // Node -> [Dependency Node]
-    incomingEdges: any = {} // Node -> [Dependant Node]
+    incomingEdges: any = {} // Node -> [Dependent Node]
 
     /**
      * Add a node to the dependency graph. If a node already exists, this method will do nothing.

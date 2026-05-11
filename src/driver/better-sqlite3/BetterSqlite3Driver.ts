@@ -146,7 +146,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
             verbose,
             nativeBinding,
         })
-        // in the options, if encryption key for SQLCipher is setted.
+        // in the options, if encryption key for SQLCipher is set.
         // Must invoke key pragma before trying to do any other interaction with the database.
         if (this.options.key) {
             databaseConnection.pragma(

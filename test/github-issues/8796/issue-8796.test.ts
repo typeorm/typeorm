@@ -34,7 +34,7 @@ describe("github issues > #8796 New find select object api should support false 
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("should suport false value when selecting fields", () =>
+    it("should support false value when selecting fields", () =>
         Promise.all(
             dataSources.map(async (connection) => {
                 const userRepository = connection.getRepository(User)

@@ -75,7 +75,7 @@ describe("entity-schema > indices > basic", () => {
             }),
         ))
 
-    it("should update the index swaping the 2 columns", () =>
+    it("should update the index swapping the 2 columns", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const entityMetadata = dataSource.entityMetadatas.find(

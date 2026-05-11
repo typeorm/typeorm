@@ -206,7 +206,7 @@ export class JoinAttribute {
         if (this.dataSource.hasMetadata(this.entityOrProperty))
             return this.dataSource.getMetadata(this.entityOrProperty)
 
-        // Overriden mapping entity provided for leftJoinAndMapOne with custom query builder
+        // Overridden mapping entity provided for leftJoinAndMapOne with custom query builder
         if (this.mapAsEntity && this.dataSource.hasMetadata(this.mapAsEntity)) {
             return this.dataSource.getMetadata(this.mapAsEntity)
         }

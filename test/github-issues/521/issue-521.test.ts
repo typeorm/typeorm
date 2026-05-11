@@ -7,7 +7,7 @@ import {
 import type { DataSource } from "../../../src/data-source/DataSource"
 import { Car } from "./entity/Car"
 
-describe("github issues > #521 Attributes in UPDATE in QB arent getting replaced", () => {
+describe("github issues > #521 Attributes in UPDATE in QB aren't getting replaced", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({

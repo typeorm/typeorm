@@ -1839,7 +1839,7 @@ export abstract class AbstractSqliteQueryRunner
                     .map((dbIndex) => dbIndex["name"])
                     .filter(
                         (value, index, self) => self.indexOf(value) === index,
-                    ) // unqiue
+                    ) // unique
                     .map(async (dbIndexName) => {
                         const indexDef = dbIndicesDef.find(
                             (dbIndexDef) => dbIndexDef["name"] === dbIndexName,

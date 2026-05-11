@@ -849,7 +849,7 @@ export class EntityManager {
         partialEntity: QueryDeepPartialEntity<Entity>,
         options?: UpdateOptions,
     ): Promise<UpdateResult> {
-        // if user passed empty criteria or empty list of criterias, then throw an error
+        // if user passed empty criteria or empty list of criteria, then throw an error
         if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
             return Promise.reject(
                 new TypeORMError(
@@ -935,7 +935,7 @@ export class EntityManager {
             | ObjectId[]
             | any,
     ): Promise<DeleteResult> {
-        // if user passed empty criteria or empty list of criterias, then throw an error
+        // if user passed empty criteria or empty list of criteria, then throw an error
         if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
             return Promise.reject(
                 new TypeORMError(
@@ -1001,7 +1001,7 @@ export class EntityManager {
             | ObjectId[]
             | any,
     ): Promise<UpdateResult> {
-        // if user passed empty criteria or empty list of criterias, then throw an error
+        // if user passed empty criteria or empty list of criteria, then throw an error
         if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
             return Promise.reject(
                 new TypeORMError(
@@ -1052,7 +1052,7 @@ export class EntityManager {
             | ObjectId[]
             | any,
     ): Promise<UpdateResult> {
-        // if user passed empty criteria or empty list of criterias, then throw an error
+        // if user passed empty criteria or empty list of criteria, then throw an error
         if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
             return Promise.reject(
                 new TypeORMError(

@@ -1707,7 +1707,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
             if (this.expressionMap.lockVersion instanceof Date) {
                 const actualVersion =
-                    metadata.updateDateColumn!.getEntityValue(result) // what if columns arent set?
+                    metadata.updateDateColumn!.getEntityValue(result) // what if columns aren't set?
                 if (
                     actualVersion.getTime() !==
                     this.expressionMap.lockVersion.getTime()
@@ -1719,7 +1719,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     )
             } else {
                 const actualVersion =
-                    metadata.versionColumn!.getEntityValue(result) // what if columns arent set?
+                    metadata.versionColumn!.getEntityValue(result) // what if columns aren't set?
                 if (actualVersion !== this.expressionMap.lockVersion)
                     throw new OptimisticLockVersionMismatchError(
                         metadata.name,

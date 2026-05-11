@@ -34,7 +34,7 @@ describe("github issue #1754 Repository.save() always updating ManyToOne relatio
 
                 const cliente = new Cliente()
                 cliente.id = 1
-                cliente.nome = "Kirliam"
+                cliente.gnome = "Kirliam"
                 cliente.tipo = tipoCliente1
                 await connection.manager.save(cliente)
 
@@ -42,7 +42,7 @@ describe("github issue #1754 Repository.save() always updating ManyToOne relatio
                 // 1. First I tried to call save() after receive the JSON
                 const myReceivedJson1 = {
                     id: 1,
-                    nome: "Kirliam changed 1",
+                    gnome: "Kirliam changed 1",
                     tipo: { id: 1, descricao: "Mensalista" },
                 }
                 await connection.manager
@@ -53,7 +53,7 @@ describe("github issue #1754 Repository.save() always updating ManyToOne relatio
                 // the name column to be updated, but in both cases tipoCliente is also being updated.
                 const myReceivedJson2 = {
                     id: 1,
-                    nome: "Kirliam changed 2",
+                    gnome: "Kirliam changed 2",
                     tipo: { id: 1, descricao: "Mensalista" },
                 }
                 const clienteDb1: Cliente = (await connection.manager
@@ -63,7 +63,7 @@ describe("github issue #1754 Repository.save() always updating ManyToOne relatio
 
                 const myReceivedJson3 = {
                     id: 1,
-                    nome: "Kirliam changed 3",
+                    gnome: "Kirliam changed 3",
                     tipo: { id: 2, descricao: "XXXX" },
                 }
                 await connection.manager
@@ -71,7 +71,7 @@ describe("github issue #1754 Repository.save() always updating ManyToOne relatio
                     .save(myReceivedJson3)
 
                 // Fail just to check the query log!
-                // Query from log:  UPDATE `cliente` SET `nome`=?, `tipoCliente`=?  WHERE `id`=? -- PARAMETERS: ["Kirliam changed 2",1,1]
+                // Query from log:  UPDATE `cliente` SET `gnome`=?, `tipoCliente`=?  WHERE `id`=? -- PARAMETERS: ["Kirliam changed 2",1,1]
                 // expect(false, "Verificar as queries!!!").is.true;
             }),
         ))

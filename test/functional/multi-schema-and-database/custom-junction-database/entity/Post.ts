@@ -6,7 +6,7 @@ import { JoinTable } from "../../../../../src/decorator/relations/JoinTable"
 import { Category } from "./Category"
 
 @Entity({
-    database: "yoman",
+    database: "yeoman",
 })
 export class Post {
     @PrimaryGeneratedColumn()
@@ -16,6 +16,6 @@ export class Post {
     name: string
 
     @ManyToMany(() => Category)
-    @JoinTable({ database: "yoman" })
+    @JoinTable({ database: "yeoman" })
     categories: Category[]
 }

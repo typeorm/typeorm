@@ -59,7 +59,7 @@ describe("github issues > #2199 - Inserting value for @PrimaryGeneratedColumn() 
                     (connection) => connection.driver.options.type === "mssql",
                 )
                 .map(async (connection) => {
-                    // Run a query that failes at the database level
+                    // Run a query that fails at the database level
                     await expect(
                         connection
                             .createQueryBuilder()

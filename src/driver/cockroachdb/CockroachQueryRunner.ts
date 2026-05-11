@@ -154,8 +154,7 @@ export class CockroachQueryRunner
 
     /**
      * Release a connection back to the pool, optionally specifying an Error to release with.
-     * Per pg-pool documentation this will prevent the pool from re-using the broken connection.
-     *
+     * Per pg-pool documentation this will prevent the pool from reusing the broken connection.
      * @param err
      */
     private async releaseConnection(err?: Error) {

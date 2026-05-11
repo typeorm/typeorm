@@ -386,8 +386,7 @@ export abstract class AbstractLogger implements Logger {
 
     /**
      * Converts parameters to a string.
-     * Sometimes parameters can have circular objects and therefor we are handle this case too.
-     *
+     * Sometimes parameters can have circular objects and therefore we are handle this case too.
      * @param parameters
      */
     protected stringifyParams(parameters: any[] | ObjectLiteral) {

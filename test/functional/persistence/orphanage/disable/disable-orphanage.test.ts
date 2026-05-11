@@ -72,8 +72,8 @@ describe("persistence > orphanage > disable", () => {
             await userRepo.save(userToUpdate)
         })
 
-        it("should not delete setting with orphanedRowAction=disabed", async () => {
-            const user = await userRepo.findOneByOrFail({ id: userId })
+        it("should not delete setting with orphanedRowAction=disabled", async () => {
+            const user = await userRepo.findOneBy({ id: userId })
             expect(user).not.to.be.undefined
             expect(user.settings).to.have.lengthOf(4)
         })

@@ -239,7 +239,7 @@ describe("jsonb type > sqlite", () => {
             dataSources.map(async (dataSource) => {
                 const recordRepo = dataSource.getRepository(Record)
                 const record = new Record()
-                record.data = { qoute: "He said, O'Brian" }
+                record.data = { quote: "He said, O'Brian" }
                 const savedRecord = await recordRepo.save(record)
 
                 const foundRecord = await recordRepo.findOneByOrFail({
@@ -247,7 +247,7 @@ describe("jsonb type > sqlite", () => {
                 })
                 expect(foundRecord).to.deep.include({
                     data: {
-                        qoute: "He said, O'Brian",
+                        quote: "He said, O'Brian",
                     },
                     dataWithDefaultObject: { hello: "world'O", foo: "bar" },
                 })

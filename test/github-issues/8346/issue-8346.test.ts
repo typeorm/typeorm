@@ -27,7 +27,7 @@ describe("github issues > #8346 MySQL: Regression when using take, orderBy, and 
             dataSources.map(async (connection) => {
                 const [user1, user2] = await connection
                     .getRepository(Customer)
-                    .save([{ name: "userA" }, { name: "userB" }])
+                    .save([{ name: "users" }, { name: "userB" }])
                 await connection.getRepository(CustomerContact).save([
                     {
                         firstName: "firstName1",

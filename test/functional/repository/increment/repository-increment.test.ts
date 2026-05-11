@@ -247,7 +247,7 @@ describe("repository > increment method", () => {
             ))
     })
 
-    describe("embeded entities", () => {
+    describe("embedded entities", () => {
         let dataSources: DataSource[]
         before(async () => {
             dataSources = await createTestingConnections({
