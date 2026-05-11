@@ -38,45 +38,49 @@ describe("schema builder > collation > collation changes", () => {
                 const OLD_COLLATION = col.collation
                 col.collation = NEW_COLLATION
 
-                // capture generated up queries
-                const sqlInMemory = await connection.driver
-                    .createSchemaBuilder()
-                    .log()
-                const tableName = meta.tableName
-                const expectedUp = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying COLLATE "${NEW_COLLATION}"`
-                const expectedDown = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying COLLATE "${OLD_COLLATION}"`
-
-                // assert that the expected queries are in the generated SQL
-                const upJoined = sqlInMemory.upQueries
-                    .map((q) => q.query.replaceAll(/\s+/g, " ").trim())
-                    .join(" ")
-                expect(upJoined).to.include(expectedUp)
-                const downJoined = sqlInMemory.downQueries
-                    .map((q) => q.query.replaceAll(/\s+/g, " ").trim())
-                    .join(" ")
-                expect(downJoined).to.include(expectedDown)
-
-                // assert that collation changes are applied to the database
-                const queryRunner = connection.createQueryRunner()
-
                 try {
-                    let table = await queryRunner.getTable(meta.tableName)
-                    const originColumn = table!.columns.find(
-                        (c) => c.name === COLUMN_NAME,
-                    )!
-                    // old collation should be appeared
-                    expect(originColumn.collation).to.equal(OLD_COLLATION)
+                    // capture generated up queries
+                    const sqlInMemory = await connection.driver
+                        .createSchemaBuilder()
+                        .log()
+                    const tableName = meta.tableName
+                    const expectedUp = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(100) COLLATE "${NEW_COLLATION}"`
+                    const expectedDown = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(100) COLLATE "${OLD_COLLATION}"`
 
-                    await connection.synchronize()
+                    // assert that the expected queries are in the generated SQL
+                    const upJoined = sqlInMemory.upQueries
+                        .map((q) => q.query.replaceAll(/\s+/g, " ").trim())
+                        .join(" ")
+                    expect(upJoined).to.include(expectedUp)
+                    const downJoined = sqlInMemory.downQueries
+                        .map((q) => q.query.replaceAll(/\s+/g, " ").trim())
+                        .join(" ")
+                    expect(downJoined).to.include(expectedDown)
 
-                    table = await queryRunner.getTable(meta.tableName)
-                    const appliedColumn = table!.columns.find(
-                        (c) => c.name === COLUMN_NAME,
-                    )!
-                    // new collation should be appeared
-                    expect(appliedColumn.collation).to.equal(NEW_COLLATION)
+                    // assert that collation changes are applied to the database
+                    const queryRunner = connection.createQueryRunner()
+
+                    try {
+                        let table = await queryRunner.getTable(meta.tableName)
+                        const originColumn = table!.columns.find(
+                            (c) => c.name === COLUMN_NAME,
+                        )!
+                        // old collation should be appeared
+                        expect(originColumn.collation).to.equal(OLD_COLLATION)
+
+                        await connection.synchronize()
+
+                        table = await queryRunner.getTable(meta.tableName)
+                        const appliedColumn = table!.columns.find(
+                            (c) => c.name === COLUMN_NAME,
+                        )!
+                        // new collation should be appeared
+                        expect(appliedColumn.collation).to.equal(NEW_COLLATION)
+                    } finally {
+                        await queryRunner.release()
+                    }
                 } finally {
-                    await queryRunner.release()
+                    col.collation = OLD_COLLATION
                 }
             }),
         )

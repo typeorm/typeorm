@@ -88,6 +88,36 @@ describe("schema builder > change column", () => {
             }),
         ))
 
+    it("should generate non-destructive postgres query for varchar length changes (#3357)", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (dataSource.driver.options.type !== "postgres") return
+
+                const postMetadata = dataSource.getMetadata(Post)
+                const nameColumn =
+                    postMetadata.findColumnWithPropertyName("name")!
+                const originalLength = nameColumn.length
+                nameColumn.length = "500"
+
+                try {
+                    const sqlInMemory = await dataSource.driver
+                        .createSchemaBuilder()
+                        .log()
+                    const upQueries = sqlInMemory.upQueries.map(
+                        ({ query }) => query,
+                    )
+
+                    expect(upQueries).to.include(
+                        `ALTER TABLE "post" ALTER COLUMN "name" TYPE character varying(500)`,
+                    )
+                    expect(upQueries.join("\n")).not.to.contain("DROP COLUMN")
+                    expect(upQueries.join("\n")).not.to.contain(`ADD "name"`)
+                } finally {
+                    nameColumn.length = originalLength
+                }
+            }),
+        ))
+
     it("should correctly change column type", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
