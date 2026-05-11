@@ -7,30 +7,34 @@ import {
     Column,
 } from "../../../../src"
 
+const temporalHost = globalThis as { Temporal?: unknown }
+
 describe("temporal > error paths", () => {
     it("fails fast when globalThis.Temporal is missing", async function () {
-        const original = (globalThis as any).Temporal
+        const original = temporalHost.Temporal
         if (typeof original === "undefined") this.skip()
-        ;(globalThis as any).Temporal = undefined
+        temporalHost.Temporal = undefined
 
         @Entity()
         class E {
             @PrimaryGeneratedColumn() id!: number
-            @Column({ type: "timestamptz", temporal: true } as any) at!: any
+            @Column({ type: "timestamptz", temporal: true })
+            at!: unknown
         }
 
         const ds = new DataSource({
             type: "postgres",
             entities: [E],
             host: "localhost",
-        } as any)
+        })
         try {
             await ds.initialize()
             expect.fail("should have rejected")
-        } catch (err: any) {
-            expect(err.message).to.match(/Temporal.*not.*available/i)
+        } catch (err) {
+            const message = err instanceof Error ? err.message : String(err)
+            expect(message).to.match(/Temporal.*not.*available/i)
         } finally {
-            ;(globalThis as any).Temporal = original
+            temporalHost.Temporal = original
             if (ds.isInitialized) await ds.destroy()
         }
     })

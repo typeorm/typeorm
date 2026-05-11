@@ -652,7 +652,9 @@ export class AuroraMysqlDriver implements Driver {
             }
         } else if (columnMetadata.type === "date") {
             if (columnMetadata.temporal) {
-                value = PlainDateUtils.toTemporal(value)
+                value = PlainDateUtils.toTemporal(value, {
+                    utc: columnMetadata.utc,
+                })
             } else {
                 value = DateUtils.mixedDateToDateString(value, {
                     utc: columnMetadata.utc,

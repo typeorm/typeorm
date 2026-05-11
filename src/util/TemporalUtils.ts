@@ -30,7 +30,7 @@ export class TemporalUtils {
 }
 
 /**
- * Converts between database values and `Temporal.ZonedDateTime`. Used for `timestamptz` columns when a specific IANA time zone is configured.
+ * Converts between database values and `Temporal.ZonedDateTime`. Used for `timestamptz` columns; defaults to `UTC` when `temporal: true` and uses the configured IANA zone when `temporal: { timeZone }` is given.
  */
 export class ZonedDateTimeUtils {
     static toTemporal(
@@ -87,15 +87,27 @@ export class PlainDateTimeUtils {
 export class PlainDateUtils {
     static toTemporal(
         value: Date | string | null | undefined,
+        options?: { utc?: boolean },
     ): Temporal.PlainDate | null {
         if (value === null || value === undefined) return null
         const t = T()
         if (value instanceof Date) {
-            return t.PlainDate.from({
-                year: value.getUTCFullYear(),
-                month: value.getUTCMonth() + 1,
-                day: value.getUTCDate(),
-            })
+            // Mirror DateUtils.mixedDateToDateString: defaults to local-time
+            // components, picks UTC components only when `utc` is set.
+            const utc = options?.utc ?? false
+            return t.PlainDate.from(
+                utc
+                    ? {
+                          year: value.getUTCFullYear(),
+                          month: value.getUTCMonth() + 1,
+                          day: value.getUTCDate(),
+                      }
+                    : {
+                          year: value.getFullYear(),
+                          month: value.getMonth() + 1,
+                          day: value.getDate(),
+                      },
+            )
         }
         return t.PlainDate.from(value)
     }

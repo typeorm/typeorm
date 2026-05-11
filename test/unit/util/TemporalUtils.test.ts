@@ -111,10 +111,21 @@ describe("PlainDateUtils", () => {
         expect(r.toString()).to.equal("2026-05-07")
     })
 
-    it("toTemporal: Date → PlainDate (UTC components)", function () {
+    it("toTemporal: Date → PlainDate uses local components by default", function () {
         if (!supported) this.skip()
-        const d = new Date(Date.UTC(2026, 4, 7))
+        // Pick a wall-clock instant whose UTC and local day differ in
+        // off-UTC zones; assertions reference the runtime's local components.
+        const d = new Date(Date.UTC(2026, 4, 7, 23, 30))
         const r: any = PlainDateUtils.toTemporal(d)
+        expect(r.year).to.equal(d.getFullYear())
+        expect(r.month).to.equal(d.getMonth() + 1)
+        expect(r.day).to.equal(d.getDate())
+    })
+
+    it("toTemporal: Date + { utc: true } → PlainDate uses UTC components", function () {
+        if (!supported) this.skip()
+        const d = new Date(Date.UTC(2026, 4, 7, 23, 30))
+        const r: any = PlainDateUtils.toTemporal(d, { utc: true })
         expect(r.year).to.equal(2026)
         expect(r.month).to.equal(5)
         expect(r.day).to.equal(7)
