@@ -156,4 +156,37 @@ describe("schema builder > collation > collation changes", () => {
             }),
         )
     })
+
+    it("escapes quoted collation identifiers in generated SQL", async () => {
+        await Promise.all(
+            dataSources.map(async (connection) => {
+                const meta = connection.getMetadata(Item)
+                const col = meta.columns.find(
+                    (c) => c.propertyName === COLUMN_NAME,
+                )!
+                const OLD_COLLATION = col.collation
+                const quotedCollation = 'custom"collation'
+
+                try {
+                    col.collation = quotedCollation
+
+                    const sqlInMemory = await connection.driver
+                        .createSchemaBuilder()
+                        .log()
+                    const tableName = meta.tableName
+                    const upJoined = joinQueries(sqlInMemory.upQueries)
+                    const downJoined = joinQueries(sqlInMemory.downQueries)
+
+                    expect(upJoined).to.include(
+                        `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(${COLUMN_LENGTH}) COLLATE "custom""collation"`,
+                    )
+                    expect(downJoined).to.include(
+                        `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(${COLUMN_LENGTH}) COLLATE "${OLD_COLLATION}"`,
+                    )
+                } finally {
+                    col.collation = OLD_COLLATION
+                }
+            }),
+        )
+    })
 })

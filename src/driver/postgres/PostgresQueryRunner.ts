@@ -2354,7 +2354,7 @@ export class PostgresQueryRunner
             // update column collation
             if (collationChanged) {
                 const newCollation = newColumn.collation
-                    ? `"${newColumn.collation}"`
+                    ? this.driver.escape(newColumn.collation)
                     : `pg_catalog."default"` // if there's no new collation, use default
 
                 upQueries.push(
@@ -2368,7 +2368,7 @@ export class PostgresQueryRunner
                 )
 
                 const oldCollation = oldColumn.collation
-                    ? `"${oldColumn.collation}"`
+                    ? this.driver.escape(oldColumn.collation)
                     : `pg_catalog."default"` // if there's no old collation, use default
 
                 downQueries.push(
