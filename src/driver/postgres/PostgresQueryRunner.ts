@@ -1619,25 +1619,9 @@ export class PostgresQueryRunner
 
             if (
                 newColumn.precision !== oldColumn.precision ||
-                newColumn.scale !== oldColumn.scale
+                newColumn.scale !== oldColumn.scale ||
+                oldColumn.length !== newColumn.length
             ) {
-                upQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
-                        }" TYPE ${this.driver.createFullType(newColumn)}`,
-                    ),
-                )
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
-                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
-                    ),
-                )
-            }
-
-            if (oldColumn.length !== newColumn.length) {
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
@@ -2364,7 +2348,7 @@ export class PostgresQueryRunner
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE "${
+                        }" TYPE ${this.driver.createFullType(newColumn)} COLLATE "${
                             newColumn.collation
                         }"`,
                     ),
@@ -2378,7 +2362,7 @@ export class PostgresQueryRunner
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE ${oldCollation}`,
+                        }" TYPE ${this.driver.createFullType(oldColumn)} COLLATE ${oldCollation}`,
                     ),
                 )
             }
