@@ -36,25 +36,31 @@ describe("schema builder > collation > collation changes", () => {
                     (c) => c.propertyName === COLUMN_NAME,
                 )!
                 const OLD_COLLATION = col.collation
+                const OLD_LENGTH = col.length
                 col.collation = NEW_COLLATION
+                col.length = "101"
 
                 // capture generated up queries
                 const sqlInMemory = await connection.driver
                     .createSchemaBuilder()
                     .log()
                 const tableName = meta.tableName
-                const expectedUp = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying COLLATE "${NEW_COLLATION}"`
-                const expectedDown = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying COLLATE "${OLD_COLLATION}"`
+                const expectedUp = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(101) COLLATE "${NEW_COLLATION}"`
+                const expectedDown = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(${OLD_LENGTH}) COLLATE "${OLD_COLLATION}"`
 
                 // assert that the expected queries are in the generated SQL
-                const upJoined = sqlInMemory.upQueries
+                const upQueries = sqlInMemory.upQueries
                     .map((q) => q.query.replaceAll(/\s+/g, " ").trim())
-                    .join(" ")
-                expect(upJoined).to.include(expectedUp)
-                const downJoined = sqlInMemory.downQueries
+                    .filter((query) =>
+                        query.includes(`ALTER COLUMN "${COLUMN_NAME}" TYPE`),
+                    )
+                expect(upQueries).to.eql([expectedUp])
+                const downQueries = sqlInMemory.downQueries
                     .map((q) => q.query.replaceAll(/\s+/g, " ").trim())
-                    .join(" ")
-                expect(downJoined).to.include(expectedDown)
+                    .filter((query) =>
+                        query.includes(`ALTER COLUMN "${COLUMN_NAME}" TYPE`),
+                    )
+                expect(downQueries).to.eql([expectedDown])
 
                 // assert that collation changes are applied to the database
                 const queryRunner = connection.createQueryRunner()
@@ -75,7 +81,10 @@ describe("schema builder > collation > collation changes", () => {
                     )!
                     // new collation should be appeared
                     expect(appliedColumn.collation).to.equal(NEW_COLLATION)
+                    expect(appliedColumn.length).to.equal("101")
                 } finally {
+                    col.collation = OLD_COLLATION
+                    col.length = OLD_LENGTH
                     await queryRunner.release()
                 }
             }),

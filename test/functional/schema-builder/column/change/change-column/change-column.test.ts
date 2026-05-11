@@ -88,6 +88,59 @@ describe("schema builder > change column", () => {
             }),
         ))
 
+    it("should change postgres column length without dropping the column", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (dataSource.driver.options.type !== "postgres") return
+
+                const postRepository = dataSource.getRepository(Post)
+                await postRepository.save({
+                    id: 1,
+                    version: "v1",
+                    name: "preserved",
+                    text: "text",
+                    tag: "tag",
+                    likesCount: 1,
+                })
+
+                const postMetadata = dataSource.getMetadata(Post)
+                const nameColumn =
+                    postMetadata.findColumnWithPropertyName("name")!
+                const originalLength = nameColumn.length
+                nameColumn.length = "500"
+
+                try {
+                    const sqlInMemory = await dataSource.driver
+                        .createSchemaBuilder()
+                        .log()
+                    const upQueries = sqlInMemory.upQueries.map(
+                        (query) => query.query,
+                    )
+
+                    expect(upQueries).to.include(
+                        `ALTER TABLE "post" ALTER COLUMN "name" TYPE character varying(500)`,
+                    )
+                    expect(
+                        upQueries.some((query) =>
+                            query.includes(`DROP COLUMN "name"`),
+                        ),
+                    ).to.be.false
+                    expect(
+                        upQueries.some((query) => query.includes(`ADD "name"`)),
+                    ).to.be.false
+
+                    await dataSource.synchronize(false)
+
+                    const post = await postRepository.findOneByOrFail({
+                        id: 1,
+                    })
+                    expect(post.name).to.equal("preserved")
+                } finally {
+                    nameColumn.length = originalLength
+                }
+            }),
+        ))
+
     it("should correctly change column type", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
