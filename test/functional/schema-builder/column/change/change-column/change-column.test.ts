@@ -88,6 +88,42 @@ describe("schema builder > change column", () => {
             }),
         ))
 
+    it("should preserve postgres column data when changing varchar length", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (dataSource.driver.options.type !== "postgres") return
+
+                const text = "data that must survive varchar length changes"
+                await dataSource.getRepository(Post).insert({
+                    id: 3357,
+                    version: "1",
+                    name: "issue-3357",
+                    text,
+                    tag: "issue-3357",
+                    likesCount: 1,
+                })
+
+                const postMetadata = dataSource.getMetadata(Post)
+                const textColumn =
+                    postMetadata.findColumnWithPropertyName("text")!
+                const oldLength = textColumn.length
+
+                try {
+                    textColumn.length = "300"
+
+                    await dataSource.synchronize()
+
+                    const post = await dataSource
+                        .getRepository(Post)
+                        .findOneByOrFail({ id: 3357 })
+
+                    expect(post.text).to.equal(text)
+                } finally {
+                    textColumn.length = oldLength
+                }
+            }),
+        ))
+
     it("should correctly change column type", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
