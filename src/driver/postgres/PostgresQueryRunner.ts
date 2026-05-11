@@ -1326,9 +1326,16 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        const isOnlyLengthChanged =
+            oldColumn.type === newColumn.type &&
+            oldColumn.length !== newColumn.length &&
+            oldColumn.isArray === newColumn.isArray &&
+            oldColumn.generatedType === newColumn.generatedType &&
+            oldColumn.asExpression === newColumn.asExpression
+
         if (
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
+            (!isOnlyLengthChanged && oldColumn.length !== newColumn.length) ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1620,7 +1627,8 @@ export class PostgresQueryRunner
 
             if (
                 newColumn.precision !== oldColumn.precision ||
-                newColumn.scale !== oldColumn.scale
+                newColumn.scale !== oldColumn.scale ||
+                isOnlyLengthChanged
             ) {
                 upQueries.push(
                     new Query(
@@ -2344,13 +2352,17 @@ export class PostgresQueryRunner
 
             // update column collation
             if (newColumn.collation !== oldColumn.collation) {
+                const newCollation = newColumn.collation
+                    ? `"${newColumn.collation}"`
+                    : `pg_catalog."default"` // if there's no new collation, use default
+
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE "${
-                            newColumn.collation
-                        }"`,
+                        }" TYPE ${this.driver.createFullType(
+                            newColumn,
+                        )} COLLATE ${newCollation}`,
                     ),
                 )
 
@@ -2362,7 +2374,9 @@ export class PostgresQueryRunner
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE ${oldCollation}`,
+                        }" TYPE ${this.driver.createFullType(
+                            oldColumn,
+                        )} COLLATE ${oldCollation}`,
                     ),
                 )
             }
