@@ -115,11 +115,15 @@ describe("schema builder > collation > collation changes", () => {
                     const tableName = meta.tableName
                     const upJoined = joinQueries(sqlInMemory.upQueries)
                     expect(upJoined).to.include(
-                        `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(${NEXT_COLUMN_LENGTH})`,
-                    )
-                    expect(upJoined).to.include(
                         `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(${NEXT_COLUMN_LENGTH}) COLLATE "${NEW_COLLATION}"`,
                     )
+                    expect(
+                        sqlInMemory.upQueries.filter((query) =>
+                            query.query.includes(
+                                `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE`,
+                            ),
+                        ),
+                    ).to.have.length(1)
                     expect(upJoined).not.to.include("DROP COLUMN")
                     expect(upJoined).not.to.include(
                         `TYPE character varying COLLATE "${NEW_COLLATION}"`,

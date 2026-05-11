@@ -1332,6 +1332,7 @@ export class PostgresQueryRunner
             oldColumn.isArray === newColumn.isArray &&
             oldColumn.generatedType === newColumn.generatedType &&
             oldColumn.asExpression === newColumn.asExpression
+        const collationChanged = newColumn.collation !== oldColumn.collation
 
         if (
             oldColumn.type !== newColumn.type ||
@@ -1628,7 +1629,7 @@ export class PostgresQueryRunner
             if (
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale ||
-                isOnlyLengthChanged
+                (isOnlyLengthChanged && !collationChanged)
             ) {
                 upQueries.push(
                     new Query(
@@ -2351,7 +2352,7 @@ export class PostgresQueryRunner
             }
 
             // update column collation
-            if (newColumn.collation !== oldColumn.collation) {
+            if (collationChanged) {
                 const newCollation = newColumn.collation
                     ? `"${newColumn.collation}"`
                     : `pg_catalog."default"` // if there's no new collation, use default
