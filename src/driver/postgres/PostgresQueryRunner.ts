@@ -1326,9 +1326,17 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        const isVarcharLengthChange =
+            oldColumn.length !== newColumn.length &&
+            newColumn.isArray === oldColumn.isArray &&
+            (oldColumn.type === "character varying" ||
+                oldColumn.type === "varchar") &&
+            (newColumn.type === "character varying" ||
+                newColumn.type === "varchar")
+
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
+            (oldColumn.type !== newColumn.type && !isVarcharLengthChange) ||
+            (oldColumn.length !== newColumn.length && !isVarcharLengthChange) ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1619,6 +1627,7 @@ export class PostgresQueryRunner
             }
 
             if (
+                newColumn.length !== oldColumn.length ||
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {
