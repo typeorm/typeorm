@@ -1326,9 +1326,12 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        const lengthChanged = oldColumn.length !== newColumn.length
+        const shouldAlterLength = this.isSafeLengthChange(oldColumn, newColumn)
+
         if (
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
+            (lengthChanged && !shouldAlterLength) ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1616,6 +1619,30 @@ export class PostgresQueryRunner
                     clonedTable.columns.indexOf(oldTableColumn!)
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
+            }
+
+            if (lengthChanged && shouldAlterLength) {
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                    ),
+                )
+
+                const changedColumn = clonedTable.columns.find(
+                    (column) => column.name === newColumn.name,
+                )
+                if (changedColumn) {
+                    changedColumn.length = newColumn.length
+                }
             }
 
             if (
@@ -2348,9 +2375,9 @@ export class PostgresQueryRunner
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE "${
-                            newColumn.collation
-                        }"`,
+                        }" TYPE ${this.driver.createFullType(
+                            newColumn,
+                        )} COLLATE "${newColumn.collation}"`,
                     ),
                 )
 
@@ -2362,7 +2389,9 @@ export class PostgresQueryRunner
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE ${oldCollation}`,
+                        }" TYPE ${this.driver.createFullType(
+                            oldColumn,
+                        )} COLLATE ${oldCollation}`,
                     ),
                 )
             }
@@ -2465,6 +2494,23 @@ export class PostgresQueryRunner
 
         await this.executeQueries(upQueries, downQueries)
         this.replaceCachedTable(table, clonedTable)
+    }
+
+    protected isSafeLengthChange(
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+    ): boolean {
+        if (
+            oldColumn.type !== newColumn.type ||
+            oldColumn.isArray !== newColumn.isArray ||
+            oldColumn.isArray
+        ) {
+            return false
+        }
+
+        return ["character varying", "varchar", "character", "char"].includes(
+            oldColumn.type,
+        )
     }
 
     /**
