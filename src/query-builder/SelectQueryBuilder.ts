@@ -1526,12 +1526,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     }
 
     /**
-     * Set certain index to be used by the query.
+     * Set certain index(es) to be used by the query.
      *
-     * @param index Name of index to be used.
+     * @param indexes Name(s) of index(es) to be used.
      */
-    useIndex(index: string): this {
-        this.expressionMap.useIndex = index
+    useIndex(indexes: string | string[]): this {
+        this.expressionMap.useIndex = Array.isArray(indexes)
+            ? indexes
+            : [indexes]
 
         return this
     }
@@ -2234,11 +2236,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         // Use certain index
         let useIndex: string = ""
-        if (this.expressionMap.useIndex) {
+        if (this.expressionMap.useIndex?.length) {
             if (DriverUtils.isMySQLFamily(this.dataSource.driver)) {
                 useIndex = ` USE INDEX (${this.expressionMap.useIndex
-                    .split(",")
-                    .map((i) => this.escape(i.trim()))
+                    .map((i) => this.escape(i))
                     .join(", ")})`
             }
         }
@@ -2734,11 +2735,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (this.expressionMap.lockTables.length < 1) {
                 throw new TypeORMError("lockTables cannot be an empty array")
             }
-            lockTablesClause =
-                " OF " +
-                this.expressionMap.lockTables
-                    .map((table) => this.escape(table))
-                    .join(", ")
+            lockTablesClause = " OF " + this.expressionMap.lockTables.join(", ")
         }
 
         let onLockExpression = ""

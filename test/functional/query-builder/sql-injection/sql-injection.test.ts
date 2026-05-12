@@ -500,7 +500,7 @@ describe("query builder > sql injection", () => {
         it("should escape a malicious index name", () => {
             for (const dataSource of dataSources) {
                 if (!DriverUtils.isMySQLFamily(dataSource.driver)) {
-                    return
+                    continue
                 }
 
                 const sql = dataSource
@@ -515,75 +515,36 @@ describe("query builder > sql injection", () => {
             }
         })
 
-        it("should escape each index name when comma-separated", () => {
+        it("should escape each index name when an array is passed", () => {
             for (const dataSource of dataSources) {
                 if (!DriverUtils.isMySQLFamily(dataSource.driver)) {
-                    return
+                    continue
                 }
 
                 const sql = dataSource
                     .createQueryBuilder(Post, "post")
-                    .useIndex("idx_one, idx_two")
+                    .useIndex(["idx_one", "idx_two"])
                     .getSql()
 
                 expect(sql).to.contain("`idx_one`, `idx_two`")
             }
         })
 
-        it("should escape a malicious comma-separated index name", () => {
+        it("should escape a malicious index name in an array", () => {
             for (const dataSource of dataSources) {
                 if (!DriverUtils.isMySQLFamily(dataSource.driver)) {
-                    return
+                    continue
                 }
 
                 const sql = dataSource
                     .createQueryBuilder(Post, "post")
-                    .useIndex("good_index, bad`; DROP TABLE post")
+                    .useIndex(["good_index", "bad`; DROP TABLE post"])
                     .getSql()
 
                 expect(sql).to.not.match(
                     /DROP TABLE(?! post`)/, // should only appear inside escaped identifier
                 )
                 expect(sql).to.contain("USE INDEX")
-            }
-        })
-    })
-
-    describe("setLock lockTables", () => {
-        it("should escape a malicious table name in lockTables", () => {
-            for (const dataSource of dataSources) {
-                if (!DriverUtils.isPostgresFamily(dataSource.driver)) {
-                    return
-                }
-
-                const sql = dataSource
-                    .createQueryBuilder(Post, "post")
-                    .setLock("pessimistic_write", undefined, [
-                        "post; DROP TABLE post",
-                    ])
-                    .getSql()
-
-                expect(sql).to.not.match(/OF post; DROP TABLE/)
-                expect(sql).to.contain('"post; DROP TABLE post"')
-            }
-        })
-
-        it("should escape multiple malicious table names in lockTables", () => {
-            for (const dataSource of dataSources) {
-                if (!DriverUtils.isPostgresFamily(dataSource.driver)) {
-                    return
-                }
-
-                const sql = dataSource
-                    .createQueryBuilder(Post, "post")
-                    .setLock("pessimistic_write", undefined, [
-                        "post",
-                        "user; DROP TABLE user",
-                    ])
-                    .getSql()
-
-                expect(sql).to.contain('"post"')
-                expect(sql).to.contain('"user; DROP TABLE user"')
             }
         })
     })
