@@ -139,6 +139,12 @@ export class TableColumn {
      */
     srid?: number
 
+    /**
+     * Sort order of the column's single-column unique index, if any.
+     * Used by MySQL-family drivers when creating a UNIQUE INDEX from a @Unique decorator.
+     */
+    uniqueColumnOrders: { [columnName: string]: "ASC" | "DESC" } = {}
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -170,6 +176,7 @@ export class TableColumn {
             this.generatedType = options.generatedType
             this.spatialFeatureType = options.spatialFeatureType
             this.srid = options.srid
+            this.uniqueColumnOrders = options.uniqueColumnOrders ?? {}
         }
     }
 
@@ -207,6 +214,7 @@ export class TableColumn {
             comment: this.comment,
             spatialFeatureType: this.spatialFeatureType,
             srid: this.srid,
+            uniqueColumnOrders: { ...this.uniqueColumnOrders },
         })
     }
 }

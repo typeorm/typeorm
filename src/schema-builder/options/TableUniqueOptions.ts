@@ -21,4 +21,10 @@ export interface TableUniqueOptions {
      * or at the end of a transaction
      */
     deferrable?: string
+
+    /**
+     * Per-column sort orders for this unique constraint.
+     * Columns not listed here use the database default (ASC).
+     */
+    columnOrders?: { [columnName: string]: "ASC" | "DESC" }
 }

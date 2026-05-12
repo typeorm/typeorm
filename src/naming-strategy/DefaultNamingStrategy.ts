@@ -105,6 +105,7 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         tableOrName: Table | string,
         columnNames: string[],
         where?: string,
+        columnOrders?: { [columnName: string]: "ASC" | "DESC" },
     ): string {
         // sort incoming column names to avoid issue when ["id", "name"] and ["name", "id"] arrays
         const clonedColumnNames = [...columnNames]
@@ -112,6 +113,12 @@ export class DefaultNamingStrategy implements NamingStrategyInterface {
         const tableName = this.getTableName(tableOrName)
         const replacedTableName = tableName.replace(".", "_")
         let key = `${replacedTableName}_${clonedColumnNames.join("_")}`
+        if (columnOrders && Object.keys(columnOrders).length > 0) {
+            const orderKey = clonedColumnNames
+                .map((col) => columnOrders[col] ?? "ASC")
+                .join("_")
+            key += `_${orderKey}`
+        }
         if (where) key += `_${where}`
 
         return "IDX_" + this.hash(key).slice(0, 26)

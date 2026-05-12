@@ -67,4 +67,10 @@ export interface TableIndexOptions {
      * This option is only applicable in PostgreSQL.
      */
     type?: TableIndexTypes
+
+    /**
+     * Per-column sort orders for this index (e.g. `{ createdAt: 'DESC' }`).
+     * Columns not listed here use the database default (ASC).
+     */
+    columnOrders?: { [columnName: string]: "ASC" | "DESC" }
 }

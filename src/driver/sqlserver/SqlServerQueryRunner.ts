@@ -701,11 +701,7 @@ export class SqlServerQueryRunner
         if (createIndices) {
             table.indices.forEach((index) => {
                 // new index may be passed without name. In this case we generate index name manually.
-                index.name ??= this.dataSource.namingStrategy.indexName(
-                    table,
-                    index.columnNames,
-                    index.where,
-                )
+                index.name ??= this.generateIndexName(table, index)
                 upQueries.push(this.createIndexSql(table, index))
                 downQueries.push(this.dropIndexSql(table, index))
             })
@@ -1017,6 +1013,7 @@ export class SqlServerQueryRunner
                 oldTable,
                 index.columnNames,
                 index.where,
+                index.columnOrders,
             )
 
             // Skip renaming if Index has user defined constraint name
@@ -1027,6 +1024,7 @@ export class SqlServerQueryRunner
                 newTable,
                 index.columnNames,
                 index.where,
+                index.columnOrders,
             )
 
             // build queries
@@ -1471,6 +1469,7 @@ export class SqlServerQueryRunner
                             clonedTable,
                             index.columnNames,
                             index.where,
+                            index.columnOrders,
                         )
 
                     // Skip renaming if Index has user defined constraint name
@@ -1487,6 +1486,7 @@ export class SqlServerQueryRunner
                             clonedTable,
                             index.columnNames,
                             index.where,
+                            index.columnOrders,
                         )
 
                     // build queries
@@ -3249,7 +3249,8 @@ export class SqlServerQueryRunner
 
                 return (
                     `SELECT '${TABLE_CATALOG}' AS "TABLE_CATALOG", "s"."name" AS "TABLE_SCHEMA", "t"."name" AS "TABLE_NAME", ` +
-                    `"ind"."name" AS "INDEX_NAME", "col"."name" AS "COLUMN_NAME", "ind"."is_unique" AS "IS_UNIQUE", "ind"."filter_definition" as "CONDITION" ` +
+                    `"ind"."name" AS "INDEX_NAME", "col"."name" AS "COLUMN_NAME", "ind"."is_unique" AS "IS_UNIQUE", "ind"."filter_definition" as "CONDITION", ` +
+                    `"ic"."is_descending_key" AS "IS_DESCENDING" ` +
                     `FROM "${TABLE_CATALOG}"."sys"."indexes" "ind" ` +
                     `INNER JOIN "${TABLE_CATALOG}"."sys"."index_columns" "ic" ON "ic"."object_id" = "ind"."object_id" AND "ic"."index_id" = "ind"."index_id" ` +
                     `INNER JOIN "${TABLE_CATALOG}"."sys"."columns" "col" ON "col"."object_id" = "ic"."object_id" AND "col"."column_id" = "ic"."column_id" ` +
@@ -3757,6 +3758,14 @@ export class SqlServerQueryRunner
                         table: table,
                         name: constraint["INDEX_NAME"],
                         columnNames: indices.map((i) => i["COLUMN_NAME"]),
+                        columnOrders: indices.reduce(
+                            (map, i) => {
+                                if (i["IS_DESCENDING"])
+                                    map[i["COLUMN_NAME"]] = "DESC"
+                                return map
+                            },
+                            {} as { [col: string]: "ASC" | "DESC" },
+                        ),
                         isUnique: constraint["IS_UNIQUE"],
                         where: constraint["CONDITION"],
                     })
@@ -3811,7 +3820,12 @@ export class SqlServerQueryRunner
                             unique.columnNames,
                         )
                     const columnNames = unique.columnNames
-                        .map((columnName) => `"${columnName}"`)
+                        .map((columnName) => {
+                            const order = unique.columnOrders[columnName]
+                            return order
+                                ? `"${columnName}" ${order}`
+                                : `"${columnName}"`
+                        })
                         .join(", ")
                     return `CONSTRAINT "${uniqueName}" UNIQUE (${columnNames})`
                 })
@@ -3988,7 +4002,10 @@ export class SqlServerQueryRunner
      */
     protected createIndexSql(table: Table, index: TableIndex): Query {
         const columns = index.columnNames
-            .map((columnName) => `"${columnName}"`)
+            .map((columnName) => {
+                const order = index.columnOrders[columnName]
+                return `"${columnName}"${order ? ` ${order}` : ""}`
+            })
             .join(", ")
         return new Query(
             `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${
@@ -4073,7 +4090,10 @@ export class SqlServerQueryRunner
         uniqueConstraint: TableUnique,
     ): Query {
         const columnNames = uniqueConstraint.columnNames
-            .map((column) => `"` + column + `"`)
+            .map((column) => {
+                const order = uniqueConstraint.columnOrders[column]
+                return order ? `"${column}" ${order}` : `"${column}"`
+            })
             .join(", ")
         return new Query(
             `ALTER TABLE ${this.escapePath(table)} ADD CONSTRAINT "${

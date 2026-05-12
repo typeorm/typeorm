@@ -72,4 +72,11 @@ export interface IndexOptions {
      * This option is only applicable in PostgreSQL.
      */
     type?: TableIndexTypes
+
+    /**
+     * Sort order for the indexed column when used as a property decorator.
+     * Has no effect when used as a class decorator (use per-column objects in
+     * the `fields` array instead).
+     */
+    order?: "ASC" | "DESC"
 }

@@ -711,11 +711,7 @@ export class CockroachQueryRunner
                 .filter((index) => !index.isUnique)
                 .forEach((index) => {
                     // new index may be passed without name. In this case we generate index name manually.
-                    index.name ??= this.dataSource.namingStrategy.indexName(
-                        table,
-                        index.columnNames,
-                        index.where,
-                    )
+                    index.name ??= this.generateIndexName(table, index)
                     upQueries.push(this.createIndexSql(table, index))
                     downQueries.push(this.dropIndexSql(table, index))
                 })
@@ -1020,6 +1016,7 @@ export class CockroachQueryRunner
                 oldTable,
                 index.columnNames,
                 index.where,
+                index.columnOrders,
             )
 
             // Skip renaming if Index has user defined constraint name
@@ -1031,6 +1028,7 @@ export class CockroachQueryRunner
                 newTable,
                 index.columnNames,
                 index.where,
+                index.columnOrders,
             )
 
             // build queries
@@ -1560,6 +1558,7 @@ export class CockroachQueryRunner
                             clonedTable,
                             index.columnNames,
                             index.where,
+                            index.columnOrders,
                         )
 
                     // Skip renaming if Index has user defined constraint name
@@ -1577,6 +1576,7 @@ export class CockroachQueryRunner
                             clonedTable,
                             index.columnNames,
                             index.where,
+                            index.columnOrders,
                         )
 
                     // build queries
@@ -3242,7 +3242,8 @@ export class CockroachQueryRunner
         const indicesSql =
             `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
             `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition", ` +
-            `"types"."typname" AS "type_name" ` +
+            `"types"."typname" AS "type_name", ` +
+            `CASE WHEN (SELECT opt & 1 FROM unnest("ix"."indkey"::int2[], "ix"."indoption"::int2[]) AS t(key, opt) WHERE t.key = "a"."attnum" LIMIT 1) = 1 THEN 'DESC' ELSE 'ASC' END AS "column_order" ` +
             `FROM "pg_class" "t" ` +
             `INNER JOIN "pg_index" "ix" ON "ix"."indrelid" = "t"."oid" ` +
             `INNER JOIN "pg_attribute" "a" ON "a"."attrelid" = "t"."oid"  AND "a"."attnum" = ANY ("ix"."indkey") ` +
@@ -3809,6 +3810,14 @@ export class CockroachQueryRunner
                         table: table,
                         name: constraint["constraint_name"],
                         columnNames: indices.map((i) => i["column_name"]),
+                        columnOrders: indices.reduce(
+                            (map, i) => {
+                                if (i["column_order"] === "DESC")
+                                    map[i["column_name"]] = "DESC"
+                                return map
+                            },
+                            {} as { [col: string]: "ASC" | "DESC" },
+                        ),
                         isUnique: constraint["is_unique"] === "TRUE",
                         where: constraint["condition"],
                         isSpatial: indices.every(
@@ -4136,7 +4145,10 @@ export class CockroachQueryRunner
      */
     protected createIndexSql(table: Table, index: TableIndex): Query {
         const columns = index.columnNames
-            .map((columnName) => `"${columnName}"`)
+            .map((columnName) => {
+                const order = index.columnOrders[columnName]
+                return `"${columnName}"${order ? ` ${order}` : ""}`
+            })
             .join(", ")
         return new Query(
             `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${

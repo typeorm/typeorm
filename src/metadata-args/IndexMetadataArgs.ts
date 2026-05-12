@@ -1,4 +1,5 @@
 import type { TableIndexTypes } from "../schema-builder/options/TableIndexTypes"
+import type { IndexColumnOptions } from "../decorator/options/IndexColumnOptions"
 
 /**
  * Arguments for IndexMetadata class.
@@ -16,8 +17,11 @@ export interface IndexMetadataArgs {
 
     /**
      * Columns combination to be used as index.
+     * Each entry can be a column name string or an object specifying the column and its sort order.
      */
-    columns?: ((object?: any) => any[] | { [key: string]: number }) | string[]
+    columns?:
+        | ((object?: any) => any[] | { [key: string]: number })
+        | (string | IndexColumnOptions)[]
 
     /**
      * Indicates if index must be unique or not.

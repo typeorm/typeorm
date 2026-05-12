@@ -551,11 +551,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (createIndices) {
             table.indices.forEach((index) => {
                 // new index may be passed without name. In this case we generate index name manually.
-                index.name ??= this.dataSource.namingStrategy.indexName(
-                    table,
-                    index.columnNames,
-                    index.where,
-                )
+                index.name ??= this.generateIndexName(table, index)
                 upQueries.push(this.createIndexSql(table, index))
                 downQueries.push(this.dropIndexSql(index))
             })
@@ -822,6 +818,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldTable,
                 index.columnNames,
                 index.where,
+                index.columnOrders,
             )
 
             // Skip renaming if Index has user defined constraint name
@@ -832,6 +829,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 newTable,
                 index.columnNames,
                 index.where,
+                index.columnOrders,
             )
 
             // build queries
@@ -1273,6 +1271,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                             clonedTable,
                             index.columnNames,
                             index.where,
+                            index.columnOrders,
                         )
 
                     // Skip renaming if Index has user defined constraint name
@@ -1289,6 +1288,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                             clonedTable,
                             index.columnNames,
                             index.where,
+                            index.columnOrders,
                         )
 
                     // build queries
@@ -2549,7 +2549,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const indicesSql =
             `SELECT "C"."INDEX_NAME", "C"."OWNER", "C"."TABLE_NAME", "C"."UNIQUENESS", ` +
-            `LISTAGG ("COL"."COLUMN_NAME", ',') WITHIN GROUP (ORDER BY "COL"."COLUMN_NAME") AS "COLUMN_NAMES" ` +
+            `LISTAGG ("COL"."COLUMN_NAME", ',') WITHIN GROUP (ORDER BY "COL"."COLUMN_NAME") AS "COLUMN_NAMES", ` +
+            `LISTAGG ("COL"."DESCEND", ',') WITHIN GROUP (ORDER BY "COL"."COLUMN_NAME") AS "COLUMN_DESCENDS" ` +
             `FROM "ALL_INDEXES" "C" ` +
             `INNER JOIN "ALL_IND_COLUMNS" "COL" ON "COL"."INDEX_OWNER" = "C"."OWNER" AND "COL"."INDEX_NAME" = "C"."INDEX_NAME" ` +
             `LEFT JOIN "ALL_CONSTRAINTS" "CON" ON "CON"."OWNER" = "C"."OWNER" AND "CON"."CONSTRAINT_NAME" = "C"."INDEX_NAME" ` +
@@ -2911,6 +2912,13 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 // TIMESTAMP WITH TIME ZONE is indexed. Oracle will create a
                 // virtual column of type TIMESTAMP with a default value of
                 // SYS_EXTRACT_UTC(<column>).
+                // Maps system-generated virtual column names to their real column
+                // name and whether the virtual column is a SYS_OP_DESCEND
+                // wrapper. Oracle implements DESC index columns by creating a
+                // hidden virtual column with SYS_OP_DESCEND(<col>) as its
+                // expression and indexing that in ASC order. The DESCEND field
+                // in ALL_IND_COLUMNS therefore reports ASC for such columns
+                // even though the logical ordering is DESC.
                 const autoGenVirtualDbColumns = dbColumns
                     .filter(
                         (dbColumn) =>
@@ -2919,19 +2927,40 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                             dbColumn["VIRTUAL_COLUMN"] === "YES" &&
                             dbColumn["USER_GENERATED"] === "NO",
                     )
-                    .reduce((acc, x) => {
-                        const referencedDbColumn = dbColumns.find((dbColumn) =>
-                            x["DATA_DEFAULT"].includes(dbColumn["COLUMN_NAME"]),
-                        )
+                    .reduce(
+                        (
+                            acc: {
+                                [key: string]: {
+                                    name: string
+                                    isDescColumn: boolean
+                                }
+                            },
+                            x,
+                        ) => {
+                            // Match the full quoted identifier so that short
+                            // column names (e.g. "id") are not found inside
+                            // longer ones (e.g. "category_id").
+                            const referencedDbColumn = dbColumns.find(
+                                (dbColumn) =>
+                                    x["DATA_DEFAULT"].includes(
+                                        `"${dbColumn["COLUMN_NAME"]}"`,
+                                    ),
+                            )
 
-                        if (!referencedDbColumn) return acc
+                            if (!referencedDbColumn) return acc
 
-                        return {
-                            ...acc,
-                            [x["COLUMN_NAME"]]:
-                                referencedDbColumn["COLUMN_NAME"],
-                        }
-                    }, {})
+                            return {
+                                ...acc,
+                                [x["COLUMN_NAME"]]: {
+                                    name: referencedDbColumn["COLUMN_NAME"],
+                                    isDescColumn: (
+                                        x["DATA_DEFAULT"] as string
+                                    ).includes("SYS_OP_DESCEND"),
+                                },
+                            }
+                        },
+                        {},
+                    )
 
                 // create TableIndex objects from the loaded indices
                 table.indices = dbIndices
@@ -2941,20 +2970,40 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                             dbIndex["OWNER"] === dbTable["OWNER"],
                     )
                     .map((dbIndex) => {
-                        //
-                        const columnNames = dbIndex["COLUMN_NAMES"]
-                            .split(",")
-                            .map(
-                                (
-                                    columnName: keyof typeof autoGenVirtualDbColumns,
-                                ) =>
-                                    autoGenVirtualDbColumns[columnName] ??
-                                    columnName,
-                            )
+                        const rawColumnNames: string[] =
+                            dbIndex["COLUMN_NAMES"].split(",")
+                        const columnNames = rawColumnNames.map(
+                            (columnName) =>
+                                autoGenVirtualDbColumns[columnName]?.name ??
+                                columnName,
+                        )
+                        const descends: string[] =
+                            dbIndex["COLUMN_DESCENDS"]?.split(",") ?? []
+                        const columnOrders = columnNames.reduce(
+                            (
+                                map: { [col: string]: "ASC" | "DESC" },
+                                col: string,
+                                idx: number,
+                            ) => {
+                                // SYS_OP_DESCEND virtual columns are stored as
+                                // ASC in ALL_IND_COLUMNS but represent DESC
+                                // ordering on the original column.
+                                const isDescVirtual =
+                                    autoGenVirtualDbColumns[rawColumnNames[idx]]
+                                        ?.isDescColumn ?? false
+                                const order = isDescVirtual
+                                    ? "DESC"
+                                    : descends[idx]
+                                if (order === "DESC") map[col] = "DESC"
+                                return map
+                            },
+                            {} as { [col: string]: "ASC" | "DESC" },
+                        )
 
                         return new TableIndex({
                             name: dbIndex["INDEX_NAME"],
                             columnNames,
+                            columnOrders,
                             isUnique: dbIndex["UNIQUENESS"] === "UNIQUE",
                         })
                     })
@@ -3166,7 +3215,10 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected createIndexSql(table: Table, index: TableIndex): Query {
         const columns = index.columnNames
-            .map((columnName) => `"${columnName}"`)
+            .map((columnName) => {
+                const order = index.columnOrders[columnName]
+                return `"${columnName}"${order ? ` ${order}` : ""}`
+            })
             .join(", ")
         return new Query(
             `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX "${

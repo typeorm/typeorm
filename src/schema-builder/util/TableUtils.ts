@@ -7,6 +7,12 @@ export class TableUtils {
         columnMetadata: ColumnMetadata,
         driver: Driver,
     ): TableColumnOptions {
+        const singleColumnUniqueIndex = columnMetadata.entityMetadata.indices.find(
+            (idx) =>
+                idx.isUnique &&
+                idx.columns.length === 1 &&
+                idx.columns[0] === columnMetadata,
+        )
         return {
             name: columnMetadata.databaseName,
             length: driver.getColumnLength(columnMetadata),
@@ -35,6 +41,7 @@ export class TableUtils {
             primaryKeyConstraintName: columnMetadata.primaryKeyConstraintName,
             spatialFeatureType: columnMetadata.spatialFeatureType,
             srid: columnMetadata.srid,
+            uniqueColumnOrders: singleColumnUniqueIndex?.columnOrderMap ?? {},
         }
     }
 }

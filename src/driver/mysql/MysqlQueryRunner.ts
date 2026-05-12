@@ -706,6 +706,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             const oldIndexName = this.dataSource.namingStrategy.indexName(
                 oldTable,
                 index.columnNames,
+                undefined,
+                index.columnOrders,
             )
 
             // Skip renaming if Index has user defined constraint name
@@ -719,6 +721,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 newTable,
                 index.columnNames,
                 index.where,
+                index.columnOrders,
             )
 
             // build queries
@@ -1028,6 +1031,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 ]),
                 columnNames: [column.name],
                 isUnique: true,
+                columnOrders: { ...column.uniqueColumnOrders },
             })
             clonedTable.indices.push(uniqueIndex)
             clonedTable.uniques.push(
@@ -1036,20 +1040,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     columnNames: uniqueIndex.columnNames,
                 }),
             )
-            upQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(table)} ADD UNIQUE INDEX \`${
-                        uniqueIndex.name
-                    }\` (\`${column.name}\`)`,
-                ),
-            )
-            downQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${
-                        uniqueIndex.name
-                    }\``,
-                ),
-            )
+            upQueries.push(this.createIndexSql(table, uniqueIndex))
+            downQueries.push(this.dropIndexSql(table, uniqueIndex))
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -1183,6 +1175,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         this.dataSource.namingStrategy.indexName(
                             clonedTable,
                             index.columnNames,
+                            undefined,
+                            index.columnOrders,
                         )
 
                     // Skip renaming if Index has user defined constraint name
@@ -1202,6 +1196,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                             clonedTable,
                             index.columnNames,
                             index.where,
+                            index.columnOrders,
                         )
 
                     // build queries
@@ -1570,6 +1565,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         ]),
                         columnNames: [newColumn.name],
                         isUnique: true,
+                        columnOrders: { ...newColumn.uniqueColumnOrders },
                     })
                     clonedTable.indices.push(uniqueIndex)
                     clonedTable.uniques.push(
@@ -1578,22 +1574,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                             columnNames: uniqueIndex.columnNames,
                         }),
                     )
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} ADD UNIQUE INDEX \`${uniqueIndex.name}\` (\`${
-                                newColumn.name
-                            }\`)`,
-                        ),
-                    )
-                    downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} DROP INDEX \`${uniqueIndex.name}\``,
-                        ),
-                    )
+                    upQueries.push(this.createIndexSql(table, uniqueIndex))
+                    downQueries.push(this.dropIndexSql(table, uniqueIndex))
                 } else {
                     const uniqueIndex = clonedTable.indices.find((index) => {
                         return (
@@ -3154,6 +3136,14 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         table: table,
                         name: constraint["INDEX_NAME"],
                         columnNames: indices.map((i) => i["COLUMN_NAME"]),
+                        columnOrders: indices.reduce(
+                            (map, i) => {
+                                if (i["COLLATION"] === "D")
+                                    map[i["COLUMN_NAME"]] = "DESC"
+                                return map
+                            },
+                            {} as { [col: string]: "ASC" | "DESC" },
+                        ),
                         isUnique: nonUnique === 0,
                         isSpatial: constraint["INDEX_TYPE"] === "SPATIAL",
                         isFulltext: constraint["INDEX_TYPE"] === "FULLTEXT",
@@ -3221,6 +3211,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                         new TableIndex({
                             name: unique.name,
                             columnNames: unique.columnNames,
+                            columnOrders: { ...unique.columnOrders },
                             isUnique: true,
                         }),
                     )
@@ -3231,14 +3222,17 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (table.indices.length > 0) {
             const indicesSql = table.indices
                 .map((index) => {
+                    const supportsOrder = !index.isSpatial && !index.isFulltext
                     const columnNames = index.columnNames
-                        .map((columnName) => `\`${columnName}\``)
+                        .map((columnName) => {
+                            const order =
+                                supportsOrder && index.columnOrders[columnName]
+                            return order
+                                ? `\`${columnName}\` ${order}`
+                                : `\`${columnName}\``
+                        })
                         .join(", ")
-                    index.name ??= this.dataSource.namingStrategy.indexName(
-                        table,
-                        index.columnNames,
-                        index.where,
-                    )
+                    index.name ??= this.generateIndexName(table, index)
 
                     let indexType = ""
                     if (index.isUnique) indexType += "UNIQUE "
@@ -3375,8 +3369,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * @param index
      */
     protected createIndexSql(table: Table, index: TableIndex): Query {
+        const supportsOrder = !index.isSpatial && !index.isFulltext
         const columns = index.columnNames
-            .map((columnName) => `\`${columnName}\``)
+            .map((columnName) => {
+                const order = supportsOrder && index.columnOrders[columnName]
+                return `\`${columnName}\`${order ? ` ${order}` : ""}`
+            })
             .join(", ")
         let indexType = ""
         if (index.isUnique) indexType += "UNIQUE "
