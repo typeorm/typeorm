@@ -69,7 +69,8 @@ jobs:
           apply_label() {
             gh pr edit "$PR_NUMBER" --repo "$REPO" \
               --add-label "$1" --remove-label "$2" 2>/dev/null \
-              || gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "$1"
+              || gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "$1" \
+              || echo "Warning: failed to apply label $1"
           }
 
           ## Status check + triage label ##
@@ -90,18 +91,22 @@ jobs:
             apply_label "$LABEL_TRIAGE" "$LABEL_LINKED"
           fi
 
-          ## Duplicate check (only on open, not edit) ##
-          if [ "$EVENT_ACTION" != "opened" ]; then exit 0; fi
+          ## Duplicate check ##
+          HAS_DUPE_LABEL=$(gh pr view "$PR_NUMBER" --repo "$REPO" \
+            --json labels --jq "[.labels[].name] | any(. == \"$LABEL_DUPE\")" 2>/dev/null || echo "false")
+          if [ "$HAS_DUPE_LABEL" = "true" ]; then exit 0; fi
 
           DUPES=$({
             gh pr list --repo "$REPO" --state open --search "\"Fixes #${FIRST_ISSUE}\"" --json number --jq ".[].number"
             gh pr list --repo "$REPO" --state open --search "\"Closes #${FIRST_ISSUE}\"" --json number --jq ".[].number"
             gh pr list --repo "$REPO" --state open --search "\"Resolves #${FIRST_ISSUE}\"" --json number --jq ".[].number"
+            gh pr list --repo "$REPO" --state open --search "\"Closed #${FIRST_ISSUE}\"" --json number --jq ".[].number"
+            gh pr list --repo "$REPO" --state open --search "\"Resolved #${FIRST_ISSUE}\"" --json number --jq ".[].number"
           } | sort -u | grep -v "^${PR_NUMBER}$" || true)
 
           if [ -n "$DUPES" ]; then
             DUPE_LIST=$(echo "$DUPES" | sed 's/^/#/' | tr '\n' ', ' | sed 's/,$//')
-            gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "$LABEL_DUPE"
+            gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "$LABEL_DUPE" || true
             gh pr comment "$PR_NUMBER" --repo "$REPO" \
-              --body "Other open PRs also reference #${FIRST_ISSUE}: ${DUPE_LIST}. Maintainers may want to coordinate."
+              --body "Other open PRs also reference #${FIRST_ISSUE}: ${DUPE_LIST}. Maintainers may want to coordinate." || true
           fi
