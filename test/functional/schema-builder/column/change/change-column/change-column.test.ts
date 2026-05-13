@@ -88,6 +88,51 @@ describe("schema builder > change column", () => {
             }),
         ))
 
+    it("should preserve postgres column data when changing column length", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (dataSource.driver.options.type !== "postgres") return
+
+                await dataSource.manager.save(Post, {
+                    id: 1,
+                    version: "v1",
+                    name: "My persisted post",
+                    text: "body",
+                    tag: "tag",
+                    likesCount: 1,
+                })
+
+                const postMetadata = dataSource.getMetadata(Post)
+                const nameColumn =
+                    postMetadata.findColumnWithPropertyName("name")!
+                nameColumn.length = "500"
+
+                const sqlInMemory = await dataSource.driver
+                    .createSchemaBuilder()
+                    .log()
+                const upQueries = sqlInMemory.upQueries.map(
+                    (query) => query.query,
+                )
+
+                expect(upQueries).to.include(
+                    `ALTER TABLE "post" ALTER COLUMN "name" TYPE character varying(500)`,
+                )
+                expect(
+                    upQueries.some((query) =>
+                        query.includes(`DROP COLUMN "name"`),
+                    ),
+                ).to.be.false
+
+                await dataSource.synchronize()
+
+                const post = await dataSource.manager.findOneBy(Post, { id: 1 })
+                expect(post!.name).to.equal("My persisted post")
+
+                // revert changes
+                nameColumn.length = "255"
+            }),
+        ))
+
     it("should correctly change column type", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
