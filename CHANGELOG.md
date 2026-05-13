@@ -7,6 +7,7 @@
 - **cli:** init command reading package.json from two folders up ([#11789](https://github.com/typeorm/typeorm/issues/11789)) ([dd55218](https://github.com/typeorm/typeorm/commit/dd55218648eb449937e22e1e7c88182db0048f1d))
 - **deps:** upgrade glob to fix CVE-2025-64756 ([#11784](https://github.com/typeorm/typeorm/issues/11784)) ([dc74f53](https://github.com/typeorm/typeorm/commit/dc74f5374ef5ec83d53045e4bca99cb9ff7d49d4))
 - **mongodb:** add missing `findBy` method to MongoEntityManager ([#11814](https://github.com/typeorm/typeorm/issues/11814)) ([38715bb](https://github.com/typeorm/typeorm/commit/38715bbd4169cae2910aac035cd2b05bddbaec5c))
+- **postgres:** preserve data when generated migrations change `varchar` column lengths ([#3357](https://github.com/typeorm/typeorm/issues/3357))
 - **redis:** version detection logic ([#11815](https://github.com/typeorm/typeorm/issues/11815)) ([6f486e5](https://github.com/typeorm/typeorm/commit/6f486e5a67c007287949be119f233fb2b4fb7a59))
 - typesense doc sync ([#11807](https://github.com/typeorm/typeorm/issues/11807)) ([d0b5454](https://github.com/typeorm/typeorm/commit/d0b54544e9e43a5330c0485d41551128224fe4d3))
 

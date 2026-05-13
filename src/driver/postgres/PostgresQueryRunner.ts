@@ -1326,9 +1326,16 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        const isLengthOnlyChange =
+            oldColumn.type === newColumn.type &&
+            oldColumn.length !== newColumn.length &&
+            this.driver.withLengthColumnTypes.includes(
+                oldColumn.type as ColumnType,
+            )
+
         if (
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
+            (oldColumn.length !== newColumn.length && !isLengthOnlyChange) ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1619,6 +1626,7 @@ export class PostgresQueryRunner
             }
 
             if (
+                isLengthOnlyChange ||
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {
@@ -2348,9 +2356,9 @@ export class PostgresQueryRunner
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE "${
-                            newColumn.collation
-                        }"`,
+                        }" TYPE ${this.driver.createFullType(
+                            newColumn,
+                        )} COLLATE "${newColumn.collation}"`,
                     ),
                 )
 
@@ -2362,7 +2370,9 @@ export class PostgresQueryRunner
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE ${oldCollation}`,
+                        }" TYPE ${this.driver.createFullType(
+                            oldColumn,
+                        )} COLLATE ${oldCollation}`,
                     ),
                 )
             }

@@ -50,6 +50,15 @@ describe("schema builder > change column", () => {
     it("should correctly change column length", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
+                await dataSource.getRepository(Post).save({
+                    id: 1,
+                    version: "v1",
+                    name: "existing name",
+                    text: "existing text",
+                    tag: "tag",
+                    likesCount: 1,
+                })
+
                 const postMetadata = dataSource.getMetadata(Post)
                 const nameColumn =
                     postMetadata.findColumnWithPropertyName("name")!
@@ -70,6 +79,16 @@ describe("schema builder > change column", () => {
                 postTable!
                     .findColumnByName("text")!
                     .length.should.be.equal("300")
+
+                if (dataSource.driver.options.type === "postgres") {
+                    // Regression for #3357: varchar length changes must not
+                    // recreate the column and lose existing row data.
+                    const loadedPost = await dataSource
+                        .getRepository(Post)
+                        .findOneByOrFail({ id: 1 })
+                    loadedPost.name.should.be.equal("existing name")
+                    loadedPost.text.should.be.equal("existing text")
+                }
 
                 if (
                     DriverUtils.isMySQLFamily(dataSource.driver) ||
