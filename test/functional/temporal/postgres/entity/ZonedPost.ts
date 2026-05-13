@@ -1,5 +1,5 @@
+import { Temporal } from "@js-temporal/polyfill"
 import { Entity, PrimaryGeneratedColumn, Column } from "../../../../../src"
-import type { Temporal } from "../../../../../src/util/Temporal"
 
 @Entity()
 export class ZonedPost {

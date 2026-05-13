@@ -1,8 +1,14 @@
-import type { ColumnType } from "../driver/types/ColumnTypes"
 import type { Temporal, TemporalGlobal } from "./Temporal"
 
 const T = (): TemporalGlobal =>
     (globalThis as unknown as { Temporal: TemporalGlobal }).Temporal
+
+export type TemporalKind =
+    | "zoned-date-time"
+    | "plain-date-time"
+    | "plain-date"
+    | "plain-time"
+    | "duration"
 
 /**
  * Provides Temporal API runtime detection and column-type inference for Temporal-typed entity properties.
@@ -15,16 +21,23 @@ export class TemporalUtils {
         )
     }
 
+    /**
+     * Identifies a Temporal class without leaking the `./Temporal` stub to
+     * callers — keeps the opt-in stub dependency in a single file so it can
+     * be removed in one place once Temporal is natively supported.
+     *
+     * @param reflectType
+     */
     static inferKindFromReflectType(
         reflectType: unknown,
-    ): ColumnType | undefined {
+    ): TemporalKind | undefined {
         if (!this.isSupported() || reflectType == null) return undefined
         const t = T()
-        if (reflectType === t.ZonedDateTime) return "timestamptz"
-        if (reflectType === t.PlainDateTime) return "timestamp"
-        if (reflectType === t.PlainDate) return "date"
-        if (reflectType === t.PlainTime) return "time"
-        if (reflectType === t.Duration) return "interval"
+        if (reflectType === t.ZonedDateTime) return "zoned-date-time"
+        if (reflectType === t.PlainDateTime) return "plain-date-time"
+        if (reflectType === t.PlainDate) return "plain-date"
+        if (reflectType === t.PlainTime) return "plain-time"
+        if (reflectType === t.Duration) return "duration"
         return undefined
     }
 }

@@ -201,14 +201,12 @@ export function Column(
         if (!type && reflectMetadataType) {
             type = reflectMetadataType
 
-            // Temporal auto-inference
-            if (options.temporal !== false && TemporalUtils.isSupported()) {
-                const inferredTemporalKind =
-                    TemporalUtils.inferKindFromReflectType(reflectMetadataType)
-                if (inferredTemporalKind) {
-                    type = inferredTemporalKind
-                    options.temporal ??= true
-                }
+            if (
+                options.temporal !== false &&
+                TemporalUtils.isSupported() &&
+                TemporalUtils.inferKindFromReflectType(reflectMetadataType)
+            ) {
+                options.temporal ??= true
             }
         }
 

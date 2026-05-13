@@ -15,6 +15,7 @@ import {
     PlainDateTimeUtils,
     PlainDateUtils,
     PlainTimeUtils,
+    TemporalUtils,
     ZonedDateTimeUtils,
 } from "../../util/TemporalUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
@@ -560,30 +561,44 @@ export class AuroraMysqlDriver implements Driver {
 
         if (value === null || value === undefined) return value
 
+        const temporalKind = TemporalUtils.inferKindFromReflectType(
+            columnMetadata.type,
+        )
+
         if (columnMetadata.type === Boolean) {
             return value === true ? 1 : 0
-        } else if (columnMetadata.type === "date") {
+        } else if (
+            columnMetadata.type === "date" ||
+            temporalKind === "plain-date"
+        ) {
             if (columnMetadata.temporal) {
                 return PlainDateUtils.fromTemporal(value)
             }
             return DateUtils.mixedDateToDateString(value, {
                 utc: columnMetadata.utc,
             })
-        } else if (columnMetadata.type === "time") {
+        } else if (
+            columnMetadata.type === "time" ||
+            temporalKind === "plain-time"
+        ) {
             if (columnMetadata.temporal) {
                 return PlainTimeUtils.fromTemporal(value)
             }
             return DateUtils.mixedDateToTimeString(value)
         } else if (columnMetadata.type === "json") {
             return JSON.stringify(value)
-        } else if (columnMetadata.type === "datetime") {
+        } else if (
+            columnMetadata.type === "datetime" ||
+            temporalKind === "plain-date-time"
+        ) {
             if (columnMetadata.temporal) {
                 return PlainDateTimeUtils.fromTemporal(value)
             }
             return DateUtils.mixedDateToDate(value)
         } else if (
             columnMetadata.type === "timestamp" ||
-            columnMetadata.type === Date
+            columnMetadata.type === Date ||
+            temporalKind === "zoned-date-time"
         ) {
             if (columnMetadata.temporal) {
                 return ZonedDateTimeUtils.fromTemporal(value)
@@ -625,13 +640,20 @@ export class AuroraMysqlDriver implements Driver {
             return this.client.prepareHydratedValue(value, columnMetadata)
         }
 
+        const temporalKind = TemporalUtils.inferKindFromReflectType(
+            columnMetadata.type,
+        )
+
         if (
             columnMetadata.type === Boolean ||
             columnMetadata.type === "bool" ||
             columnMetadata.type === "boolean"
         ) {
             value = value ? true : false
-        } else if (columnMetadata.type === "datetime") {
+        } else if (
+            columnMetadata.type === "datetime" ||
+            temporalKind === "plain-date-time"
+        ) {
             if (columnMetadata.temporal) {
                 value = PlainDateTimeUtils.toTemporal(value)
             } else {
@@ -639,7 +661,8 @@ export class AuroraMysqlDriver implements Driver {
             }
         } else if (
             columnMetadata.type === "timestamp" ||
-            columnMetadata.type === Date
+            columnMetadata.type === Date ||
+            temporalKind === "zoned-date-time"
         ) {
             if (columnMetadata.temporal) {
                 const tz =
@@ -650,7 +673,10 @@ export class AuroraMysqlDriver implements Driver {
             } else {
                 value = DateUtils.normalizeHydratedDate(value)
             }
-        } else if (columnMetadata.type === "date") {
+        } else if (
+            columnMetadata.type === "date" ||
+            temporalKind === "plain-date"
+        ) {
             if (columnMetadata.temporal) {
                 value = PlainDateUtils.toTemporal(value, {
                     utc: columnMetadata.utc,
@@ -662,7 +688,10 @@ export class AuroraMysqlDriver implements Driver {
             }
         } else if (columnMetadata.type === "json") {
             value = typeof value === "string" ? JSON.parse(value) : value
-        } else if (columnMetadata.type === "time") {
+        } else if (
+            columnMetadata.type === "time" ||
+            temporalKind === "plain-time"
+        ) {
             if (columnMetadata.temporal) {
                 value = PlainTimeUtils.toTemporal(value)
             } else {

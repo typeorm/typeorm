@@ -1,5 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
+import { Temporal } from "@js-temporal/polyfill"
 import type { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
@@ -11,7 +12,6 @@ import { DurationPost } from "./entity/DurationPost"
 describe("temporal > Duration", () => {
     let dataSources: DataSource[] = []
     before(async () => {
-        if (typeof (globalThis as any).Temporal === "undefined") return
         dataSources = await createTestingConnections({
             entities: [DurationPost],
             enabledDrivers: ["postgres"],
@@ -22,14 +22,12 @@ describe("temporal > Duration", () => {
     beforeEach(() => dataSources.length && reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
-    it("round-trips Temporal.Duration via Postgres interval", async function () {
-        if (typeof (globalThis as any).Temporal === "undefined") this.skip()
-        const T = (globalThis as any).Temporal
+    it("round-trips Temporal.Duration via Postgres interval", async () => {
         await Promise.all(
             dataSources.map(async (ds) => {
                 const repo = ds.getRepository(DurationPost)
                 const e = new DurationPost()
-                e.span = T.Duration.from({
+                e.span = Temporal.Duration.from({
                     years: 1,
                     months: 2,
                     days: 3,
@@ -39,7 +37,7 @@ describe("temporal > Duration", () => {
                 })
                 const saved = await repo.save(e)
                 const found = await repo.findOneByOrFail({ id: saved.id })
-                expect(found.span).to.be.instanceOf(T.Duration)
+                expect(found.span).to.be.instanceOf(Temporal.Duration)
                 expect(found.span.years).to.equal(1)
                 expect(found.span.months).to.equal(2)
                 expect(found.span.days).to.equal(3)

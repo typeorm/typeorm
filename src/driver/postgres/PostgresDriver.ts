@@ -24,6 +24,7 @@ import {
     PlainDateTimeUtils,
     PlainDateUtils,
     PlainTimeUtils,
+    TemporalUtils,
     ZonedDateTimeUtils,
 } from "../../util/TemporalUtils"
 import { VersionUtils } from "../../util/VersionUtils"
@@ -769,16 +770,26 @@ export class PostgresDriver implements Driver {
 
         if (value === null || value === undefined) return value
 
+        const temporalKind = TemporalUtils.inferKindFromReflectType(
+            columnMetadata.type,
+        )
+
         if (columnMetadata.type === Boolean) {
             return value === true ? 1 : 0
-        } else if (columnMetadata.type === "date") {
+        } else if (
+            columnMetadata.type === "date" ||
+            temporalKind === "plain-date"
+        ) {
             if (columnMetadata.temporal) {
                 return PlainDateUtils.fromTemporal(value)
             }
             return DateUtils.mixedDateToDateString(value, {
                 utc: columnMetadata.utc,
             })
-        } else if (columnMetadata.type === "time") {
+        } else if (
+            columnMetadata.type === "time" ||
+            temporalKind === "plain-time"
+        ) {
             if (columnMetadata.temporal) {
                 return PlainTimeUtils.fromTemporal(value)
             }
@@ -787,7 +798,8 @@ export class PostgresDriver implements Driver {
             columnMetadata.type === "datetime" ||
             columnMetadata.type === Date ||
             columnMetadata.type === "timestamp" ||
-            columnMetadata.type === "timestamp without time zone"
+            columnMetadata.type === "timestamp without time zone" ||
+            temporalKind === "plain-date-time"
         ) {
             if (columnMetadata.temporal) {
                 return PlainDateTimeUtils.fromTemporal(value)
@@ -795,13 +807,17 @@ export class PostgresDriver implements Driver {
             return DateUtils.mixedDateToDate(value)
         } else if (
             columnMetadata.type === "timestamptz" ||
-            columnMetadata.type === "timestamp with time zone"
+            columnMetadata.type === "timestamp with time zone" ||
+            temporalKind === "zoned-date-time"
         ) {
             if (columnMetadata.temporal) {
                 return ZonedDateTimeUtils.fromTemporal(value)
             }
             return DateUtils.mixedDateToDate(value)
-        } else if (columnMetadata.type === "interval") {
+        } else if (
+            columnMetadata.type === "interval" ||
+            temporalKind === "duration"
+        ) {
             if (columnMetadata.temporal) {
                 return DurationUtils.fromTemporal(value)
             }
@@ -904,13 +920,18 @@ export class PostgresDriver implements Driver {
                   )
                 : value
 
+        const temporalKind = TemporalUtils.inferKindFromReflectType(
+            columnMetadata.type,
+        )
+
         if (columnMetadata.type === Boolean) {
             value = value ? true : false
         } else if (
             columnMetadata.type === "datetime" ||
             columnMetadata.type === Date ||
             columnMetadata.type === "timestamp" ||
-            columnMetadata.type === "timestamp without time zone"
+            columnMetadata.type === "timestamp without time zone" ||
+            temporalKind === "plain-date-time"
         ) {
             if (columnMetadata.temporal) {
                 value = PlainDateTimeUtils.toTemporal(value)
@@ -919,7 +940,8 @@ export class PostgresDriver implements Driver {
             }
         } else if (
             columnMetadata.type === "timestamptz" ||
-            columnMetadata.type === "timestamp with time zone"
+            columnMetadata.type === "timestamp with time zone" ||
+            temporalKind === "zoned-date-time"
         ) {
             if (columnMetadata.temporal) {
                 const tz =
@@ -930,7 +952,10 @@ export class PostgresDriver implements Driver {
             } else {
                 value = DateUtils.normalizeHydratedDate(value)
             }
-        } else if (columnMetadata.type === "date") {
+        } else if (
+            columnMetadata.type === "date" ||
+            temporalKind === "plain-date"
+        ) {
             if (columnMetadata.temporal) {
                 value = PlainDateUtils.toTemporal(value, {
                     utc: columnMetadata.utc,
@@ -940,13 +965,19 @@ export class PostgresDriver implements Driver {
                     utc: columnMetadata.utc,
                 })
             }
-        } else if (columnMetadata.type === "time") {
+        } else if (
+            columnMetadata.type === "time" ||
+            temporalKind === "plain-time"
+        ) {
             if (columnMetadata.temporal) {
                 value = PlainTimeUtils.toTemporal(value)
             } else {
                 value = DateUtils.mixedTimeToString(value)
             }
-        } else if (columnMetadata.type === "interval") {
+        } else if (
+            columnMetadata.type === "interval" ||
+            temporalKind === "duration"
+        ) {
             if (columnMetadata.temporal) {
                 value = DurationUtils.toTemporal(value)
             }
@@ -1208,6 +1239,15 @@ export class PostgresDriver implements Driver {
         scale?: number
         isArray?: boolean
     }): string {
+        const temporalKind = TemporalUtils.inferKindFromReflectType(column.type)
+        if (temporalKind === "zoned-date-time")
+            return "timestamp with time zone"
+        if (temporalKind === "plain-date-time")
+            return "timestamp without time zone"
+        if (temporalKind === "plain-date") return "date"
+        if (temporalKind === "plain-time") return "time without time zone"
+        if (temporalKind === "duration") return "interval"
+
         if (
             column.type === Number ||
             column.type === "int" ||
