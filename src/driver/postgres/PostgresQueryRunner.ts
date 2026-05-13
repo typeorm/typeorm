@@ -1637,7 +1637,10 @@ export class PostgresQueryRunner
                 )
             }
 
-            if (newColumn.length !== oldColumn.length) {
+            if (
+                newColumn.length !== oldColumn.length &&
+                newColumn.collation === oldColumn.collation
+            ) {
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
