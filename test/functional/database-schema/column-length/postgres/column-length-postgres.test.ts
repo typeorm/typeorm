@@ -44,6 +44,14 @@ describe("database schema > column length > postgres", () => {
     it("all types should update their size", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
+                await dataSource.getRepository(Post).save({
+                    id: 1,
+                    characterVarying: "character varying value",
+                    varchar: "varchar value",
+                    character: "character value",
+                    char: "char value",
+                })
+
                 const metadata = dataSource.getMetadata(Post)
                 metadata.findColumnWithPropertyName(
                     "characterVarying",
@@ -51,6 +59,17 @@ describe("database schema > column length > postgres", () => {
                 metadata.findColumnWithPropertyName("varchar")!.length = "100"
                 metadata.findColumnWithPropertyName("character")!.length = "100"
                 metadata.findColumnWithPropertyName("char")!.length = "100"
+
+                const sqlInMemory = await dataSource.driver
+                    .createSchemaBuilder()
+                    .log()
+                const upQueries = sqlInMemory.upQueries.map(
+                    (query) => query.query,
+                )
+                expect(upQueries.join("\n")).to.not.contain("DROP COLUMN")
+                expect(upQueries.join("\n")).to.contain(
+                    'ALTER COLUMN "varchar" TYPE character varying(100)',
+                )
 
                 await dataSource.synchronize(false)
 
@@ -69,6 +88,14 @@ describe("database schema > column length > postgres", () => {
                 ).to.be.equal("100")
                 expect(table!.findColumnByName("char")!.length).to.be.equal(
                     "100",
+                )
+
+                const post = await dataSource
+                    .getRepository(Post)
+                    .findOneByOrFail({ id: 1 })
+                expect(post.varchar).to.be.equal("varchar value")
+                expect(post.characterVarying).to.be.equal(
+                    "character varying value",
                 )
             }),
         ))
