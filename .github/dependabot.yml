@@ -5,6 +5,14 @@ updates:
     schedule:
       interval: weekly
     groups:
-      github-actions:
+      github-actions-official:
         patterns:
-          - "*"
+          - "actions/*"
+          - "github/*"
+      github-actions-third-party:
+        patterns:
+          - "pnpm/*"
+          - "dorny/*"
+          - "SonarSource/*"
+          - "cloudflare/*"
+          - "amannn/*"
