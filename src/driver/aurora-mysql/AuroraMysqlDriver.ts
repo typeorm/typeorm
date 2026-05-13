@@ -563,6 +563,7 @@ export class AuroraMysqlDriver implements Driver {
 
         const temporalKind = TemporalUtils.inferKindFromReflectType(
             columnMetadata.type,
+            this.options.temporal,
         )
 
         if (columnMetadata.type === Boolean) {
@@ -642,6 +643,7 @@ export class AuroraMysqlDriver implements Driver {
 
         const temporalKind = TemporalUtils.inferKindFromReflectType(
             columnMetadata.type,
+            this.options.temporal,
         )
 
         if (
@@ -655,7 +657,10 @@ export class AuroraMysqlDriver implements Driver {
             temporalKind === "plain-date-time"
         ) {
             if (columnMetadata.temporal) {
-                value = PlainDateTimeUtils.toTemporal(value)
+                value = PlainDateTimeUtils.toTemporal(
+                    value,
+                    this.options.temporal,
+                )
             } else {
                 value = DateUtils.normalizeHydratedDate(value)
             }
@@ -669,7 +674,11 @@ export class AuroraMysqlDriver implements Driver {
                     columnMetadata.temporal !== true
                         ? columnMetadata.temporal.timeZone
                         : "UTC"
-                value = ZonedDateTimeUtils.toTemporal(value, tz)
+                value = ZonedDateTimeUtils.toTemporal(
+                    value,
+                    tz,
+                    this.options.temporal,
+                )
             } else {
                 value = DateUtils.normalizeHydratedDate(value)
             }
@@ -678,9 +687,11 @@ export class AuroraMysqlDriver implements Driver {
             temporalKind === "plain-date"
         ) {
             if (columnMetadata.temporal) {
-                value = PlainDateUtils.toTemporal(value, {
-                    utc: columnMetadata.utc,
-                })
+                value = PlainDateUtils.toTemporal(
+                    value,
+                    { utc: columnMetadata.utc },
+                    this.options.temporal,
+                )
             } else {
                 value = DateUtils.mixedDateToDateString(value, {
                     utc: columnMetadata.utc,
@@ -693,7 +704,7 @@ export class AuroraMysqlDriver implements Driver {
             temporalKind === "plain-time"
         ) {
             if (columnMetadata.temporal) {
-                value = PlainTimeUtils.toTemporal(value)
+                value = PlainTimeUtils.toTemporal(value, this.options.temporal)
             } else {
                 value = DateUtils.mixedTimeToString(value)
             }

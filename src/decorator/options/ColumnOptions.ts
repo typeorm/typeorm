@@ -164,12 +164,12 @@ export interface ColumnOptions extends ColumnCommonOptions {
     transformer?: ValueTransformer | ValueTransformer[]
 
     /**
-     * Opt-in flag for Temporal hydration/persistence. `true` picks the default
-     * kind: wall-clock columns (postgres `timestamp`, mysql `datetime`, `date`,
-     * `time`) → `PlainDateTime`/`PlainDate`/`PlainTime`; moment-in-time columns
-     * (postgres `timestamptz`, mysql/mariadb `timestamp`) → `ZonedDateTime` in
-     * `UTC`; postgres `interval` → `Duration`. `{ timeZone }` overrides UTC for
-     * moment-in-time columns. `false` opts out. Requires `globalThis.Temporal`.
+     * Opt-in flag for Temporal hydration/persistence. `true` picks the default kind:
+     * wall-clock columns (postgres `timestamp`, mysql `datetime`, `date`, `time`) → `PlainDateTime`/`PlainDate`/`PlainTime`;
+     * moment-in-time columns (postgres `timestamptz`, mysql/mariadb `timestamp`) → `ZonedDateTime` in `UTC`;
+     * postgres `interval` → `Duration`.
+     * `{ timeZone }` overrides UTC for moment-in-time columns. `false` opts out.
+     * Requires a Temporal implementation — pass `temporal` in DataSource options or use Node 26+.
      */
     temporal?: TemporalColumnOption
 

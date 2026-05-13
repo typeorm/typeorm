@@ -1,13 +1,15 @@
 import "reflect-metadata"
 import { expect } from "chai"
+import { Temporal } from "@js-temporal/polyfill"
 import { EntityMetadataValidator } from "../../../src/metadata-builder/EntityMetadataValidator"
 import type { EntityMetadata } from "../../../src/metadata/EntityMetadata"
 import type { ColumnMetadata } from "../../../src/metadata/ColumnMetadata"
+import type { Driver } from "../../../src/driver/Driver"
 
 function makeColumn(opts: {
     propertyName: string
     type: string
-    temporal: any
+    temporal: unknown
 }): ColumnMetadata {
     return {
         propertyName: opts.propertyName,
@@ -28,11 +30,21 @@ function makeEntity(
     } as unknown as EntityMetadata
 }
 
+function makeDriver(temporal?: unknown): Driver {
+    return { options: { temporal } } as unknown as Driver
+}
+
 describe("EntityMetadataValidator > Temporal", () => {
     const validator = new EntityMetadataValidator()
-    const supported = typeof (globalThis as any).Temporal !== "undefined"
+    const validateTemporal = (
+        e: EntityMetadata,
+        driver: Driver = makeDriver(),
+    ) =>
+        (
+            validator as unknown as { validateTemporalColumns: Function }
+        ).validateTemporalColumns(e, driver)
 
-    it("noop for temporal: false and undefined", function () {
+    it("noop for temporal: false and undefined", () => {
         const e = makeEntity([
             makeColumn({
                 propertyName: "a",
@@ -45,13 +57,11 @@ describe("EntityMetadataValidator > Temporal", () => {
                 temporal: undefined,
             }),
         ])
-        expect(() =>
-            (validator as any).validateTemporalColumns(e),
-        ).not.to.throw()
+        // No Temporal implementation available, but no column opted in either.
+        expect(() => validateTemporal(e, makeDriver(undefined))).not.to.throw()
     })
 
-    it("accepts any column shape when Temporal is supported (no DB↔option matching)", function () {
-        if (!supported) this.skip()
+    it("accepts any column shape when Temporal is available (no DB↔option matching)", () => {
         const e = makeEntity([
             makeColumn({
                 propertyName: "a",
@@ -74,15 +84,12 @@ describe("EntityMetadataValidator > Temporal", () => {
                 temporal: { timeZone: "UTC" },
             }),
         ])
-        expect(() =>
-            (validator as any).validateTemporalColumns(e),
-        ).not.to.throw()
+        expect(() => validateTemporal(e)).not.to.throw()
     })
 
-    it("rejects temporal usage when Temporal API is missing", function () {
-        if (!supported) this.skip()
-        const original = (globalThis as any).Temporal
-        ;(globalThis as any).Temporal = undefined
+    it("accepts DataSource-injected Temporal even when globalThis is missing", () => {
+        const original = (globalThis as { Temporal?: unknown }).Temporal
+        ;(globalThis as { Temporal?: unknown }).Temporal = undefined
         try {
             const e = makeEntity([
                 makeColumn({
@@ -92,10 +99,29 @@ describe("EntityMetadataValidator > Temporal", () => {
                 }),
             ])
             expect(() =>
-                (validator as any).validateTemporalColumns(e),
-            ).to.throw(/Temporal.*not.*available/i)
+                validateTemporal(e, makeDriver(Temporal)),
+            ).not.to.throw()
         } finally {
-            ;(globalThis as any).Temporal = original
+            ;(globalThis as { Temporal?: unknown }).Temporal = original
+        }
+    })
+
+    it("rejects temporal usage when no implementation is available", () => {
+        const original = (globalThis as { Temporal?: unknown }).Temporal
+        ;(globalThis as { Temporal?: unknown }).Temporal = undefined
+        try {
+            const e = makeEntity([
+                makeColumn({
+                    propertyName: "v",
+                    type: "timestamptz",
+                    temporal: true,
+                }),
+            ])
+            expect(() => validateTemporal(e, makeDriver(undefined))).to.throw(
+                /Temporal/i,
+            )
+        } finally {
+            ;(globalThis as { Temporal?: unknown }).Temporal = original
         }
     })
 })

@@ -66,7 +66,7 @@ export class EntityMetadataValidator {
         if (!entityMetadata.primaryColumns.length && !entityMetadata.isJunction)
             throw new MissingPrimaryColumnError(entityMetadata)
 
-        this.validateTemporalColumns(entityMetadata)
+        this.validateTemporalColumns(entityMetadata, driver)
 
         // if entity has multiple primary keys and uses custom constraint name,
         // then all primary keys should have the same constraint name
@@ -273,21 +273,22 @@ export class EntityMetadataValidator {
     }
 
     /**
-     * Throws if any column opts into `temporal` but the runtime lacks the Temporal API.
+     * Throws if any column opts into `temporal` but no Temporal implementation is available.
      *
      * @param entityMetadata
+     * @param driver
      */
-    protected validateTemporalColumns(entityMetadata: EntityMetadata): void {
+    protected validateTemporalColumns(
+        entityMetadata: EntityMetadata,
+        driver: Driver,
+    ): void {
         for (const column of entityMetadata.columns) {
             if (column.temporal === undefined || column.temporal === false)
                 continue
 
-            if (!TemporalUtils.isSupported()) {
+            if (!TemporalUtils.isSupported(driver.options.temporal)) {
                 throw new TypeORMError(
-                    `Column "${entityMetadata.name}.${column.propertyName}" ` +
-                        `uses Temporal, but globalThis.Temporal is not ` +
-                        `available in this runtime. Use Node 26+ or a ` +
-                        `Temporal-capable runtime.`,
+                    `Column "${entityMetadata.name}.${column.propertyName}" uses Temporal, but no Temporal implementation is available. Pass \`temporal\` in DataSource options or use Node 26+.`,
                 )
             }
         }

@@ -772,6 +772,7 @@ export class PostgresDriver implements Driver {
 
         const temporalKind = TemporalUtils.inferKindFromReflectType(
             columnMetadata.type,
+            this.options.temporal,
         )
 
         if (columnMetadata.type === Boolean) {
@@ -922,6 +923,7 @@ export class PostgresDriver implements Driver {
 
         const temporalKind = TemporalUtils.inferKindFromReflectType(
             columnMetadata.type,
+            this.options.temporal,
         )
 
         if (columnMetadata.type === Boolean) {
@@ -934,7 +936,10 @@ export class PostgresDriver implements Driver {
             temporalKind === "plain-date-time"
         ) {
             if (columnMetadata.temporal) {
-                value = PlainDateTimeUtils.toTemporal(value)
+                value = PlainDateTimeUtils.toTemporal(
+                    value,
+                    this.options.temporal,
+                )
             } else {
                 value = DateUtils.normalizeHydratedDate(value)
             }
@@ -948,7 +953,11 @@ export class PostgresDriver implements Driver {
                     columnMetadata.temporal !== true
                         ? columnMetadata.temporal.timeZone
                         : "UTC"
-                value = ZonedDateTimeUtils.toTemporal(value, tz)
+                value = ZonedDateTimeUtils.toTemporal(
+                    value,
+                    tz,
+                    this.options.temporal,
+                )
             } else {
                 value = DateUtils.normalizeHydratedDate(value)
             }
@@ -957,9 +966,11 @@ export class PostgresDriver implements Driver {
             temporalKind === "plain-date"
         ) {
             if (columnMetadata.temporal) {
-                value = PlainDateUtils.toTemporal(value, {
-                    utc: columnMetadata.utc,
-                })
+                value = PlainDateUtils.toTemporal(
+                    value,
+                    { utc: columnMetadata.utc },
+                    this.options.temporal,
+                )
             } else {
                 value = DateUtils.mixedDateToDateString(value, {
                     utc: columnMetadata.utc,
@@ -970,7 +981,7 @@ export class PostgresDriver implements Driver {
             temporalKind === "plain-time"
         ) {
             if (columnMetadata.temporal) {
-                value = PlainTimeUtils.toTemporal(value)
+                value = PlainTimeUtils.toTemporal(value, this.options.temporal)
             } else {
                 value = DateUtils.mixedTimeToString(value)
             }
@@ -979,7 +990,7 @@ export class PostgresDriver implements Driver {
             temporalKind === "duration"
         ) {
             if (columnMetadata.temporal) {
-                value = DurationUtils.toTemporal(value)
+                value = DurationUtils.toTemporal(value, this.options.temporal)
             }
         } else if (
             columnMetadata.type === "vector" ||
@@ -1239,7 +1250,10 @@ export class PostgresDriver implements Driver {
         scale?: number
         isArray?: boolean
     }): string {
-        const temporalKind = TemporalUtils.inferKindFromReflectType(column.type)
+        const temporalKind = TemporalUtils.inferKindFromReflectType(
+            column.type,
+            this.options.temporal,
+        )
         if (temporalKind === "zoned-date-time")
             return "timestamp with time zone"
         if (temporalKind === "plain-date-time")

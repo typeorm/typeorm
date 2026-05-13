@@ -203,7 +203,6 @@ export function Column(
 
             if (
                 options.temporal !== false &&
-                TemporalUtils.isSupported() &&
                 TemporalUtils.inferKindFromReflectType(reflectMetadataType)
             ) {
                 options.temporal ??= true
