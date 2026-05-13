@@ -1326,9 +1326,21 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        const oldColumnType = this.driver.normalizeType({
+            type: oldColumn.type as ColumnType,
+        })
+        const newColumnType = this.driver.normalizeType({
+            type: newColumn.type as ColumnType,
+        })
+        const isVarcharLengthChanged =
+            oldColumn.length !== newColumn.length &&
+            oldColumnType === newColumnType &&
+            oldColumnType === "character varying"
+
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
+            oldColumnType !== newColumnType ||
+            (oldColumn.length !== newColumn.length &&
+                !isVarcharLengthChanged) ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1636,6 +1648,30 @@ export class PostgresQueryRunner
                         }" TYPE ${this.driver.createFullType(oldColumn)}`,
                     ),
                 )
+            }
+
+            if (isVarcharLengthChanged) {
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                    ),
+                )
+
+                const alteredColumn = clonedTable.findColumnByName(
+                    newColumn.name,
+                )
+                if (alteredColumn) {
+                    alteredColumn.length = newColumn.length
+                }
             }
 
             if (

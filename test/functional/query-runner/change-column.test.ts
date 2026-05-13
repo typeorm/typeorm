@@ -6,7 +6,7 @@ import {
     createTestingConnections,
     createTypeormMetadataTable,
 } from "../../utils/test-utils"
-import { TableColumn } from "../../../src"
+import { Table, TableColumn } from "../../../src"
 import type { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
@@ -178,6 +178,82 @@ describe("query runner > change column", () => {
                 table!.findColumnByName("id")!.isGenerated.should.be.false
                 expect(table!.findColumnByName("id")!.generationStrategy).to.be
                     .undefined
+
+                await queryRunner.release()
+            }),
+        ))
+
+    it("should alter postgres varchar length without losing column data", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (dataSource.driver.options.type !== "postgres") return
+
+                let queryRunner = dataSource.createQueryRunner()
+
+                await queryRunner.createTable(
+                    new Table({
+                        name: "change_column_varchar_length_post",
+                        columns: [
+                            {
+                                name: "id",
+                                type: "integer",
+                                isPrimary: true,
+                            },
+                            {
+                                name: "name",
+                                type: "varchar",
+                                length: "50",
+                            },
+                        ],
+                    }),
+                )
+                await queryRunner.query(
+                    `INSERT INTO "change_column_varchar_length_post"("id", "name") VALUES (1, 'hello')`,
+                )
+
+                let table = await queryRunner.getTable(
+                    "change_column_varchar_length_post",
+                )
+                const oldColumn = table!.findColumnByName("name")!
+                const newColumn = oldColumn.clone()
+                newColumn.type = "varchar"
+                newColumn.length = "51"
+
+                queryRunner.enableSqlMemory()
+                await queryRunner.changeColumn(table!, oldColumn, newColumn)
+
+                const upQueries = queryRunner
+                    .getMemorySql()
+                    .upQueries.map(({ query }) => query)
+                expect(upQueries).to.deep.equal([
+                    `ALTER TABLE "change_column_varchar_length_post" ALTER COLUMN "name" TYPE varchar(51)`,
+                ])
+                queryRunner.disableSqlMemory()
+                await queryRunner.release()
+
+                queryRunner = dataSource.createQueryRunner()
+                table = await queryRunner.getTable(
+                    "change_column_varchar_length_post",
+                )
+                await queryRunner.changeColumn(
+                    table!,
+                    table!.findColumnByName("name")!,
+                    new TableColumn({
+                        ...table!.findColumnByName("name")!,
+                        type: "varchar",
+                        length: "51",
+                    }),
+                )
+
+                const rows = await queryRunner.query(
+                    `SELECT "name" FROM "change_column_varchar_length_post" WHERE "id" = 1`,
+                )
+                expect(rows).to.deep.equal([{ name: "hello" }])
+
+                table = await queryRunner.getTable(
+                    "change_column_varchar_length_post",
+                )
+                expect(table!.findColumnByName("name")!.length).to.equal("51")
 
                 await queryRunner.release()
             }),
