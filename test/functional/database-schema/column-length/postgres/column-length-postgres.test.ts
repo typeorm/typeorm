@@ -85,7 +85,7 @@ describe("database schema > column length > postgres", () => {
             }),
         ))
 
-    // #3357
+    // #3357 regression test
     it("should preserve data when varchar length changes", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {

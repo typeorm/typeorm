@@ -117,4 +117,31 @@ describe("PostgresQueryRunner changeColumn", () => {
             'ALTER TABLE "bug" ALTER COLUMN "example" TYPE character varying(51) COLLATE "C"',
         ])
     })
+
+    it("uses default collation when removing varchar collation", async () => {
+        const queryRunner = createQueryRunner()
+        const oldColumn = new TableColumn({
+            name: "example",
+            type: "character varying",
+            length: "50",
+            collation: "en_US",
+            isNullable: true,
+        })
+        const newColumn = oldColumn.clone()
+        newColumn.collation = undefined
+        const table = new Table({
+            name: "bug",
+            columns: [oldColumn],
+        })
+
+        await queryRunner.changeColumn(table, oldColumn, newColumn)
+
+        const upQueries = queryRunner
+            .getMemorySql()
+            .upQueries.map((query) => query.query)
+
+        expect(upQueries).to.deep.equal([
+            'ALTER TABLE "bug" ALTER COLUMN "example" TYPE character varying(50) COLLATE pg_catalog."default"',
+        ])
+    })
 })
