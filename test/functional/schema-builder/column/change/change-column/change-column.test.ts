@@ -88,6 +88,71 @@ describe("schema builder > change column", () => {
             }),
         ))
 
+    it("should alter postgres varchar length without dropping the column", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (dataSource.driver.options.type !== "postgres") return
+
+                await dataSource.getRepository(Post).insert({
+                    id: 3357,
+                    version: "1",
+                    name: "preserved value",
+                    text: "text",
+                    tag: "tag",
+                    likesCount: 1,
+                })
+
+                const postMetadata = dataSource.getMetadata(Post)
+                const nameColumn =
+                    postMetadata.findColumnWithPropertyName("name")!
+                const originalLength = nameColumn.length
+                const originalCollation = nameColumn.collation
+                nameColumn.length = "500"
+                nameColumn.collation = "C"
+
+                try {
+                    // #3357: varchar length changes should preserve data and
+                    // keep full type details when combined with collation.
+                    const sqlInMemory = await dataSource.driver
+                        .createSchemaBuilder()
+                        .log()
+                    const upQueries = sqlInMemory.upQueries.map(
+                        ({ query }) => query,
+                    )
+
+                    expect(upQueries).to.include(
+                        `ALTER TABLE "post" ALTER COLUMN "name" TYPE character varying(500)`,
+                    )
+                    expect(upQueries).to.include(
+                        `ALTER TABLE "post" ALTER COLUMN "name" TYPE character varying(500) COLLATE "C"`,
+                    )
+                    expect(
+                        upQueries.some((query) =>
+                            query.includes(`DROP COLUMN "name"`),
+                        ),
+                    ).to.be.false
+                    expect(
+                        upQueries.some((query) => query.includes(`ADD "name"`)),
+                    ).to.be.false
+
+                    await dataSource.synchronize()
+
+                    const post = await dataSource
+                        .getRepository(Post)
+                        .findOneByOrFail({ id: 3357 })
+                    expect(post.name).to.equal("preserved value")
+
+                    const sqlAfterSync = await dataSource.driver
+                        .createSchemaBuilder()
+                        .log()
+                    expect(sqlAfterSync.upQueries).to.have.length(0)
+                } finally {
+                    nameColumn.length = originalLength
+                    nameColumn.collation = originalCollation
+                }
+            }),
+        ))
+
     it("should correctly change column type", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {

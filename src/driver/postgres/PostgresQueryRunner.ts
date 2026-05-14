@@ -1328,7 +1328,6 @@ export class PostgresQueryRunner
 
         if (
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1619,6 +1618,7 @@ export class PostgresQueryRunner
             }
 
             if (
+                newColumn.length !== oldColumn.length ||
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {
@@ -1636,6 +1636,13 @@ export class PostgresQueryRunner
                         }" TYPE ${this.driver.createFullType(oldColumn)}`,
                     ),
                 )
+
+                const column = clonedTable.columns.find(
+                    (column) => column.name === newColumn.name,
+                )
+                column!.length = newColumn.length
+                column!.precision = newColumn.precision
+                column!.scale = newColumn.scale
             }
 
             if (
@@ -2344,13 +2351,17 @@ export class PostgresQueryRunner
 
             // update column collation
             if (newColumn.collation !== oldColumn.collation) {
+                const newCollation = newColumn.collation
+                    ? `"${newColumn.collation}"`
+                    : `pg_catalog."default"`
+
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE "${
-                            newColumn.collation
-                        }"`,
+                        }" TYPE ${this.driver.createFullType(
+                            newColumn,
+                        )} COLLATE ${newCollation}`,
                     ),
                 )
 
@@ -2362,9 +2373,16 @@ export class PostgresQueryRunner
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE ${oldCollation}`,
+                        }" TYPE ${this.driver.createFullType(
+                            oldColumn,
+                        )} COLLATE ${oldCollation}`,
                     ),
                 )
+
+                const column = clonedTable.columns.find(
+                    (column) => column.name === newColumn.name,
+                )
+                column!.collation = newColumn.collation
             }
 
             if (newColumn.generatedType !== oldColumn.generatedType) {
