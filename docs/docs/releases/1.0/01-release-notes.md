@@ -162,6 +162,7 @@ TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes pla
 
 ### Driver-specific fixes
 
+- **PostgreSQL: varchar length migrations preserve data** — changing the length of a `varchar` or `character varying` column now uses `ALTER COLUMN ... TYPE ...` instead of dropping and recreating the column ([#12497](https://github.com/typeorm/typeorm/pull/12497) by [@Gimyoonsoo](https://github.com/Gimyoonsoo))
 - **PostgreSQL: `timestamptz` persistence/hydration** — `timestamp with time zone` columns now persist and hydrate correctly ([#11774](https://github.com/typeorm/typeorm/pull/11774) by [@Minishlink](https://github.com/Minishlink))
 - **PostgreSQL: geometric type re-save** — point/circle values are now normalized on persist to avoid invalid input errors when re-saving hydrated objects ([#11857](https://github.com/typeorm/typeorm/pull/11857) by [@Cprakhar](https://github.com/Cprakhar))
 - **PostgreSQL/CockroachDB: tables with quoted names** — fixed handling of tables with special characters in names ([#10993](https://github.com/typeorm/typeorm/pull/10993) by [@iskalyakin](https://github.com/iskalyakin))
