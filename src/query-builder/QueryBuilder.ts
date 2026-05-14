@@ -1722,4 +1722,30 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             }
         }
     }
+
+    protected normalizeNumber(num: any) {
+        if (typeof num === "number" || num === undefined || num === null)
+            return num
+
+        return Number(num)
+    }
+
+    /**
+     * Normalizes and validates a numeric query parameter,
+     * throwing if the result is NaN.
+     *
+     * @param label
+     * @param num
+     */
+    protected validateNumericInput(
+        label: string,
+        num: number | undefined,
+    ): number | undefined {
+        const normalized = this.normalizeNumber(num)
+        if (normalized !== undefined && isNaN(normalized))
+            throw new TypeORMError(
+                `Provided "${label}" value is not a number. Please provide a numeric value.`,
+            )
+        return normalized
+    }
 }
