@@ -255,5 +255,5 @@ export interface BaseDataSourceOptions {
      * }
      *
      */
-    prepareEntityMetadata?(meta: EntityMetadata): unknown
+    readonly prepareEntityMetadata?: (meta: EntityMetadata) => unknown
 }
