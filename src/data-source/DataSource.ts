@@ -733,6 +733,13 @@ export class DataSource {
             await connectionMetadataBuilder.buildEntityMetadatas(
                 flattenedEntities,
             )
+
+        if (this.options.prepareEntityMetadata) {
+            for (const meta of entityMetadatas) {
+                await this.options.prepareEntityMetadata(meta)
+            }
+        }
+
         ObjectUtils.assign(this, {
             entityMetadatas: entityMetadatas,
             entityMetadatasMap: new Map(
