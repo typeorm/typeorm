@@ -1326,21 +1326,48 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
-        if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
-            newColumn.isArray !== oldColumn.isArray ||
-            (!oldColumn.generatedType &&
-                newColumn.generatedType === "STORED") ||
+        const isGeneratedColumnChange =
+            (!oldColumn.generatedType && newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
                 newColumn.generatedType === "STORED")
-        ) {
-            // To avoid data conversion, we just recreate column
-            await this.dropColumn(table, oldColumn)
-            await this.addColumn(table, newColumn)
+        const isColumnTypeChange = oldColumn.type !== newColumn.type
+        const isColumnLengthChange = oldColumn.length !== newColumn.length
+        const isColumnArrayChange = newColumn.isArray !== oldColumn.isArray
 
-            // update cloned table
-            clonedTable = table.clone()
+        if (
+            isColumnTypeChange ||
+            isColumnLengthChange ||
+            isColumnArrayChange ||
+            isGeneratedColumnChange
+        ) {
+            if (
+                isColumnLengthChange &&
+                !isColumnTypeChange &&
+                !isColumnArrayChange &&
+                !isGeneratedColumnChange
+            ) {
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                    ),
+                )
+            } else {
+                // To avoid data conversion, we just recreate column
+                await this.dropColumn(table, oldColumn)
+                await this.addColumn(table, newColumn)
+
+                // update cloned table
+                clonedTable = table.clone()
+            }
         } else {
             if (oldColumn.name !== newColumn.name) {
                 // rename column
