@@ -11,7 +11,7 @@ jobs:
   better-sqlite3:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
@@ -46,7 +46,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
@@ -76,7 +76,7 @@ jobs:
         ports:
           - "27017:27017"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
@@ -101,7 +101,7 @@ jobs:
           ACCEPT_EULA: Y
           MSSQL_PID: Express
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
@@ -136,7 +136,7 @@ jobs:
           MYSQL_PASSWORD: password
           MYSQL_DATABASE: typeorm
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
@@ -176,7 +176,7 @@ jobs:
           MYSQL_PASSWORD: password
           MYSQL_DATABASE: typeorm
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
@@ -197,7 +197,7 @@ jobs:
   oracle:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - run: docker compose up oracle --detach
 
@@ -237,7 +237,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
@@ -253,7 +253,7 @@ jobs:
   sap:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - run: docker compose up hanaexpress --detach
 
@@ -283,7 +283,7 @@ jobs:
           SPANNER_INSTANCE_ID: typeorm
           SPANNER_DATABASE_ID: typeorm
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
@@ -303,7 +303,7 @@ jobs:
   sqljs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
