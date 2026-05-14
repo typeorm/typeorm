@@ -2392,6 +2392,19 @@ export class PostgresQueryRunner
                 )
             }
 
+            const clonedColumn = clonedTable.columns.find(
+                (column) => column.name === newColumn.name,
+            )
+
+            if (clonedColumn) {
+                clonedColumn.length = newColumn.length
+                clonedColumn.precision = newColumn.precision
+                clonedColumn.scale = newColumn.scale
+                clonedColumn.collation = newColumn.collation
+                clonedColumn.spatialFeatureType = newColumn.spatialFeatureType
+                clonedColumn.srid = newColumn.srid
+            }
+
             if (newColumn.generatedType !== oldColumn.generatedType) {
                 // Convert generated column data to normal column
                 if (
