@@ -9,6 +9,7 @@ import {
 import { TableColumn } from "../../../src"
 import type { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
+import type { BaseQueryRunner } from "../../../src/query-runner/BaseQueryRunner"
 
 describe("query runner > change column", () => {
     let dataSources: DataSource[]
@@ -179,6 +180,54 @@ describe("query runner > change column", () => {
                 expect(table!.findColumnByName("id")!.generationStrategy).to.be
                     .undefined
 
+                await queryRunner.release()
+            }),
+        ))
+
+    it("should alter postgres varchar length without dropping the column", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (dataSource.driver.options.type !== "postgres") return
+
+                const queryRunner = dataSource.createQueryRunner()
+                const table = await queryRunner.getTable("post")
+                const nameColumn = table!.findColumnByName("name")!
+
+                const changedNameColumn = nameColumn.clone()
+                changedNameColumn.length = "51"
+
+                queryRunner.enableSqlMemory()
+                await queryRunner.changeColumn(
+                    table!,
+                    nameColumn,
+                    changedNameColumn,
+                )
+
+                const sqlInMemory = queryRunner.getMemorySql()
+                const upQueries = sqlInMemory.upQueries.map((query) =>
+                    query.query.replaceAll(/\s+/g, " ").trim(),
+                )
+                const downQueries = sqlInMemory.downQueries.map((query) =>
+                    query.query.replaceAll(/\s+/g, " ").trim(),
+                )
+
+                expect(upQueries).to.include(
+                    `ALTER TABLE "post" ALTER COLUMN "name" TYPE character varying(51)`,
+                )
+                expect(downQueries).to.include(
+                    `ALTER TABLE "post" ALTER COLUMN "name" TYPE character varying`,
+                )
+                expect(upQueries.join(" ")).not.to.include(`DROP COLUMN "name"`)
+                expect(upQueries.join(" ")).not.to.include(
+                    `ADD "name" character varying(51)`,
+                )
+                const cachedTable = (queryRunner as unknown as BaseQueryRunner)
+                    .loadedTables[0]
+                cachedTable
+                    .findColumnByName("name")!
+                    .length!.should.be.equal("51")
+
+                queryRunner.disableSqlMemory()
                 await queryRunner.release()
             }),
         ))
