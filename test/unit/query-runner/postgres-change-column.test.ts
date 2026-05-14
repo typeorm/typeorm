@@ -1,15 +1,28 @@
 import "reflect-metadata"
 import { expect } from "chai"
+import type { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
 import { PostgresQueryRunner } from "../../../src/driver/postgres/PostgresQueryRunner"
 import { Table } from "../../../src/schema-builder/table/Table"
 import { TableColumn } from "../../../src/schema-builder/table/TableColumn"
 
 describe("PostgresQueryRunner changeColumn", () => {
+    type MinimalPostgresDriver = Pick<
+        PostgresDriver,
+        | "database"
+        | "searchSchema"
+        | "options"
+        | "parseTableName"
+        | "createFullType"
+        | "buildTableName"
+        | "dataSource"
+    >
+
     function createQueryRunner() {
-        const driver: any = {
+        const driver = {
             database: "test",
             searchSchema: "public",
             options: { type: "postgres" },
+            dataSource: undefined as unknown as PostgresDriver["dataSource"],
             parseTableName(target: Table | string) {
                 if (typeof target === "string") {
                     return { schema: undefined, tableName: target }
@@ -29,7 +42,7 @@ describe("PostgresQueryRunner changeColumn", () => {
             ) {
                 return [database, schema, tableName].filter(Boolean).join(".")
             },
-        }
+        } satisfies MinimalPostgresDriver
 
         driver.dataSource = {
             driver,
@@ -39,9 +52,12 @@ describe("PostgresQueryRunner changeColumn", () => {
                 indexName: () => "IDX_test",
                 foreignKeyName: () => "FK_test",
             },
-        }
+        } as unknown as PostgresDriver["dataSource"]
 
-        const queryRunner = new PostgresQueryRunner(driver, "master")
+        const queryRunner = new PostgresQueryRunner(
+            driver as PostgresDriver,
+            "master",
+        )
         queryRunner.enableSqlMemory()
 
         return queryRunner

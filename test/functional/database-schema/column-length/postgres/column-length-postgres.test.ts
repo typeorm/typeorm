@@ -10,13 +10,25 @@ import {
 
 describe("database schema > column length > postgres", () => {
     let dataSources: DataSource[]
+
+    function resetPostColumnLengths(dataSource: DataSource) {
+        const metadata = dataSource.getMetadata(Post)
+        metadata.findColumnWithPropertyName("characterVarying")!.length = "50"
+        metadata.findColumnWithPropertyName("varchar")!.length = "50"
+        metadata.findColumnWithPropertyName("character")!.length = "50"
+        metadata.findColumnWithPropertyName("char")!.length = "50"
+    }
+
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [Post],
             enabledDrivers: ["postgres"],
         })
     })
-    beforeEach(() => reloadTestingDatabases(dataSources))
+    beforeEach(() => {
+        dataSources.forEach(resetPostColumnLengths)
+        return reloadTestingDatabases(dataSources)
+    })
     after(() => closeTestingConnections(dataSources))
 
     it("all types should create with correct size", () =>
@@ -76,6 +88,11 @@ describe("database schema > column length > postgres", () => {
     it("should preserve data when varchar length changes", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
+                const metadata = dataSource.getMetadata(Post)
+                metadata.findColumnWithPropertyName("varchar")!.length = "50"
+
+                await dataSource.synchronize(true)
+
                 await dataSource
                     .createQueryBuilder()
                     .insert()
@@ -89,7 +106,6 @@ describe("database schema > column length > postgres", () => {
                     })
                     .execute()
 
-                const metadata = dataSource.getMetadata(Post)
                 metadata.findColumnWithPropertyName("varchar")!.length = "100"
 
                 await dataSource.synchronize(false)
