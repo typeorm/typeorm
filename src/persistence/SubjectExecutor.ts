@@ -299,7 +299,7 @@ export class SubjectExecutor {
                 this.queryRunner.broadcaster.broadcastAfterInsertEvent(
                     result,
                     subject.metadata,
-                    subject.entity!,
+                    subject.originalEntity!,
                     subject.identifier,
                 ),
             )
@@ -308,7 +308,7 @@ export class SubjectExecutor {
                 this.queryRunner.broadcaster.broadcastAfterUpdateEvent(
                     result,
                     subject.metadata,
-                    subject.entity!,
+                    subject.originalEntity!,
                     subject.databaseEntity,
                     subject.diffColumns,
                     subject.diffRelations,

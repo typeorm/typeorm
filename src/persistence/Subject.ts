@@ -63,6 +63,12 @@ export class Subject {
     databaseEntity?: ObjectLiteral
 
     /**
+     * Original entity snapshot before execution.
+     * Preserved to pass select:false columns to afterUpdate broadcast event.
+     */
+    originalEntity?: ObjectLiteral
+
+    /**
      * Indicates if database entity was loaded.
      * No matter if it was found or not, it indicates the fact of loading.
      */
@@ -169,6 +175,7 @@ export class Subject {
             this.changeMaps.push(...options.changeMaps)
 
         this.recompute()
+        this.snapshotEntity()
     }
 
     // -------------------------------------------------------------------------
@@ -331,6 +338,16 @@ export class Subject {
             )
         } else if (this.databaseEntity) {
             this.identifier = this.metadata.getEntityIdMap(this.databaseEntity)
+        }
+    }
+
+    /**
+     * Takes a snapshot of the current entity state.
+     * Used to preserve original values (e.g. select:false columns) before execution mutates the entity.
+     */
+    snapshotEntity(): void {
+        if (this.entity && !this.originalEntity) {
+            this.originalEntity = structuredClone(this.entity)
         }
     }
 }
