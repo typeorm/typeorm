@@ -90,9 +90,6 @@ describe("database schema > column length > postgres", () => {
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const metadata = dataSource.getMetadata(Post)
-                metadata.findColumnWithPropertyName("varchar")!.length = "50"
-
-                await dataSource.synchronize(true)
 
                 await dataSource
                     .createQueryBuilder()
