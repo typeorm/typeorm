@@ -72,4 +72,34 @@ describe("database schema > column length > postgres", () => {
                 )
             }),
         ))
+
+    it("should preserve data when varchar length changes", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await dataSource
+                    .createQueryBuilder()
+                    .insert()
+                    .into(Post)
+                    .values({
+                        id: 1,
+                        characterVarying: "character varying value",
+                        varchar: "varchar value",
+                        character: "character value",
+                        char: "char value",
+                    })
+                    .execute()
+
+                const metadata = dataSource.getMetadata(Post)
+                metadata.findColumnWithPropertyName("varchar")!.length = "100"
+
+                await dataSource.synchronize(false)
+
+                const post = await dataSource
+                    .createQueryBuilder(Post, "post")
+                    .where("post.id = :id", { id: 1 })
+                    .getOneOrFail()
+
+                expect(post.varchar).to.be.equal("varchar value")
+            }),
+        ))
 })
