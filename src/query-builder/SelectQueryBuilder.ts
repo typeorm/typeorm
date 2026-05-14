@@ -1483,8 +1483,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Sets LIMIT - maximum number of rows to be selected.
-     * When joins are present, a two-query distinct-id strategy is used
-     * so that LIMIT applies to root entities rather than raw joined rows.
+     * NOTE that it may not work as you expect if you are using joins.
+     * If you want to implement pagination, and you are having join in your query,
+     * then use the take method instead.
      *
      * @param limit
      */
@@ -1495,8 +1496,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Sets OFFSET - selection offset.
-     * When joins are present, a two-query distinct-id strategy is used
-     * so that OFFSET applies to root entities rather than raw joined rows.
+     * NOTE that it may not work as you expect if you are using joins.
+     * If you want to implement pagination, and you are having join in your query,
+     * then use the skip method instead.
      *
      * @param offset
      */
@@ -3415,10 +3417,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         // first query find ids in skip and take range
         // and second query loads the actual data in given ids range
         if (
-            (this.expressionMap.skip ||
-                this.expressionMap.take ||
-                this.expressionMap.offset ||
-                this.expressionMap.limit) &&
+            (this.expressionMap.skip || this.expressionMap.take) &&
             this.expressionMap.joinAttributes.length > 0
         ) {
             // we are skipping order by here because its not working in subqueries anyway
@@ -3458,10 +3457,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
             const originalQuery = this.clone()
 
-            // clear limit/offset from the inner query since pagination is handled by the outer distinct query
-            originalQuery.expressionMap.limit = undefined
-            originalQuery.expressionMap.offset = undefined
-
             // preserve original timeTravel value since we set it to "false" in subquery
             const originalQueryTimeTravel =
                 originalQuery.expressionMap.timeTravel
@@ -3480,8 +3475,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     "distinctAlias",
                 )
                 .timeTravelQuery(originalQueryTimeTravel)
-                .offset(this.expressionMap.skip ?? this.expressionMap.offset)
-                .limit(this.expressionMap.take ?? this.expressionMap.limit)
+                .offset(this.expressionMap.skip)
+                .limit(this.expressionMap.take)
                 .orderBy(orderBys)
                 .cache(
                     this.expressionMap.cache && this.expressionMap.cacheId
@@ -3541,14 +3536,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             " IN (:...orm_distinct_ids)"
                     }
                 }
-                const secondQuery = this.clone()
+                rawResults = await this.clone()
                     .mergeExpressionMap({
                         extraAppendedAndWhereCondition: condition,
                     })
                     .setParameters(parameters)
-                secondQuery.expressionMap.limit = undefined
-                secondQuery.expressionMap.offset = undefined
-                rawResults = await secondQuery.loadRawResults(queryRunner)
+                    .loadRawResults(queryRunner)
             }
         } else {
             rawResults = await this.loadRawResults(queryRunner)
