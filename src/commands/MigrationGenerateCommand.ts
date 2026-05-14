@@ -85,9 +85,10 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 path.resolve(process.cwd(), args.dataSource as string),
             )
             dataSource.setOptions({
+                subscribers: [],
                 synchronize: false,
                 dropSchema: false,
-                logging: false,
+                logging: ["query", "error", "schema"],
             })
             await dataSource.initialize()
 
