@@ -1326,6 +1326,36 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        const isVarcharLengthOnlyChange =
+            this.isVarcharColumn(oldColumn) &&
+            this.isVarcharColumn(newColumn) &&
+            oldColumn.name === newColumn.name &&
+            oldColumn.length !== newColumn.length &&
+            newColumn.isArray === oldColumn.isArray &&
+            oldColumn.charset === newColumn.charset &&
+            oldColumn.collation === newColumn.collation &&
+            oldColumn.precision === newColumn.precision &&
+            oldColumn.scale === newColumn.scale &&
+            oldColumn.default === newColumn.default &&
+            oldColumn.isNullable === newColumn.isNullable &&
+            oldColumn.isGenerated === newColumn.isGenerated &&
+            oldColumn.generationStrategy === newColumn.generationStrategy &&
+            oldColumn.generatedIdentity === newColumn.generatedIdentity &&
+            oldColumn.isPrimary === newColumn.isPrimary &&
+            oldColumn.isUnique === newColumn.isUnique &&
+            oldColumn.comment === newColumn.comment &&
+            oldColumn.enumName === newColumn.enumName &&
+            OrmUtils.isArraysEqual(
+                oldColumn.enum ?? [],
+                newColumn.enum ?? [],
+            ) &&
+            oldColumn.primaryKeyConstraintName ===
+                newColumn.primaryKeyConstraintName &&
+            oldColumn.generatedType === newColumn.generatedType &&
+            oldColumn.asExpression === newColumn.asExpression &&
+            oldColumn.spatialFeatureType === newColumn.spatialFeatureType &&
+            oldColumn.srid === newColumn.srid
+
         if (
             oldColumn.type !== newColumn.type ||
             oldColumn.length !== newColumn.length ||
@@ -1335,12 +1365,36 @@ export class PostgresQueryRunner
             (oldColumn.asExpression !== newColumn.asExpression &&
                 newColumn.generatedType === "STORED")
         ) {
-            // To avoid data conversion, we just recreate column
-            await this.dropColumn(table, oldColumn)
-            await this.addColumn(table, newColumn)
+            if (isVarcharLengthOnlyChange) {
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                    ),
+                )
 
-            // update cloned table
-            clonedTable = table.clone()
+                const oldTableColumn = clonedTable.columns.find(
+                    (column) => column.name === oldColumn.name,
+                )
+                clonedTable.columns[
+                    clonedTable.columns.indexOf(oldTableColumn!)
+                ] = newColumn
+            } else {
+                // To avoid data conversion, we just recreate column
+                await this.dropColumn(table, oldColumn)
+                await this.addColumn(table, newColumn)
+
+                // update cloned table
+                clonedTable = table.clone()
+            }
         } else {
             if (oldColumn.name !== newColumn.name) {
                 // rename column
@@ -5186,6 +5240,10 @@ export class PostgresQueryRunner
             c += ` DEFAULT ${this.driver.uuidGenerator}`
 
         return c
+    }
+
+    protected isVarcharColumn(column: TableColumn): boolean {
+        return column.type === "character varying" || column.type === "varchar"
     }
 
     /**
