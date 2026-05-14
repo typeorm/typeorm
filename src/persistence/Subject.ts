@@ -347,7 +347,7 @@ export class Subject {
      */
     snapshotEntity(): void {
         if (this.entity && !this.originalEntity) {
-            this.originalEntity = structuredClone(this.entity)
+            this.originalEntity = { ...this.entity }
         }
     }
 }
