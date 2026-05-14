@@ -18,9 +18,7 @@ function filterByCteCapabilities(
 describe("github issues > #12489 Recursive CTEs order dependent, can't have more than one", () => {
     let dataSources: DataSource[]
     before(async () => {
-        dataSources = await createTestingConnections({
-            entities: [],
-        })
+        dataSources = await createTestingConnections({})
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
@@ -55,29 +53,29 @@ describe("github issues > #12489 Recursive CTEs order dependent, can't have more
                                 `"cte1"."foo" = "cte3"."foo"`,
                             )
                             .addCommonTableExpression(
-                                `SELECT * AS foo FROM sys.odcinumberlist(1,2,3,4,5,6,7,8,9,10)`,
+                                `SELECT LEVEL AS "foo" FROM "DUAL" CONNECT BY LEVEL <= 10`,
                                 "cte1",
                                 { recursive: false, columnNames: ["foo"] },
                             )
                             .addCommonTableExpression(
                                 `SELECT 1 FROM "DUAL"` +
                                     ` UNION ALL` +
-                                    ` SELECT cte2.foo + 1` +
-                                    ` FROM cte2` +
-                                    ` WHERE cte2.foo < 10`,
+                                    ` SELECT "cte2"."foo" + 1` +
+                                    ` FROM "cte2"` +
+                                    ` WHERE "cte2"."foo" < 10`,
                                 "cte2",
                                 { recursive: true, columnNames: ["foo"] },
                             )
                             .addCommonTableExpression(
                                 `SELECT 1 FROM "DUAL"` +
                                     ` UNION ALL` +
-                                    ` SELECT cte3.foo + 1` +
-                                    ` FROM cte3` +
-                                    ` WHERE cte3.foo < 10`,
+                                    ` SELECT "cte3"."foo" + 1` +
+                                    ` FROM "cte3"` +
+                                    ` WHERE "cte3"."foo" < 10`,
                                 "cte3",
                                 { recursive: true, columnNames: ["foo"] },
                             )
-                            .addSelect("cte1.foo", "foo")
+                            .addSelect(`"cte1.foo"`, "foo")
                             .getRawMany<{ foo: number }>()
                     } else {
                         qb = await dataSource
@@ -95,12 +93,14 @@ describe("github issues > #12489 Recursive CTEs order dependent, can't have more
                                 `"cte1"."foo" = "cte3"."foo"`,
                             )
                             .addCommonTableExpression(
-                                `SELECT foo FROM (VALUES (1), (2), (3), (4), (5), (6), (7), (8), (9), (10)) AS t(foo)`,
+                                [...Array(10)]
+                                    .map((_, i) => `SELECT ${i + 1} AS foo`)
+                                    .join(" UNION "),
                                 "cte1",
-                                { recursive: false, columnNames: ["foo"] },
+                                { columnNames: ["foo"] },
                             )
                             .addCommonTableExpression(
-                                `SELECT 1` +
+                                `SELECT 1 AS foo` +
                                     ` UNION ALL` +
                                     ` SELECT cte2.foo + 1` +
                                     ` FROM cte2` +
@@ -109,7 +109,7 @@ describe("github issues > #12489 Recursive CTEs order dependent, can't have more
                                 { recursive: true, columnNames: ["foo"] },
                             )
                             .addCommonTableExpression(
-                                `SELECT 1` +
+                                `SELECT 1 AS foo` +
                                     ` UNION ALL` +
                                     ` SELECT cte3.foo + 1` +
                                     ` FROM cte3` +
