@@ -123,23 +123,15 @@ describe("query builder > cte > recursive", () => {
                                 "cte3",
                                 { recursive: true, columnNames: ["foo"] },
                             )
-                            .addSelect(`"cte1.foo"`, "foo")
+                            .addSelect(`"cte1"."foo"`, "foo")
                             .getRawMany<{ foo: number }>()
                     } else {
                         qb = await dataSource
                             .createQueryBuilder()
                             .select([])
                             .from("cte1", "cte1")
-                            .innerJoin(
-                                "cte2",
-                                "cte2",
-                                `"cte1"."foo" = "cte2"."foo"`,
-                            )
-                            .innerJoin(
-                                "cte3",
-                                "cte3",
-                                `"cte1"."foo" = "cte3"."foo"`,
-                            )
+                            .innerJoin("cte2", "cte2", "cte1.foo = cte2.foo")
+                            .innerJoin("cte3", "cte3", "cte1.foo = cte3.foo")
                             .addCommonTableExpression(
                                 [...Array(10)]
                                     .map((_, i) => `SELECT ${i + 1} AS foo`)

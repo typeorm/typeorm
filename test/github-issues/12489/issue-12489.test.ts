@@ -42,16 +42,8 @@ describe("github issues > #12489 Recursive CTEs order dependent, can't have more
                             .createQueryBuilder()
                             .select([])
                             .from("cte1", "cte1")
-                            .innerJoin(
-                                "cte2",
-                                "cte2",
-                                `"cte1"."foo" = "cte2"."foo"`,
-                            )
-                            .innerJoin(
-                                "cte3",
-                                "cte3",
-                                `"cte1"."foo" = "cte3"."foo"`,
-                            )
+                            .innerJoin("cte2", "cte2", "cte1.foo = cte2.foo")
+                            .innerJoin("cte3", "cte3", "cte1.foo = cte3.foo")
                             .addCommonTableExpression(
                                 `SELECT LEVEL AS "foo" FROM "DUAL" CONNECT BY LEVEL <= 10`,
                                 "cte1",
@@ -75,23 +67,15 @@ describe("github issues > #12489 Recursive CTEs order dependent, can't have more
                                 "cte3",
                                 { recursive: true, columnNames: ["foo"] },
                             )
-                            .addSelect(`"cte1.foo"`, "foo")
+                            .addSelect(`"cte1"."foo"`, "foo")
                             .getRawMany<{ foo: number }>()
                     } else {
                         qb = await dataSource
                             .createQueryBuilder()
                             .select([])
                             .from("cte1", "cte1")
-                            .innerJoin(
-                                "cte2",
-                                "cte2",
-                                `"cte1"."foo" = "cte2"."foo"`,
-                            )
-                            .innerJoin(
-                                "cte3",
-                                "cte3",
-                                `"cte1"."foo" = "cte3"."foo"`,
-                            )
+                            .innerJoin("cte2", "cte2", "cte1.foo = cte2.foo")
+                            .innerJoin("cte3", "cte3", "cte1.foo = cte3.foo")
                             .addCommonTableExpression(
                                 [...Array(10)]
                                     .map((_, i) => `SELECT ${i + 1} AS foo`)
