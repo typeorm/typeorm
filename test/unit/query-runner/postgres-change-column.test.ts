@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import type { DataSource } from "../../../src/data-source/DataSource"
+import { DataSource } from "../../../src/data-source/DataSource"
 import type { PostgresDataSourceOptions } from "../../../src/driver/postgres/PostgresDataSourceOptions"
 import { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
 import { PostgresQueryRunner } from "../../../src/driver/postgres/PostgresQueryRunner"
@@ -8,19 +8,16 @@ import { TableColumn } from "../../../src/schema-builder/table/TableColumn"
 
 describe("query runner > postgres > change column", () => {
     function createQueryRunner() {
-        const driver = Object.create(PostgresDriver.prototype) as PostgresDriver
+        const dataSource = new DataSource({
+            type: "postgres",
+            database: "typeorm_test",
+            schema: "public",
+            driver: {},
+        } as PostgresDataSourceOptions)
+        const driver = dataSource.driver as PostgresDriver
 
-        driver.database = "typeorm_test"
-        driver.schema = "public"
         driver.searchSchema = "public"
         driver.spatialTypes = []
-        driver.options = {
-            type: "postgres",
-        } as PostgresDataSourceOptions
-        driver.dataSource = {
-            driver,
-            metadataTableName: "typeorm_metadata",
-        } as unknown as DataSource
 
         const queryRunner = new PostgresQueryRunner(driver, "master")
         queryRunner.enableSqlMemory()

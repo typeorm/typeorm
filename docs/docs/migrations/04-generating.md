@@ -114,4 +114,6 @@ export class PostRefactoringTIMESTAMP {
 
 See, you don't need to write the queries on your own.
 
+For PostgreSQL, generated migrations preserve data when changing the length of a `varchar` or `character varying` column by emitting `ALTER TABLE ... ALTER COLUMN ... TYPE ...` instead of dropping and recreating the column.
+
 The rule of thumb for generating migrations is that you generate them after **each** change you made to your models. To apply multi-line formatting to your generated migration queries, use the `p` (alias for `--pretty`) flag.
