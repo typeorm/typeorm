@@ -5,7 +5,7 @@ import { FindOperator } from "../FindOperator"
  * Example: { someField: JsonContains({...}) }
  */
 export function JsonContains<
-    T extends Record<string | number | symbol, unknown>,
+    T extends Record<string | number | symbol, unknown> | readonly unknown[],
 >(value: T | FindOperator<T>): FindOperator<any> {
     return new FindOperator("jsonContains", value as any)
 }

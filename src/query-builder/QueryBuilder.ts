@@ -1520,7 +1520,15 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         parameters.push(this.createParameter(v))
                     }
                 } else {
-                    parameters.push(this.createParameter(parameterValue.value))
+                    let value = parameterValue.value
+                    if (
+                        parameterValue.type === "jsonContains" &&
+                        value !== null &&
+                        typeof value === "object"
+                    ) {
+                        value = JSON.stringify(value)
+                    }
+                    parameters.push(this.createParameter(value))
                 }
             }
 
