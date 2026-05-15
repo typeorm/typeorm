@@ -1326,39 +1326,17 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
-        if (oldColumn.type !== newColumn.type || newColumn.isArray !== oldColumn.isArray ||
+        if (oldColumn.type !== newColumn.type ||
+            newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType && newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression && newColumn.generatedType === "STORED")
         ) {
-            // Type, array, or generated column changed - need to recreate column
+            // To avoid data conversion, we just recreate column
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
-        } else if (oldColumn.length !== newColumn.length) {
-            // For PostgreSQL, when type stays the same and only length changes,
-            // we can safely use ALTER COLUMN TYPE without data loss (e.g., varchar(50) -> varchar(51))
-            // This avoids the destructive DROP + ADD pattern that causes data loss
-            const upType = this.driver.createFullType(newColumn)
-            const downType = this.driver.createFullType(oldColumn)
-
-            upQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" TYPE ${upType}`,
-                ),
-            )
-            downQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" TYPE ${downType}`,
-                ),
-            )
-
-            // Update the oldColumn in cloned table to reflect the change
-            const clonedTableColumn = clonedTable.columns.find(c => c.name === oldColumn.name)
-            if (clonedTableColumn) {
-                clonedTableColumn.length = newColumn.length
-            }
         } else {
             if (oldColumn.name !== newColumn.name) {
                 // rename column
@@ -1638,7 +1616,8 @@ export class PostgresQueryRunner
 
             if (
                 newColumn.precision !== oldColumn.precision ||
-                newColumn.scale !== oldColumn.scale
+                newColumn.scale !== oldColumn.scale ||
+                oldColumn.length !== newColumn.length
             ) {
                 upQueries.push(
                     new Query(
