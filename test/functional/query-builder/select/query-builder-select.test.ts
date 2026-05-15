@@ -635,7 +635,7 @@ describe("query builder > select", () => {
                 .useIndex("my_index")
                 .getSql()
 
-            expect(sql).contains("FROM post USE INDEX (my_index)")
+            expect(sql).contains("FROM post USE INDEX (`my_index`)")
         }
     })
 
