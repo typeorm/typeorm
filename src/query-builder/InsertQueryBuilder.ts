@@ -488,6 +488,17 @@ export class InsertQueryBuilder<
             )
                 // special syntax for mysql DEFAULT VALUES insertion
                 query += "()"
+            else if (
+                !valuesExpression &&
+                this.dataSource.driver.options.type === "sap"
+            ) {
+                // SAP HANA requires explicit column names even for DEFAULT VALUES
+                const sapColumnsExpression =
+                    this.createSapDefaultColumnsExpression()
+                if (sapColumnsExpression) {
+                    query += `(${sapColumnsExpression})`
+                }
+            }
         }
 
         if (this.expressionMap.insertFromSelect)
@@ -503,9 +514,40 @@ export class InsertQueryBuilder<
 
             // add VALUES expression
             if (valuesExpression) {
-                if (
-                    (this.dataSource.driver.options.type === "oracle" ||
-                        this.dataSource.driver.options.type === "sap") &&
+                if (this.dataSource.driver.options.type === "sap") {
+                    const valueSets = this.getValueSets()
+                    const metadata = this.expressionMap.mainAlias!.metadata
+
+                    const columns: string[] = []
+                    const valuesArr: string[] = []
+
+                    const valueSet = valueSets[0]
+
+                    metadata.columns.forEach((col) => {
+                        if (col.isGenerated) return
+
+                        const value = valueSet[col.propertyName]
+
+                        if (value !== undefined) {
+                            columns.push(col.databaseName)
+
+                            if (typeof value === "number") {
+                                valuesArr.push(value.toString())
+                            } else if (typeof value === "function") {
+                                valuesArr.push(value())
+                            } else {
+                                valuesArr.push(`'${value}'`)
+                            }
+                        }
+                    })
+
+                    if (columns.length > 0) {
+                        query += ` (${columns.join(", ")}) VALUES (${valuesArr.join(", ")})`
+                    } else {
+                        query += ` VALUES ()`
+                    }
+                } else if (
+                    this.dataSource.driver.options.type === "oracle" &&
                     this.getValueSets().length > 1
                 ) {
                     query += ` ${valuesExpression}`
@@ -519,6 +561,38 @@ export class InsertQueryBuilder<
                 ) {
                     // special syntax for mysql DEFAULT VALUES insertion
                     query += " VALUES ()"
+                } else if (this.dataSource.driver.options.type === "sap") {
+                    // SAP HANA does not support DEFAULT VALUES syntax
+
+                    const metadata = this.expressionMap.mainAlias!.metadata
+
+                    const columns: string[] = []
+                    const valuesArr: string[] = []
+
+                    metadata.columns.forEach((col) => {
+                        // skip generated columns (like auto id)
+                        if (col.isGenerated) return
+
+                        // only include columns with defaults
+                        if (col.default !== undefined) {
+                            columns.push(col.databaseName)
+
+                            if (typeof col.default === "number") {
+                                valuesArr.push(col.default.toString())
+                            } else if (typeof col.default === "function") {
+                                valuesArr.push(col.default())
+                            } else {
+                                valuesArr.push(`'${col.default}'`)
+                            }
+                        }
+                    })
+
+                    if (columns.length > 0) {
+                        query += ` (${columns.join(", ")}) VALUES (${valuesArr.join(", ")})`
+                    } else {
+                        // fallback when no defaults exist
+                        query += ` VALUES ()`
+                    }
                 } else {
                     query += ` DEFAULT VALUES`
                 }
@@ -803,11 +877,13 @@ export class InsertQueryBuilder<
 
                 // if user did not specified such list then return all columns except auto-increment one
                 // for Oracle we return auto-increment column as well because Oracle does not support DEFAULT VALUES expression
+                // for SAP HANA we do the same because SAP HANA requires explicit column names for DEFAULT VALUES
                 if (
                     column.isGenerated &&
                     column.generationStrategy === "increment" &&
                     !(this.dataSource.driver.options.type === "spanner") &&
                     !(this.dataSource.driver.options.type === "oracle") &&
+                    !(this.dataSource.driver.options.type === "sap") &&
                     !DriverUtils.isSQLiteFamily(this.dataSource.driver) &&
                     !DriverUtils.isMySQLFamily(this.dataSource.driver) &&
                     !(this.dataSource.driver.options.type === "aurora-mysql") &&
@@ -850,6 +926,43 @@ export class InsertQueryBuilder<
         return this.expressionMap.insertColumns
             .map((columnName) => this.escape(columnName))
             .join(", ")
+    }
+
+    /**
+     * Creates a VALUES expression with DEFAULT values for SAP HANA.
+     * SAP HANA does not support the DEFAULT VALUES syntax, so we need to
+     * explicitly list columns and use DEFAULT for each value.
+     */
+    protected createSapDefaultValuesExpression(): string {
+        const columns = this.getInsertedColumns()
+
+        // If there are columns to insert, generate (DEFAULT, DEFAULT, ...)
+        if (columns.length > 0) {
+            const defaultValues = columns.map(() => "DEFAULT").join(", ")
+            return `(${defaultValues})`
+        }
+
+        // If there are no columns (shouldn't happen in normal cases),
+        // return empty string to fall back to DEFAULT VALUES
+        return ""
+    }
+
+    /**
+     * Creates a column names expression for SAP HANA DEFAULT VALUES.
+     * SAP HANA requires explicit column names even when using DEFAULT values.
+     */
+    protected createSapDefaultColumnsExpression(): string {
+        const columns = this.getInsertedColumns()
+
+        // If there are columns to insert, generate the column names
+        if (columns.length > 0) {
+            return columns
+                .map((column) => this.escape(column.databaseName))
+                .join(", ")
+        }
+
+        // If there are no columns, return empty string
+        return ""
     }
 
     /**
@@ -1326,6 +1439,7 @@ export class InsertQueryBuilder<
 
                     if (
                         value === undefined &&
+                        this.dataSource.driver.options.type !== "sap" &&
                         !(
                             column.isGenerated &&
                             column.generationStrategy === "uuid" &&

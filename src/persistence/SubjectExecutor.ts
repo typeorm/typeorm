@@ -1041,10 +1041,17 @@ export class SubjectExecutor {
                 if (column.isDeleteDate) return
 
                 // update nullable columns
+                // update nullable columns
                 if (column.isNullable) {
                     const columnValue = column.getEntityValue(subject.entity!)
-                    if (columnValue === undefined)
+
+                    if (
+                        columnValue === undefined &&
+                        this.queryRunner.dataSource.driver.options.type !==
+                            "sap"
+                    ) {
                         column.setEntityValue(subject.entity!, null)
+                    }
                 }
 
                 if (!column.isSelect) {

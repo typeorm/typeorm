@@ -285,6 +285,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             if (typeof raw === "number") {
                 result.affected = raw
             } else if (Array.isArray(raw)) {
+                raw = this.transformSapQueryResult(raw)
                 result.records = raw
             }
 
@@ -303,7 +304,8 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                     result.raw =
                         identityValueResult[0]["CURRENT_IDENTITY_VALUE()"]
-                    result.records = identityValueResult
+                    result.records =
+                        this.transformSapQueryResult(identityValueResult)
                 } catch (error) {
                     throw new QueryFailedError(lastIdQuery, [], error)
                 }
@@ -342,6 +344,25 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         } else {
             return result.raw
         }
+    }
+
+    /**
+     * Transforms SAP query result rows.
+     * Converts null values to undefined and preserves numeric values as-is.
+     */
+    protected transformSapQueryResult(raw: any[]): any[] {
+        return raw.map((row) => {
+            if (row === null || row === undefined) return row
+            if (typeof row !== "object") return row
+
+            for (const key of Object.keys(row)) {
+                if (row[key] === null) {
+                    row[key] = undefined
+                }
+            }
+
+            return row
+        })
     }
 
     /**
