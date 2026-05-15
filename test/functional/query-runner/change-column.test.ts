@@ -7,8 +7,48 @@ import {
     createTypeormMetadataTable,
 } from "../../utils/test-utils"
 import { TableColumn } from "../../../src"
-import type { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
+import { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
+import { PostgresQueryRunner } from "../../../src/driver/postgres/PostgresQueryRunner"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
+import { Table } from "../../../src/schema-builder/table/Table"
+
+describe("query runner > change column > Postgres SQL memory", () => {
+    it("should alter Postgres varchar length without recreating the column", async () => {
+        const queryRunner = createPostgresQueryRunner()
+        const table = new Table({
+            name: "post",
+            columns: [
+                new TableColumn({
+                    name: "title",
+                    type: "character varying",
+                    length: "50",
+                }),
+            ],
+        })
+        const newColumn = new TableColumn({
+            name: "title",
+            type: "character varying",
+            length: "51",
+        })
+
+        queryRunner.enableSqlMemory()
+
+        await queryRunner.changeColumn(table, table.columns[0], newColumn)
+
+        const sqlInMemory = queryRunner.getMemorySql()
+        const upQueries = sqlInMemory.upQueries.map(({ query }) => query)
+        const downQueries = sqlInMemory.downQueries.map(({ query }) => query)
+
+        expect(upQueries).to.deep.equal([
+            'ALTER TABLE "post" ALTER COLUMN "title" TYPE character varying(51)',
+        ])
+        expect(downQueries).to.deep.equal([
+            'ALTER TABLE "post" ALTER COLUMN "title" TYPE character varying(50)',
+        ])
+        expect(upQueries.join("\n")).not.to.include("DROP COLUMN")
+        expect(upQueries.join("\n")).not.to.include("ADD")
+    })
+})
 
 describe("query runner > change column", () => {
     let dataSources: DataSource[]
@@ -270,3 +310,18 @@ describe("query runner > change column", () => {
             }),
         ))
 })
+
+function createPostgresQueryRunner(): PostgresQueryRunner {
+    const driver = Object.create(PostgresDriver.prototype) as PostgresDriver
+    const dataSource = { driver }
+
+    Object.assign(driver, {
+        database: "typeorm_test",
+        dataSource,
+        schema: "public",
+        searchSchema: "public",
+        spatialTypes: ["geometry", "geography"],
+    })
+
+    return new PostgresQueryRunner(driver, "master")
+}
