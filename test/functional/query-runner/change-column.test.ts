@@ -86,6 +86,41 @@ describe("query runner > change column > Postgres SQL memory", () => {
             'ALTER TABLE "post" ALTER COLUMN "title" TYPE character varying(50) COLLATE "en_US"',
         ])
     })
+
+    it("should reset Postgres varchar collation without using undefined", async () => {
+        const queryRunner = createPostgresQueryRunner()
+        const table = new Table({
+            name: "post",
+            columns: [
+                new TableColumn({
+                    name: "title",
+                    type: "character varying",
+                    length: "50",
+                    collation: "en_US",
+                }),
+            ],
+        })
+        const newColumn = new TableColumn({
+            name: "title",
+            type: "character varying",
+            length: "50",
+        })
+
+        queryRunner.enableSqlMemory()
+
+        await queryRunner.changeColumn(table, table.columns[0], newColumn)
+
+        const sqlInMemory = queryRunner.getMemorySql()
+        const upQueries = sqlInMemory.upQueries.map(({ query }) => query)
+        const downQueries = sqlInMemory.downQueries.map(({ query }) => query)
+
+        expect(upQueries).to.deep.equal([
+            'ALTER TABLE "post" ALTER COLUMN "title" TYPE character varying(50) COLLATE pg_catalog."default"',
+        ])
+        expect(downQueries).to.deep.equal([
+            'ALTER TABLE "post" ALTER COLUMN "title" TYPE character varying(50) COLLATE "en_US"',
+        ])
+    })
 })
 
 describe("query runner > change column", () => {
