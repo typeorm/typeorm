@@ -52,6 +52,27 @@ describe("database schema > column length > postgres", () => {
                 metadata.findColumnWithPropertyName("character")!.length = "100"
                 metadata.findColumnWithPropertyName("char")!.length = "100"
 
+                const sqlInMemory = await dataSource.driver
+                    .createSchemaBuilder()
+                    .log()
+                const upQueries = sqlInMemory.upQueries.map(
+                    (query) => query.query,
+                )
+                const generatedSql = upQueries.join("\n")
+
+                expect(upQueries).to.include(
+                    `ALTER TABLE "post" ALTER COLUMN "characterVarying" TYPE character varying(100)`,
+                )
+                expect(upQueries).to.include(
+                    `ALTER TABLE "post" ALTER COLUMN "varchar" TYPE character varying(100)`,
+                )
+                expect(generatedSql).not.to.include(
+                    `DROP COLUMN "characterVarying"`,
+                )
+                expect(generatedSql).not.to.include(`DROP COLUMN "varchar"`)
+                expect(generatedSql).not.to.include(`ADD "characterVarying"`)
+                expect(generatedSql).not.to.include(`ADD "varchar"`)
+
                 await dataSource.synchronize(false)
 
                 const queryRunner = dataSource.createQueryRunner()

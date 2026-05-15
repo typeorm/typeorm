@@ -1336,7 +1336,7 @@ export class PostgresQueryRunner
             oldColumn.collation === newColumn.collation &&
             oldColumn.precision === newColumn.precision &&
             oldColumn.scale === newColumn.scale &&
-            oldColumn.default === newColumn.default &&
+            this.columnDefaultsEqual(oldColumn.default, newColumn.default) &&
             oldColumn.isNullable === newColumn.isNullable &&
             oldColumn.isGenerated === newColumn.isGenerated &&
             oldColumn.generationStrategy === newColumn.generationStrategy &&
@@ -5244,6 +5244,30 @@ export class PostgresQueryRunner
 
     protected isVarcharColumn(column: TableColumn): boolean {
         return column.type === "character varying" || column.type === "varchar"
+    }
+
+    protected columnDefaultsEqual(
+        oldDefault: unknown,
+        newDefault: unknown,
+    ): boolean {
+        return (
+            this.lowerDefaultValueIfNecessary(oldDefault) ===
+            this.lowerDefaultValueIfNecessary(newDefault)
+        )
+    }
+
+    protected lowerDefaultValueIfNecessary(value: unknown): unknown {
+        // Postgres saves function calls in default value as lowercase #2733
+        if (typeof value !== "string") {
+            return value
+        }
+
+        return value
+            .split(`'`)
+            .map((v, i) => {
+                return i % 2 === 1 ? v : v.toLowerCase()
+            })
+            .join(`'`)
     }
 
     /**

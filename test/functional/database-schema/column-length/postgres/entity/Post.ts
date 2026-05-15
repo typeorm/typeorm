@@ -14,6 +14,7 @@ export class Post {
 
     @Column("varchar", {
         length: 50,
+        default: () => "CURRENT_USER",
     })
     varchar: string
 
