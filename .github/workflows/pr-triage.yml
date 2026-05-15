@@ -48,8 +48,9 @@ jobs:
           Maintainers and bots are exempt via the \`skip-issue-check\` label."
 
           ## Extract issue references ##
+          ## Matches: #N, typeorm/typeorm#N, and full issue URLs
           ISSUES=$(echo "$PR_BODY" \
-            | grep -ioP '(?:fix(?:es)?|close[sd]?|resolve[sd]?)\s+(?:#(\d+)|https://github\.com/typeorm/typeorm/issues/(\d+))' \
+            | grep -ioP '(?:fix(?:es)?|close[sd]?|resolve[sd]?)\s+(?:typeorm/typeorm)?(?:#(\d+)|https://github\.com/typeorm/typeorm/issues/(\d+))' \
             | grep -oP '\d+' \
             | grep -vE '^0+$' \
             | sort -u \
@@ -91,13 +92,16 @@ jobs:
             apply_label "$LABEL_TRIAGE" "$LABEL_LINKED"
           fi
 
-          ## Duplicate check ##
+          ## Duplicate check — short (#N) and qualified (typeorm/typeorm#N) forms ##
           DUPES=$({
             gh pr list --repo "$REPO" --state open --search "\"Fixes #${FIRST_ISSUE}\"" --json number --jq ".[].number"
             gh pr list --repo "$REPO" --state open --search "\"Closes #${FIRST_ISSUE}\"" --json number --jq ".[].number"
             gh pr list --repo "$REPO" --state open --search "\"Resolves #${FIRST_ISSUE}\"" --json number --jq ".[].number"
             gh pr list --repo "$REPO" --state open --search "\"Closed #${FIRST_ISSUE}\"" --json number --jq ".[].number"
             gh pr list --repo "$REPO" --state open --search "\"Resolved #${FIRST_ISSUE}\"" --json number --jq ".[].number"
+            gh pr list --repo "$REPO" --state open --search "\"Fixes ${REPO}#${FIRST_ISSUE}\"" --json number --jq ".[].number"
+            gh pr list --repo "$REPO" --state open --search "\"Closes ${REPO}#${FIRST_ISSUE}\"" --json number --jq ".[].number"
+            gh pr list --repo "$REPO" --state open --search "\"Resolves ${REPO}#${FIRST_ISSUE}\"" --json number --jq ".[].number"
           } | sort -u | grep -v "^${PR_NUMBER}$" || true)
 
           if [ -n "$DUPES" ]; then
