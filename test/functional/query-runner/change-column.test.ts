@@ -48,6 +48,44 @@ describe("query runner > change column > Postgres SQL memory", () => {
         expect(upQueries.join("\n")).not.to.include("DROP COLUMN")
         expect(upQueries.join("\n")).not.to.include("ADD")
     })
+
+    it("should preserve Postgres varchar length when changing collation", async () => {
+        const queryRunner = createPostgresQueryRunner()
+        const table = new Table({
+            name: "post",
+            columns: [
+                new TableColumn({
+                    name: "title",
+                    type: "character varying",
+                    length: "50",
+                    collation: "en_US",
+                }),
+            ],
+        })
+        const newColumn = new TableColumn({
+            name: "title",
+            type: "character varying",
+            length: "51",
+            collation: "fr_FR",
+        })
+
+        queryRunner.enableSqlMemory()
+
+        await queryRunner.changeColumn(table, table.columns[0], newColumn)
+
+        const sqlInMemory = queryRunner.getMemorySql()
+        const upQueries = sqlInMemory.upQueries.map(({ query }) => query)
+        const downQueries = sqlInMemory.downQueries.map(({ query }) => query)
+
+        expect(upQueries).to.deep.equal([
+            'ALTER TABLE "post" ALTER COLUMN "title" TYPE character varying(51)',
+            'ALTER TABLE "post" ALTER COLUMN "title" TYPE character varying(51) COLLATE "fr_FR"',
+        ])
+        expect(downQueries).to.deep.equal([
+            'ALTER TABLE "post" ALTER COLUMN "title" TYPE character varying(50)',
+            'ALTER TABLE "post" ALTER COLUMN "title" TYPE character varying(50) COLLATE "en_US"',
+        ])
+    })
 })
 
 describe("query runner > change column", () => {
