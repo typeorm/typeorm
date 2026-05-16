@@ -6,7 +6,7 @@ import {
     createTestingConnections,
     createTypeormMetadataTable,
 } from "../../utils/test-utils"
-import { TableColumn } from "../../../src"
+import { Table, TableColumn } from "../../../src"
 import type { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
@@ -178,6 +178,82 @@ describe("query runner > change column", () => {
                 table!.findColumnByName("id")!.isGenerated.should.be.false
                 expect(table!.findColumnByName("id")!.generationStrategy).to.be
                     .undefined
+
+                await queryRunner.release()
+            }),
+        ))
+
+    it("should preserve data when changing a Postgres varchar length", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (dataSource.driver.options.type !== "postgres") return
+
+                const queryRunner = dataSource.createQueryRunner()
+                await queryRunner.createTable(
+                    new Table({
+                        name: "bug",
+                        columns: [
+                            {
+                                name: "id",
+                                type: "int",
+                                isPrimary: true,
+                            },
+                            {
+                                name: "example",
+                                type: "varchar",
+                                length: "50",
+                            },
+                        ],
+                    }),
+                )
+
+                await queryRunner.query(
+                    `INSERT INTO "bug"("id", "example") VALUES (1, 'kept')`,
+                )
+                queryRunner.clearSqlMemory()
+
+                let table = await queryRunner.getTable("bug")
+                const oldColumn = table!.findColumnByName("example")!
+                const newColumn = oldColumn.clone()
+                newColumn.length = "51"
+                newColumn.collation = "C"
+
+                await queryRunner.changeColumn(table!, oldColumn, newColumn)
+
+                const memorySql = queryRunner.getMemorySql()
+                expect(
+                    memorySql.upQueries.filter((query) =>
+                        query.query.includes('ALTER COLUMN "example" TYPE'),
+                    ),
+                ).to.have.length(1)
+                expect(
+                    memorySql.downQueries.filter((query) =>
+                        query.query.includes('ALTER COLUMN "example" TYPE'),
+                    ),
+                ).to.have.length(1)
+
+                table = await queryRunner.getTable("bug")
+                table!.findColumnByName("example")!.length.should.equal("51")
+                expect(table!.findColumnByName("example")!.collation).to.equal(
+                    "C",
+                )
+
+                let rows = await queryRunner.query(
+                    `SELECT "example" FROM "bug" WHERE "id" = 1`,
+                )
+                expect(rows[0].example).to.equal("kept")
+
+                await queryRunner.executeMemoryDownSql()
+
+                table = await queryRunner.getTable("bug")
+                table!.findColumnByName("example")!.length.should.equal("50")
+                expect(table!.findColumnByName("example")!.collation).to.be
+                    .undefined
+
+                rows = await queryRunner.query(
+                    `SELECT "example" FROM "bug" WHERE "id" = 1`,
+                )
+                expect(rows[0].example).to.equal("kept")
 
                 await queryRunner.release()
             }),

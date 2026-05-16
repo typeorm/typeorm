@@ -1326,9 +1326,18 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        const lengthChanged = oldColumn.length !== newColumn.length
+        const collationChanged = oldColumn.collation !== newColumn.collation
+        const canAlterLength =
+            lengthChanged &&
+            oldColumn.type === newColumn.type &&
+            this.driver.withLengthColumnTypes.indexOf(
+                newColumn.type as ColumnType,
+            ) !== -1
+
         if (
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
+            (lengthChanged && !canAlterLength) ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1616,6 +1625,30 @@ export class PostgresQueryRunner
                     clonedTable.columns.indexOf(oldTableColumn!)
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
+            }
+
+            if (canAlterLength && !collationChanged) {
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                    ),
+                )
+            }
+
+            if (canAlterLength) {
+                const clonedColumn = clonedTable.columns.find(
+                    (column) => column.name === newColumn.name,
+                )
+                if (clonedColumn) clonedColumn.length = newColumn.length
             }
 
             if (
@@ -2343,14 +2376,18 @@ export class PostgresQueryRunner
             }
 
             // update column collation
-            if (newColumn.collation !== oldColumn.collation) {
+            if (collationChanged) {
+                const newCollation = newColumn.collation
+                    ? `"${newColumn.collation}"`
+                    : `pg_catalog."default"`
+
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE "${
-                            newColumn.collation
-                        }"`,
+                        }" TYPE ${this.driver.createFullType(
+                            newColumn,
+                        )} COLLATE ${newCollation}`,
                     ),
                 )
 
@@ -2362,9 +2399,16 @@ export class PostgresQueryRunner
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE ${oldCollation}`,
+                        }" TYPE ${this.driver.createFullType(
+                            oldColumn,
+                        )} COLLATE ${oldCollation}`,
                     ),
                 )
+
+                const clonedColumn = clonedTable.columns.find(
+                    (column) => column.name === newColumn.name,
+                )
+                if (clonedColumn) clonedColumn.collation = newColumn.collation
             }
 
             if (newColumn.generatedType !== oldColumn.generatedType) {
