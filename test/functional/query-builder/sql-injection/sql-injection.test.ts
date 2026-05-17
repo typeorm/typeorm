@@ -357,6 +357,70 @@ describe("query builder > sql injection", () => {
             ))
     })
 
+    describe("UpdateQueryBuilder limit validation", () => {
+        it("should reject non-numeric limit", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (!DriverUtils.isMySQLFamily(dataSource.driver)) return
+
+                    expect(() => {
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ text: "updated" })
+                            .limit("1; DROP TABLE post" as any)
+                    }).to.throw(/not a number/)
+                }),
+            ))
+
+        it("should accept valid numeric limit", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (!DriverUtils.isMySQLFamily(dataSource.driver)) return
+
+                    expect(() => {
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ text: "updated" })
+                            .limit(10)
+                    }).to.not.throw()
+                }),
+            ))
+    })
+
+    describe("SoftDeleteQueryBuilder limit validation", () => {
+        it("should reject non-numeric limit", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (!DriverUtils.isMySQLFamily(dataSource.driver)) return
+
+                    expect(() => {
+                        dataSource
+                            .createQueryBuilder()
+                            .softDelete()
+                            .from(Post)
+                            .limit("1; DROP TABLE post" as any)
+                    }).to.throw(/not a number/)
+                }),
+            ))
+
+        it("should accept valid numeric limit", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (!DriverUtils.isMySQLFamily(dataSource.driver)) return
+
+                    expect(() => {
+                        dataSource
+                            .createQueryBuilder()
+                            .softDelete()
+                            .from(Post)
+                            .limit(10)
+                    }).to.not.throw()
+                }),
+            ))
+    })
+
     describe("orWhere", () => {
         for (const malicious of maliciousInputs) {
             it(`should prevent injection with: ${malicious}`, () =>
@@ -430,5 +494,58 @@ describe("query builder > sql injection", () => {
                     }),
                 ))
         }
+    })
+
+    describe("useIndex", () => {
+        it("should escape a malicious index name", () => {
+            for (const dataSource of dataSources) {
+                if (!DriverUtils.isMySQLFamily(dataSource.driver)) {
+                    continue
+                }
+
+                const sql = dataSource
+                    .createQueryBuilder(Post, "post")
+                    .useIndex("my_index; DROP TABLE post")
+                    .getSql()
+
+                // The malicious payload should be wrapped in backticks,
+                // not interpreted as a raw SQL statement
+                expect(sql).to.contain("USE INDEX")
+                expect(sql).to.contain("`my_index; DROP TABLE post`")
+            }
+        })
+
+        it("should escape each index name when an array is passed", () => {
+            for (const dataSource of dataSources) {
+                if (!DriverUtils.isMySQLFamily(dataSource.driver)) {
+                    continue
+                }
+
+                const sql = dataSource
+                    .createQueryBuilder(Post, "post")
+                    .useIndex(["idx_one", "idx_two"])
+                    .getSql()
+
+                expect(sql).to.contain("`idx_one`, `idx_two`")
+            }
+        })
+
+        it("should escape a malicious index name in an array", () => {
+            for (const dataSource of dataSources) {
+                if (!DriverUtils.isMySQLFamily(dataSource.driver)) {
+                    continue
+                }
+
+                const sql = dataSource
+                    .createQueryBuilder(Post, "post")
+                    .useIndex(["good_index", "bad`; DROP TABLE post"])
+                    .getSql()
+
+                expect(sql).to.not.match(
+                    /DROP TABLE(?! post`)/, // should only appear inside escaped identifier
+                )
+                expect(sql).to.contain("USE INDEX")
+            }
+        })
     })
 })

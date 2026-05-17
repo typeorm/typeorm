@@ -66,6 +66,18 @@ postCode: number
 
 If you need zero-padded display formatting, handle it in your application layer using `String.prototype.padStart()` or the MySQL `LPAD()` function in a raw query. The `unsigned` option for integer types is **not** affected by this change.
 
+#### `QueryBuilder.useIndex` signature changed
+
+When specifying the `USE INDEX` query hint, the `QueryBuilder.useIndex()` method no longer accepts raw SQL, but either an index name or an array of index names.
+
+```typescript
+// Before
+qb.useIndex("index1, `index#2`")
+
+// After
+qb.useIndex(["index1", "index#2"])
+```
+
 ### SQLite
 
 The `sqlite3` package has been dropped. Use `better-sqlite3` instead:
