@@ -11,7 +11,7 @@ describe("github issues > #12492 Postgres enum array column default callbacks ar
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["postgres"],
+            enabledDrivers: ["postgres", "cockroachdb"],
             schemaCreate: true,
             dropSchema: true,
         })
