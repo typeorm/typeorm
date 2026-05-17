@@ -1212,6 +1212,12 @@ export class PostgresDriver implements Driver {
             return `'{${defaultValue.map((val) => String(val)).join(",")}}'`
         }
 
+        if (typeof defaultValue === "function") {
+            const value = defaultValue()
+
+            return this.normalizeDatetimeFunction(value)
+        }
+
         if (
             (columnMetadata.type === "enum" ||
                 columnMetadata.type === "simple-enum" ||
@@ -1224,12 +1230,6 @@ export class PostgresDriver implements Driver {
 
         if (typeof defaultValue === "boolean") {
             return defaultValue ? "true" : "false"
-        }
-
-        if (typeof defaultValue === "function") {
-            const value = defaultValue()
-
-            return this.normalizeDatetimeFunction(value)
         }
 
         if (typeof defaultValue === "object") {
