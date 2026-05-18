@@ -3,6 +3,7 @@ import type { EntityMetadata } from "../../../src/metadata/EntityMetadata"
 
 import { setupSingleTestingConnection } from "../../utils/test-utils"
 import { PrepareEntityMetadataError } from "../../../src/error"
+import { getMetadataArgsStorage } from "../../../src/globals"
 import { DataSource } from "../../../src/data-source/DataSource"
 import { expect } from "chai"
 import { Post } from "./entity/Post"
@@ -201,5 +202,51 @@ describe("DataSource > prepareEntityMetadata", () => {
         )
 
         expect(callCount).to.equal(1)
+    })
+
+    it("should not leak mutations to other DataSources or getMetadataArgsStorage", async () => {
+        interface EntityMetadataExtend extends EntityMetadata {
+            prepared?: boolean
+        }
+
+        const baseOptions = setupSingleTestingConnection("sqljs", {
+            entities: [Post],
+        })
+
+        if (!baseOptions) {
+            return
+        }
+
+        const tablesBeforeInit = getMetadataArgsStorage().tables.length
+
+        dataSource = new DataSource({
+            ...baseOptions,
+            prepareEntityMetadata(meta: EntityMetadataExtend) {
+                meta.prepared = true
+            },
+        })
+
+        const otherDataSource = new DataSource(baseOptions)
+
+        try {
+            await Promise.all([
+                dataSource.initialize(),
+                otherDataSource.initialize(),
+            ])
+
+            for (const meta of dataSource.entityMetadatas) {
+                expect((meta as EntityMetadataExtend).prepared).to.equal(true)
+            }
+
+            for (const meta of otherDataSource.entityMetadatas) {
+                expect((meta as EntityMetadataExtend).prepared).to.be.undefined
+            }
+
+            expect(getMetadataArgsStorage().tables.length).to.equal(
+                tablesBeforeInit,
+            )
+        } finally {
+            await otherDataSource.destroy()
+        }
     })
 })
