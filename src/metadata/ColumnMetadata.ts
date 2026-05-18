@@ -627,22 +627,37 @@ export class ColumnMetadata {
 
                 const embeddedMetadata = embeddedMetadataTree.at(0)
 
-                if (embeddedMetadata) {
-                    const embeddedPropertyName = embeddedMetadata.propertyName
-                    const embeddedPropertyValue = value[embeddedPropertyName]
+                if (propertyName) {
+                    //MongoDb embedded arrays need to be extracted with additional recursive calls. Otherwise, the arrays are not persisted
+                    const isMongoColumn = this.entityMetadata.connection.options.type === "mongodb";
+                    if(isMongoColumn) {
+                        if(Array.isArray(value)) {
+                            const mappedArray: any = [];
 
-                    if (
-                        embeddedMetadata.isArray &&
-                        Array.isArray(embeddedPropertyValue)
-                    ) {
-                        return {
-                            [embeddedPropertyName]: embeddedPropertyValue.map(
-                                (element) =>
-                                    extractEmbeddedColumnValue(
-                                        embeddedMetadataTree.slice(1),
-                                        element,
-                                    ),
-                            ),
+                            value.forEach((arrayElement) => {
+                                const mappedArrayElement = extractEmbeddedColumnValue(propertyNames, arrayElement[propertyName]);
+                                if (Object.keys(mappedArrayElement).length > 0) {
+                                    mappedArray.push({ [propertyName]: mappedArrayElement });
+                                } else {
+                                    if(Array.isArray(mappedArrayElement)) {
+                                        mappedArray.push({ [propertyName]: [] });
+                                    } else {
+                                        mappedArray.push({ [propertyName]: {} });
+                                    }
+                                }
+                            });
+
+                            return mappedArray;
+                        } else {
+                            const submap = extractEmbeddedColumnValue(propertyNames, value[propertyName]);
+                            if (Object.keys(submap).length > 0) {
+                                return { [propertyName]: submap };
+                            }
+                        }
+                    } else {
+                        const submap = extractEmbeddedColumnValue(propertyNames, value[propertyName]);
+                        if (Object.keys(submap).length > 0) {
+                            return { [propertyName]: submap };
                         }
                     }
 

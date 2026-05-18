@@ -1,10 +1,13 @@
 {
   "name": "typeorm",
-  "version": "1.0.0-pre",
-  "description": "Data-Mapper ORM for TypeScript and ES2023+. Supports MySQL/MariaDB, PostgreSQL, MS SQL Server, Oracle, SAP HANA, SQLite, MongoDB databases.",
-  "homepage": "https://typeorm.io",
-  "bugs": {
-    "url": "https://github.com/typeorm/typeorm/issues"
+  "private": true,
+  "version": "0.3.6",
+  "description": "Data-Mapper ORM for TypeScript, ES7, ES6, ES5. Supports MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, MongoDB databases.",
+  "license": "MIT",
+  "readmeFilename": "README.md",
+  "author": {
+    "name": "Umed Khudoiberdiev",
+    "email": "pleerock.me@gmail.com"
   },
   "repository": {
     "type": "git",
