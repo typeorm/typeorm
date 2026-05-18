@@ -1326,7 +1326,35 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
-        if (
+        // Check if only length changed (safe to ALTER without data loss)
+        const onlyLengthChanged =
+            oldColumn.type === newColumn.type &&
+            oldColumn.length !== newColumn.length &&
+            newColumn.isArray === oldColumn.isArray &&
+            oldColumn.generatedType === newColumn.generatedType &&
+            oldColumn.asExpression === newColumn.asExpression
+
+        if (onlyLengthChanged) {
+            // Safe: ALTER COLUMN TYPE preserves data when only length changes
+            const newType = this.dataSource.driver.createFullType(newColumn)
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                        oldColumn.name
+                    }" TYPE ${newType}`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                        newColumn.name
+                    }" TYPE ${this.dataSource.driver.createFullType(oldColumn)}`,
+                ),
+            )
+
+            // update cloned table
+            clonedTable = table.clone()
+        } else if (
             oldColumn.type !== newColumn.type ||
             oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
