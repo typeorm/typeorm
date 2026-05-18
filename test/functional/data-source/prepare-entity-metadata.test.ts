@@ -184,15 +184,15 @@ describe("DataSource > prepareEntityMetadata", () => {
         })
         if (!baseOptions) return
 
-        const processed: string[] = []
+        let callCount = 0
 
         dataSource = new DataSource({
             ...baseOptions,
-            prepareEntityMetadata(meta) {
-                if (meta.name === "Post") {
+            prepareEntityMetadata() {
+                callCount++
+                if (callCount === 1) {
                     throw new Error("stop here")
                 }
-                processed.push(meta.name)
             },
         })
 
@@ -200,6 +200,6 @@ describe("DataSource > prepareEntityMetadata", () => {
             PrepareEntityMetadataError,
         )
 
-        expect(processed).to.not.include("View")
+        expect(callCount).to.equal(1)
     })
 })
