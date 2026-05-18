@@ -2966,7 +2966,7 @@ export class CockroachQueryRunner
             return []
         }
 
-        const columnsCondiiton = dbTables
+        const columnsCondition = dbTables
             .map(({ table_name, table_schema }) => {
                 return `("table_schema" = '${table_schema}' AND "table_name" = '${table_name}')`
             })
@@ -2975,11 +2975,11 @@ export class CockroachQueryRunner
             `SELECT "columns".*, "attr"."attgenerated" as "generated_type", ` +
             `pg_catalog.col_description(('"' || table_catalog || '"."' || table_schema || '"."' || table_name || '"')::regclass::oid, ordinal_position) as description ` +
             `FROM "information_schema"."columns" ` +
-            `LEFT JOIN "pg_class" AS "cls" ON "cls"."relname" = "table_name" ` +
-            `LEFT JOIN "pg_namespace" AS "ns" ON "ns"."oid" = "cls"."relnamespace" AND "ns"."nspname" = "table_schema" ` +
+            `LEFT JOIN "pg_namespace" AS "ns" ON "ns"."nspname" = "table_schema" ` +
+            `LEFT JOIN "pg_class" AS "cls" ON "cls"."relnamespace" = "ns"."oid" AND "cls"."relname" = "table_name" ` +
             `LEFT JOIN "pg_attribute" AS "attr" ON "attr"."attrelid" = "cls"."oid" AND "attr"."attname" = "column_name" AND "attr"."attnum" = "ordinal_position" ` +
             `WHERE "is_hidden" = 'NO' AND ` +
-            columnsCondiiton
+            `(${columnsCondition})`
 
         const constraintsCondition = dbTables
             .map(({ table_name, table_schema }) => {

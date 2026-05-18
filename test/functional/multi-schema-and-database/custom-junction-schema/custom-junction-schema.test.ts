@@ -14,7 +14,7 @@ describe("multi-schema-and-database > custom-junction-schema", () => {
     before(async () => {
         connections = await createTestingConnections({
             entities: [Post, Category],
-            enabledDrivers: ["mssql", "postgres"],
+            enabledDrivers: ["mssql", "postgres", "sap", "cockroachdb"],
         })
     })
     beforeEach(() => reloadTestingDatabases(connections))
@@ -24,24 +24,22 @@ describe("multi-schema-and-database > custom-junction-schema", () => {
         Promise.all(
             connections.map(async (connection) => {
                 const queryRunner = connection.createQueryRunner()
-                const postTable = await queryRunner.getTable("yoman.post")
-                const categoryTable = await queryRunner.getTable(
+
+                const postTable = (await queryRunner.getTable("yoman.post"))!
+                const categoryTable = (await queryRunner.getTable(
                     "yoman.category",
-                )
+                ))!
                 const junctionMetadata = connection.getManyToManyMetadata(
                     Post,
                     "categories",
                 )!
-                const junctionTable = await queryRunner.getTable(
+                const junctionTable = (await queryRunner.getTable(
                     "yoman." + junctionMetadata.tableName,
-                )
-                await queryRunner.release()
-                expect(postTable).not.to.be.undefined
-                postTable!.name!.should.be.equal("yoman.post")
-                expect(categoryTable).not.to.be.undefined
-                categoryTable!.name!.should.be.equal("yoman.category")
-                expect(junctionTable).not.to.be.undefined
-                junctionTable!.name!.should.be.equal(
+                ))!
+
+                expect(postTable.name).to.be.equal("yoman.post")
+                expect(categoryTable.name).to.be.equal("yoman.category")
+                expect(junctionTable.name).to.be.equal(
                     "yoman." + junctionMetadata.tableName,
                 )
             }),
