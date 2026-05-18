@@ -12,6 +12,7 @@ describe("github issues > #512 Table name escaping in UPDATE in QueryBuilder", (
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

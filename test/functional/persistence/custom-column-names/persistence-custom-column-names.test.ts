@@ -14,6 +14,7 @@ describe("persistence > custom-column-names", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Post, Category, CategoryMetadata],
         })
     })

@@ -148,7 +148,6 @@ export class MaterializedPathSubjectExecutor {
                     (column) => column.referencedColumn,
                 )
                 .filter((v) => v != null) as ColumnMetadata[],
-            { skipNulls: true },
         )
     }
 

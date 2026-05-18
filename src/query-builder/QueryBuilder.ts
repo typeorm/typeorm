@@ -196,14 +196,10 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     ): SelectQueryBuilder<Entity> {
         this.expressionMap.queryType = "select"
         if (Array.isArray(selection)) {
-            for (const s of selection) {
-                this.assertNoSemicolon(s, "select")
-            }
             this.expressionMap.selects = selection.map((selection) => ({
                 selection: selection,
             }))
         } else if (selection) {
-            this.assertNoSemicolon(selection, "select")
             this.expressionMap.selects = [
                 { selection: selection, aliasName: selectionAliasName },
             ]
@@ -793,7 +789,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             .join("|")
 
         if (replacementKeys.length > 0) {
-            statement = statement.replace(
+            statement = statement.replaceAll(
                 new RegExp(
                     // Avoid a lookbehind here since it's not well supported
                     `([ =(]|^.{0})` + // any of ' =(' or start of line
@@ -816,7 +812,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
                         if (replacements[matches[2]][p]) {
                             return `${pre}${this.escape(
-                                matches[2].substring(0, matches[2].length - 1),
+                                matches[2].slice(0, -1),
                             )}.${this.escape(replacements[matches[2]][p])}`
                         }
                     } else {
@@ -846,7 +842,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         // to scrub "ending" characters from the SQL but otherwise we can leave everything else
         // as-is and it should be valid.
 
-        return `/* ${this.expressionMap.comment.replace(/\*\//g, "")} */ `
+        return `/* ${this.expressionMap.comment.replaceAll("*/", "")} */ `
     }
 
     /**
@@ -1574,7 +1570,15 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         parameters.push(this.createParameter(v))
                     }
                 } else {
-                    parameters.push(this.createParameter(parameterValue.value))
+                    let value = parameterValue.value
+                    if (
+                        parameterValue.type === "jsonContains" &&
+                        value !== null &&
+                        typeof value === "object"
+                    ) {
+                        value = JSON.stringify(value)
+                    }
+                    parameters.push(this.createParameter(value))
                 }
             }
 
@@ -1727,20 +1731,11 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         return this.expressionMap.commonTableExpressions.length > 0
     }
 
-    protected assertNoSemicolon(value: string, context: string): void {
-        if (value.includes(";")) {
-            throw new TypeORMError(
-                `Semicolons are not allowed in ${context} to prevent SQL statement stacking.`,
-            )
-        }
-    }
-
     protected validateOrderByCondition(sort: OrderByCondition): void {
         const validOrders = ["ASC", "DESC"]
         const validNulls = ["NULLS FIRST", "NULLS LAST"]
 
         for (const [key, value] of Object.entries(sort)) {
-            this.assertNoSemicolon(key, "orderBy sort key")
             if (typeof value === "string") {
                 if (!validOrders.includes(value))
                     throw new TypeORMError(
@@ -1764,5 +1759,31 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 )
             }
         }
+    }
+
+    protected normalizeNumber(num: any) {
+        if (typeof num === "number" || num === undefined || num === null)
+            return num
+
+        return Number(num)
+    }
+
+    /**
+     * Normalizes and validates a numeric query parameter,
+     * throwing if the result is NaN.
+     *
+     * @param label
+     * @param num
+     */
+    protected validateNumericInput(
+        label: string,
+        num: number | undefined,
+    ): number | undefined {
+        const normalized = this.normalizeNumber(num)
+        if (normalized !== undefined && isNaN(normalized))
+            throw new TypeORMError(
+                `Provided "${label}" value is not a number. Please provide a numeric value.`,
+            )
+        return normalized
     }
 }

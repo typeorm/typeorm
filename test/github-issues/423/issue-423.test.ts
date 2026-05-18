@@ -9,6 +9,7 @@ describe("github issues > #423 Cannot use Group as Table name && cannot autoSche
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: false,
             dropSchema: true,

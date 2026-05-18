@@ -12,12 +12,13 @@ import type { UpdateResult } from "../query-builder/result/UpdateResult"
 import type { DeleteResult } from "../query-builder/result/DeleteResult"
 import type { ObjectId } from "../driver/mongodb/typings"
 import { ObjectUtils } from "../util/ObjectUtils"
-import { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
-import { UpsertOptions } from "./UpsertOptions"
-import { UpdateOptions } from "./UpdateOptions"
-import { DeleteOptions } from "./DeleteOptions"
-import { EntityTarget } from "../common/EntityTarget"
-import { PickKeysByType } from "../common/PickKeysByType"
+import type { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
+import type { UpsertOptions } from "./UpsertOptions"
+import type { UpdateOptions } from "./UpdateOptions"
+import type { DeleteOptions } from "./DeleteOptions"
+import type { EntityTarget } from "../common/EntityTarget"
+import type { PickKeysByType } from "../common/PickKeysByType"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
 
 /**
  * Base abstract entity for all entities, used in ActiveRecord patterns.
@@ -418,6 +419,7 @@ export class BaseEntity {
      * Does not check if entity exist in the database.
      *
      * @param criteria
+     * @param options
      */
     static delete<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -650,7 +652,7 @@ export class BaseEntity {
     static query<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
         query: string,
-        parameters?: any[],
+        parameters?: any[] | ObjectLiteral,
     ): Promise<any> {
         return this.getRepository<T>().query(query, parameters)
     }

@@ -25,10 +25,9 @@ import type { DeleteResult } from "../query-builder/result/DeleteResult"
 import type { FindOptionsWhere } from "../find-options/FindOptionsWhere"
 import type { IsolationLevel } from "../driver/types/IsolationLevel"
 import { ObjectUtils } from "../util/ObjectUtils"
-import { getMetadataArgsStorage } from "../globals"
-import { UpsertOptions } from "../repository/UpsertOptions"
-import { UpdateOptions } from "../repository/UpdateOptions"
-import { DeleteOptions } from "../repository/DeleteOptions"
+import type { UpsertOptions } from "../repository/UpsertOptions"
+import type { UpdateOptions } from "../repository/UpdateOptions"
+import type { DeleteOptions } from "../repository/DeleteOptions"
 import { InstanceChecker } from "../util/InstanceChecker"
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { PickKeysByType } from "../common/PickKeysByType"
@@ -182,7 +181,10 @@ export class EntityManager {
      * @param parameters
      * @see [Official docs](https://typeorm.io/docs/Working%20with%20Entity%20Manager/entity-manager-api/) for examples.
      */
-    async query<T = any>(query: string, parameters?: any[]): Promise<T> {
+    async query<T = any>(
+        query: string,
+        parameters?: any[] | ObjectLiteral,
+    ): Promise<T> {
         return this.dataSource.query(query, parameters, this.queryRunner)
     }
 

@@ -13,6 +13,7 @@ describe("other issues > composite keys doesn't work as expected in 0.3 compared
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

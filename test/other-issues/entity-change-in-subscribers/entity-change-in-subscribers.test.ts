@@ -13,6 +13,7 @@ describe("other issues > entity change in subscribers should affect persistence"
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
         })

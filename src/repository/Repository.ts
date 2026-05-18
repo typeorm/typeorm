@@ -1,23 +1,23 @@
-import { FindManyOptions } from "../find-options/FindManyOptions"
-import { ObjectLiteral } from "../common/ObjectLiteral"
-import { FindOneOptions } from "../find-options/FindOneOptions"
-import { DeepPartial } from "../common/DeepPartial"
-import { SaveOptions } from "./SaveOptions"
-import { RemoveOptions } from "./RemoveOptions"
-import { EntityManager } from "../entity-manager/EntityManager"
-import { QueryRunner } from "../query-runner/QueryRunner"
-import { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
-import { DeleteResult } from "../query-builder/result/DeleteResult"
-import { UpdateResult } from "../query-builder/result/UpdateResult"
-import { InsertResult } from "../query-builder/result/InsertResult"
-import { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
-import { ObjectId } from "../driver/mongodb/typings"
-import { FindOptionsWhere } from "../find-options/FindOptionsWhere"
-import { UpsertOptions } from "./UpsertOptions"
-import { UpdateOptions } from "./UpdateOptions"
-import { DeleteOptions } from "./DeleteOptions"
-import { EntityTarget } from "../common/EntityTarget"
-import { PickKeysByType } from "../common/PickKeysByType"
+import type { FindManyOptions } from "../find-options/FindManyOptions"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { FindOneOptions } from "../find-options/FindOneOptions"
+import type { DeepPartial } from "../common/DeepPartial"
+import type { SaveOptions } from "./SaveOptions"
+import type { RemoveOptions } from "./RemoveOptions"
+import type { EntityManager } from "../entity-manager/EntityManager"
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import type { SelectQueryBuilder } from "../query-builder/SelectQueryBuilder"
+import type { DeleteResult } from "../query-builder/result/DeleteResult"
+import type { UpdateResult } from "../query-builder/result/UpdateResult"
+import type { InsertResult } from "../query-builder/result/InsertResult"
+import type { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
+import type { ObjectId } from "../driver/mongodb/typings"
+import type { FindOptionsWhere } from "../find-options/FindOptionsWhere"
+import type { UpsertOptions } from "./UpsertOptions"
+import type { UpdateOptions } from "./UpdateOptions"
+import type { DeleteOptions } from "./DeleteOptions"
+import type { EntityTarget } from "../common/EntityTarget"
+import type { PickKeysByType } from "../common/PickKeysByType"
 import { buildSqlTag } from "../util/SqlTagUtils"
 
 /**
@@ -452,6 +452,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Does not check if entity exist in the database.
      *
      * @param criteria
+     * @param options
      */
     delete(
         criteria:
@@ -476,6 +477,8 @@ export class Repository<Entity extends ObjectLiteral> {
      * Executes fast and efficient DELETE query without WHERE clause.
      *
      * WARNING! This method deletes ALL rows in the target table.
+     *
+     * @param options
      */
     deleteAll(options?: DeleteOptions): Promise<DeleteResult> {
         return this.manager.deleteAll(this.metadata.target, options)
@@ -727,7 +730,10 @@ export class Repository<Entity extends ObjectLiteral> {
      * @param parameters
      * @see [Official docs](https://typeorm.io/repository-api) for examples.
      */
-    query<T = any>(query: string, parameters?: any[]): Promise<T> {
+    query<T = any>(
+        query: string,
+        parameters?: any[] | ObjectLiteral,
+    ): Promise<T> {
         return this.manager.query(query, parameters)
     }
 

@@ -51,6 +51,8 @@ describe("repository > returning", () => {
                 if (!dataSource.driver.isReturningSqlSupported("insert")) {
                     return
                 }
+                // Spanner's Data API has no ON CONFLICT DO UPDATE equivalent.
+                if (dataSource.driver.options.type === "spanner") return
 
                 const repo = dataSource.getRepository(User)
                 const created = await repo.save({ name: "seed" })
@@ -77,6 +79,8 @@ describe("repository > returning", () => {
                 if (!dataSource.driver.isReturningSqlSupported("update")) {
                     return
                 }
+                // Spanner rejects UPDATE without a WHERE clause.
+                if (dataSource.driver.options.type === "spanner") return
 
                 const repo = dataSource.getRepository(User)
                 const user1 = await repo.save({ name: "user1" })

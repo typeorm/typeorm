@@ -1,5 +1,6 @@
 import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { TypeORMError } from "../../error"
+import { NamedPlaceholdersNotSupportedError } from "../../error/NamedPlaceholdersNotSupportedError"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
@@ -25,7 +26,7 @@ import type { IsolationLevel } from "../types/IsolationLevel"
 import { validateIsolationLevel } from "../validate-isolation-level"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
-import { SpannerDriver } from "./SpannerDriver"
+import type { SpannerDriver } from "./SpannerDriver"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -72,7 +73,8 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async connect(): Promise<any> {
         if (this.session) {
-            return Promise.resolve(this.session)
+            this.sessionTransaction ??= await this.session.transaction()
+            return this.session
         }
 
         const [session] = await this.driver.instanceDatabase.createSession({})
@@ -100,8 +102,10 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
+        isolationLevel ??= this.dataSource.options.isolationLevel
+
         validateIsolationLevel(
-            SpannerDriver.supportedIsolationLevels,
+            this.driver.supportedIsolationLevels,
             isolationLevel,
         )
 
@@ -113,8 +117,20 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             throw err
         }
 
-        await this.connect()
-        await this.sessionTransaction.begin()
+        try {
+            await this.connect()
+            if (isolationLevel) {
+                this.sessionTransaction.setReadWriteTransactionOptions({
+                    isolationLevel:
+                        this.mapSpannerIsolationLevel(isolationLevel),
+                })
+            }
+            await this.sessionTransaction.begin()
+        } catch (err) {
+            this.isTransactionActive = false
+            await this.resetSessionTransaction()
+            throw err
+        }
         this.dataSource.logger.logQuery("START TRANSACTION")
 
         await this.broadcaster.broadcast("AfterTransactionStart")
@@ -133,6 +149,11 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.sessionTransaction.commit()
         this.dataSource.logger.logQuery("COMMIT")
         this.isTransactionActive = false
+        // Spanner transaction options (e.g. isolation level) persist on the
+        // object across commit, so replace it with a fresh one before reuse.
+        // If the recreate fails, clear it and let connect() recreate lazily —
+        // the commit itself already succeeded, so we must not fail the caller.
+        await this.resetSessionTransaction()
 
         await this.broadcaster.broadcast("AfterTransactionCommit")
     }
@@ -150,8 +171,49 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.sessionTransaction.rollback()
         this.dataSource.logger.logQuery("ROLLBACK")
         this.isTransactionActive = false
+        // Spanner transaction options (e.g. isolation level) persist on the
+        // object across rollback, so replace it with a fresh one before reuse.
+        // If the recreate fails, clear it and let connect() recreate lazily —
+        // the rollback itself already succeeded, so we must not fail the caller.
+        await this.resetSessionTransaction()
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
+    }
+
+    /**
+     * Replaces the cached session transaction with a fresh one so that options
+     * (e.g. isolation level) do not bleed into the next transaction. Failures
+     * are tolerated: the stale reference is cleared and connect() will lazily
+     * create a fresh one on next use.
+     */
+    protected async resetSessionTransaction(): Promise<void> {
+        if (!this.session) return
+        try {
+            this.sessionTransaction = await this.session.transaction()
+        } catch {
+            this.sessionTransaction = undefined
+        }
+    }
+
+    /**
+     * Maps a TypeORM isolation level to the Spanner protobuf enum key.
+     *
+     * @param level
+     * @see https://cloud.google.com/spanner/docs/reference/rpc/google.spanner.v1#google.spanner.v1.TransactionOptions.IsolationLevel
+     */
+    protected mapSpannerIsolationLevel(
+        level: IsolationLevel,
+    ): "SERIALIZABLE" | "REPEATABLE_READ" {
+        switch (level) {
+            case "SERIALIZABLE":
+                return "SERIALIZABLE"
+            case "REPEATABLE READ":
+                return "REPEATABLE_READ"
+            default:
+                throw new TypeORMError(
+                    `Spanner driver does not support isolation level "${level}"`,
+                )
+        }
     }
 
     /**
@@ -163,10 +225,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     async query(
         query: string,
-        parameters?: any[],
+        parameters?: any[] | ObjectLiteral,
         useStructuredResult: boolean = false,
     ): Promise<any> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
+        if (parameters && !Array.isArray(parameters))
+            throw new NamedPlaceholdersNotSupportedError()
 
         await this.connect()
 
@@ -196,6 +260,20 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                     : this.sessionTransaction
 
             if (!this.isTransactionActive && !isSelect) {
+                const defaultIsolationLevel =
+                    this.dataSource.options.isolationLevel
+                if (
+                    defaultIsolationLevel &&
+                    this.driver.supportedIsolationLevels.includes(
+                        defaultIsolationLevel,
+                    )
+                ) {
+                    this.sessionTransaction.setReadWriteTransactionOptions({
+                        isolationLevel: this.mapSpannerIsolationLevel(
+                            defaultIsolationLevel,
+                        ),
+                    })
+                }
                 await this.sessionTransaction.begin()
             }
 
@@ -212,12 +290,15 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 })
                 if (!this.isTransactionActive && !isSelect) {
                     await this.sessionTransaction.commit()
+                    await this.resetSessionTransaction()
                 }
             } catch (error) {
                 try {
                     // we throw original error even if rollback thrown an error
-                    if (!this.isTransactionActive && !isSelect)
+                    if (!this.isTransactionActive && !isSelect) {
                         await this.sessionTransaction.rollback()
+                        await this.resetSessionTransaction()
+                    }
                 } catch (rollbackError) {}
                 throw error
             }
@@ -1948,14 +2029,14 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                                 dbColumn["SPANNER_TYPE"].toLowerCase()
                             if (fullType.indexOf("array") !== -1) {
                                 tableColumn.isArray = true
-                                fullType = fullType.substring(
+                                fullType = fullType.slice(
                                     fullType.indexOf("<") + 1,
                                     fullType.indexOf(">"),
                                 )
                             }
 
                             if (fullType.indexOf("(") !== -1) {
-                                tableColumn.type = fullType.substring(
+                                tableColumn.type = fullType.slice(
                                     0,
                                     fullType.indexOf("("),
                                 )
@@ -1968,7 +2049,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                                     tableColumn.type as ColumnType,
                                 ) !== -1
                             ) {
-                                tableColumn.length = fullType.substring(
+                                tableColumn.length = fullType.slice(
                                     fullType.indexOf("(") + 1,
                                     fullType.indexOf(")"),
                                 )

@@ -14,6 +14,7 @@ describe("github issues > #3803 column option unique sqlite error", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [new EntitySchema<Post>(PostSchema)],
         })
     })

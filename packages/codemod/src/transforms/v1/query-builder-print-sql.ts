@@ -1,6 +1,7 @@
 import path from "node:path"
 import type { API, FileInfo, Node } from "jscodeshift"
-import { addTodoComment } from "../todo"
+import { fileImportsFrom } from "../ast-helpers"
+import { addTodoComment, hasTodoComment } from "../todo"
 import { stats } from "../stats"
 
 export const name = path.basename(__filename, path.extname(__filename))
@@ -11,6 +12,9 @@ export const manual = true
 export const queryBuilderPrintSql = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
+
+    if (!fileImportsFrom(root, j, "typeorm")) return undefined
+
     let hasChanges = false
     let hasTodos = false
 
@@ -22,23 +26,28 @@ export const queryBuilderPrintSql = (file: FileInfo, api: API) => {
             type: "MemberExpression",
             property: { name: "printSql" },
         },
-    }).forEach((path) => {
-        // Walk up to find the enclosing ExpressionStatement
-        let current = path.parent
+    }).forEach((callPath) => {
+        // Walk up to the enclosing statement (ExpressionStatement or
+        // VariableDeclaration). If we reach the root without finding one,
+        // leave the file untouched — attaching a comment to a non-statement
+        // node is usually dropped by recast, and `hasChanges = true` with no
+        // actual edit would misreport the transform as having emitted a comment.
+        let current = callPath.parent
         while (current) {
             const node: Node = current.node
-            if (node.type === "ExpressionStatement") {
-                addTodoComment(node, message, j)
-                break
-            }
-            if (node.type === "VariableDeclaration") {
-                addTodoComment(node, message, j)
-                break
+            if (
+                node.type === "ExpressionStatement" ||
+                node.type === "VariableDeclaration"
+            ) {
+                if (!hasTodoComment(node, message)) {
+                    addTodoComment(node, message, j)
+                }
+                hasChanges = true
+                hasTodos = true
+                return
             }
             current = current.parent
         }
-        hasChanges = true
-        hasTodos = true
     })
 
     if (hasTodos) stats.count.todo(api, name, file)

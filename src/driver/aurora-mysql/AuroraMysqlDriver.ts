@@ -35,16 +35,14 @@ export class AuroraMysqlDriver implements Driver {
     // -------------------------------------------------------------------------
 
     /**
-     * Transaction isolation levels supported by this driver.
-     *
-     * @see https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html
+     * Aurora MySQL cannot honor per-transaction isolation levels over the RDS
+     * Data API: BeginTransaction accepts no isolation parameter, the API is
+     * stateless so a preceding `SET TRANSACTION` has no guaranteed connection
+     * affinity to the subsequent BeginTransaction, multi-statement SQL is
+     * rejected, and MySQL disallows `SET TRANSACTION` inside an active
+     * transaction (error 1568). See the transactions documentation for links.
      */
-    static readonly supportedIsolationLevels: IsolationLevel[] = [
-        "READ UNCOMMITTED",
-        "READ COMMITTED",
-        "REPEATABLE READ",
-        "SERIALIZABLE",
-    ]
+    static readonly supportedIsolationLevels: IsolationLevel[] = []
 
     // -------------------------------------------------------------------------
     // Public Properties
@@ -54,6 +52,11 @@ export class AuroraMysqlDriver implements Driver {
      * DataSource used by the driver.
      */
     dataSource: DataSource
+
+    /**
+     * Isolation levels supported by this driver.
+     */
+    supportedIsolationLevels = AuroraMysqlDriver.supportedIsolationLevels
 
     /**
      * DataSource used by the driver.
@@ -414,7 +417,7 @@ export class AuroraMysqlDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
-        sql = sql.replace(
+        sql = sql.replaceAll(
             /:(\.\.\.)?([A-Za-z0-9_.]+)/g,
             (full, isArray: string, key: string): string => {
                 if (!parameters.hasOwnProperty(key)) {
@@ -1124,8 +1127,8 @@ export class AuroraMysqlDriver implements Driver {
         ) {
             // we need to cut out "'" because in mysql we can understand returned value is a string or a function
             // as result compare cannot understand if default is really changed or not
-            columnMetadataValue = columnMetadataValue.replace(/^'+|'+$/g, "")
-            databaseValue = databaseValue.replace(/^'+|'+$/g, "")
+            columnMetadataValue = columnMetadataValue.replaceAll(/^'+|'+$/g, "")
+            databaseValue = databaseValue.replaceAll(/^'+|'+$/g, "")
         }
 
         return columnMetadataValue === databaseValue
@@ -1139,7 +1142,7 @@ export class AuroraMysqlDriver implements Driver {
     protected escapeComment(comment?: string) {
         if (!comment) return comment
 
-        comment = comment.replace(/\u0000/g, "") // Null bytes aren't allowed in comments
+        comment = comment.replaceAll("\u0000", "") // Null bytes aren't allowed in comments
 
         return comment
     }

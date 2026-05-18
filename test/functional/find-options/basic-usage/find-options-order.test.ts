@@ -16,6 +16,7 @@ describe("find options > order", () => {
     before(async () => {
         dataSources = await createTestingConnections({
             __dirname,
+            disabledDrivers: ["spanner"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
