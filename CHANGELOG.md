@@ -147,7 +147,7 @@ The list below is the set of commits between `0.3.30` and `1.0.0` — fixes alre
 - **find-options:** allow array values in JsonContains ([#12420](https://github.com/typeorm/typeorm/issues/12420)) ([90f169d](https://github.com/typeorm/typeorm/commit/90f169d6988ee60ad5f1243d3e7c839be2a76b3d))
 - preserve user-defined shared join columns in change set ([#12354](https://github.com/typeorm/typeorm/issues/12354)) ([0aba011](https://github.com/typeorm/typeorm/commit/0aba011264bda823ef258a8d090fd3d99098bb26))
 - scope computed-columns join to correct table in MSSQL schema query ([#12288](https://github.com/typeorm/typeorm/issues/12288)) ([6170be6](https://github.com/typeorm/typeorm/commit/6170be6dfcbbbb0aa3a9b35c2dab5d0f60a7a1b3))
-- scope invalidWhereValuesBehavior to high-level abstractions only ([#11878](https://github.com/typeorm/typeorm/issues/11878)) ([1e10fb8](https://github.com/typeorm/typeorm/commit/1e10fb86a6bac2fe012452d86867c4d4bb67568a)), closes [hi#level](https://github.com/hi/issues/level)
+- scope invalidWhereValuesBehavior to high-level abstractions only ([#11878](https://github.com/typeorm/typeorm/issues/11878)) ([1e10fb8](https://github.com/typeorm/typeorm/commit/1e10fb86a6bac2fe012452d86867c4d4bb67568a))
 
 ### Reverts
 
