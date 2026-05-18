@@ -1,7 +1,7 @@
 import { Entity, Column, PrimaryColumn } from "../../../../src"
 
-const EnumDef = ["VALUE1", "VALUE2"] as const
-type EnumDef = (typeof EnumDef)[number]
+const enumDef = ["VALUE1", "VALUE2"] as const
+type EnumDef = (typeof enumDef)[number]
 
 @Entity()
 export class SingleEnum {
@@ -10,17 +10,17 @@ export class SingleEnum {
 
     @Column({
         type: "enum",
-        enum: EnumDef,
+        enum: enumDef,
         enumName: "enum_def",
         nullable: false,
         array: false,
         default: () => "'VALUE2'::enum_def",
     })
-    labels1: EnumDef[]
+    labels1: EnumDef
 
     @Column({
         type: "enum",
-        enum: EnumDef,
+        enum: enumDef,
         enumName: "enum_def",
         nullable: false,
         array: true,
