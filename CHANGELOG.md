@@ -1,3 +1,19 @@
+## [0.3.30](https://github.com/typeorm/typeorm/compare/0.3.29...0.3.30) (2026-05-18)
+
+
+### Bug Fixes
+
+* **cockroachdb:** adjust join in loadTables to load correct table columns ([#12413](https://github.com/typeorm/typeorm/issues/12413)) ([d93402e](https://github.com/typeorm/typeorm/commit/d93402e57523b8e2f7373f052b2e7872ce87012b))
+* **find-options:** allow array values in JsonContains ([#12420](https://github.com/typeorm/typeorm/issues/12420)) ([90f169d](https://github.com/typeorm/typeorm/commit/90f169d6988ee60ad5f1243d3e7c839be2a76b3d))
+* preserve user-defined shared join columns in change set ([#12354](https://github.com/typeorm/typeorm/issues/12354)) ([0aba011](https://github.com/typeorm/typeorm/commit/0aba011264bda823ef258a8d090fd3d99098bb26))
+* scope computed-columns join to correct table in MSSQL schema query ([#12288](https://github.com/typeorm/typeorm/issues/12288)) ([6170be6](https://github.com/typeorm/typeorm/commit/6170be6dfcbbbb0aa3a9b35c2dab5d0f60a7a1b3))
+* scope invalidWhereValuesBehavior to high-level abstractions only ([#11878](https://github.com/typeorm/typeorm/issues/11878)) ([1e10fb8](https://github.com/typeorm/typeorm/commit/1e10fb86a6bac2fe012452d86867c4d4bb67568a)), closes [hi#level](https://github.com/hi/issues/level)
+
+
+### Reverts
+
+* fix up limit with joins ([#11987](https://github.com/typeorm/typeorm/issues/11987)) ([66f1ff8](https://github.com/typeorm/typeorm/commit/66f1ff80fb66d2a33d56b35f50e110686d81829b))
+
 ## [0.3.29](https://github.com/typeorm/typeorm/compare/0.3.28...0.3.29) (2026-05-08)
 
 
