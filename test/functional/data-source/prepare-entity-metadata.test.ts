@@ -45,7 +45,7 @@ describe("DataSource > prepareEntityMetadata", () => {
 
     it("should make mutations visible in the final entity metadata", async () => {
         interface EntityMetadataExtend extends EntityMetadata {
-            __prepared?: boolean
+            prepared?: boolean
         }
 
         const baseOptions = setupSingleTestingConnection("sqljs", {
@@ -59,20 +59,20 @@ describe("DataSource > prepareEntityMetadata", () => {
         dataSource = new DataSource({
             ...baseOptions,
             prepareEntityMetadata(meta: EntityMetadataExtend) {
-                meta.__prepared = true
+                meta.prepared = true
             },
         })
 
         await dataSource.initialize()
 
         for (const meta of dataSource.entityMetadatas) {
-            expect((meta as EntityMetadataExtend).__prepared).to.equal(true)
+            expect((meta as EntityMetadataExtend).prepared).to.equal(true)
         }
     })
 
     it("should await async prepareEntityMetadata before continuing", async () => {
         interface EntityMetadataExtend extends EntityMetadata {
-            __asyncPrepared?: boolean
+            asyncPrepared?: boolean
         }
 
         const baseOptions = setupSingleTestingConnection("sqljs", {
@@ -87,15 +87,13 @@ describe("DataSource > prepareEntityMetadata", () => {
             ...baseOptions,
             async prepareEntityMetadata(meta: EntityMetadataExtend) {
                 await Promise.resolve()
-                meta.__asyncPrepared = true
+                meta.asyncPrepared = true
             },
         })
 
         await dataSource.initialize()
         for (const meta of dataSource.entityMetadatas) {
-            expect((meta as EntityMetadataExtend).__asyncPrepared).to.equal(
-                true,
-            )
+            expect((meta as EntityMetadataExtend).asyncPrepared).to.equal(true)
         }
     })
 
