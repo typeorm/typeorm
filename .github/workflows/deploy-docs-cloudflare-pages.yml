@@ -43,5 +43,5 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy docs/build --project-name=typeorm-v0-3
+          command: pages deploy docs/build --project-name=typeorm
           packageManager: npm
