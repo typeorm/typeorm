@@ -129,9 +129,13 @@ export interface BaseDataSourceOptions {
     readonly entitySkipConstructor?: boolean
 
     /**
-     * Extra connection options to be passed to the underlying driver.
+     * Extra connection options passed through to the underlying driver client
+     * (e.g. `pg`, `mysql2`, `tedious`, `mongodb`).
      *
-     * todo: deprecate this and move all database-specific types into hts own connection options object.
+     * Use this for driver-native settings that are not modeled as typed
+     * options on the per-driver `DataSourceOptions`. Prefer the typed
+     * per-driver options when they exist; `extra` is the escape hatch for
+     * anything the driver supports but TypeORM does not expose directly.
      */
     readonly extra?: any
 
