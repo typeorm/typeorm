@@ -14,6 +14,8 @@ import { UpdateResult } from "../query-builder/result/UpdateResult"
 import { DeleteResult } from "../query-builder/result/DeleteResult"
 import type { EntityMetadata } from "../metadata/EntityMetadata"
 import { EntityPropertyNotFoundError } from "../error"
+import { ReturningStatementNotSupportedError } from "../error/ReturningStatementNotSupportedError"
+import type { DeleteOptions as RepositoryDeleteOptions } from "../repository/DeleteOptions"
 
 import type {
     AggregateOptions,
@@ -389,6 +391,7 @@ export class MongoEntityManager extends EntityManager {
      *
      * @param target
      * @param criteria
+     * @param options
      */
     async delete<Entity>(
         target: EntityTarget<Entity>,
@@ -402,7 +405,12 @@ export class MongoEntityManager extends EntityManager {
             | ObjectId
             | ObjectId[]
             | ObjectLiteral[],
+        options?: RepositoryDeleteOptions,
     ): Promise<DeleteResult> {
+        if (options?.returning !== undefined) {
+            throw new ReturningStatementNotSupportedError()
+        }
+
         const result = new DeleteResult()
 
         if (Array.isArray(criteria)) {

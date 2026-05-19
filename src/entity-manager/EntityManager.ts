@@ -952,7 +952,19 @@ export class EntityManager {
         if (OrmUtils.isPrimitiveCriteria(criteria)) {
             qb.whereInIds(criteria)
         } else {
-            qb.where(criteria)
+            const normalizedCriteria = Array.isArray(criteria)
+                ? criteria.map((criterion) =>
+                      OrmUtils.normalizeWhereCriteria(
+                          criterion as ObjectLiteral,
+                          this.dataSource.options.invalidWhereValuesBehavior,
+                      ),
+                  )
+                : OrmUtils.normalizeWhereCriteria(
+                      criteria as ObjectLiteral,
+                      this.dataSource.options.invalidWhereValuesBehavior,
+                  )
+
+            qb.where(normalizedCriteria)
         }
 
         if (options?.returning !== undefined) {
