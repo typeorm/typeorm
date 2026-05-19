@@ -192,6 +192,52 @@ describe("github issues > #11285 Missing MSSQL input type", () => {
                     )
                 }),
             ))
+
+        it("should not mutate reused FindOperator array values across queries", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const user = new User()
+                    user.memberId = "test-member-id"
+
+                    const user2 = new User()
+                    user2.memberId = "test-member-id-2"
+
+                    await dataSource.manager.save([user, user2])
+
+                    const reusedNot = Not(In([user2.memberId]))
+
+                    const assertReusedOperatorWasNotMutated = () => {
+                        expect(reusedNot.value).to.eql([user2.memberId])
+                        expect(
+                            (reusedNot.value as any[])[0],
+                        ).to.not.be.instanceOf(MssqlParameter)
+                    }
+
+                    const firstUsers = await dataSource
+                        .getRepository(User)
+                        .find({
+                            where: {
+                                memberId: reusedNot,
+                            },
+                        })
+
+                    expect(firstUsers).to.have.length(1)
+                    expect(firstUsers[0].memberId).to.be.equal(user.memberId)
+                    assertReusedOperatorWasNotMutated()
+
+                    const secondUsers = await dataSource
+                        .getRepository(User)
+                        .find({
+                            where: {
+                                memberId: reusedNot,
+                            },
+                        })
+
+                    expect(secondUsers).to.have.length(1)
+                    expect(secondUsers[0].memberId).to.be.equal(user.memberId)
+                    assertReusedOperatorWasNotMutated()
+                }),
+            ))
     })
 
     describe("other connections", () => {
