@@ -24,9 +24,9 @@ The TypeORM team and community is proud to present v1.0. This post covers what y
 
 From 0.3.28 to 1.0:
 
-- **302 commits** in the v1 development cycle
-- **40 contributors**
-- **4M+ weekly downloads** on npm (top 0.1%)
+- **363 commits** in the v1 development cycle
+- **53 contributors**
+- **4.7M+ weekly downloads** on npm (top 0.1%)
 - **36,400+ GitHub stars**
 - **10 supported databases**, from Postgres to Spanner to MongoDB
 
@@ -79,7 +79,7 @@ And dozens more bug fixes across query generation, eager loading, persistence, a
 
 ## Security hardening
 
-v1 closes three attack surfaces that had been accumulating over the 0.3.x series: parameterized schema introspection and DDL, runtime validation on `orderBy` direction values, and semicolons rejected in raw SQL fragments. Details in the [upgrading guide](/docs/releases/1.0/upgrading-from-0.3).
+v1 closes two attack surfaces that had been accumulating over the 0.3.x series: parameterized schema introspection and DDL, and runtime validation on `orderBy` direction values. Details in the [upgrading guide](/docs/releases/1.0/upgrading-from-0.3).
 
 If you pipe user input through raw QueryBuilder fragments, rerun your tests after upgrading.
 
@@ -122,7 +122,7 @@ If you've heard that TypeORM is dead or unmaintained, v1 is our answer. The proj
 
 Special thanks to **Umed Khudoiberdiev** ([@pleerock](https://github.com/pleerock)) and **Dmitry Zotov** - TypeORM is their project originally, and v1 is built on everything they shipped across the entire 0.x series.
 
-v1 also wouldn't exist without the 40 contributors who shipped PRs in this cycle, everyone who filed issues with clear reproductions, and our sponsors on OpenCollective. Thank you.
+v1 also wouldn't exist without the 53 contributors who shipped PRs in this cycle, everyone who filed issues with clear reproductions, and our sponsors on OpenCollective. Thank you.
 
 If your company depends on TypeORM and has never sponsored, this is a good time: sponsor on [OpenCollective](https://opencollective.com/typeorm), or reach out at [maintainers@typeorm.io](mailto:maintainers@typeorm.io) to discuss other ways to support the project.
 
