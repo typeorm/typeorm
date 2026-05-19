@@ -3,7 +3,7 @@ name: Deploy Docs to Cloudflare Pages
 on:
   push:
     branches:
-      - v0.3
+      - v0
     paths:
       - "docs/**"
       - ".github/workflows/deploy-docs-cloudflare-pages.yml"
