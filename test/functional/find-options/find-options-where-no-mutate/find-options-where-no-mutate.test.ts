@@ -96,6 +96,11 @@ describe("find options > FindOptionsWhere reuse with column transformer", () => 
             __dirname,
             schemaCreate: true,
             dropSchema: true,
+            // Spanner assigns generated primary keys differently from the
+            // other drivers, so the ordered id assertions below are not
+            // meaningful there. The mutation guarantee under test is
+            // driver-agnostic and is already covered by the other drivers.
+            disabledDrivers: ["spanner"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
