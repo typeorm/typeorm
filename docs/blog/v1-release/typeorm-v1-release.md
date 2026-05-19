@@ -87,7 +87,7 @@ If you pipe user input through raw QueryBuilder fragments, rerun your tests afte
 
 v1 raises the floor:
 
-- **Node.js 20+** (was 14+)
+- **Node.js 20+** (was 16+)
 - **ES2023** target
 - **`mysql2`** only (the old `mysql` driver is gone)
 - **`better-sqlite3`** only (`sqlite3` is gone)
