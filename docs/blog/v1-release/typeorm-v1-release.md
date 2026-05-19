@@ -2,7 +2,7 @@
 slug: typeorm-1-0
 title: TypeORM 1.0 is here
 tags: [release, announcement]
-date: 2026-04-17
+date: 2026-05-19
 description: TypeORM 1.0 is out - the first major in almost five years. A stable API surface, dozens of new features, and a statement that TypeORM is here to stay.
 ---
 
