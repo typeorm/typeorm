@@ -109,16 +109,30 @@ const config: Config = {
                 },
                 {
                     type: "dropdown",
-                    label: "Version",
+                    label: "Version 0.3.x",
                     position: "right",
+                    className: "navbar__version-trigger",
                     items: [
                         {
-                            label: "Stable (v0.3)",
-                            href: "https://typeorm.io",
+                            html: '<span class="navbar__version-section-label">Latest</span>',
+                            to: "#",
+                            className: "navbar__version-section",
                         },
                         {
-                            label: "Dev (master)",
-                            href: "https://dev.typeorm.io",
+                            label: "Version 1.x",
+                            href: "https://typeorm.io",
+                            className: "navbar__version-item",
+                        },
+                        {
+                            html: '<span class="navbar__version-section-label">Legacy</span>',
+                            to: "#",
+                            className: "navbar__version-section",
+                        },
+                        {
+                            label: "Version 0.3.x",
+                            href: "https://v0.typeorm.io",
+                            className:
+                                "navbar__version-item navbar__version-item--active",
                         },
                     ],
                 },
