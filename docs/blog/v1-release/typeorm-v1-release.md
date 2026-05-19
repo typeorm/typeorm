@@ -22,7 +22,7 @@ The TypeORM team and community is proud to present v1.0. This post covers what y
 
 ## By the numbers
 
-From 0.3.28 to 1.0:
+From 0.3 to 1.0:
 
 - **363 commits** in the v1 development cycle
 - **53 contributors**
@@ -76,12 +76,6 @@ A DataSource-level `isolationLevel` is now honored by every driver that supports
 - **`await using` on `QueryRunner`** - automatic cleanup when the scope exits, one fewer class of leaked-connection bug.
 
 And dozens more bug fixes across query generation, eager loading, persistence, and every driver. Full list in the [upgrading guide](/docs/releases/1.0/upgrading-from-0.3).
-
-## Security hardening
-
-v1 closes two attack surfaces that had been accumulating over the 0.3.x series: parameterized schema introspection and DDL, and runtime validation on `orderBy` direction values. Details in the [upgrading guide](/docs/releases/1.0/upgrading-from-0.3).
-
-If you pipe user input through raw QueryBuilder fragments, rerun your tests after upgrading.
 
 ## Platform requirements
 
