@@ -61,7 +61,6 @@ The list below is the set of commits between `0.3.30` and `1.0.0` — fixes alre
 - properly escape column alias in orderBy ([#12027](https://github.com/typeorm/typeorm/issues/12027)) ([b975297](https://github.com/typeorm/typeorm/commit/b97529767dad4c2a05958930070b4956aae38712))
 - query stack trace for mysql/mssql ([#12056](https://github.com/typeorm/typeorm/issues/12056)) ([24677a1](https://github.com/typeorm/typeorm/commit/24677a1323c59338212484b416a543ac74d695df))
 - **query-builder:** follow-up fixes for eager load relation strategy ([#12256](https://github.com/typeorm/typeorm/issues/12256)) ([0801b85](https://github.com/typeorm/typeorm/commit/0801b85c4e78166ebaffe90b2024c9cf6fcb295d))
-- **query-builder:** reject semicolons in raw SQL expression methods ([#12209](https://github.com/typeorm/typeorm/issues/12209)) ([250e019](https://github.com/typeorm/typeorm/commit/250e01922503b66b77d228e0758212d8749bf2e7))
 - **query-builder:** resolve alias collision for self-referencing relations with query load strategy ([#11066](https://github.com/typeorm/typeorm/issues/11066)) ([bf6e1ef](https://github.com/typeorm/typeorm/commit/bf6e1efd5ded29999366bde2a145390439e5d9f2))
 - **query-builder:** resolve column lookup when using database column name in addOrderBy ([#11904](https://github.com/typeorm/typeorm/issues/11904)) ([0ebc7e5](https://github.com/typeorm/typeorm/commit/0ebc7e56f186242e157f0d007885295d51dbabe6))
 - **query-builder:** validate orderBy condition values at runtime ([#12217](https://github.com/typeorm/typeorm/issues/12217)) ([93eec63](https://github.com/typeorm/typeorm/commit/93eec630630b219b162ba4e0c072afa851697cff))
@@ -129,11 +128,6 @@ The list below is the set of commits between `0.3.30` and `1.0.0` — fixes alre
 
 - **cockroachdb:** batch DROP statements in clearDatabase() ([#12159](https://github.com/typeorm/typeorm/issues/12159)) ([d494489](https://github.com/typeorm/typeorm/commit/d494489c456e1c7c8eac57e5ae308510e1ca96f8))
 - **postgres:** batch DROP statements in clearDatabase() ([#12164](https://github.com/typeorm/typeorm/issues/12164)) ([c4dc431](https://github.com/typeorm/typeorm/commit/c4dc4312bc8465285901fa11ffa55d9ad19a42e9))
-
-### Reverts
-
-- **250e019:** undo sanitization modifying intended behavior in QueryBuilder (PR 12209) ([#12396](https://github.com/typeorm/typeorm/issues/12396)) ([4770621](https://github.com/typeorm/typeorm/commit/477062122fb65c0e3ad17ab5f076b112932c5ca7))
-- fix up limit with joins ([#12478](https://github.com/typeorm/typeorm/issues/12478)) ([62948a3](https://github.com/typeorm/typeorm/commit/62948a3751b0d978ab854bf2f51c3453ff8b15b2))
 
 ### BREAKING CHANGES
 
