@@ -1,5 +1,8 @@
 import { expect } from "chai"
 import type { DataSource } from "../../../../src"
+import { MssqlParameter } from "../../../../src/driver/sqlserver/MssqlParameter"
+import { EqualOperator } from "../../../../src/find-options/EqualOperator"
+import { Equal } from "../../../../src/find-options/operator/Equal"
 import { In } from "../../../../src/find-options/operator/In"
 import { Not } from "../../../../src/find-options/operator/Not"
 import "../../../utils/test-setup"
@@ -76,6 +79,13 @@ describe("FindOperator > clone()", () => {
         })
 
         expect(inner.value).to.equal("alice")
+    })
+
+    it("should preserve the subclass prototype when cloning", () => {
+        const op = Equal("alice")
+        const cloned = op.clone()
+
+        expect(cloned).to.be.instanceOf(EqualOperator)
     })
 })
 
@@ -171,6 +181,54 @@ describe("find options > FindOptionsWhere reuse with column transformer", () => 
                     where: { id: reusedNot },
                 })
                 expect(reusedNot.value).to.equal(a.id)
+            }),
+        ))
+})
+
+describe("find options > (mssql) SqlServerDriver should not mutate reused FindOperator array values", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            __dirname,
+            enabledDrivers: ["mssql"],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    it("should not wrap reused Not(In([...])) array values into MssqlParameter across queries", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const a = new User()
+                a.name = "alice"
+                const b = new User()
+                b.name = "bob"
+                await dataSource.manager.save([a, b])
+
+                const reusedNot = Not(In([a.id]))
+
+                const assertReusedOperatorWasNotMutated = () => {
+                    expect(reusedNot.value).to.eql([a.id])
+                    expect((reusedNot.value as any[])[0]).to.not.be.instanceOf(
+                        MssqlParameter,
+                    )
+                }
+
+                const firstUsers = await dataSource.manager.find(User, {
+                    where: { id: reusedNot },
+                })
+                expect(firstUsers).to.have.length(1)
+                expect(firstUsers[0].id).to.equal(b.id)
+                assertReusedOperatorWasNotMutated()
+
+                const secondUsers = await dataSource.manager.find(User, {
+                    where: { id: reusedNot },
+                })
+                expect(secondUsers).to.have.length(1)
+                expect(secondUsers[0].id).to.equal(b.id)
+                assertReusedOperatorWasNotMutated()
             }),
         ))
 })
