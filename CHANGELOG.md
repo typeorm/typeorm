@@ -1,4 +1,4 @@
-# [1.0.0](https://github.com/typeorm/typeorm/compare/0.3.30...1.0.0) (2026-05-18)
+# [1.0.0](https://github.com/typeorm/typeorm/compare/0.3.30...1.0.0) (2026-05-19)
 
 > **👉 For a structured walk-through of the changes in v1.0 — breaking changes, new features, security fixes, and the upgrade path from 0.3.x — see the [v1.0 Release Notes](https://typeorm.io/docs/releases/1.0/release-notes).**
 
