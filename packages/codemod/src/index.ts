@@ -8,11 +8,21 @@ import { resolveTransforms } from "./transforms/resolve"
 import { run } from "./cli/run"
 import { versions } from "./transforms"
 
+// Read package.json at runtime to avoid bundling it into the output bundle.
+// The path is relative to `dist/index.js` (post-build), where `../package.json`
+// resolves to the same file as development.
+const pkgVersion = (require("../package.json") as { version: string }).version
+
 const main = async () => {
     const args = process.argv.slice(2)
 
     if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
         printUsage()
+        return
+    }
+
+    if (args.includes("--version") || args.includes("-v")) {
+        console.log(pkgVersion)
         return
     }
 

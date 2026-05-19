@@ -14,7 +14,7 @@ describe("multi-schema-and-database > custom-junction-schema", () => {
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [Post, Category],
-            enabledDrivers: ["mssql", "postgres"],
+            enabledDrivers: ["mssql", "postgres", "sap", "cockroachdb"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
@@ -23,24 +23,22 @@ describe("multi-schema-and-database > custom-junction-schema", () => {
     it("should correctly create tables when custom table schema used", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                const queryRunner = dataSource.createQueryRunner()
-                const postTable = await queryRunner.getTable("yoman.post")
+                await using queryRunner = dataSource.createQueryRunner()
+
+                const postTable = (await queryRunner.getTable("yoman.post"))!
                 const categoryTable =
-                    await queryRunner.getTable("yoman.category")
+                    (await queryRunner.getTable("yoman.category"))!
                 const junctionMetadata = dataSource.getManyToManyMetadata(
                     Post,
                     "categories",
                 )!
-                const junctionTable = await queryRunner.getTable(
+                const junctionTable = (await queryRunner.getTable(
                     "yoman." + junctionMetadata.tableName,
-                )
-                await queryRunner.release()
-                expect(postTable).not.to.be.undefined
-                postTable!.name!.should.be.equal("yoman.post")
-                expect(categoryTable).not.to.be.undefined
-                categoryTable!.name!.should.be.equal("yoman.category")
-                expect(junctionTable).not.to.be.undefined
-                junctionTable!.name!.should.be.equal(
+                ))!
+
+                expect(postTable.name).to.be.equal("yoman.post")
+                expect(categoryTable.name).to.be.equal("yoman.category")
+                expect(junctionTable.name).to.be.equal(
                     "yoman." + junctionMetadata.tableName,
                 )
             }),

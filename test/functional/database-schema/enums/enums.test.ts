@@ -12,6 +12,7 @@ import {
     HeterogeneousEnum,
     StringNumericEnum,
 } from "./entity/EnumEntity"
+import { expect } from "chai"
 
 describe("database schema > enums", () => {
     let dataSources: DataSource[]
@@ -39,16 +40,18 @@ describe("database schema > enums", () => {
                     await enumEntityRepository.findOneByOrFail({
                         id: 1,
                     })
-                loadedEnumEntity.numericEnum.should.be.eq(NumericEnum.MODERATOR)
-                loadedEnumEntity.stringEnum.should.be.eq(StringEnum.GHOST)
-                loadedEnumEntity.stringNumericEnum.should.be.eq(
-                    StringNumericEnum.FOUR,
-                )
-                loadedEnumEntity.heterogeneousEnum.should.be.eq(
-                    HeterogeneousEnum.NO,
-                )
-                loadedEnumEntity.arrayDefinedStringEnum.should.be.eq("ghost")
-                loadedEnumEntity.arrayDefinedNumericEnum.should.be.eq(12)
+
+                expect(loadedEnumEntity).to.be.eql({
+                    id: 1,
+                    numericEnum: NumericEnum.MODERATOR,
+                    stringEnum: StringEnum.GHOST,
+                    stringNumericEnum: StringNumericEnum.FOUR,
+                    heterogeneousEnum: HeterogeneousEnum.NO,
+                    arrayDefinedStringEnum: "ghost",
+                    arrayDefinedNumericEnum: 12,
+                    enumWithoutDefault: StringEnum.EDITOR,
+                    nullableDefaultEnum: null,
+                })
             }),
         ))
 
@@ -73,16 +76,17 @@ describe("database schema > enums", () => {
                     await enumEntityRepository.findOneByOrFail({
                         id: 1,
                     })
-                loadedEnumEntity.numericEnum.should.be.eq(NumericEnum.EDITOR)
-                loadedEnumEntity.stringEnum.should.be.eq(StringEnum.ADMIN)
-                loadedEnumEntity.stringNumericEnum.should.be.eq(
-                    StringNumericEnum.TWO,
-                )
-                loadedEnumEntity.heterogeneousEnum.should.be.eq(
-                    HeterogeneousEnum.YES,
-                )
-                loadedEnumEntity.arrayDefinedStringEnum.should.be.eq("editor")
-                loadedEnumEntity.arrayDefinedNumericEnum.should.be.eq(13)
+                expect(loadedEnumEntity).to.be.eql({
+                    id: 1,
+                    numericEnum: NumericEnum.EDITOR,
+                    stringEnum: StringEnum.ADMIN,
+                    stringNumericEnum: StringNumericEnum.TWO,
+                    heterogeneousEnum: HeterogeneousEnum.YES,
+                    arrayDefinedStringEnum: "editor",
+                    arrayDefinedNumericEnum: 13,
+                    enumWithoutDefault: StringEnum.ADMIN,
+                    nullableDefaultEnum: null,
+                })
             }),
         ))
 
@@ -95,10 +99,8 @@ describe("database schema > enums", () => {
                     .createSchemaBuilder()
                     .log()
 
-                console.log(sqlInMemory.upQueries)
-
-                sqlInMemory.upQueries.length.should.be.equal(0)
-                sqlInMemory.downQueries.length.should.be.equal(0)
+                expect(sqlInMemory.upQueries).to.have.length(0)
+                expect(sqlInMemory.downQueries).to.have.length(0)
             }),
         ))
 })

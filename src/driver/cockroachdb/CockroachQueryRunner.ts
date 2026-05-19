@@ -1,5 +1,6 @@
 import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { TypeORMError } from "../../error"
+import { NamedPlaceholdersNotSupportedError } from "../../error/NamedPlaceholdersNotSupportedError"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
@@ -284,10 +285,12 @@ export class CockroachQueryRunner
      */
     async query(
         query: string,
-        parameters?: any[],
+        parameters?: any[] | ObjectLiteral,
         useStructuredResult = false,
     ): Promise<any> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
+        if (parameters && !Array.isArray(parameters))
+            throw new NamedPlaceholdersNotSupportedError()
 
         const databaseConnection = await this.connect()
 
@@ -723,28 +726,29 @@ export class CockroachQueryRunner
             (column) => column.generatedType && column.asExpression,
         )
 
-        for (const column of generatedColumns) {
-            const currentSchema = await this.getCurrentSchema()
-            let { schema } = this.driver.parseTableName(table)
-            schema ??= currentSchema
+        if (generatedColumns.length > 0) {
+            const parsedTableName = this.driver.parseTableName(table)
+            parsedTableName.schema ??= await this.getCurrentSchema()
 
-            const insertQuery = this.insertTypeormMetadataSql({
-                schema: schema,
-                table: table.name,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression,
-            })
+            for (const column of generatedColumns) {
+                const insertQuery = this.insertTypeormMetadataSql({
+                    schema: parsedTableName.schema,
+                    table: table.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                    value: column.asExpression,
+                })
 
-            const deleteQuery = this.deleteTypeormMetadataSql({
-                schema: schema,
-                table: table.name,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-            })
+                const deleteQuery = this.deleteTypeormMetadataSql({
+                    schema: parsedTableName.schema,
+                    table: table.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                })
 
-            upQueries.push(insertQuery)
-            downQueries.push(deleteQuery)
+                upQueries.push(insertQuery)
+                downQueries.push(deleteQuery)
+            }
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -822,28 +826,29 @@ export class CockroachQueryRunner
             (column) => column.generatedType && column.asExpression,
         )
 
-        for (const column of generatedColumns) {
-            const currentSchema = await this.getCurrentSchema()
-            let { schema } = this.driver.parseTableName(table)
-            schema ??= currentSchema
+        if (generatedColumns.length > 0) {
+            const parsedTableName = this.driver.parseTableName(table)
+            parsedTableName.schema ??= await this.getCurrentSchema()
 
-            const deleteQuery = this.deleteTypeormMetadataSql({
-                schema: schema,
-                table: table.name,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-            })
+            for (const column of generatedColumns) {
+                const deleteQuery = this.deleteTypeormMetadataSql({
+                    schema: parsedTableName.schema,
+                    table: table.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                })
 
-            const insertQuery = this.insertTypeormMetadataSql({
-                schema: schema,
-                table: table.name,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression,
-            })
+                const insertQuery = this.insertTypeormMetadataSql({
+                    schema: parsedTableName.schema,
+                    table: table.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                    value: column.asExpression,
+                })
 
-            upQueries.push(deleteQuery)
-            downQueries.push(insertQuery)
+                upQueries.push(deleteQuery)
+                downQueries.push(insertQuery)
+            }
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -3203,7 +3208,7 @@ export class CockroachQueryRunner
             return []
         }
 
-        const columnsCondiiton = dbTables
+        const columnsCondition = dbTables
             .map(({ table_name, table_schema }) => {
                 return `("table_schema" = '${table_schema}' AND "table_name" = '${table_name}')`
             })
@@ -3212,11 +3217,11 @@ export class CockroachQueryRunner
             `SELECT "columns".*, "attr"."attgenerated" as "generated_type", ` +
             `pg_catalog.col_description((quote_ident(table_catalog) || '.' || quote_ident(table_schema) || '.' || quote_ident(table_name))::regclass::oid, ordinal_position) as description ` +
             `FROM "information_schema"."columns" ` +
-            `LEFT JOIN "pg_class" AS "cls" ON "cls"."relname" = "table_name" ` +
-            `LEFT JOIN "pg_namespace" AS "ns" ON "ns"."oid" = "cls"."relnamespace" AND "ns"."nspname" = "table_schema" ` +
+            `LEFT JOIN "pg_namespace" AS "ns" ON "ns"."nspname" = "table_schema" ` +
+            `LEFT JOIN "pg_class" AS "cls" ON "cls"."relnamespace" = "ns"."oid" AND "cls"."relname" = "table_name" ` +
             `LEFT JOIN "pg_attribute" AS "attr" ON "attr"."attrelid" = "cls"."oid" AND "attr"."attname" = "column_name" AND "attr"."attnum" = "ordinal_position" ` +
             `WHERE "is_hidden" = 'NO' AND ` +
-            columnsCondiiton
+            `(${columnsCondition})`
 
         const constraintsCondition = dbTables
             .map(({ table_name, table_schema }) => {
@@ -3273,7 +3278,7 @@ export class CockroachQueryRunner
             .map((dbTable) => `'${dbTable.table_schema}'`)
             .join(", ")
         const enumsSql =
-            `SELECT "t"."typname" AS "name", string_agg("e"."enumlabel", '|') AS "value" ` +
+            `SELECT "t"."typname" AS "name", string_agg("e"."enumlabel", '|' ORDER BY "e"."enumsortorder") AS "value" ` +
             `FROM "pg_enum" "e" ` +
             `INNER JOIN "pg_type" "t" ON "t"."oid" = "e"."enumtypid" ` +
             `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +

@@ -1,5 +1,10 @@
 import path from "node:path"
 import type { API, FileInfo, Identifier } from "jscodeshift"
+import {
+    collectRepositoryBindings,
+    fileImportsFrom,
+    isRepositoryReceiver,
+} from "../ast-helpers"
 
 export const name = path.basename(__filename, path.extname(__filename))
 export const description =
@@ -8,6 +13,11 @@ export const description =
 export const repositoryFindOneById = (file: FileInfo, api: API) => {
     const j = api.jscodeshift
     const root = j(file.source)
+
+    if (!fileImportsFrom(root, j, "typeorm")) return undefined
+
+    const bindings = collectRepositoryBindings(root, j)
+
     let hasChanges = false
 
     root.find(j.CallExpression, {
@@ -22,6 +32,8 @@ export const repositoryFindOneById = (file: FileInfo, api: API) => {
         ) {
             return
         }
+
+        if (!isRepositoryReceiver(path.node.callee.object, bindings)) return
 
         const args = path.node.arguments
 
