@@ -114,6 +114,16 @@ const config: Config = {
                     className: "navbar__version-trigger",
                     items: [
                         {
+                            html: '<span class="navbar__version-section-label">Latest</span>',
+                            to: "#",
+                            className: "navbar__version-section",
+                        },
+                        {
+                            label: "Version 1.x",
+                            href: "https://typeorm.io",
+                            className: "navbar__version-item",
+                        },
+                        {
                             html: '<span class="navbar__version-section-label">Legacy</span>',
                             to: "#",
                             className: "navbar__version-section",
@@ -123,16 +133,6 @@ const config: Config = {
                             href: "https://v0.typeorm.io",
                             className:
                                 "navbar__version-item navbar__version-item--active",
-                        },
-                        {
-                            html: '<span class="navbar__version-section-label">Latest</span>',
-                            to: "#",
-                            className: "navbar__version-section",
-                        },
-                        {
-                            label: "Version 1.x",
-                            href: "https://typeorm.io",
-                            className: "navbar__version-item",
                         },
                     ],
                 },
