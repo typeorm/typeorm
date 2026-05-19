@@ -162,31 +162,25 @@ export class FindOperator<T> {
     /**
      * Returns a shallow copy of this FindOperator so callers can safely
      * apply mutating operations like `transformValue` without affecting
-     * the original instance. Nested FindOperator children are cloned
-     * recursively, including FindOperator values inside arrays. Array
-     * values are copied so that in-place mutations on the clone's value do
-     * not leak back to the caller.
+     * the original instance. The prototype is preserved so subclasses
+     * such as EqualOperator stay intact. Nested FindOperator children
+     * are cloned recursively, including FindOperator values inside
+     * arrays, and array values are copied so that in-place mutations on
+     * the clone's value do not leak back to the caller.
      */
-    clone(): FindOperator<T> {
-        const clonedValue: T | FindOperator<T> = InstanceChecker.isFindOperator(
-            this._value,
-        )
-            ? this._value.clone()
-            : Array.isArray(this._value)
-              ? (this._value.map((value: any) =>
-                    InstanceChecker.isFindOperator(value)
-                        ? value.clone()
-                        : value,
-                ) as unknown as T)
-              : this._value
+    clone(): this {
+        const cloned = Object.create(Object.getPrototypeOf(this)) as this
 
-        return new FindOperator(
-            this._type,
-            clonedValue,
-            this._useParameter,
-            this._multipleParameters,
-            this._getSql,
-            this._objectLiteralParameters,
-        )
+        Object.assign(cloned, this)
+
+        if (InstanceChecker.isFindOperator(this._value)) {
+            cloned._value = this._value.clone() as T | FindOperator<T>
+        } else if (Array.isArray(this._value)) {
+            cloned._value = this._value.map((value: any) =>
+                InstanceChecker.isFindOperator(value) ? value.clone() : value,
+            ) as unknown as T
+        }
+
+        return cloned
     }
 }
