@@ -22,7 +22,7 @@ The TypeORM team and community is proud to present v1.0. This post covers what y
 
 ## By the numbers
 
-From 0.3.28 to 1.0:
+From 0.3 to 1.0:
 
 - **363 commits** in the v1 development cycle
 - **53 contributors**
