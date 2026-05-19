@@ -1,7 +1,7 @@
 import type { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 
 /**
- * Sqlite-specific connection options.
+ * Expo SQLite-specific connection options.
  */
 export interface ExpoDataSourceOptions extends BaseDataSourceOptions {
     /**
@@ -15,9 +15,11 @@ export interface ExpoDataSourceOptions extends BaseDataSourceOptions {
     readonly database: string
 
     /**
-     * Driver module
+     * Driver module. Optional — if omitted, TypeORM will load `expo-sqlite`
+     * automatically. Pass explicitly when you need to control which instance
+     * of the module is used (e.g. patch-package, custom wrappers).
      */
-    readonly driver: any
+    readonly driver?: any
 
     readonly poolSize?: never
 }

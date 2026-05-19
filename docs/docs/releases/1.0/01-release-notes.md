@@ -60,6 +60,7 @@ TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes pla
 - **Internal `nativeParameters` plumbing removed** from drivers and query builders ([#12104](https://github.com/typeorm/typeorm/pull/12104) by [@pkuczynski](https://github.com/pkuczynski))
 - **Internal `broadcastLoadEventsForAll()` removed** from Broadcaster ([#12137](https://github.com/typeorm/typeorm/pull/12137) by [@pkuczynski](https://github.com/pkuczynski))
 - **Internal `DriverUtils.buildColumnAlias()` removed** — use `buildAlias()` instead ([#12138](https://github.com/typeorm/typeorm/pull/12138) by [@pkuczynski](https://github.com/pkuczynski))
+- **`RdbmsSchemaBuilder.renameTables()` removed** — empty no-op method that was never called ([#12284](https://github.com/typeorm/typeorm/pull/12284) by [@naorpeled](https://github.com/naorpeled))
 - **`EntityMetadata.getValueMap()` `options` parameter removed** — the `skipNulls` option was never functional; remove the third argument ([#12303](https://github.com/typeorm/typeorm/pull/12303) by [@naorpeled](https://github.com/naorpeled))
 
 ### Behavioral changes
@@ -182,7 +183,6 @@ TypeORM 1.0 is a major release that removes long-deprecated APIs, modernizes pla
 
 - **SQL injection prevention** — parameterized queries and escaped identifiers are now used across all drivers for schema introspection and DDL methods, preventing SQL injection via database/schema/table/column names ([#12207](https://github.com/typeorm/typeorm/pull/12207) by [@pkuczynski](https://github.com/pkuczynski), [#12197](https://github.com/typeorm/typeorm/pull/12197) by [@pkuczynski](https://github.com/pkuczynski), [#12185](https://github.com/typeorm/typeorm/pull/12185) by [@pkuczynski](https://github.com/pkuczynski))
 - **OrderBy condition validation** — QueryBuilder `orderBy` and `addOrderBy` now validate condition values at runtime, preventing injection via order expressions ([#12217](https://github.com/typeorm/typeorm/pull/12217) by [@pkuczynski](https://github.com/pkuczynski))
-- **QueryBuilder rejects semicolons in raw SQL fragments** — `select`, `addSelect`, `groupBy`, `addGroupBy`, `orderBy`, and `addOrderBy` now throw when the string argument contains `;`, preventing statement-stacking injection via these entry points ([#12209](https://github.com/typeorm/typeorm/pull/12209) by [@pkuczynski](https://github.com/pkuczynski))
 
 ## Performance improvements
 

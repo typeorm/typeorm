@@ -172,7 +172,7 @@ export class QueryExpressionMap {
      * SELECT * FROM table_name USE INDEX (col1_index, col2_index) WHERE col1=1 AND col2=2 AND col3=3;
      *
      */
-    useIndex?: string
+    useIndex?: string[]
 
     /**
      * Locking mode.

@@ -7,9 +7,14 @@ import type { View } from "../schema-builder/view/View"
  */
 export interface NamingStrategyInterface {
     /**
-     * Naming strategy name.
+     * Column name for materialized paths.
      */
-    name?: string
+    materializedPathColumnName: string
+
+    /**
+     * Column names for nested sets.
+     */
+    nestedSetColumnNames: { left: string; right: string }
 
     /**
      * Normalizes table name.
@@ -161,14 +166,4 @@ export interface NamingStrategyInterface {
      * Note that table name comes here already normalized by #tableName method.
      */
     prefixTableName(prefix: string, tableName: string): string
-
-    /**
-     * Column names for nested sets.
-     */
-    nestedSetColumnNames: { left: string; right: string }
-
-    /**
-     * Column name for materialized paths.
-     */
-    materializedPathColumnName: string
 }

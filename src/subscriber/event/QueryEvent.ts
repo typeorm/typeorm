@@ -1,3 +1,4 @@
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import type { BaseEvent } from "./BaseEvent"
 
 /**
@@ -12,7 +13,7 @@ export interface QueryEvent extends BaseEvent {
     /**
      * Parameters used in the query.
      */
-    parameters?: any[]
+    parameters?: any[] | ObjectLiteral
 }
 
 export interface BeforeQueryEvent extends QueryEvent {}

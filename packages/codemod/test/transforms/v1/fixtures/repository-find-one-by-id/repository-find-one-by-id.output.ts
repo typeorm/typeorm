@@ -1,3 +1,5 @@
+import "typeorm"
+
 // Repository form
 const user = await repository.findOneBy({
     id: 1,
