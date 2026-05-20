@@ -250,7 +250,7 @@ describe("relations > eager relations > basic", () => {
                 try {
                     await dataSource.manager.findOne(Post, {
                         where: { id: 1 },
-                        select: ["title"],
+                        select: { title: true },
                     })
                 } catch (e) {
                     error = e as Error
