@@ -241,7 +241,7 @@ describe("relations > eager relations > basic", () => {
             dataSources.map(async (dataSource) => {
                 await prepareData(dataSource)
 
-                // Regression test for: QueryExpressionMap.clone() did not copy
+                // Regression test for PR #12499: QueryExpressionMap.clone() did not copy
                 // queryEntity, causing the pagination DISTINCT wrapper's inner
                 // query to omit primary key columns from the SELECT. When eager
                 // relations exist the wrapper references distinctAlias.<Entity>_id
