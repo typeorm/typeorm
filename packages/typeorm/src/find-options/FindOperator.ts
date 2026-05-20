@@ -169,16 +169,17 @@ export class FindOperator<T> {
      * the clone's value do not leak back to the caller.
      */
     clone(): this {
-        const cloned = Object.create(Object.getPrototypeOf(this)) as this
-
-        Object.assign(cloned, this)
+        const cloned = Object.assign(
+            Object.create(Object.getPrototypeOf(this)),
+            this,
+        ) as this
 
         if (InstanceChecker.isFindOperator(this._value)) {
             cloned._value = this._value.clone() as T | FindOperator<T>
         } else if (Array.isArray(this._value)) {
             cloned._value = this._value.map((value: any) =>
                 InstanceChecker.isFindOperator(value) ? value.clone() : value,
-            ) as unknown as T
+            ) as T
         }
 
         return cloned
