@@ -729,3 +729,42 @@ describe("tree tables > closure-table", () => {
             }),
         ))
 })
+
+describe("tree tables > closure-table > schema-qualified closure table joins", () => {
+    let connections: DataSource[]
+    before(
+        async () =>
+            (connections = await createTestingConnections({
+                entities: [Category],
+                schemaCreate: true,
+                enabledDrivers: ["postgres"],
+                driverSpecific: {
+                    schema: "public",
+                },
+            })),
+    )
+    beforeEach(() => reloadTestingDatabases(connections))
+    after(() => closeTestingConnections(connections))
+
+    it("should find descendants when closure table path includes schema", () =>
+        Promise.all(
+            connections.map(async (connection) => {
+                const categoryRepository =
+                    connection.getTreeRepository(Category)
+
+                const a1 = new Category()
+                a1.name = "a1"
+                await categoryRepository.save(a1)
+
+                const a11 = new Category()
+                a11.name = "a11"
+                a11.parentCategory = a1
+                await categoryRepository.save(a11)
+
+                const descendants = await categoryRepository.findDescendants(a1)
+                descendants.length.should.be.equal(2)
+                descendants.should.deep.include({ id: 1, name: "a1" })
+                descendants.should.deep.include({ id: 2, name: "a11" })
+            }),
+        ))
+})
