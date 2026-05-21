@@ -25,8 +25,11 @@ describe("github issues > #12002 clearDatabase fails when extension-owned views/
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const queryRunner = dataSource.createQueryRunner()
-                await expect(queryRunner.clearDatabase()).not.to.be.rejected
-                await queryRunner.release()
+                try {
+                    await expect(queryRunner.clearDatabase()).not.to.be.rejected
+                } finally {
+                    await queryRunner.release()
+                }
             }),
         ))
 
@@ -58,6 +61,9 @@ describe("github issues > #12002 clearDatabase fails when extension-owned views/
 
                 try {
                     await expect(queryRunner.clearDatabase()).not.to.be.rejected
+                    await queryRunner.query(
+                        `SELECT 1 FROM pg_stat_statements LIMIT 1`,
+                    )
                 } finally {
                     await queryRunner.query(
                         `DROP EXTENSION IF EXISTS pg_stat_statements`,
