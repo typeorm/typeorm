@@ -438,7 +438,7 @@ export class SqlServerQueryRunner
      */
     async getSchemas(database?: string): Promise<string[]> {
         const query = database
-            ? `SELECT * FROM "${database}"."sys"."schema"`
+            ? `SELECT * FROM "${database}"."sys"."schemas"`
             : `SELECT * FROM "sys"."schemas"`
         const results: ObjectLiteral[] = await this.query(query)
         return results.map((result) => result["name"])
@@ -3156,7 +3156,9 @@ export class SqlServerQueryRunner
                 return (
                     `SELECT "COLUMNS".*, "cc"."is_persisted", "cc"."definition" ` +
                     `FROM "${TABLE_CATALOG}"."INFORMATION_SCHEMA"."COLUMNS" ` +
-                    `LEFT JOIN "sys"."computed_columns" "cc" ON COL_NAME("cc"."object_id", "cc"."column_id") = "column_name" ` +
+                    `LEFT JOIN "${TABLE_CATALOG}"."sys"."computed_columns" "cc" ON COL_NAME("cc"."object_id", "cc"."column_id") = "COLUMN_NAME" ` +
+                    `AND OBJECT_NAME("cc"."object_id", DB_ID('${TABLE_CATALOG}')) = "TABLE_NAME" ` +
+                    `AND OBJECT_SCHEMA_NAME("cc"."object_id", DB_ID('${TABLE_CATALOG}')) = "TABLE_SCHEMA" ` +
                     `WHERE (${condition})`
                 )
             })

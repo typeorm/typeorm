@@ -30,8 +30,10 @@ describe("github issues > #10678 useIndex is not preserved when cloning a QueryE
                     .createQueryBuilder("u")
                     .useIndex(useIndex)
 
-                expect(qb.expressionMap.useIndex).to.equal(useIndex)
-                expect(qb.clone().expressionMap.useIndex).to.equal(useIndex)
+                expect(qb.expressionMap.useIndex).to.deep.equal([useIndex])
+                expect(qb.clone().expressionMap.useIndex).to.deep.equal([
+                    useIndex,
+                ])
             }),
         ))
 })
