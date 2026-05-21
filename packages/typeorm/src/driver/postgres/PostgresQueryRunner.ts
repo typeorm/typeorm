@@ -3434,13 +3434,32 @@ export class PostgresQueryRunner
             schemas.push(currentSchema)
         }
 
+        // Returns a SQL fragment that excludes objects owned by an extension
+        // (e.g. PostGIS views, pg_stat_statements views, spatial_ref_sys table).
+        const notExtensionOwned = (
+            alias: string,
+            nameCol: string,
+            relkind: string,
+        ): string =>
+            `AND NOT EXISTS (` +
+            `SELECT 1 FROM pg_depend d ` +
+            `JOIN pg_class c ON d.objid = c.oid ` +
+            `JOIN pg_namespace n ON c.relnamespace = n.oid ` +
+            `WHERE d.classid = 'pg_class'::regclass ` +
+            `AND c.relname = ${alias}.${nameCol} ` +
+            `AND n.nspname = ${alias}.schemaname ` +
+            `AND c.relkind = '${relkind}' ` +
+            `AND d.deptype = 'e'` +
+            `)`
+
         const isAnotherTransactionActive = this.isTransactionActive
         if (!isAnotherTransactionActive) await this.startTransaction()
         try {
-            // drop views
+            // drop views — exclude extension-owned views
             const views: ObjectLiteral[] = await this.query(
-                `SELECT quote_ident(schemaname) || '.' || quote_ident(viewname) as "name" ` +
-                    `FROM "pg_views" WHERE "schemaname" = ANY($1) AND "viewname" NOT IN ('geography_columns', 'geometry_columns', 'raster_columns', 'raster_overviews')`,
+                `SELECT quote_ident(v.schemaname) || '.' || quote_ident(v.viewname) as "name" ` +
+                    `FROM "pg_views" v WHERE v."schemaname" = ANY($1) ` +
+                    notExtensionOwned("v", "viewname", "v"),
                 [schemas],
             )
             if (views.length > 0) {
@@ -3453,8 +3472,9 @@ export class PostgresQueryRunner
             // Note: materialized views introduced in Postgres 9.3
             if (DriverUtils.isReleaseVersionOrGreater(this.driver, "9.3")) {
                 const matViews: ObjectLiteral[] = await this.query(
-                    `SELECT quote_ident(schemaname) || '.' || quote_ident(matviewname) as "name" ` +
-                        `FROM "pg_matviews" WHERE "schemaname" = ANY($1)`,
+                    `SELECT quote_ident(v.schemaname) || '.' || quote_ident(v.matviewname) as "name" ` +
+                        `FROM "pg_matviews" v WHERE v."schemaname" = ANY($1) ` +
+                        notExtensionOwned("v", "matviewname", "m"),
                     [schemas],
                 )
                 if (matViews.length > 0) {
@@ -3464,13 +3484,11 @@ export class PostgresQueryRunner
                 }
             }
 
-            // ignore spatial_ref_sys; it's a special table supporting PostGIS
-            // TODO generalize this as this.driver.ignoreTables
-
-            // drop tables
+            // drop tables — exclude extension-owned tables
             const tables: ObjectLiteral[] = await this.query(
-                `SELECT quote_ident(schemaname) || '.' || quote_ident(tablename) as "name" ` +
-                    `FROM "pg_tables" WHERE "schemaname" = ANY($1) AND "tablename" NOT IN ('spatial_ref_sys')`,
+                `SELECT quote_ident(t.schemaname) || '.' || quote_ident(t.tablename) as "name" ` +
+                    `FROM "pg_tables" t WHERE t."schemaname" = ANY($1) ` +
+                    notExtensionOwned("t", "tablename", "r"),
                 [schemas],
             )
             if (tables.length > 0) {
