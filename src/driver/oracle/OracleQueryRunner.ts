@@ -1154,26 +1154,29 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             // update cloned table
             clonedTable = table.clone()
-        } else if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length
-        ) {
-            // Use ALTER COLUMN TYPE for type/length changes to preserve data
-            upQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(table)} MODIFY "${
-                        newColumn.name
-                    }" ${this.driver.createFullType(newColumn)}`,
-                ),
-            )
-            downQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(table)} MODIFY "${
-                        newColumn.name
-                    }" ${this.driver.createFullType(oldColumn)}`,
-                ),
-            )
         } else {
+            if (
+                oldColumn.type !== newColumn.type ||
+                (newColumn.length !== undefined &&
+                    oldColumn.length !== newColumn.length)
+            ) {
+                // Use ALTER COLUMN TYPE for type/length changes to preserve data
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} MODIFY "${
+                            oldColumn.name
+                        }" ${this.driver.createFullType(newColumn)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} MODIFY "${
+                            oldColumn.name
+                        }" ${this.driver.createFullType(oldColumn)}`,
+                    ),
+                )
+            }
+
             if (newColumn.name !== oldColumn.name) {
                 // rename column
                 upQueries.push(

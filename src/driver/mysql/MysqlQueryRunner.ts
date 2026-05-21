@@ -1150,34 +1150,37 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             // update cloned table
             clonedTable = table.clone()
-        } else if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length
-        ) {
-            // Use ALTER TABLE CHANGE for type/length changes to preserve data
-            upQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
-                        newColumn.name
-                    }\` \`${newColumn.name}\` ${this.buildCreateColumnSql(
-                        newColumn,
-                        true,
-                        true,
-                    )}`,
-                ),
-            )
-            downQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
-                        newColumn.name
-                    }\` \`${newColumn.name}\` ${this.buildCreateColumnSql(
-                        oldColumn,
-                        true,
-                        true,
-                    )}`,
-                ),
-            )
         } else {
+            if (
+                oldColumn.type !== newColumn.type ||
+                (newColumn.length !== undefined &&
+                    oldColumn.length !== newColumn.length)
+            ) {
+                // Use ALTER TABLE CHANGE for type/length changes to preserve data
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                            oldColumn.name
+                        }\` \`${newColumn.name}\` ${this.buildCreateColumnSql(
+                            newColumn,
+                            true,
+                            true,
+                        )}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                            newColumn.name
+                        }\` \`${oldColumn.name}\` ${this.buildCreateColumnSql(
+                            oldColumn,
+                            true,
+                            true,
+                        )}`,
+                    ),
+                )
+            }
+
             if (newColumn.name !== oldColumn.name) {
                 // We don't change any column properties, just rename it.
                 upQueries.push(
