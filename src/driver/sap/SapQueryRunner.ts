@@ -1374,26 +1374,29 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             // update cloned table
             clonedTable = table.clone()
-        } else if (
-            newColumn.type !== oldColumn.type ||
-            newColumn.length !== oldColumn.length
-        ) {
-            // Use ALTER COLUMN TYPE for type/length changes to preserve data
-            upQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                        newColumn.name
-                    }" ${this.driver.createFullType(newColumn)}`,
-                ),
-            )
-            downQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                        newColumn.name
-                    }" ${this.driver.createFullType(oldColumn)}`,
-                ),
-            )
         } else {
+            if (
+                newColumn.type !== oldColumn.type ||
+                (newColumn.length !== undefined &&
+                    oldColumn.length !== newColumn.length)
+            ) {
+                // Use ALTER COLUMN TYPE for type/length changes to preserve data
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            oldColumn.name
+                        }" ${this.driver.createFullType(newColumn)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            oldColumn.name
+                        }" ${this.driver.createFullType(oldColumn)}`,
+                    ),
+                )
+            }
+
             if (newColumn.name !== oldColumn.name) {
                 // rename column
                 upQueries.push(

@@ -1151,12 +1151,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             // update cloned table
             clonedTable = table.clone()
         } else {
+            let typeOrLengthChanged = false
             if (
                 oldColumn.type !== newColumn.type ||
                 (newColumn.length !== undefined &&
                     oldColumn.length !== newColumn.length)
             ) {
+                typeOrLengthChanged = true
                 // Use ALTER TABLE CHANGE for type/length changes to preserve data
+                // CHANGE can handle both rename and type change in one statement
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
@@ -1181,7 +1184,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 )
             }
 
-            if (newColumn.name !== oldColumn.name) {
+            if (newColumn.name !== oldColumn.name && !typeOrLengthChanged) {
                 // We don't change any column properties, just rename it.
                 upQueries.push(
                     new Query(
