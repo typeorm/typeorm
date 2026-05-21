@@ -1365,18 +1365,34 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            newColumn.type !== oldColumn.type ||
-            newColumn.length !== oldColumn.length ||
             (newColumn.asExpression ?? "").trim() !==
                 (oldColumn.asExpression ?? "").trim()
         ) {
-            // SQL Server does not support changing of IDENTITY column, so we must drop column and recreate it again.
-            // Also, we recreate column if column type changed
+            // SAP HANA does not support changing of IDENTITY column, so we must drop column and recreate it again.
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
+        } else if (
+            newColumn.type !== oldColumn.type ||
+            newColumn.length !== oldColumn.length
+        ) {
+            // Use ALTER COLUMN TYPE for type/length changes to preserve data
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                        newColumn.name
+                    }" ${this.driver.createFullType(newColumn)}`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                        newColumn.name
+                    }" ${this.driver.createFullType(oldColumn)}`,
+                ),
+            )
         } else {
             if (newColumn.name !== oldColumn.name) {
                 // rename column

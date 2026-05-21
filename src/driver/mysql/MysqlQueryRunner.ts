@@ -1137,8 +1137,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             (oldColumn.generatedType &&
                 newColumn.generatedType &&
                 oldColumn.generatedType !== newColumn.generatedType) ||
@@ -1146,11 +1144,39 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 newColumn.generatedType === "VIRTUAL") ||
             (oldColumn.generatedType === "VIRTUAL" && !newColumn.generatedType)
         ) {
+            // Recreate column only for incompatible changes (generated type/strategy)
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
+        } else if (
+            oldColumn.type !== newColumn.type ||
+            oldColumn.length !== newColumn.length
+        ) {
+            // Use ALTER TABLE CHANGE for type/length changes to preserve data
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                        newColumn.name
+                    }\` \`${newColumn.name}\` ${this.buildCreateColumnSql(
+                        newColumn,
+                        true,
+                        true,
+                    )}`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                        newColumn.name
+                    }\` \`${newColumn.name}\` ${this.buildCreateColumnSql(
+                        oldColumn,
+                        true,
+                        true,
+                    )}`,
+                ),
+            )
         } else {
             if (newColumn.name !== oldColumn.name) {
                 // We don't change any column properties, just rename it.
