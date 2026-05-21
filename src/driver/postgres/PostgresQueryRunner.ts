@@ -1328,7 +1328,6 @@ export class PostgresQueryRunner
 
         if (
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1619,6 +1618,7 @@ export class PostgresQueryRunner
             }
 
             if (
+                oldColumn.length !== newColumn.length ||
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {
@@ -2348,7 +2348,7 @@ export class PostgresQueryRunner
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE "${
+                        }" TYPE ${this.driver.createFullType(newColumn)} COLLATE "${
                             newColumn.collation
                         }"`,
                     ),
@@ -2362,7 +2362,7 @@ export class PostgresQueryRunner
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE ${oldCollation}`,
+                        }" TYPE ${this.driver.createFullType(oldColumn)} COLLATE ${oldCollation}`,
                     ),
                 )
             }
