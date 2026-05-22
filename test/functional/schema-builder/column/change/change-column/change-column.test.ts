@@ -130,6 +130,7 @@ describe("schema builder > change column", () => {
                     remove: removeRecorder,
                 } = createSqlRecorder(connection)
 
+                let testErr
                 try {
                     // Step 1: Ensure column is CHAR(N)
                     nameColumn.type = charTypeByDriver[driver]
@@ -235,6 +236,8 @@ describe("schema builder > change column", () => {
 
                     // Cleanup inserted data
                     await repo.delete({ name: testData })
+                } catch (e) {
+                    testErr = e
                 } finally {
                     // Revert
                     nameColumn.type = originalType
@@ -242,6 +245,7 @@ describe("schema builder > change column", () => {
                     nameColumn.build(connection)
                     await connection.synchronize()
                 }
+                expect(testErr).to.be.undefined
             }),
         ))
 
@@ -316,6 +320,7 @@ describe("schema builder > change column", () => {
                 const originalType = versionCol.type
                 const originalPrecision = versionCol.precision
 
+                let testErr
                 try {
                     // Step 1: set FLOAT
                     versionCol.type = floatBy[driver]
@@ -411,16 +416,23 @@ describe("schema builder > change column", () => {
 
                     // Cleanup inserted data
                     await repo.delete({ name: "test" })
+                } catch (e) {
+                    testErr = e
                 } finally {
                     // Revert & clean up the isolated connection
                     versionCol.type = originalType
                     ;(versionCol as any).precision = originalPrecision
                     versionCol.build(connection)
+                    let revertErr
                     try {
                         await connection.synchronize()
-                    } catch {}
+                    } catch (e) {
+                        revertErr = e
+                    }
+                    expect(revertErr).to.be.undefined
                     await closeTestingConnections(conns)
                 }
+                expect(testErr).to.be.undefined
             }),
         ))
 
@@ -465,6 +477,7 @@ describe("schema builder > change column", () => {
                     remove: removeRecorder,
                 } = createSqlRecorder(connection)
 
+                let testErr
                 try {
                     // STEP 1: varchar2 -> "datetime-like" (DATE for Oracle)
                     nameCol.type = datetimeBy[driver]
@@ -621,6 +634,8 @@ describe("schema builder > change column", () => {
 
                     // Cleanup inserted data
                     await repo.delete({ id: 1 })
+                } catch (e) {
+                    testErr = e
                 } finally {
                     // Revert everything
                     nameCol.type = originalType
@@ -630,6 +645,7 @@ describe("schema builder > change column", () => {
                     nameCol.build(connection)
                     await connection.synchronize()
                 }
+                expect(testErr).to.be.undefined
             }),
         ))
 
@@ -659,6 +675,7 @@ describe("schema builder > change column", () => {
 
                 let insertedRowId: number | undefined
 
+                let testErr
                 try {
                     // 1) Ensure start at varchar(50)
                     nameColumnMetadata.length = "50"
@@ -912,13 +929,20 @@ describe("schema builder > change column", () => {
                         id: row2?.id,
                     })
                     expect(rt.name.length).to.equal(51)
+                } catch (e) {
+                    testErr = e
                 } finally {
                     // Revert data
+                    let deleteErr
                     try {
                         if (insertedRowId !== undefined)
                             await repo.delete(insertedRowId)
-                    } catch {}
+                    } catch (e) {
+                        deleteErr = e
+                    }
+                    expect(deleteErr).to.be.undefined
                     // Revert schema (restore original length)
+                    let revertErr
                     try {
                         const nameColumnMetadata = connection
                             .getMetadata("post")
@@ -928,9 +952,13 @@ describe("schema builder > change column", () => {
                             nameColumnMetadata.build(connection)
                             await connection.synchronize()
                         }
-                    } catch {}
+                    } catch (e) {
+                        revertErr = e
+                    }
+                    expect(revertErr).to.be.undefined
                     await queryRunner.release()
                 }
+                expect(testErr).to.be.undefined
             }),
         ))
     it("uses ALTER COLUMN when reducing varchar length", () =>
@@ -959,6 +987,7 @@ describe("schema builder > change column", () => {
 
                 let insertedRowId: number | undefined
 
+                let testErr
                 try {
                     // 1) Ensure start at varchar(50)
                     nameColumnMetadata.length = "50"
@@ -1214,13 +1243,20 @@ describe("schema builder > change column", () => {
                         id: row2?.id,
                     })
                     expect(rt.name.length).to.equal(40)
+                } catch (e) {
+                    testErr = e
                 } finally {
                     // Revert data
+                    let deleteErr
                     try {
                         if (insertedRowId !== undefined)
                             await repo.delete(insertedRowId)
-                    } catch {}
+                    } catch (e) {
+                        deleteErr = e
+                    }
+                    expect(deleteErr).to.be.undefined
                     // Revert schema (restore original length)
+                    let revertErr
                     try {
                         const nameColumnMetadata = connection
                             .getMetadata("post")
@@ -1230,9 +1266,13 @@ describe("schema builder > change column", () => {
                             nameColumnMetadata.build(connection)
                             await connection.synchronize()
                         }
-                    } catch {}
+                    } catch (e) {
+                        revertErr = e
+                    }
+                    expect(revertErr).to.be.undefined
                     await queryRunner.release()
                 }
+                expect(testErr).to.be.undefined
             }),
         ))
 
