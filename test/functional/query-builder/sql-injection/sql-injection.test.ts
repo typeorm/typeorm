@@ -218,6 +218,209 @@ describe("query builder > sql injection", () => {
         })
     })
 
+    describe("UpdateQueryBuilder orderBy direction injection", () => {
+        it("should reject invalid order direction string", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ name: "test" })
+                            // @ts-expect-error intentionally invalid order direction
+                            .orderBy("id", "ASC, (SELECT SLEEP(2))"),
+                    ).to.throw(/Invalid order direction/)
+                    await verifyIntegrity(dataSource)()
+                }),
+            ))
+
+        it("should reject invalid order direction in addOrderBy", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ name: "test" })
+                            .orderBy("id")
+                            // @ts-expect-error intentionally invalid order direction
+                            .addOrderBy("name", "DESC; DROP TABLE post"),
+                    ).to.throw(/Invalid order direction/)
+                    await verifyIntegrity(dataSource)()
+                }),
+            ))
+
+        it("should reject invalid nulls value", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ name: "test" })
+                            .orderBy(
+                                "id",
+                                "ASC",
+                                // @ts-expect-error intentionally invalid nulls
+                                "NULLS FIRST; DROP TABLE post",
+                            ),
+                    ).to.throw(/Invalid nulls option/)
+                    await verifyIntegrity(dataSource)()
+                }),
+            ))
+
+        it("should accept valid order directions", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ name: "test" })
+                            .orderBy("id", "ASC"),
+                    ).to.not.throw()
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ name: "test" })
+                            .orderBy("id", "DESC"),
+                    ).to.not.throw()
+                }),
+            ))
+    })
+
+    describe("SoftDeleteQueryBuilder orderBy direction injection", () => {
+        it("should reject invalid order direction string", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .softDelete()
+                            .from(Post)
+                            // @ts-expect-error intentionally invalid order direction
+                            .orderBy("id", "ASC, (SELECT SLEEP(2))"),
+                    ).to.throw(/Invalid order direction/)
+                    await verifyIntegrity(dataSource)()
+                }),
+            ))
+
+        it("should reject invalid order direction in addOrderBy", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .softDelete()
+                            .from(Post)
+                            .orderBy("id")
+                            // @ts-expect-error intentionally invalid order direction
+                            .addOrderBy("name", "DESC; DROP TABLE post"),
+                    ).to.throw(/Invalid order direction/)
+                    await verifyIntegrity(dataSource)()
+                }),
+            ))
+
+        it("should reject invalid nulls value", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .softDelete()
+                            .from(Post)
+                            .orderBy(
+                                "id",
+                                "ASC",
+                                // @ts-expect-error intentionally invalid nulls
+                                "NULLS FIRST; DROP TABLE post",
+                            ),
+                    ).to.throw(/Invalid nulls option/)
+                    await verifyIntegrity(dataSource)()
+                }),
+            ))
+    })
+
+    describe("UpdateQueryBuilder limit validation", () => {
+        it("should reject non-numeric limit", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (!DriverUtils.isMySQLFamily(dataSource.driver)) return
+
+                    expect(() => {
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ text: "updated" })
+                            .limit("1; DROP TABLE post" as any)
+                    }).to.throw(/not a number/)
+                }),
+            ))
+
+        it("should accept valid numeric limit", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (!DriverUtils.isMySQLFamily(dataSource.driver)) return
+
+                    expect(() => {
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ text: "updated" })
+                            .limit(10)
+                    }).to.not.throw()
+                }),
+            ))
+    })
+
+    describe("SoftDeleteQueryBuilder limit validation", () => {
+        it("should reject non-numeric limit", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (!DriverUtils.isMySQLFamily(dataSource.driver)) return
+
+                    expect(() => {
+                        dataSource
+                            .createQueryBuilder()
+                            .softDelete()
+                            .from(Post)
+                            .limit("1; DROP TABLE post" as any)
+                    }).to.throw(/not a number/)
+                }),
+            ))
+
+        it("should accept valid numeric limit", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (!DriverUtils.isMySQLFamily(dataSource.driver)) return
+
+                    expect(() => {
+                        dataSource
+                            .createQueryBuilder()
+                            .softDelete()
+                            .from(Post)
+                            .limit(10)
+                    }).to.not.throw()
+                }),
+            ))
+    })
+
     describe("orWhere", () => {
         for (const malicious of maliciousInputs) {
             it(`should prevent injection with: ${malicious}`, () =>
@@ -291,5 +494,58 @@ describe("query builder > sql injection", () => {
                     }),
                 ))
         }
+    })
+
+    describe("useIndex", () => {
+        it("should escape a malicious index name", () => {
+            for (const dataSource of dataSources) {
+                if (!DriverUtils.isMySQLFamily(dataSource.driver)) {
+                    continue
+                }
+
+                const sql = dataSource
+                    .createQueryBuilder(Post, "post")
+                    .useIndex("my_index; DROP TABLE post")
+                    .getSql()
+
+                // The malicious payload should be wrapped in backticks,
+                // not interpreted as a raw SQL statement
+                expect(sql).to.contain("USE INDEX")
+                expect(sql).to.contain("`my_index; DROP TABLE post`")
+            }
+        })
+
+        it("should escape each index name when an array is passed", () => {
+            for (const dataSource of dataSources) {
+                if (!DriverUtils.isMySQLFamily(dataSource.driver)) {
+                    continue
+                }
+
+                const sql = dataSource
+                    .createQueryBuilder(Post, "post")
+                    .useIndex(["idx_one", "idx_two"])
+                    .getSql()
+
+                expect(sql).to.contain("`idx_one`, `idx_two`")
+            }
+        })
+
+        it("should escape a malicious index name in an array", () => {
+            for (const dataSource of dataSources) {
+                if (!DriverUtils.isMySQLFamily(dataSource.driver)) {
+                    continue
+                }
+
+                const sql = dataSource
+                    .createQueryBuilder(Post, "post")
+                    .useIndex(["good_index", "bad`; DROP TABLE post"])
+                    .getSql()
+
+                expect(sql).to.not.match(
+                    /DROP TABLE(?! post`)/, // should only appear inside escaped identifier
+                )
+                expect(sql).to.contain("USE INDEX")
+            }
+        })
     })
 })
