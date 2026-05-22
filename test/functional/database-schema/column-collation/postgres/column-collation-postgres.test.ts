@@ -56,4 +56,25 @@ describe("database schema > column collation > postgres", () => {
                 )
             }),
         ))
+
+    it("should keep column length when removing collation", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const metadata = dataSource.getMetadata(Post)
+                metadata.findColumnWithPropertyName("name")!.collation =
+                    undefined
+
+                await dataSource.synchronize(false)
+
+                const queryRunner = dataSource.createQueryRunner()
+                const table = await queryRunner.getTable("post")
+                await queryRunner.release()
+
+                const collation =
+                    table!.findColumnByName("name")!.collation || ""
+
+                table!.findColumnByName("name")!.length!.should.be.equal("50")
+                collation.should.not.be.equal("undefined")
+            }),
+        ))
 })
