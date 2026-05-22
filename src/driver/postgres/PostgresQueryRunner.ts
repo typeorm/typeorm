@@ -1618,7 +1618,7 @@ export class PostgresQueryRunner
             }
 
             if (
-                newColumn.length !== oldColumn.length ||
+                (newColumn.length ?? "") !== (oldColumn.length ?? "") ||
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {
