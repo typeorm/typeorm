@@ -34,6 +34,26 @@ describe("database schema > column collation > postgres", () => {
                 table!
                     .findColumnByName("name")!
                     .collation!.should.be.equal("en_US")
+                table!.findColumnByName("name")!.length!.should.be.equal("50")
+            }),
+        ))
+
+    it("should keep column length when changing collation", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const metadata = dataSource.getMetadata(Post)
+                metadata.findColumnWithPropertyName("name")!.collation = "C"
+
+                await dataSource.synchronize(false)
+
+                const queryRunner = dataSource.createQueryRunner()
+                const table = await queryRunner.getTable("post")
+                await queryRunner.release()
+
+                table!.findColumnByName("name")!.length!.should.be.equal("50")
+                table!.findColumnByName("name")!.collation!.should.be.equal(
+                    "C",
+                )
             }),
         ))
 })
