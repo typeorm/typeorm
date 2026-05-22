@@ -1,4 +1,5 @@
 import "reflect-metadata"
+import { expect } from "chai"
 import { Post } from "./entity/Post"
 import type { DataSource } from "../../../../../src/data-source/DataSource"
 import {
@@ -70,11 +71,10 @@ describe("database schema > column collation > postgres", () => {
                 const table = await queryRunner.getTable("post")
                 await queryRunner.release()
 
-                const collation =
-                    table!.findColumnByName("name")!.collation || ""
+                const column = table!.findColumnByName("name")!
 
-                table!.findColumnByName("name")!.length!.should.be.equal("50")
-                collation.should.not.be.equal("undefined")
+                column.length!.should.be.equal("50")
+                expect(column.collation).to.not.exist
             }),
         ))
 })
