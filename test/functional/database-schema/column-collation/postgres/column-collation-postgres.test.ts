@@ -43,18 +43,28 @@ describe("database schema > column collation > postgres", () => {
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const metadata = dataSource.getMetadata(Post)
-                metadata.findColumnWithPropertyName("name")!.collation = "C"
+                const columnMetadata =
+                    metadata.findColumnWithPropertyName("name")!
+                const originalCollation = columnMetadata.collation
 
-                await dataSource.synchronize(false)
+                try {
+                    columnMetadata.collation = "C"
 
-                const queryRunner = dataSource.createQueryRunner()
-                const table = await queryRunner.getTable("post")
-                await queryRunner.release()
+                    await dataSource.synchronize(false)
 
-                table!.findColumnByName("name")!.length!.should.be.equal("50")
-                table!.findColumnByName("name")!.collation!.should.be.equal(
-                    "C",
-                )
+                    const queryRunner = dataSource.createQueryRunner()
+                    const table = await queryRunner.getTable("post")
+                    await queryRunner.release()
+
+                    table!
+                        .findColumnByName("name")!
+                        .length!.should.be.equal("50")
+                    table!
+                        .findColumnByName("name")!
+                        .collation!.should.be.equal("C")
+                } finally {
+                    columnMetadata.collation = originalCollation
+                }
             }),
         ))
 
@@ -62,19 +72,26 @@ describe("database schema > column collation > postgres", () => {
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const metadata = dataSource.getMetadata(Post)
-                metadata.findColumnWithPropertyName("name")!.collation =
-                    undefined
+                const columnMetadata =
+                    metadata.findColumnWithPropertyName("name")!
+                const originalCollation = columnMetadata.collation
 
-                await dataSource.synchronize(false)
+                try {
+                    columnMetadata.collation = undefined
 
-                const queryRunner = dataSource.createQueryRunner()
-                const table = await queryRunner.getTable("post")
-                await queryRunner.release()
+                    await dataSource.synchronize(false)
 
-                const column = table!.findColumnByName("name")!
+                    const queryRunner = dataSource.createQueryRunner()
+                    const table = await queryRunner.getTable("post")
+                    await queryRunner.release()
 
-                column.length!.should.be.equal("50")
-                expect(column.collation).to.not.exist
+                    const column = table!.findColumnByName("name")!
+
+                    column.length!.should.be.equal("50")
+                    expect(column.collation).to.not.exist
+                } finally {
+                    columnMetadata.collation = originalCollation
+                }
             }),
         ))
 })
