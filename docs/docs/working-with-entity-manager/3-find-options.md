@@ -549,6 +549,23 @@ will execute following query:
 SELECT * FROM "post" WHERE "metadata" ::jsonb @> '{"author":{"name":"John"}}'
 ```
 
+`JsonContains` also accepts arrays, so jsonb columns that store JSON arrays
+can be queried directly:
+
+```ts
+import { JsonContains } from "typeorm"
+
+const loadedPosts = await dataSource.getRepository(Post).findBy({
+    tags: JsonContains([{ name: "TypeScript" }]),
+})
+```
+
+will execute following query:
+
+```sql
+SELECT * FROM "post" WHERE "tags" ::jsonb @> '[{"name":"TypeScript"}]'
+```
+
 - `Raw`
 
 ```ts

@@ -49,7 +49,7 @@ describe("persistence > order of persistence execution operations", () => {
         })
         beforeEach(() => reloadTestingDatabases(dataSources))
         after(() => closeTestingConnections(dataSources))
-        it("", () =>
+        it("should persist all entities in correct order", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
                     // create first category and post and save them
