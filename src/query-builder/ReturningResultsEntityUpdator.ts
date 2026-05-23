@@ -5,6 +5,10 @@ import { ColumnMetadata } from "../metadata/ColumnMetadata"
 import { UpdateResult } from "./result/UpdateResult"
 import { InsertResult } from "./result/InsertResult"
 import { TypeORMError } from "../error"
+import { EntityMetadata } from "../metadata/EntityMetadata"
+import { OrmUtils } from "../util/OrmUtils"
+
+type ReloadCriteriaResult = { criteria: ObjectLiteral } | { reason: string }
 
 /**
  * Updates entity with returning results in the entity insert and update operations.
@@ -217,17 +221,20 @@ export class ReturningResultsEntityUpdator {
             )
         ) {
             const entityIds = entities.map((entity) => {
-                const entityId = metadata.getEntityIdMap(entity)!
+                const criteriaResult = this.getEntityIdMapOrUpsertConflictMap(
+                    metadata,
+                    entity,
+                )
 
                 // We have to check for an empty `entityId` - if we don't, the query against the database
                 // effectively drops the `where` clause entirely and the first record will be returned -
                 // not what we want at all.
-                if (!entityId)
+                if ("reason" in criteriaResult)
                     throw new TypeORMError(
-                        `Cannot update entity because entity id is not set in the entity.`,
+                        `Cannot reload inserted or upserted entity because ${criteriaResult.reason}.`,
                     )
 
-                return entityId
+                return criteriaResult.criteria
             })
 
             // to select just inserted entities we need a criteria to select by.
@@ -275,6 +282,48 @@ export class ReturningResultsEntityUpdator {
             insertResult.identifiers.push(entityId)
             insertResult.generatedMaps.push(generatedMaps[entityIndex])
         })
+    }
+
+    protected getEntityIdMapOrUpsertConflictMap(
+        metadata: EntityMetadata,
+        entity: ObjectLiteral,
+    ): ReloadCriteriaResult {
+        const entityId = metadata.getEntityIdMap(entity)
+        if (entityId) return { criteria: entityId }
+
+        const conflict = this.expressionMap.onUpdate?.conflict
+        if (!Array.isArray(conflict)) {
+            return {
+                reason: "entity id is not set and no upsert conflict columns are available",
+            }
+        }
+
+        const conflictMap: ObjectLiteral = {}
+        for (const conflictColumn of conflict) {
+            const column =
+                metadata.findColumnWithDatabaseName(conflictColumn) ||
+                metadata.findColumnWithPropertyPath(conflictColumn)
+            if (!column) {
+                return {
+                    reason: `entity id is not set and conflict column "${conflictColumn}" was not found in metadata`,
+                }
+            }
+
+            const value = column.getEntityValue(entity)
+            if (value === undefined) {
+                return {
+                    reason: `entity id is not set and value for conflict column "${conflictColumn}" is not set in the entity`,
+                }
+            }
+
+            OrmUtils.mergeDeep(conflictMap, column.createValueMap(value))
+        }
+
+        return Object.keys(conflictMap).length > 0
+            ? { criteria: conflictMap }
+            : {
+                  reason: "entity id is not set and upsert conflict columns did not produce criteria",
+              }
     }
 
     /**
