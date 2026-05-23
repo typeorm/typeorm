@@ -20,7 +20,15 @@ describe("database schema > generated columns > cockroachdb", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    after(async () => {
+        await Promise.all(
+            dataSources.map(async (dataSource) => {
+                await using queryRunner = dataSource.createQueryRunner()
+                await queryRunner.dropTable("test_schema.human", true)
+            }),
+        )
+        await closeTestingConnections(dataSources)
+    })
 
     it("should not generate queries when no model changes", () =>
         Promise.all(
