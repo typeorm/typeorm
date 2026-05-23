@@ -3005,16 +3005,17 @@ export class SqlServerQueryRunner
                     }),
                 )
             }
-
-            const metadataTableName = this.getTypeormMetadataTableName()
-            const hasMetadataTable = await this.hasTable(metadataTableName)
-            if (hasMetadataTable) {
-                await this.query(
-                    `DELETE FROM ${this.escapePath(
-                        metadataTableName,
-                    )} WHERE "database" = @0`,
-                    [database],
-                )
+            if (database) {
+                const metadataTableName = this.getTypeormMetadataTableName()
+                const hasMetadataTable = await this.hasTable(metadataTableName)
+                if (hasMetadataTable) {
+                    await this.query(
+                        `DELETE FROM ${this.escapePath(
+                            metadataTableName,
+                        )} WHERE "database" = @0`,
+                        [database],
+                    )
+                }
             }
 
             if (!isAnotherTransactionActive) await this.commitTransaction()
@@ -3205,11 +3206,11 @@ export class SqlServerQueryRunner
                 return (
                     `SELECT "COLUMNS".*, "cc"."is_persisted", "cc"."definition" ` +
                     `FROM "${TABLE_CATALOG}"."INFORMATION_SCHEMA"."COLUMNS" ` +
+                    `LEFT JOIN "${TABLE_CATALOG}"."sys"."schemas" "ss" ON "ss"."name" = "TABLE_SCHEMA" ` +
                     `LEFT JOIN "${TABLE_CATALOG}"."sys"."tables" "st" ON "st"."name" = "TABLE_NAME" ` +
-                    `LEFT JOIN "${TABLE_CATALOG}"."sys"."schemas" "ss" ON "ss"."schema_id" = "st"."schema_id" ` +
-                    `AND "ss"."name" = "TABLE_SCHEMA" ` +
+                    `AND "st"."schema_id" = "ss"."schema_id" ` +
                     `LEFT JOIN "${TABLE_CATALOG}"."sys"."columns" "sc" ON "sc"."object_id" = "st"."object_id" ` +
-                    `AND "sc"."name" = "COLUMN_NAME" AND "ss"."schema_id" = "st"."schema_id" ` +
+                    `AND "sc"."name" = "COLUMN_NAME" ` +
                     `LEFT JOIN "${TABLE_CATALOG}"."sys"."computed_columns" "cc" ON "cc"."object_id" = "sc"."object_id" ` +
                     `AND "cc"."column_id" = "sc"."column_id" ` +
                     `WHERE (${condition})`
