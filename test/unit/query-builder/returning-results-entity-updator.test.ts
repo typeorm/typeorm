@@ -15,6 +15,7 @@ import { QueryExpressionMap } from "../../../src/query-builder/QueryExpressionMa
 import { QueryRunner } from "../../../src/query-runner/QueryRunner"
 import { InsertResult } from "../../../src/query-builder/result/InsertResult"
 import { ReturningResultsEntityUpdator } from "../../../src/query-builder/ReturningResultsEntityUpdator"
+import { ColumnMetadata } from "../../../src/metadata/ColumnMetadata"
 
 @Index(["key1", "key2"], { unique: true })
 @Entity()
@@ -82,6 +83,15 @@ class ReloadQueryBuilder {
     }
 }
 
+class TestReturningResultsEntityUpdator extends ReturningResultsEntityUpdator {
+    getTestReloadCriteriaKey(
+        entity: ObjectLiteral,
+        columns: ColumnMetadata[],
+    ): string {
+        return this.getReloadCriteriaKey(entity, columns)
+    }
+}
+
 async function createDataSource(): Promise<TestDataSource> {
     const dataSource = new TestDataSource({
         type: "mysql",
@@ -115,13 +125,13 @@ function createUpdater(
     dataSource: TestDataSource,
     expressionMap: QueryExpressionMap,
     queryBuilder: ReloadQueryBuilder,
-): ReturningResultsEntityUpdator {
+): TestReturningResultsEntityUpdator {
     const manager = {
         merge: dataSource.manager.merge.bind(dataSource.manager),
         createQueryBuilder: () => queryBuilder,
     } as unknown as EntityManager
 
-    return new ReturningResultsEntityUpdator(
+    return new TestReturningResultsEntityUpdator(
         { connection: dataSource, manager } as unknown as QueryRunner,
         expressionMap,
     )
@@ -259,5 +269,22 @@ describe("ReturningResultsEntityUpdator", () => {
             updater.insert(insertResult, [firstEntity, secondEntity]),
             'Cannot reload inserted or upserted entity because no row was found for reload criteria columns "key1", "key2".',
         )
+    })
+
+    it("serializes bigint reload criteria without throwing", async () => {
+        const dataSource = await createDataSource()
+        const metadata = dataSource.getMetadata(CompositeUniqueEntity)
+        const updater = createUpdater(
+            dataSource,
+            createExpressionMap(dataSource, ["key1", "key2"]),
+            new ReloadQueryBuilder([]),
+        )
+
+        const key = updater.getTestReloadCriteriaKey(
+            { id: 9007199254740993n },
+            metadata.primaryColumns,
+        )
+
+        expect(key).to.equal('["9007199254740993"]')
     })
 })

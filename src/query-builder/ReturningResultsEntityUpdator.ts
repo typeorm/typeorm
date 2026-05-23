@@ -458,6 +458,8 @@ export class ReturningResultsEntityUpdator {
     ): string {
         return JSON.stringify(
             columns.map((column) => column.getEntityValue(entity)),
+            (_, value) =>
+                typeof value === "bigint" ? value.toString() : value,
         )
     }
 
