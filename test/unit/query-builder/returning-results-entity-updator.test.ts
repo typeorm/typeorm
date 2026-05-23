@@ -47,9 +47,11 @@ class ReloadQueryBuilder {
         private readonly captureWhere?: (
             criteria: ObjectLiteral | ObjectLiteral[],
         ) => void,
+        private readonly captureSelect?: (selection: string[]) => void,
     ) {}
 
-    select(): this {
+    select(selection: string[]): this {
+        this.captureSelect?.(selection)
         return this
     }
 
@@ -62,6 +64,11 @@ class ReloadQueryBuilder {
     }
 
     where(criteria: ObjectLiteral | ObjectLiteral[]): this {
+        this.captureWhere?.(criteria)
+        return this
+    }
+
+    whereInIds(criteria: ObjectLiteral | ObjectLiteral[]): this {
         this.captureWhere?.(criteria)
         return this
     }
@@ -120,13 +127,36 @@ function createUpdater(
     )
 }
 
+async function expectRejectedWithMessage(
+    promise: Promise<unknown>,
+    message: string,
+): Promise<void> {
+    let caughtError: unknown
+    try {
+        await promise
+    } catch (error) {
+        caughtError = error
+    }
+
+    expect(caughtError).to.be.instanceOf(Error)
+    expect((caughtError as Error).message).to.equal(message)
+}
+
 describe("ReturningResultsEntityUpdator", () => {
     it("uses upsert conflict columns to reload rows when the generated id is unavailable", async () => {
         const dataSource = await createDataSource()
         let whereCriteria: ObjectLiteral | ObjectLiteral[] | undefined
+        let selectedColumns: string[] | undefined
 
         const queryBuilder = new ReloadQueryBuilder(
             [
+                {
+                    id: 43,
+                    key1: "upsert-key-3",
+                    key2: "upsert-key-4",
+                    value: "updated-2",
+                    createdAt: new Date(),
+                },
                 {
                     id: 42,
                     key1: "upsert-key-1",
@@ -138,27 +168,42 @@ describe("ReturningResultsEntityUpdator", () => {
             (criteria) => {
                 whereCriteria = criteria
             },
+            (selection) => {
+                selectedColumns = selection
+            },
         )
         const updater = createUpdater(
             dataSource,
             createExpressionMap(dataSource, ["key1", "key2"]),
             queryBuilder,
         )
-        const entity = {
+        const firstEntity = {
             key1: "upsert-key-1",
             key2: "upsert-key-2",
             value: "updated",
         }
+        const secondEntity = {
+            key1: "upsert-key-3",
+            key2: "upsert-key-4",
+            value: "updated-2",
+        }
         const insertResult = new InsertResult()
         insertResult.raw = {}
 
-        await updater.insert(insertResult, [entity])
+        await updater.insert(insertResult, [firstEntity, secondEntity])
 
         expect(whereCriteria).to.deep.equal([
             { key1: "upsert-key-1", key2: "upsert-key-2" },
+            { key1: "upsert-key-3", key2: "upsert-key-4" },
         ])
-        expect(insertResult.identifiers).to.deep.equal([{ id: 42 }])
-        expect(entity).to.include({ id: 42, value: "updated" })
+        expect(selectedColumns).to.include.members([
+            "CompositeUniqueEntity.id",
+            "CompositeUniqueEntity.key1",
+            "CompositeUniqueEntity.key2",
+        ])
+        expect(insertResult.identifiers).to.deep.equal([{ id: 42 }, { id: 43 }])
+        expect(firstEntity).to.include({ id: 42, value: "updated" })
+        expect(secondEntity).to.include({ id: 43, value: "updated-2" })
     })
 
     it("reports conflict criteria failures when reload criteria cannot be built", async () => {
@@ -176,8 +221,43 @@ describe("ReturningResultsEntityUpdator", () => {
         const insertResult = new InsertResult()
         insertResult.raw = {}
 
-        await expect(updater.insert(insertResult, [entity])).to.be.rejectedWith(
+        await expectRejectedWithMessage(
+            updater.insert(insertResult, [entity]),
             'Cannot reload inserted or upserted entity because entity id is not set and conflict column "missing_key" was not found in metadata.',
+        )
+    })
+
+    it("reports a missing reload row instead of merging by index", async () => {
+        const dataSource = await createDataSource()
+        const updater = createUpdater(
+            dataSource,
+            createExpressionMap(dataSource, ["key1", "key2"]),
+            new ReloadQueryBuilder([
+                {
+                    id: 42,
+                    key1: "upsert-key-1",
+                    key2: "upsert-key-2",
+                    value: "updated",
+                    createdAt: new Date(),
+                },
+            ]),
+        )
+        const firstEntity = {
+            key1: "upsert-key-1",
+            key2: "upsert-key-2",
+            value: "updated",
+        }
+        const secondEntity = {
+            key1: "upsert-key-3",
+            key2: "upsert-key-4",
+            value: "updated-2",
+        }
+        const insertResult = new InsertResult()
+        insertResult.raw = {}
+
+        await expectRejectedWithMessage(
+            updater.insert(insertResult, [firstEntity, secondEntity]),
+            'Cannot reload inserted or upserted entity because no row was found for reload criteria {"key1":"upsert-key-3","key2":"upsert-key-4"}.',
         )
     })
 })
