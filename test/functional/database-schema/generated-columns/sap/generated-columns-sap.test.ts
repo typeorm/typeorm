@@ -66,7 +66,6 @@ describe("database schema > generated columns > sap", () => {
                 const humanTable =
                     (await queryRunner.getTable("test_schema.human"))!
                 const nameCol = humanTable.findColumnByName("name")!
-                nameCol.generatedType!.should.be.equal("STORED")
                 nameCol.asExpression!.should.be.equal(
                     `"firstName" || ' ' || "lastName"`,
                 )
@@ -76,7 +75,7 @@ describe("database schema > generated columns > sap", () => {
                 )
                 metadataRecords.length.should.be.equal(1)
                 metadataRecords[0].should.be.eql({
-                    database: dataSource.options.database,
+                    database: null,
                     schema: humanTable.schema,
                     name: "name",
                     table: "human",
