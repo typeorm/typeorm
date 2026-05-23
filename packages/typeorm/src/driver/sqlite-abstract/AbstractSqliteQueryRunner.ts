@@ -418,16 +418,17 @@ export abstract class AbstractSqliteQueryRunner
                 type: MetadataTableType.GENERATED_COLUMN,
                 name: column.name,
             })
-
-            const insertQuery = this.insertTypeormMetadataSql({
-                table: table.name,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression,
-            })
-
             upQueries.push(deleteQuery)
-            downQueries.push(insertQuery)
+
+            if (column.asExpression) {
+                const insertQuery = this.insertTypeormMetadataSql({
+                    table: table.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                    value: column.asExpression,
+                })
+                downQueries.push(insertQuery)
+            }
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -2356,16 +2357,17 @@ export abstract class AbstractSqliteQueryRunner
                     type: MetadataTableType.GENERATED_COLUMN,
                     name: column.name,
                 })
-
-                const insertQuery = this.insertTypeormMetadataSql({
-                    table: oldTable.name,
-                    type: MetadataTableType.GENERATED_COLUMN,
-                    name: column.name,
-                    value: column.asExpression,
-                })
-
                 upQueries.push(deleteQuery)
-                downQueries.push(insertQuery)
+
+                if (column.asExpression) {
+                    const insertQuery = this.insertTypeormMetadataSql({
+                        table: oldTable.name,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        name: column.name,
+                        value: column.asExpression,
+                    })
+                    downQueries.push(insertQuery)
+                }
             })
 
         // Step 2: add data for new generated columns
@@ -2414,32 +2416,34 @@ export abstract class AbstractSqliteQueryRunner
                     type: MetadataTableType.GENERATED_COLUMN,
                     name: oldColumn.name,
                 })
-
-                const insertQuery = this.insertTypeormMetadataSql({
-                    table: newTable.name,
-                    type: MetadataTableType.GENERATED_COLUMN,
-                    name: column.name,
-                    value: column.asExpression,
-                })
-
                 upQueries.push(deleteQuery)
-                upQueries.push(insertQuery)
+
+                if (column.asExpression) {
+                    const insertQuery = this.insertTypeormMetadataSql({
+                        table: newTable.name,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        name: column.name,
+                        value: column.asExpression,
+                    })
+                    upQueries.push(insertQuery)
+                }
 
                 // revert update
-                const revertInsertQuery = this.insertTypeormMetadataSql({
-                    table: newTable.name,
-                    type: MetadataTableType.GENERATED_COLUMN,
-                    name: oldColumn.name,
-                    value: oldColumn.asExpression,
-                })
+                if (oldColumn.asExpression) {
+                    const revertInsertQuery = this.insertTypeormMetadataSql({
+                        table: newTable.name,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        name: oldColumn.name,
+                        value: oldColumn.asExpression,
+                    })
+                    downQueries.push(revertInsertQuery)
+                }
 
                 const revertDeleteQuery = this.deleteTypeormMetadataSql({
                     table: oldTable.name,
                     type: MetadataTableType.GENERATED_COLUMN,
                     name: column.name,
                 })
-
-                downQueries.push(revertInsertQuery)
                 downQueries.push(revertDeleteQuery)
             })
 
