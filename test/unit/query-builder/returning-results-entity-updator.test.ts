@@ -257,7 +257,7 @@ describe("ReturningResultsEntityUpdator", () => {
 
         await expectRejectedWithMessage(
             updater.insert(insertResult, [firstEntity, secondEntity]),
-            'Cannot reload inserted or upserted entity because no row was found for reload criteria {"key1":"upsert-key-3","key2":"upsert-key-4"}.',
+            'Cannot reload inserted or upserted entity because no row was found for reload criteria columns "key1", "key2".',
         )
     })
 })

@@ -282,25 +282,37 @@ export class ReturningResultsEntityUpdator {
             const returningResult: ObjectLiteral[] = await selectQueryBuilder
                 .setOption("create-pojo") // use POJO because created object can contain default values, e.g. property = null and those properties might be overridden by merge process
                 .getMany()
+            const returningResultMaps = this.getReloadResultMaps(
+                returningResult,
+                reloadCriteria,
+            )
 
             entities.forEach((entity, entityIndex) => {
                 const criteria = reloadCriteria[entityIndex]
-                const returningResultEntity = returningResult.find(
-                    (returningEntity) =>
-                        OrmUtils.compareIds(
-                            this.getReloadCriteriaMap(
-                                returningEntity,
+                const returningResultEntity = (
+                    returningResultMaps
+                        .get(this.getReloadColumnGroupKey(criteria.columns))
+                        ?.get(
+                            this.getReloadCriteriaKey(
+                                criteria.criteria,
                                 criteria.columns,
                             ),
-                            criteria.criteria,
+                        ) || []
+                ).find((returningEntity) =>
+                    OrmUtils.compareIds(
+                        this.getReloadCriteriaMap(
+                            returningEntity,
+                            criteria.columns,
                         ),
+                        criteria.criteria,
+                    ),
                 )
 
                 if (!returningResultEntity)
                     throw new TypeORMError(
-                        `Cannot reload inserted or upserted entity because no row was found for reload criteria ${JSON.stringify(
-                            criteria.criteria,
-                        )}.`,
+                        `Cannot reload inserted or upserted entity because no row was found for reload criteria columns ${criteria.columns
+                            .map((column) => `"${column.propertyPath}"`)
+                            .join(", ")}.`,
                     )
 
                 const returningColumns = this.getReloadCriteriaMap(
@@ -396,6 +408,57 @@ export class ReturningResultsEntityUpdator {
             )
             return criteria
         }, {} as ObjectLiteral)
+    }
+
+    protected getReloadResultMaps(
+        returningResult: ObjectLiteral[],
+        reloadCriteria: ReloadCriteriaResult[],
+    ): Map<string, Map<string, ObjectLiteral[]>> {
+        const resultMaps = new Map<string, Map<string, ObjectLiteral[]>>()
+        const columnGroups = reloadCriteria
+            .filter(
+                (
+                    criteriaResult,
+                ): criteriaResult is Exclude<
+                    ReloadCriteriaResult,
+                    { reason: string }
+                > => !("reason" in criteriaResult),
+            )
+            .map((criteriaResult) => criteriaResult.columns)
+            .filter(
+                (columns, index, allColumns) =>
+                    allColumns.findIndex(
+                        (candidate) =>
+                            this.getReloadColumnGroupKey(candidate) ===
+                            this.getReloadColumnGroupKey(columns),
+                    ) === index,
+            )
+
+        for (const columns of columnGroups) {
+            const resultMap = new Map<string, ObjectLiteral[]>()
+            for (const returningEntity of returningResult) {
+                const key = this.getReloadCriteriaKey(returningEntity, columns)
+                const bucket = resultMap.get(key) || []
+                bucket.push(returningEntity)
+                resultMap.set(key, bucket)
+            }
+            resultMaps.set(this.getReloadColumnGroupKey(columns), resultMap)
+        }
+
+        return resultMaps
+    }
+
+    protected getReloadColumnGroupKey(columns: ColumnMetadata[]): string {
+        return columns.map((column) => column.propertyPath).join("\0")
+    }
+
+    protected getReloadCriteriaKey(
+        entity: ObjectLiteral,
+        columns: ColumnMetadata[],
+    ): string {
+        return JSON.stringify(
+            columns.map((column) => column.getEntityValue(entity)),
+        )
     }
 
     protected getUniqueColumns(columns: ColumnMetadata[]): ColumnMetadata[] {
