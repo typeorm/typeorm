@@ -7,6 +7,7 @@ import {
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 import { expect } from "chai"
+import { MetadataTableType } from "../../../../../src/driver/types/MetadataTableType"
 
 describe("database schema > generated columns > mssql", () => {
     let dataSources: DataSource[]
@@ -14,7 +15,7 @@ describe("database schema > generated columns > mssql", () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mssql"],
-            schemaCreate: true,
+            schemaCreate: false,
             dropSchema: true,
         })
     })
@@ -63,6 +64,28 @@ describe("database schema > generated columns > mssql", () => {
                 nameHash.asExpression!.should.be.equal(
                     `HashBytes('MD5',coalesce("firstName",'0'))`,
                 )
+
+                const humanTable = (await queryRunner.getTable(
+                    "test_database.test_schema.human",
+                ))!
+                const nameCol = humanTable.findColumnByName("name")!
+                nameCol.asExpression!.should.be.equal(
+                    `"firstName" + ' ' + "lastName"`,
+                )
+                nameCol.generatedType!.should.be.equal("STORED")
+
+                const metadataRecords = await queryRunner.query(
+                    `SELECT * FROM "typeorm_metadata" WHERE "table" = 'human' AND "schema" = 'test_schema' AND "database" = 'test_database'`,
+                )
+                metadataRecords.length.should.be.equal(1)
+                metadataRecords[0].should.be.eql({
+                    database: humanTable.database,
+                    schema: humanTable.schema,
+                    name: "name",
+                    table: "human",
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    value: `"firstName" + ' ' + "lastName"`,
+                })
             }),
         ))
 

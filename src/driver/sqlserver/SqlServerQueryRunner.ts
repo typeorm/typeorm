@@ -438,7 +438,7 @@ export class SqlServerQueryRunner
      */
     async getSchemas(database?: string): Promise<string[]> {
         const query = database
-            ? `SELECT * FROM "${database}"."sys"."schema"`
+            ? `SELECT * FROM "${database}"."sys"."schemas"`
             : `SELECT * FROM "sys"."schemas"`
         const results: ObjectLiteral[] = await this.query(query)
         return results.map((result) => result["name"])
@@ -3006,6 +3006,17 @@ export class SqlServerQueryRunner
                 )
             }
 
+            const metadataTableName = this.getTypeormMetadataTableName()
+            const hasMetadataTable = await this.hasTable(metadataTableName)
+            if (hasMetadataTable) {
+                await this.query(
+                    `DELETE FROM ${this.escapePath(
+                        metadataTableName,
+                    )} WHERE "database" = @0`,
+                    [database],
+                )
+            }
+
             if (!isAnotherTransactionActive) await this.commitTransaction()
         } catch (error) {
             try {
@@ -3194,9 +3205,13 @@ export class SqlServerQueryRunner
                 return (
                     `SELECT "COLUMNS".*, "cc"."is_persisted", "cc"."definition" ` +
                     `FROM "${TABLE_CATALOG}"."INFORMATION_SCHEMA"."COLUMNS" ` +
-                    `LEFT JOIN "${TABLE_CATALOG}"."sys"."computed_columns" "cc" ON COL_NAME("cc"."object_id", "cc"."column_id") = "COLUMN_NAME" ` +
-                    `AND OBJECT_NAME("cc"."object_id", DB_ID('${TABLE_CATALOG}')) = "TABLE_NAME" ` +
-                    `AND OBJECT_SCHEMA_NAME("cc"."object_id", DB_ID('${TABLE_CATALOG}')) = "TABLE_SCHEMA" ` +
+                    `LEFT JOIN "${TABLE_CATALOG}"."sys"."tables" "st" ON "st"."name" = "TABLE_NAME" ` +
+                    `LEFT JOIN "${TABLE_CATALOG}"."sys"."schemas" "ss" ON "ss"."schema_id" = "st"."schema_id" ` +
+                    `AND "ss"."name" = "TABLE_SCHEMA" ` +
+                    `LEFT JOIN "${TABLE_CATALOG}"."sys"."columns" "sc" ON "sc"."object_id" = "st"."object_id" ` +
+                    `AND "sc"."name" = "COLUMN_NAME" AND "ss"."schema_id" = "st"."schema_id" ` +
+                    `LEFT JOIN "${TABLE_CATALOG}"."sys"."computed_columns" "cc" ON "cc"."object_id" = "sc"."object_id" ` +
+                    `AND "cc"."column_id" = "sc"."column_id" ` +
                     `WHERE (${condition})`
                 )
             })
