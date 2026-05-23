@@ -837,17 +837,18 @@ export class CockroachQueryRunner
                     type: MetadataTableType.GENERATED_COLUMN,
                     name: column.name,
                 })
-
-                const insertQuery = this.insertTypeormMetadataSql({
-                    schema: parsedTableName.schema,
-                    table: parsedTableName.tableName,
-                    type: MetadataTableType.GENERATED_COLUMN,
-                    name: column.name,
-                    value: column.asExpression,
-                })
-
                 upQueries.push(deleteQuery)
-                downQueries.push(insertQuery)
+
+                if (column.asExpression) {
+                    const insertQuery = this.insertTypeormMetadataSql({
+                        schema: parsedTableName.schema,
+                        table: parsedTableName.tableName,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        name: column.name,
+                        value: column.asExpression,
+                    })
+                    downQueries.push(insertQuery)
+                }
             }
         }
 
@@ -2412,16 +2413,18 @@ export class CockroachQueryRunner
                 type: MetadataTableType.GENERATED_COLUMN,
                 name: column.name,
             })
-            const insertQuery = this.insertTypeormMetadataSql({
-                schema: schema,
-                table: tableName,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression,
-            })
-
             upQueries.push(deleteQuery)
-            downQueries.push(insertQuery)
+
+            if (column.asExpression) {
+                const insertQuery = this.insertTypeormMetadataSql({
+                    schema: schema,
+                    table: tableName,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                    value: column.asExpression,
+                })
+                downQueries.push(insertQuery)
+            }
         }
 
         // drop enum type

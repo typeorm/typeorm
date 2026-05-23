@@ -812,18 +812,19 @@ export class SqlServerQueryRunner
                     type: MetadataTableType.GENERATED_COLUMN,
                     name: column.name,
                 })
-
-                const insertQuery = this.insertTypeormMetadataSql({
-                    database: parsedTableName.database,
-                    schema: parsedTableName.schema,
-                    table: parsedTableName.tableName,
-                    type: MetadataTableType.GENERATED_COLUMN,
-                    name: column.name,
-                    value: column.asExpression,
-                })
-
                 upQueries.push(deleteQuery)
-                downQueries.push(insertQuery)
+
+                if (column.asExpression) {
+                    const insertQuery = this.insertTypeormMetadataSql({
+                        database: parsedTableName.database,
+                        schema: parsedTableName.schema,
+                        table: parsedTableName.tableName,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        name: column.name,
+                        value: column.asExpression,
+                    })
+                    downQueries.push(insertQuery)
+                }
             }
         }
 
@@ -2223,17 +2224,19 @@ export class SqlServerQueryRunner
                 type: MetadataTableType.GENERATED_COLUMN,
                 name: column.name,
             })
-            const insertQuery = this.insertTypeormMetadataSql({
-                database: parsedTableName.database,
-                schema: parsedTableName.schema,
-                table: parsedTableName.tableName,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression,
-            })
-
             upQueries.push(deleteQuery)
-            downQueries.push(insertQuery)
+
+            if (column.asExpression) {
+                const insertQuery = this.insertTypeormMetadataSql({
+                    database: parsedTableName.database,
+                    schema: parsedTableName.schema,
+                    table: parsedTableName.tableName,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                    value: column.asExpression,
+                })
+                downQueries.push(insertQuery)
+            }
         }
 
         upQueries.push(
