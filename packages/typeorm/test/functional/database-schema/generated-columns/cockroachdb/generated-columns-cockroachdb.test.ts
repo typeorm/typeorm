@@ -7,6 +7,7 @@ import {
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 import { expect } from "chai"
+import { MetadataTableType } from "../../../../../src/driver/types/MetadataTableType"
 
 describe("database schema > generated columns > cockroachdb", () => {
     let dataSources: DataSource[]
@@ -14,7 +15,7 @@ describe("database schema > generated columns > cockroachdb", () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["cockroachdb"],
-            schemaCreate: true,
+            schemaCreate: false,
             dropSchema: true,
         })
     })
@@ -62,6 +63,27 @@ describe("database schema > generated columns > cockroachdb", () => {
                     `md5(coalesce("firstName",'0'))`,
                 )
                 nameHash.length!.should.be.equal("255")
+
+                const humanTable =
+                    (await queryRunner.getTable("test_schema.human"))!
+                const nameCol = humanTable.findColumnByName("name")!
+                nameCol.asExpression!.should.be.equal(
+                    `"firstName" || ' ' || "lastName"`,
+                )
+                nameCol.generatedType!.should.be.equal("STORED")
+
+                const metadataRecords = await queryRunner.query(
+                    `SELECT * FROM "typeorm_metadata" WHERE "table" = 'human' AND "schema" = 'test_schema'`,
+                )
+                metadataRecords.length.should.be.equal(1)
+                metadataRecords[0].should.be.eql({
+                    database: null,
+                    schema: humanTable.schema,
+                    name: "name",
+                    table: "human",
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    value: `"firstName" || ' ' || "lastName"`,
+                })
             }),
         ))
 

@@ -7,6 +7,7 @@ import {
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 import { expect } from "chai"
+import { MetadataTableType } from "../../../../../src/driver/types/MetadataTableType"
 
 describe("database schema > generated columns > mysql", () => {
     let dataSources: DataSource[]
@@ -70,6 +71,29 @@ describe("database schema > generated columns > mysql", () => {
                 complexColumn.asExpression!.should.be.equal(
                     "concat(if(((not `useTitle`) or IsNull(`title`)), '', concat(`firstName`,' ', `lastName`)))",
                 )
+
+                const organizationUnitTable = (await queryRunner.getTable(
+                    "avocaty.organization_unit",
+                ))!
+                const subscriptionTypeColumn =
+                    organizationUnitTable.findColumnByName("subscription_type")!
+                subscriptionTypeColumn.generatedType!.should.be.equal("VIRTUAL")
+                subscriptionTypeColumn.asExpression!.should.be.equal(
+                    `json_unquote(json_extract(\`metadata\`, _utf8mb4'$.subscriptionType'))`,
+                )
+
+                const metadataRecords = await queryRunner.query(`
+                    SELECT * FROM \`typeorm_metadata\` WHERE \`table\` = 'organization_unit' AND \`name\` = 'subscription_type'
+                    `)
+                metadataRecords.length.should.be.equal(1)
+                metadataRecords[0].should.be.eql({
+                    database: null,
+                    schema: organizationUnitTable.database,
+                    table: "organization_unit",
+                    name: "subscription_type",
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    value: `json_unquote(json_extract(\`metadata\`, _utf8mb4'$.subscriptionType'))`,
+                })
             }),
         ))
 
