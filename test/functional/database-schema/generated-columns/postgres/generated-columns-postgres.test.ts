@@ -7,6 +7,7 @@ import {
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 import { expect } from "chai"
+import { MetadataTableType } from "../../../../../src/driver/types/MetadataTableType"
 
 describe("database schema > generated columns > postgres", () => {
     let dataSources: DataSource[]
@@ -57,6 +58,27 @@ describe("database schema > generated columns > postgres", () => {
                 )
                 nameHash.length!.should.be.equal("255")
                 nameHash.isNullable.should.be.true
+
+                const humanTable =
+                    (await queryRunner.getTable("test_schema.human"))!
+                const nameCol = humanTable.findColumnByName("name")!
+                nameCol.generatedType!.should.be.equal("STORED")
+                nameCol.asExpression!.should.be.equal(
+                    `"firstName" || ' ' || "lastName"`,
+                )
+
+                const metadataRecords = await queryRunner.query(
+                    `SELECT * FROM "typeorm_metadata" WHERE "table" = 'human' AND "schema" = 'test_schema'`,
+                )
+                metadataRecords.length.should.be.equal(1)
+                metadataRecords[0].should.be.eql({
+                    database: dataSource.options.database,
+                    schema: humanTable.schema,
+                    name: "name",
+                    table: "human",
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    value: `"firstName" || ' ' || "lastName"`,
+                })
             }),
         ))
 
@@ -276,10 +298,10 @@ describe("database schema > generated columns > postgres", () => {
                 const storedFullNameAfterRevert =
                     table!.findColumnByName("storedFullName")!
                 storedFullNameAfterRevert.should.be.exist
-                storedFullNameAfterRevert!.generatedType!.should.be.equal(
+                storedFullNameAfterRevert.generatedType!.should.be.equal(
                     "STORED",
                 )
-                storedFullNameAfterRevert!.asExpression!.should.be.equal(
+                storedFullNameAfterRevert.asExpression!.should.be.equal(
                     `' ' || COALESCE("firstName", '') || ' ' || COALESCE("lastName", '')`,
                 )
             }),

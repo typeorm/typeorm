@@ -8,6 +8,7 @@ import {
 } from "../../../../utils/test-utils"
 import { expect } from "chai"
 import { Post } from "./entity/Post"
+import { MetadataTableType } from "../../../../../src/driver/types/MetadataTableType"
 
 describe("database schema > generated columns > sap", () => {
     let dataSources: DataSource[]
@@ -15,7 +16,7 @@ describe("database schema > generated columns > sap", () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["sap"],
-            schemaCreate: true,
+            schemaCreate: false,
             dropSchema: true,
         })
         if (!dataSources.length) this.skip()
@@ -38,35 +39,50 @@ describe("database schema > generated columns > sap", () => {
     it("should create table with generated columns", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                const queryRunner = dataSource.createQueryRunner()
-                try {
-                    const table = await queryRunner.getTable("post")
-                    const fullName = table?.findColumnByName("fullName")
-                    const name = table?.findColumnByName("name")
+                await using queryRunner = dataSource.createQueryRunner()
+                const table = (await queryRunner.getTable("post"))!
+                const fullName = table.findColumnByName("fullName")!
+                const name = table.findColumnByName("name")!
 
-                    fullName?.asExpression?.should.be.equal(
-                        `"firstName" || ' ' || "lastName"`,
-                    )
+                fullName.asExpression?.should.be.equal(
+                    `"firstName" || ' ' || "lastName"`,
+                )
 
-                    name?.asExpression?.should.be.equal(
-                        `"firstName" || "lastName"`,
-                    )
+                name.asExpression!.should.be.equal(`"firstName" || "lastName"`)
 
-                    const repo = dataSource.getRepository(Post)
+                const repo = dataSource.getRepository(Post)
 
-                    const post = new Post()
-                    post.firstName = "Timber"
-                    post.title = "About generated columns"
-                    post.useTitle = true
-                    post.lastName = "Saw"
-                    await repo.save(post)
+                const post = new Post()
+                post.firstName = "Timber"
+                post.title = "About generated columns"
+                post.useTitle = true
+                post.lastName = "Saw"
+                await repo.save(post)
 
-                    const loadedPost = await repo.findOneBy({ id: post.id })
-                    loadedPost?.fullName?.should.be.equal("Timber Saw")
-                    loadedPost?.name?.should.be.equal("TimberSaw")
-                } finally {
-                    await queryRunner.release()
-                }
+                const loadedPost = (await repo.findOneBy({ id: post.id }))!
+                loadedPost.fullName.should.be.equal("Timber Saw")
+                loadedPost.name.should.be.equal("TimberSaw")
+
+                const humanTable =
+                    (await queryRunner.getTable("test_schema.human"))!
+                const nameCol = humanTable.findColumnByName("name")!
+                nameCol.generatedType!.should.be.equal("STORED")
+                nameCol.asExpression!.should.be.equal(
+                    `"firstName" || ' ' || "lastName"`,
+                )
+
+                const metadataRecords = await queryRunner.query(
+                    `SELECT * FROM "typeorm_metadata" WHERE "table" = 'human' AND "schema" = 'test_schema'`,
+                )
+                metadataRecords.length.should.be.equal(1)
+                metadataRecords[0].should.be.eql({
+                    database: dataSource.options.database,
+                    schema: humanTable.schema,
+                    name: "name",
+                    table: "human",
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    value: `"firstName" || ' ' || "lastName"`,
+                })
             }),
         ))
 

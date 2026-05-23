@@ -2565,6 +2565,19 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             )
             await this.query(enableForeignKeysCheckQuery)
 
+            if (database) {
+                const metadataTableName = this.getTypeormMetadataTableName()
+                const hasMetadataTable = await this.hasTable(metadataTableName)
+                if (hasMetadataTable) {
+                    await this.query(
+                        `DELETE FROM ${this.escapePath(
+                            metadataTableName,
+                        )} WHERE \`schema\` = ?`,
+                        [database],
+                    )
+                }
+            }
+
             if (!isAnotherTransactionActive) await this.commitTransaction()
         } catch (error) {
             try {
