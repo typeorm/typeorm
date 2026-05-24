@@ -290,22 +290,30 @@ export class ReturningResultsEntityUpdator {
 
             entities.forEach((entity, entityIndex) => {
                 const criteria = reloadCriteria[entityIndex]
-                const returningResultEntity = returningResultMaps
+                const returningResultBucket = returningResultMaps
                     .get(this.getReloadColumnGroupKey(criteria.columns))
                     ?.get(
                         this.getReloadCriteriaKey(
                             criteria.criteria,
                             criteria.columns,
                         ),
-                    )?.[0]
+                    )
 
-                if (!returningResultEntity)
+                if (!returningResultBucket?.length)
                     throw new TypeORMError(
                         `Cannot reload inserted or upserted entity because no row was found for reload criteria columns ${criteria.columns
                             .map((column) => `"${column.propertyPath}"`)
                             .join(", ")}.`,
                     )
 
+                if (returningResultBucket.length > 1)
+                    throw new TypeORMError(
+                        `Cannot reload inserted or upserted entity because multiple rows were found for reload criteria columns ${criteria.columns
+                            .map((column) => `"${column.propertyPath}"`)
+                            .join(", ")}.`,
+                    )
+
+                const returningResultEntity = returningResultBucket[0]
                 const returningColumns = this.getReloadCriteriaMap(
                     returningResultEntity,
                     this.getUniqueColumns([
@@ -448,7 +456,15 @@ export class ReturningResultsEntityUpdator {
         columns: ColumnMetadata[],
     ): string {
         return JSON.stringify(
-            columns.map((column) => column.getEntityValue(entity)),
+            columns.map((column) => {
+                const value = column.getEntityValue(entity)
+                if (typeof value === "function") return value
+                if (typeof value === "bigint") return value.toString()
+                return this.queryRunner.connection.driver.preparePersistentValue(
+                    value,
+                    column,
+                )
+            }),
             (_, value) =>
                 typeof value === "bigint" ? value.toString() : value,
         )

@@ -52,6 +52,19 @@ class GeneratedOnlyCompositeUniqueEntity {
     value: string
 }
 
+@Index(["code"], { unique: true })
+@Entity()
+class NumericUniqueEntity {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    @Column()
+    code: number
+
+    @Column()
+    value: string
+}
+
 class TestDataSource extends DataSource {
     async buildTestMetadatas(): Promise<void> {
         await this.buildMetadatas()
@@ -112,7 +125,11 @@ async function createDataSource(): Promise<TestDataSource> {
     const dataSource = new TestDataSource({
         type: "mysql",
         database: "typeorm",
-        entities: [CompositeUniqueEntity, GeneratedOnlyCompositeUniqueEntity],
+        entities: [
+            CompositeUniqueEntity,
+            GeneratedOnlyCompositeUniqueEntity,
+            NumericUniqueEntity,
+        ],
     })
     await dataSource.buildTestMetadatas()
     return dataSource
@@ -123,7 +140,8 @@ function createExpressionMap(
     conflict: QueryExpressionMap["onUpdate"]["conflict"],
     target:
         | typeof CompositeUniqueEntity
-        | typeof GeneratedOnlyCompositeUniqueEntity = CompositeUniqueEntity,
+        | typeof GeneratedOnlyCompositeUniqueEntity
+        | typeof NumericUniqueEntity = CompositeUniqueEntity,
 ): QueryExpressionMap {
     const metadata = dataSource.getMetadata(target)
     const mainAlias = new Alias()
@@ -340,6 +358,68 @@ describe("ReturningResultsEntityUpdator", () => {
             updater.insert(insertResult, [firstEntity, secondEntity]),
             'Cannot reload inserted or upserted entity because no row was found for reload criteria columns "key1", "key2".',
         )
+    })
+
+    it("reports duplicate reload rows instead of choosing the first match", async () => {
+        const dataSource = await createDataSource()
+        const updater = createUpdater(
+            dataSource,
+            createExpressionMap(dataSource, ["key1", "key2"]),
+            new ReloadQueryBuilder([
+                {
+                    id: 42,
+                    key1: "upsert-key-1",
+                    key2: "upsert-key-2",
+                    value: "updated",
+                    createdAt: new Date(),
+                },
+                {
+                    id: 43,
+                    key1: "upsert-key-1",
+                    key2: "upsert-key-2",
+                    value: "unexpected",
+                    createdAt: new Date(),
+                },
+            ]),
+        )
+        const entity = {
+            key1: "upsert-key-1",
+            key2: "upsert-key-2",
+            value: "updated",
+        }
+        const insertResult = new InsertResult()
+        insertResult.raw = {}
+
+        await expectRejectedWithMessage(
+            updater.insert(insertResult, [entity]),
+            'Cannot reload inserted or upserted entity because multiple rows were found for reload criteria columns "key1", "key2".',
+        )
+    })
+
+    it("matches reload rows using normalized column values", async () => {
+        const dataSource = await createDataSource()
+        const updater = createUpdater(
+            dataSource,
+            createExpressionMap(dataSource, ["code"], NumericUniqueEntity),
+            new ReloadQueryBuilder([
+                {
+                    id: 45,
+                    code: 7,
+                    value: "updated",
+                },
+            ]),
+        )
+        const entity = {
+            code: "7",
+            value: "updated",
+        }
+        const insertResult = new InsertResult()
+        insertResult.raw = {}
+
+        await updater.insert(insertResult, [entity])
+
+        expect(insertResult.identifiers).to.deep.equal([{ id: 45 }])
+        expect(entity).to.include({ id: 45, value: "updated" })
     })
 
     it("serializes bigint reload criteria without throwing", async () => {
