@@ -75,6 +75,10 @@ function createSqlRecorder(connection: DataSource): {
     return { recorded, install, remove }
 }
 
+function recordedSchemaChanges(recorded: string[]): string[] {
+    return recorded.filter((sql) => /^(ALTER TABLE|UPDATE)\b/i.test(sql))
+}
+
 describe("schema builder > change column", () => {
     let dataSources: DataSource[]
     before(async () => {
@@ -174,45 +178,30 @@ describe("schema builder > change column", () => {
                     }
                     expect(err).to.be.undefined
 
-                    const sqlBlob = recorded.join("\n")
-
                     if (driver === "postgres" || driver === "cockroachdb") {
-                        expect(sqlBlob).to.match(
-                            /ALTER TABLE .* ALTER COLUMN "name" (SET DATA TYPE|TYPE) .*varchar/i,
-                        )
-                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+"name"/i)
-                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+"name"/i)
+                        expect(recordedSchemaChanges(recorded)).to.deep.equal([
+                            driver === "postgres"
+                                ? `ALTER TABLE "post" ALTER COLUMN "name" TYPE varchar(50)`
+                                : `ALTER TABLE "post" ALTER COLUMN "name" SET DATA TYPE varchar(50)`,
+                        ])
                     } else if (
                         driver === "mysql" ||
                         driver === "mariadb" ||
                         driver === "aurora-mysql"
                     ) {
-                        const usedModify =
-                            /ALTER TABLE .* (MODIFY|CHANGE) COLUMN `?name`? .*varchar/i.test(
-                                sqlBlob,
-                            )
-                        expect(
-                            usedModify,
-                            `Expected MODIFY/CHANGE COLUMN for 'name'.\n${sqlBlob}`,
-                        ).to.equal(true)
-                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+`?name`?/i)
-                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+`?name`?/i)
+                        expect(recordedSchemaChanges(recorded)).to.deep.equal([
+                            "ALTER TABLE `post` MODIFY COLUMN `name` varchar(50) NULL DEFAULT 'My post'",
+                        ])
                     } else if (driver === "mssql") {
-                        expect(sqlBlob).to.match(
-                            /ALTER TABLE[^\n]*ALTER COLUMN\s+(?:\[name\]|"name")\s+[^\n]*varchar/i, // NOSONAR - regex matches internally generated SQL
-                        )
-                        expect(sqlBlob).to.not.match(
-                            /ADD\s+COLUMN\s+(?:\[name\]|"name")/i,
-                        )
-                        expect(sqlBlob).to.not.match(
-                            /DROP\s+COLUMN\s+(?:\[name\]|"name")/i,
-                        )
+                        expect(recordedSchemaChanges(recorded)).to.deep.equal([
+                            'ALTER TABLE "post" DROP CONSTRAINT "DF_3b67503bc127f16f995481181a3"',
+                            'ALTER TABLE "post" ALTER COLUMN [name] varchar(50) NULL',
+                            'ALTER TABLE "post" ADD CONSTRAINT "DF_3b67503bc127f16f995481181a3" DEFAULT \'My post\' FOR [name]',
+                        ])
                     } else if (driver === "oracle") {
-                        expect(sqlBlob).to.match(
-                            /ALTER TABLE [^\n]* (MODIFY|ALTER COLUMN)\s{0,4}\(?\s{0,4}"name"\s+[^\n]*varchar2/i, // NOSONAR - regex matches internally generated SQL
-                        )
-                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+"name"/i)
-                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+"name"/i)
+                        expect(recordedSchemaChanges(recorded)).to.deep.equal([
+                            `ALTER TABLE "post" MODIFY ("name" varchar2(50) DEFAULT 'My post')`,
+                        ])
                     } else if (driver === "spanner") {
                         // No CHAR in Spanner; this test is skipped above for spanner
                     }
@@ -787,63 +776,34 @@ describe("schema builder > change column", () => {
                     expect(afterMigration.name.length).to.equal(45)
                     expect(afterMigration.name).to.equal(fortyFive)
 
-                    // 2b) Assert ALTER (driver-scoped)
                     const driver = connection.driver.options.type
-                    const sqlBlob = recorded.join("\n")
 
                     if (driver === "postgres" || driver === "cockroachdb") {
-                        // expect ALTER ... ALTER COLUMN "name" ... TYPE/SET DATA TYPE ...
-                        expect(sqlBlob).to.match(
-                            /ALTER TABLE .* ALTER COLUMN "name" (SET DATA TYPE|TYPE) .*80/i,
-                        )
-                        // ensure no drop/add of "name"
-                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+"name"/i)
-                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+"name"/i)
+                        expect(recordedSchemaChanges(recorded)).to.deep.equal([
+                            driver === "postgres"
+                                ? `ALTER TABLE "post" ALTER COLUMN "name" TYPE varchar(80)`
+                                : `ALTER TABLE "post" ALTER COLUMN "name" SET DATA TYPE varchar(80)`,
+                        ])
                     } else if (
                         driver === "mysql" ||
                         driver === "mariadb" ||
                         driver === "aurora-mysql"
                     ) {
-                        // MODIFY or CHANGE for MySQL family
-                        const usedModify =
-                            /ALTER TABLE .* (MODIFY|CHANGE) COLUMN `?name`? .*80/i.test(
-                                sqlBlob,
-                            )
-                        expect(
-                            usedModify,
-                            `Expected MODIFY/CHANGE COLUMN for 'name'.\n${sqlBlob}`,
-                        ).to.equal(true)
-                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+`?name`?/i)
-                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+`?name`?/i)
+                        expect(recordedSchemaChanges(recorded)).to.deep.equal([
+                            "ALTER TABLE `post` CHANGE COLUMN `name` `name` varchar(80) NULL DEFAULT 'My post'",
+                        ])
                     } else if (driver === "mssql") {
-                        // widen to 80
-                        expect(sqlBlob).to.match(
-                            /ALTER TABLE[^\n]*ALTER COLUMN\s+(?:\[name\]|"name")\s+[^\n]*80/i, // NOSONAR - regex matches internally generated SQL
-                        )
-                        expect(sqlBlob).to.not.match(
-                            /ADD\s+COLUMN\s+(?:\[name\]|"name")/i,
-                        )
-                        expect(sqlBlob).to.not.match(
-                            /DROP\s+COLUMN\s+(?:\[name\]|"name")/i,
-                        )
+                        expect(recordedSchemaChanges(recorded)).to.deep.equal([
+                            'ALTER TABLE "post" ALTER COLUMN [name] varchar(80) NULL',
+                        ])
                     } else if (driver === "oracle") {
-                        // Oracle uses MODIFY COLUMN or ALTER COLUMN
-                        // Oracle uses MODIFY with optional parens around the column def
-                        expect(sqlBlob).to.match(
-                            /ALTER TABLE [^\n]* (MODIFY|ALTER COLUMN)\s{0,4}\(?\s{0,4}"name"\s+[^\n]*80/i, // NOSONAR - regex matches internally generated SQL
-                            `Expected MODIFY/ALTER COLUMN for 'name' in Oracle.\n${sqlBlob}`,
-                        )
-
-                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+"name"/i)
-                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+"name"/i)
+                        expect(recordedSchemaChanges(recorded)).to.deep.equal([
+                            `ALTER TABLE "post" MODIFY ("name" varchar2(80))`,
+                        ])
                     } else if (driver === "spanner") {
-                        // Spanner uses ALTER COLUMN with type specification
-                        expect(sqlBlob).to.match(
-                            /ALTER TABLE .* ALTER COLUMN `?name`? STRING\(80\)/i,
-                            `Expected ALTER COLUMN STRING(80) for 'name' in Spanner.\n${sqlBlob}`,
-                        )
-                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+`?name`?/i)
-                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+`?name`?/i)
+                        expect(recordedSchemaChanges(recorded)).to.deep.equal([
+                            "ALTER TABLE `post` ALTER COLUMN `name` STRING(80)",
+                        ])
                     }
 
                     // 5) Insert a 51-char value (should succeed with new length)
@@ -1104,63 +1064,38 @@ describe("schema builder > change column", () => {
                     expect(afterMigration.name.length).to.equal(30)
                     expect(afterMigration.name).to.equal(thirty)
 
-                    // 2b) Assert ALTER (driver-scoped)
                     const driver = connection.driver.options.type
-                    const sqlBlob = recorded.join("\n")
 
                     if (driver === "postgres" || driver === "cockroachdb") {
-                        // expect ALTER ... ALTER COLUMN "name" ... TYPE/SET DATA TYPE ...
-                        expect(sqlBlob).to.match(
-                            /ALTER TABLE .* ALTER COLUMN "name" (SET DATA TYPE|TYPE) .*40/i,
-                        )
-                        // ensure no drop/add of "name"
-                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+"name"/i)
-                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+"name"/i)
+                        expect(recordedSchemaChanges(recorded)).to.deep.equal([
+                            driver === "postgres"
+                                ? `ALTER TABLE "post" ALTER COLUMN "name" TYPE varchar(40) USING substring("name" FROM 1 FOR 40)`
+                                : `ALTER TABLE "post" ALTER COLUMN "name" SET DATA TYPE varchar(40) USING substring("name" FROM 1 FOR 40)`,
+                        ])
                     } else if (
                         driver === "mysql" ||
                         driver === "mariadb" ||
                         driver === "aurora-mysql"
                     ) {
-                        // MODIFY or CHANGE for MySQL family
-                        const usedModify =
-                            /ALTER TABLE .* (MODIFY|CHANGE) COLUMN `?name`? .*40/i.test(
-                                sqlBlob,
-                            )
-                        expect(
-                            usedModify,
-                            `Expected MODIFY/CHANGE COLUMN for 'name'.\n${sqlBlob}`,
-                        ).to.equal(true)
-                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+`?name`?/i)
-                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+`?name`?/i)
+                        expect(recordedSchemaChanges(recorded)).to.deep.equal([
+                            "UPDATE `post` SET `name` = LEFT(`name`, 40) WHERE CHAR_LENGTH(`name`) > 40",
+                            "ALTER TABLE `post` CHANGE COLUMN `name` `name` varchar(40) NULL DEFAULT 'My post'",
+                        ])
                     } else if (driver === "mssql") {
-                        // shrink to 40
-                        expect(sqlBlob).to.match(
-                            /ALTER TABLE[^\n]*ALTER COLUMN\s+(?:\[name\]|"name")\s+[^\n]*40/i, // NOSONAR - regex matches internally generated SQL
-                        )
-                        expect(sqlBlob).to.not.match(
-                            /ADD\s+COLUMN\s+(?:\[name\]|"name")/i,
-                        )
-                        expect(sqlBlob).to.not.match(
-                            /DROP\s+COLUMN\s+(?:\[name\]|"name")/i,
-                        )
+                        expect(recordedSchemaChanges(recorded)).to.deep.equal([
+                            'UPDATE "post" SET [name] = LEFT([name], 40) WHERE DATALENGTH([name]) > 40',
+                            'ALTER TABLE "post" ALTER COLUMN [name] varchar(40) NULL',
+                        ])
                     } else if (driver === "oracle") {
-                        // Oracle uses MODIFY COLUMN or ALTER COLUMN
-                        // Oracle uses MODIFY; some versions include parens around the column def
-                        expect(sqlBlob).to.match(
-                            /ALTER TABLE [^\n]* (MODIFY|ALTER COLUMN)\s{0,4}\(?\s{0,4}"name"\s+[^\n]*40/i, // NOSONAR - regex matches internally generated SQL
-                            `Expected MODIFY/ALTER COLUMN for 'name' in Oracle.\n${sqlBlob}`,
-                        )
-
-                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+"name"/i)
-                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+"name"/i)
+                        expect(recordedSchemaChanges(recorded)).to.deep.equal([
+                            'UPDATE "post" SET "name" = SUBSTR("name", 1, 40) WHERE LENGTH("name") > 40',
+                            `ALTER TABLE "post" MODIFY ("name" varchar2(40))`,
+                        ])
                     } else if (driver === "spanner") {
-                        // Spanner uses ALTER COLUMN with type specification
-                        expect(sqlBlob).to.match(
-                            /ALTER TABLE .* ALTER COLUMN `?name`? STRING\(40\)/i,
-                            `Expected ALTER COLUMN STRING(40) for 'name' in Spanner.\n${sqlBlob}`,
-                        )
-                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+`?name`?/i)
-                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+`?name`?/i)
+                        expect(recordedSchemaChanges(recorded)).to.deep.equal([
+                            "UPDATE `post` SET `name` = SUBSTR(`name`, 1, 40) WHERE LENGTH(`name`) > 40",
+                            "ALTER TABLE `post` ALTER COLUMN `name` STRING(40)",
+                        ])
                     }
                     // 5) Insert a 40-char value (should succeed with new reduced length)
                     const forty = "x".repeat(40)
