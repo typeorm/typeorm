@@ -458,7 +458,10 @@ export class ReturningResultsEntityUpdator {
         return JSON.stringify(
             columns.map((column) => {
                 const value = column.getEntityValue(entity)
-                if (typeof value === "function") return value
+                if (typeof value === "function")
+                    throw new TypeORMError(
+                        `Cannot reload inserted or upserted entity because reload criteria column "${column.propertyPath}" is a SQL expression.`,
+                    )
                 if (typeof value === "bigint") return value.toString()
                 return this.queryRunner.connection.driver.preparePersistentValue(
                     value,

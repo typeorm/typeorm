@@ -422,6 +422,35 @@ describe("ReturningResultsEntityUpdator", () => {
         expect(entity).to.include({ id: 45, value: "updated" })
     })
 
+    it("rejects SQL expressions in reload criteria columns", async () => {
+        const dataSource = await createDataSource()
+        const updater = createUpdater(
+            dataSource,
+            createExpressionMap(dataSource, ["key1", "key2"]),
+            new ReloadQueryBuilder([
+                {
+                    id: 42,
+                    key1: "upsert-key-1",
+                    key2: "upsert-key-2",
+                    value: "updated",
+                    createdAt: new Date(),
+                },
+            ]),
+        )
+        const entity: ObjectLiteral = {
+            key1: () => "'upsert-key-1'",
+            key2: "upsert-key-2",
+            value: "updated",
+        }
+        const insertResult = new InsertResult()
+        insertResult.raw = {}
+
+        await expectRejectedWithMessage(
+            updater.insert(insertResult, [entity]),
+            'Cannot reload inserted or upserted entity because reload criteria column "key1" is a SQL expression.',
+        )
+    })
+
     it("serializes bigint reload criteria without throwing", async () => {
         const dataSource = await createDataSource()
         const metadata = dataSource.getMetadata(CompositeUniqueEntity)
