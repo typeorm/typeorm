@@ -13,6 +13,7 @@ import {
 } from "../../../utils/test-utils"
 import { Blog } from "./entity/Blog"
 import { Category } from "./entity/Category"
+import { CompositeUniqueUpsertEntity } from "./entity/CompositeUniqueUpsertEntity"
 import { EmbeddedUQEntity } from "./entity/EmbeddedUQEntity"
 import { ExternalIdPrimaryKeyEntity } from "./entity/ExternalIdPrimaryKeyEntity"
 import { OneToOneRelationEntity } from "./entity/OneToOneRelation"
@@ -39,6 +40,7 @@ describe("repository > basic methods", () => {
                     UserEntity,
                     QuestionEntity,
                     ExternalIdPrimaryKeyEntity,
+                    CompositeUniqueUpsertEntity,
                     EmbeddedUQEntity,
                     RelationAsPrimaryKey,
                     TwoUniqueColumnsEntity,
@@ -584,6 +586,44 @@ describe("repository > basic methods", () => {
                     ).forEach((updated) => {
                         updated.title.should.be.equal("Updated")
                     })
+                }),
+            ))
+        it("should reload updated rows by conflict columns when generated id is unavailable", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    if (!connection.driver.supportedUpsertTypes.length) return
+                    if (connection.driver.isReturningSqlSupported("insert"))
+                        return
+
+                    const repository = connection.getRepository(
+                        CompositeUniqueUpsertEntity,
+                    )
+
+                    await repository.upsert(
+                        {
+                            key1: "upsert-key-1",
+                            key2: "upsert-key-2",
+                            value: "initial",
+                        },
+                        ["key1", "key2"],
+                    )
+
+                    const result = await repository.upsert(
+                        {
+                            key1: "upsert-key-1",
+                            key2: "upsert-key-2",
+                            value: "updated",
+                        },
+                        ["key1", "key2"],
+                    )
+
+                    result.identifiers[0].id.should.be.a("number")
+                    ;(
+                        await repository.findOneByOrFail({
+                            key1: "upsert-key-1",
+                            key2: "upsert-key-2",
+                        })
+                    ).value.should.equal("updated")
                 }),
             ))
         it("should not overwrite unspecified properties", () =>
