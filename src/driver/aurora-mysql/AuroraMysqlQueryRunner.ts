@@ -897,37 +897,6 @@ export class AuroraMysqlQueryRunner
             // update cloned table
             clonedTable = table.clone()
         } else {
-            if (oldColumn.length !== newColumn.length) {
-
-                upQueries.push(
-
-                    new Query(
-
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-
-                         newColumn.name
-
-                        }" TYPE ${this.driver.createFullType(newColumn)}`,
-
-                    ),
-
-                )
-
-                downQueries.push(
-
-                    new Query(
-
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-
-                         newColumn.name
-
-                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
-
-                    ),
-
-                )
-
-            }
 
             if (newColumn.name !== oldColumn.name) {
                 // We don't change any column properties, just rename it.

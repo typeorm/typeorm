@@ -1000,37 +1000,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             // update cloned table
             clonedTable = table.clone()
         } else {
-            if (oldColumn.length !== newColumn.length) {
-
-                upQueries.push(
-
-                    new Query(
-
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-
-                         newColumn.name
-
-                        }" TYPE ${this.driver.createFullType(newColumn)}`,
-
-                    ),
-
-                )
-
-                downQueries.push(
-
-                    new Query(
-
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-
-                         newColumn.name
-
-                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
-
-                    ),
-
-                )
-
-            }
 
             if (
                 newColumn.length !== oldColumn.length ||
