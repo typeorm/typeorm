@@ -1327,21 +1327,50 @@ export class PostgresQueryRunner
             )
 
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
-            newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
                 newColumn.generatedType === "STORED")
         ) {
-            // To avoid data conversion, we just recreate column
+            // STORED generated columns cannot be altered; recreate the column
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
         } else {
+            if (
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length ||
+                newColumn.isArray !== oldColumn.isArray
+            ) {
+                // Use ALTER COLUMN ... TYPE with a USING cast to avoid data loss.
+                // This is safe for type/length changes (e.g. varchar(50) -> varchar(51),
+                // integer -> bigint, etc.) and preserves existing data.
+                const newType = this.driver.createFullType(newColumn)
+                const oldType = this.driver.createFullType(oldColumn)
+                const columnName = oldColumn.name
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${columnName}" TYPE ${newType} USING "${columnName}"::${newType}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${columnName}" TYPE ${oldType} USING "${columnName}"::${oldType}`,
+                    ),
+                )
+
+                // update cloned table column type/length/isArray
+                const clonedColumn = clonedTable.columns.find(
+                    (col) => col.name === oldColumn.name,
+                )
+                if (clonedColumn) {
+                    clonedColumn.type = newColumn.type
+                    clonedColumn.length = newColumn.length
+                    clonedColumn.isArray = newColumn.isArray
+                }
+            }
             if (oldColumn.name !== newColumn.name) {
                 // rename column
                 upQueries.push(
