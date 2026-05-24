@@ -1341,22 +1341,6 @@ export class PostgresQueryRunner
             // update cloned table
             clonedTable = table.clone()
         } else {
-            if (oldColumn.length !== newColumn.length) {
-                upQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                         newColumn.name
-                        }" TYPE ${this.driver.createFullType(newColumn)}`,
-                    ),
-                )
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                         newColumn.name
-                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
-                    ),
-                )
-            }
             if (oldColumn.name !== newColumn.name) {
                 // rename column
                 upQueries.push(
@@ -1634,7 +1618,8 @@ export class PostgresQueryRunner
             }
 
             if (
-                newColumn.precision !== oldColumn.precision ||
+                newColumn.length !== oldColumn.length ||
+ newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {
                 upQueries.push(

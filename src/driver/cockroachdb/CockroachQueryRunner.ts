@@ -1688,6 +1688,7 @@ export class CockroachQueryRunner
             }
 
             if (
+                newColumn.length !== oldColumn.length ||
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {

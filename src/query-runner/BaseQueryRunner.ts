@@ -641,6 +641,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
         return (
             oldColumn.charset !== newColumn.charset ||
             oldColumn.collation !== newColumn.collation ||
+            oldColumn.length !== newColumn.length ||
             oldColumn.precision !== newColumn.precision ||
             oldColumn.scale !== newColumn.scale ||
             oldColumn.unsigned !== newColumn.unsigned || // MySQL only

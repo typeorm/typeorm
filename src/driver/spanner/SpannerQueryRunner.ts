@@ -1033,6 +1033,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             }
 
             if (
+                newColumn.length !== oldColumn.length ||
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {
