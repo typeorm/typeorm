@@ -76,7 +76,9 @@ function createSqlRecorder(connection: DataSource): {
 }
 
 function recordedSchemaChanges(recorded: string[]): string[] {
-    return recorded.filter((sql) => /^(ALTER TABLE|UPDATE)\b/i.test(sql))
+    return recorded
+        .filter((sql) => /^(ALTER TABLE|UPDATE)\b/i.test(sql))
+        .map((sql) => sql.trimEnd())
 }
 
 describe("schema builder > change column", () => {
@@ -354,43 +356,26 @@ describe("schema builder > change column", () => {
                     }
                     expect(err).to.be.undefined
 
-                    const sqlBlob = recorded.join("\n")
-
                     if (driver === "postgres" || driver === "cockroachdb") {
-                        expect(sqlBlob).to.match(
-                            /ALTER TABLE .* ALTER COLUMN "version" (SET DATA TYPE|TYPE) .*double/i,
-                        )
-                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+"version"/i)
-                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+"version"/i)
+                        expect(recordedSchemaChanges(recorded)).to.deep.equal([
+                            driver === "postgres"
+                                ? `ALTER TABLE "post" ALTER COLUMN "version" TYPE double precision`
+                                : `ALTER TABLE "post" ALTER COLUMN "version" SET DATA TYPE double precision`,
+                        ])
                     } else if (
                         driver === "mysql" ||
                         driver === "mariadb" ||
                         driver === "aurora-mysql"
                     ) {
-                        const usedModify =
-                            /ALTER TABLE .* (MODIFY|CHANGE) COLUMN `?version`? .*double/i.test(
-                                sqlBlob,
-                            )
-                        expect(
-                            usedModify,
-                            `Expected MODIFY/CHANGE for 'version'.\n${sqlBlob}`,
-                        ).to.equal(true)
-                        expect(sqlBlob).to.not.match(
-                            /ADD COLUMN\s+`?version`?/i,
-                        )
-                        expect(sqlBlob).to.not.match(
-                            /DROP COLUMN\s+`?version`?/i,
-                        )
+                        expect(recordedSchemaChanges(recorded)).to.deep.equal([
+                            "ALTER TABLE `post` MODIFY COLUMN `version` double NOT NULL",
+                        ])
                     } else if (driver === "mssql") {
-                        expect(sqlBlob).to.match(
-                            /ALTER TABLE[^\n]*ALTER COLUMN\s+(?:\[version\]|"version")\s+[^\n]*float/i, // NOSONAR - regex matches internally generated SQL
-                        )
-                        expect(sqlBlob).to.not.match(
-                            /ADD\s+COLUMN\s+(?:\[version\]|"version")/i,
-                        )
-                        expect(sqlBlob).to.not.match(
-                            /DROP\s+COLUMN\s+(?:\[version\]|"version")/i,
-                        )
+                        expect(recordedSchemaChanges(recorded)).to.deep.equal([
+                            'ALTER TABLE "post" DROP CONSTRAINT "UQ_d7c82163ac258e5d18d52d0fe16"',
+                            'ALTER TABLE "post" ALTER COLUMN "version" float(53) NOT NULL',
+                            'ALTER TABLE "post" ADD CONSTRAINT "UQ_d7c82163ac258e5d18d52d0fe16" UNIQUE ("version")',
+                        ])
                     }
 
                     // Verify data still exists after migration (data survived)
@@ -577,38 +562,25 @@ describe("schema builder > change column", () => {
                     }
                     expect(err).to.be.undefined
 
-                    const sqlBlob = recorded.join("\n")
                     if (
                         driver === "mysql" ||
                         driver === "mariadb" ||
                         driver === "aurora-mysql"
                     ) {
-                        const usedModify =
-                            /ALTER TABLE .* (MODIFY|CHANGE) COLUMN `?name`? .*timestamp/i.test(
-                                sqlBlob,
-                            )
-                        expect(
-                            usedModify,
-                            `Expected MODIFY/CHANGE for 'name'.\n${sqlBlob}`,
-                        ).to.equal(true)
-                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+`?name`?/i)
-                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+`?name`?/i)
+                        expect(recordedSchemaChanges(recorded)).to.deep.equal([
+                            "ALTER TABLE `post` MODIFY COLUMN `name` timestamp NULL",
+                        ])
                     } else if (driver === "mssql") {
-                        expect(sqlBlob).to.match(
-                            /ALTER TABLE[^\n]*ALTER COLUMN\s+(?:\[name\]|"name")\s+[^\n]*(datetimeoffset|timestamp)/i, // NOSONAR - regex matches internally generated SQL
-                        )
-                        expect(sqlBlob).to.not.match(
-                            /ADD\s+COLUMN\s+(?:\[name\]|"name")/i,
-                        )
-                        expect(sqlBlob).to.not.match(
-                            /DROP\s+COLUMN\s+(?:\[name\]|"name")/i,
-                        )
+                        expect(recordedSchemaChanges(recorded)).to.deep.equal([
+                            'ALTER TABLE "post" DROP CONSTRAINT "DF_3b67503bc127f16f995481181a3"',
+                            'ALTER TABLE "post" ALTER COLUMN [name] datetimeoffset NULL',
+                            'ALTER TABLE "post" ADD CONSTRAINT "DF_3b67503bc127f16f995481181a3" DEFAULT \'My post\' FOR [name]',
+                        ])
                     } else if (driver === "oracle") {
-                        expect(sqlBlob).to.match(
-                            /ALTER TABLE [^\n]* (MODIFY|ALTER COLUMN)\s{0,4}\(?\s{0,4}"name"\s+[^\n]*TIMESTAMP/i, // NOSONAR - regex matches internally generated SQL
-                        )
-                        expect(sqlBlob).to.not.match(/ADD COLUMN\s+"name"/i)
-                        expect(sqlBlob).to.not.match(/DROP COLUMN\s+"name"/i)
+                        expect(recordedSchemaChanges(recorded)).to.deep.equal([
+                            'ALTER TABLE "post" MODIFY ("name" TIMESTAMP(6))',
+                            'ALTER TABLE "post" MODIFY "name" TIMESTAMP(6)',
+                        ])
                     }
 
                     // Verify data still exists after migration (data survived)
