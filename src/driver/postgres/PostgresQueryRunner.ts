@@ -1344,12 +1344,28 @@ export class PostgresQueryRunner
                 oldColumn.length !== newColumn.length ||
                 newColumn.isArray !== oldColumn.isArray
             ) {
-                // Use ALTER COLUMN ... TYPE with a USING cast to avoid data loss.
-                // This is safe for type/length changes (e.g. varchar(50) -> varchar(51),
-                // integer -> bigint, etc.) and preserves existing data.
                 const newType = this.driver.createFullType(newColumn)
                 const oldType = this.driver.createFullType(oldColumn)
                 const columnName = oldColumn.name
+
+                // drop default before type cast to avoid cast errors, matching enum handling
+                if (
+                    oldColumn.default !== null &&
+                    oldColumn.default !== undefined
+                ) {
+                    defaultValueChanged = true
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${columnName}" DROP DEFAULT`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${columnName}" SET DEFAULT ${oldColumn.default}`,
+                        ),
+                    )
+                }
+
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${columnName}" TYPE ${newType} USING "${columnName}"::${newType}`,
@@ -1360,6 +1376,23 @@ export class PostgresQueryRunner
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${columnName}" TYPE ${oldType} USING "${columnName}"::${oldType}`,
                     ),
                 )
+
+                // restore default after type change
+                if (
+                    newColumn.default !== null &&
+                    newColumn.default !== undefined
+                ) {
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${columnName}" SET DEFAULT ${newColumn.default}`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${columnName}" DROP DEFAULT`,
+                        ),
+                    )
+                }
 
                 // update cloned table column type/length/isArray
                 const clonedColumn = clonedTable.columns.find(
@@ -2373,11 +2406,14 @@ export class PostgresQueryRunner
 
             // update column collation
             if (newColumn.collation !== oldColumn.collation) {
+                const newFullType = this.driver.createFullType(newColumn)
+                const oldFullType = this.driver.createFullType(oldColumn)
+
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE "${
+                        }" TYPE ${newFullType} COLLATE "${
                             newColumn.collation
                         }"`,
                     ),
@@ -2385,13 +2421,13 @@ export class PostgresQueryRunner
 
                 const oldCollation = oldColumn.collation
                     ? `"${oldColumn.collation}"`
-                    : `pg_catalog."default"` // if there's no old collation, use default
+                    : `pg_catalog."default"`
 
                 downQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE ${oldCollation}`,
+                        }" TYPE ${oldFullType} COLLATE ${oldCollation}`,
                     ),
                 )
             }
