@@ -154,8 +154,9 @@ export class ReturningResultsEntityUpdator {
         // to prevent extra select SQL execution for databases not supporting RETURNING
         // in the case if we have generated column and it's value returned by underlying driver
         // we remove this column from the insertionColumns list
-        const needToCheckGenerated =
+        const isInsertReturningSqlSupported =
             this.queryRunner.connection.driver.isReturningSqlSupported("insert")
+        const needToCheckGenerated = isInsertReturningSqlSupported
         insertionColumns = insertionColumns.filter((column) => {
             if (!column.isGenerated) return true
             return needToCheckGenerated === true
@@ -220,12 +221,12 @@ export class ReturningResultsEntityUpdator {
 
         // for postgres and mssql we use returning/output statement to get values of inserted default and generated values
         // for other drivers we have to re-select this data from the database
-        if (
-            insertionColumns.length > 0 &&
-            !this.queryRunner.connection.driver.isReturningSqlSupported(
-                "insert",
-            )
-        ) {
+        const shouldReload =
+            insertionColumns.length > 0 ||
+            (Array.isArray(this.expressionMap.onUpdate?.conflict) &&
+                entities.some((entity) => !metadata.getEntityIdMap(entity)))
+
+        if (shouldReload && !isInsertReturningSqlSupported) {
             const reloadCriteria = entities.map((entity) => {
                 const criteriaResult = this.getEntityIdMapOrUpsertConflictMap(
                     metadata,
@@ -289,24 +290,14 @@ export class ReturningResultsEntityUpdator {
 
             entities.forEach((entity, entityIndex) => {
                 const criteria = reloadCriteria[entityIndex]
-                const returningResultEntity = (
-                    returningResultMaps
-                        .get(this.getReloadColumnGroupKey(criteria.columns))
-                        ?.get(
-                            this.getReloadCriteriaKey(
-                                criteria.criteria,
-                                criteria.columns,
-                            ),
-                        ) || []
-                ).find((returningEntity) =>
-                    OrmUtils.compareIds(
-                        this.getReloadCriteriaMap(
-                            returningEntity,
+                const returningResultEntity = returningResultMaps
+                    .get(this.getReloadColumnGroupKey(criteria.columns))
+                    ?.get(
+                        this.getReloadCriteriaKey(
+                            criteria.criteria,
                             criteria.columns,
                         ),
-                        criteria.criteria,
-                    ),
-                )
+                    )?.[0]
 
                 if (!returningResultEntity)
                     throw new TypeORMError(

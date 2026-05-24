@@ -36,6 +36,22 @@ class CompositeUniqueEntity {
     createdAt: Date
 }
 
+@Index(["key1", "key2"], { unique: true })
+@Entity()
+class GeneratedOnlyCompositeUniqueEntity {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    @Column()
+    key1: string
+
+    @Column()
+    key2: string
+
+    @Column()
+    value: string
+}
+
 class TestDataSource extends DataSource {
     async buildTestMetadatas(): Promise<void> {
         await this.buildMetadatas()
@@ -96,7 +112,7 @@ async function createDataSource(): Promise<TestDataSource> {
     const dataSource = new TestDataSource({
         type: "mysql",
         database: "typeorm",
-        entities: [CompositeUniqueEntity],
+        entities: [CompositeUniqueEntity, GeneratedOnlyCompositeUniqueEntity],
     })
     await dataSource.buildTestMetadatas()
     return dataSource
@@ -105,8 +121,11 @@ async function createDataSource(): Promise<TestDataSource> {
 function createExpressionMap(
     dataSource: TestDataSource,
     conflict: QueryExpressionMap["onUpdate"]["conflict"],
+    target:
+        | typeof CompositeUniqueEntity
+        | typeof GeneratedOnlyCompositeUniqueEntity = CompositeUniqueEntity,
 ): QueryExpressionMap {
-    const metadata = dataSource.getMetadata(CompositeUniqueEntity)
+    const metadata = dataSource.getMetadata(target)
     const mainAlias = new Alias()
     mainAlias.type = "from"
     mainAlias.name = metadata.targetName
@@ -216,6 +235,58 @@ describe("ReturningResultsEntityUpdator", () => {
         expect(secondEntity).to.include({ id: 43, value: "updated-2" })
     })
 
+    it("reloads rows when the generated id is the only returning column", async () => {
+        const dataSource = await createDataSource()
+        let whereCriteria: ObjectLiteral | ObjectLiteral[] | undefined
+        let selectedColumns: string[] | undefined
+
+        const queryBuilder = new ReloadQueryBuilder(
+            [
+                {
+                    id: 44,
+                    key1: "generated-only-key-1",
+                    key2: "generated-only-key-2",
+                    value: "updated",
+                },
+            ],
+            (criteria) => {
+                whereCriteria = criteria
+            },
+            (selection) => {
+                selectedColumns = selection
+            },
+        )
+        const updater = createUpdater(
+            dataSource,
+            createExpressionMap(
+                dataSource,
+                ["key1", "key2"],
+                GeneratedOnlyCompositeUniqueEntity,
+            ),
+            queryBuilder,
+        )
+        const entity = {
+            key1: "generated-only-key-1",
+            key2: "generated-only-key-2",
+            value: "updated",
+        }
+        const insertResult = new InsertResult()
+        insertResult.raw = {}
+
+        await updater.insert(insertResult, [entity])
+
+        expect(whereCriteria).to.deep.equal([
+            { key1: "generated-only-key-1", key2: "generated-only-key-2" },
+        ])
+        expect(selectedColumns).to.include.members([
+            "GeneratedOnlyCompositeUniqueEntity.id",
+            "GeneratedOnlyCompositeUniqueEntity.key1",
+            "GeneratedOnlyCompositeUniqueEntity.key2",
+        ])
+        expect(insertResult.identifiers).to.deep.equal([{ id: 44 }])
+        expect(entity).to.include({ id: 44, value: "updated" })
+    })
+
     it("reports conflict criteria failures when reload criteria cannot be built", async () => {
         const dataSource = await createDataSource()
         const updater = createUpdater(
@@ -253,7 +324,7 @@ describe("ReturningResultsEntityUpdator", () => {
             ]),
         )
         const firstEntity = {
-            key1: "upsert-key-1",
+            key1: "private@example.test",
             key2: "upsert-key-2",
             value: "updated",
         }
