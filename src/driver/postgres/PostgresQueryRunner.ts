@@ -1619,7 +1619,7 @@ export class PostgresQueryRunner
 
             if (
                 newColumn.length !== oldColumn.length ||
- newColumn.precision !== oldColumn.precision ||
+                newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {
                 upQueries.push(
