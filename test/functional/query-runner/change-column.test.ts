@@ -276,9 +276,12 @@ describe("query runner > change column", () => {
         Promise.all(
             dataSources.map(async (dataSource) => {
                 // CockroachDB and Spanner do not support all ALTER COLUMN operations
+                // SqlServer and SAP use drop+add for length changes, which destroys data
                 if (
                     dataSource.driver.options.type === "cockroachdb" ||
-                    dataSource.driver.options.type === "spanner"
+                    dataSource.driver.options.type === "spanner" ||
+                    dataSource.driver.options.type === "mssql" ||
+                    dataSource.driver.options.type === "sap"
                 )
                     return
 
