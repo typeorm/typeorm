@@ -9,6 +9,7 @@ import {
 import { TableColumn } from "../../../src"
 import type { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
+import { Post } from "./entity/Post"
 
 describe("query runner > change column", () => {
     let dataSources: DataSource[]
@@ -270,6 +271,7 @@ describe("query runner > change column", () => {
             }),
         ))
 
+    // See: https://github.com/typeorm/typeorm/issues/3357
     it("should preserve data when changing column length", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
@@ -281,54 +283,55 @@ describe("query runner > change column", () => {
                     return
 
                 const queryRunner = dataSource.createQueryRunner()
+                const postRepository = dataSource.getRepository(Post)
 
-                // Insert test data
-                await queryRunner.query(
-                    `INSERT INTO "post" ("id", "version", "name", "text", "tag") VALUES (999, 1, 'preserved data value', 'some text', 'tag1')`,
-                )
+                try {
+                    // Insert test data using repository for cross-driver compatibility
+                    const testPost = new Post()
+                    testPost.id = 999
+                    testPost.version = 1
+                    testPost.name = "preserved data value"
+                    testPost.text = "some text"
+                    testPost.tag = "tag1"
+                    await postRepository.save(testPost)
 
-                // Verify data was inserted
-                let rows = await queryRunner.query(
-                    `SELECT "name" FROM "post" WHERE "id" = 999`,
-                )
-                expect(rows[0].name).to.equal("preserved data value")
+                    // Verify data was inserted
+                    let savedPost = await postRepository.findOneBy({ id: 999 })
+                    expect(savedPost!.name).to.equal("preserved data value")
 
-                // Change column length (increase from default to 500)
-                let table = await queryRunner.getTable("post")
-                const nameColumn = table!.findColumnByName("name")!
-                const changedNameColumn = nameColumn.clone()
-                changedNameColumn.length = "500"
-                await queryRunner.changeColumn(
-                    table!,
-                    nameColumn,
-                    changedNameColumn,
-                )
+                    // Change column length (increase from default to 500)
+                    let table = await queryRunner.getTable("post")
+                    const nameColumn = table!.findColumnByName("name")!
+                    const changedNameColumn = nameColumn.clone()
+                    changedNameColumn.length = "500"
+                    await queryRunner.changeColumn(
+                        table!,
+                        nameColumn,
+                        changedNameColumn,
+                    )
 
-                // Verify data is preserved after length change
-                rows = await queryRunner.query(
-                    `SELECT "name" FROM "post" WHERE "id" = 999`,
-                )
-                expect(rows[0].name).to.equal("preserved data value")
+                    // Verify data is preserved after length change
+                    savedPost = await postRepository.findOneBy({ id: 999 })
+                    expect(savedPost!.name).to.equal("preserved data value")
 
-                // Revert the length change and verify data is still preserved
-                table = await queryRunner.getTable("post")
-                const currentColumn = table!.findColumnByName("name")!
-                const revertedColumn = currentColumn.clone()
-                revertedColumn.length = nameColumn.length
-                await queryRunner.changeColumn(
-                    table!,
-                    currentColumn,
-                    revertedColumn,
-                )
+                    // Revert the length change and verify data is still preserved
+                    table = await queryRunner.getTable("post")
+                    const currentColumn = table!.findColumnByName("name")!
+                    const revertedColumn = currentColumn.clone()
+                    revertedColumn.length = nameColumn.length
+                    await queryRunner.changeColumn(
+                        table!,
+                        currentColumn,
+                        revertedColumn,
+                    )
 
-                rows = await queryRunner.query(
-                    `SELECT "name" FROM "post" WHERE "id" = 999`,
-                )
-                expect(rows[0].name).to.equal("preserved data value")
-
-                // Clean up
-                await queryRunner.query(`DELETE FROM "post" WHERE "id" = 999`)
-                await queryRunner.release()
+                    savedPost = await postRepository.findOneBy({ id: 999 })
+                    expect(savedPost!.name).to.equal("preserved data value")
+                } finally {
+                    // Clean up - guaranteed even if test fails
+                    await postRepository.delete(999).catch(() => {})
+                    await queryRunner.release()
+                }
             }),
         ))
 })
