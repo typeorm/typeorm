@@ -329,7 +329,7 @@ describe("query runner > change column", () => {
                     expect(savedPost!.name).to.equal("preserved data value")
                 } finally {
                     // Clean up - guaranteed even if test fails
-                    await postRepository.delete(999).catch(() => {})
+                    await postRepository.delete(999)
                     await queryRunner.release()
                 }
             }),
