@@ -1618,9 +1618,10 @@ export class PostgresQueryRunner
             }
 
             if (
-                newColumn.length !== oldColumn.length ||
-                newColumn.precision !== oldColumn.precision ||
-                newColumn.scale !== oldColumn.scale
+                (newColumn.length !== oldColumn.length ||
+                    newColumn.precision !== oldColumn.precision ||
+                    newColumn.scale !== oldColumn.scale) &&
+                newColumn.collation === oldColumn.collation
             ) {
                 upQueries.push(
                     new Query(
@@ -2348,7 +2349,7 @@ export class PostgresQueryRunner
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE "${
+                        }" TYPE ${this.driver.createFullType(newColumn)} COLLATE "${
                             newColumn.collation
                         }"`,
                     ),
@@ -2362,7 +2363,7 @@ export class PostgresQueryRunner
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE ${oldCollation}`,
+                        }" TYPE ${this.driver.createFullType(oldColumn)} COLLATE ${oldCollation}`,
                     ),
                 )
             }
