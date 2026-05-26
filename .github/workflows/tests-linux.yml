@@ -86,6 +86,7 @@ jobs:
           wait_for() {
             local check="$1"
             local retries="$2"
+            local description="$3"
 
             for _ in $(seq 1 "$retries"); do
               if eval "$check"; then
@@ -94,17 +95,18 @@ jobs:
               sleep 1
             done
 
+            echo "Timed out waiting for ${description} after ${retries} seconds" >&2
             return 1
           }
 
           # Wait until mongod is ready to accept commands.
-          wait_for 'docker exec typeorm-mongodb mongosh --quiet --eval "if (db.adminCommand({ ping: 1 }).ok !== 1) { quit(1); }"' 30
+          wait_for 'docker exec typeorm-mongodb mongosh --quiet --eval "if (db.adminCommand({ ping: 1 }).ok !== 1) { quit(1); }"' 30 'mongod to accept commands'
 
           # Initialize replica set if this is the first startup.
-          docker exec typeorm-mongodb mongosh --quiet --eval 'try { rs.status().ok } catch (e) { rs.initiate({ _id: "rs0", members: [{ _id: 0, host: "localhost:27017" }] }) }'
+          docker exec typeorm-mongodb mongosh --quiet --eval 'try { rs.status() } catch (e) { rs.initiate({ _id: "rs0", members: [{ _id: 0, host: "localhost:27017" }] }) }'
 
           # Wait until replica set reaches writable PRIMARY state.
-          wait_for 'docker exec typeorm-mongodb mongosh --quiet --eval "if (!db.hello().isWritablePrimary) { quit(1); }"' 30
+          wait_for 'docker exec typeorm-mongodb mongosh --quiet --eval "if (!db.hello().isWritablePrimary) { quit(1); }"' 30 'MongoDB replica set to reach writable PRIMARY state'
 
       - run: jq 'map(select(.type == "mongodb"))' ormconfig.sample.json > ormconfig.json
       - run: pnpm exec c8 pnpm run test:ci
