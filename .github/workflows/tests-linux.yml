@@ -98,13 +98,13 @@ jobs:
           }
 
           # Wait until mongod is ready to accept commands.
-          wait_for 'docker exec typeorm-mongodb mongosh --quiet --eval "db.adminCommand({ ping: 1 }).ok === 1" | grep true' 30
+          wait_for 'docker exec typeorm-mongodb mongosh --quiet --eval "if (db.adminCommand({ ping: 1 }).ok !== 1) { quit(1); }"' 30
 
           # Initialize replica set if this is the first startup.
           docker exec typeorm-mongodb mongosh --quiet --eval 'try { rs.status().ok } catch (e) { rs.initiate({ _id: "rs0", members: [{ _id: 0, host: "localhost:27017" }] }) }'
 
           # Wait until replica set reaches writable PRIMARY state.
-          wait_for 'docker exec typeorm-mongodb mongosh --quiet --eval "db.hello().isWritablePrimary === true" | grep true' 30
+          wait_for 'docker exec typeorm-mongodb mongosh --quiet --eval "if (!db.hello().isWritablePrimary) { quit(1); }"' 30
 
       - run: jq 'map(select(.type == "mongodb"))' ormconfig.sample.json > ormconfig.json
       - run: pnpm exec c8 pnpm run test:ci
