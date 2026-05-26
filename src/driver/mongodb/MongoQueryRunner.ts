@@ -28,6 +28,7 @@ import type {
     InsertOneResult,
     ListIndexesCursor,
     ListIndexesOptions,
+    DropIndexesOptions,
     ClientSession,
     MongoClient,
     OptionalId,
@@ -256,12 +257,17 @@ export class MongoQueryRunner implements QueryRunner {
      *
      * @param collectionName
      * @param indexSpecs
+     * @param options
      */
     async createCollectionIndexes(
         collectionName: string,
         indexSpecs: IndexDescription[],
+        options?: CreateIndexesOptions,
     ): Promise<string[]> {
-        return this.getCollection(collectionName).createIndexes(indexSpecs)
+        return this.getCollection(collectionName).createIndexes(
+            indexSpecs,
+            this.getSessionOptions(options),
+        )
     }
 
     /**
@@ -343,9 +349,15 @@ export class MongoQueryRunner implements QueryRunner {
      * Drops all indexes from the collection.
      *
      * @param collectionName
+     * @param options
      */
-    async dropCollectionIndexes(collectionName: string): Promise<boolean> {
-        return this.getCollection(collectionName).dropIndexes()
+    async dropCollectionIndexes(
+        collectionName: string,
+        options?: DropIndexesOptions,
+    ): Promise<boolean> {
+        return this.getCollection(collectionName).dropIndexes(
+            this.getSessionOptions(options),
+        )
     }
 
     /**
@@ -644,6 +656,7 @@ export class MongoQueryRunner implements QueryRunner {
      * (because it can clear all your database).
      */
     async clearDatabase(): Promise<void> {
+        if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
         await this.databaseConnection
             .db(this.dataSource.driver.database!)
             .dropDatabase()
@@ -1540,6 +1553,7 @@ export class MongoQueryRunner implements QueryRunner {
         collectionName: string,
         options?: { cascade?: boolean },
     ): Promise<void> {
+        if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
         if (options?.cascade) {
             throw new TypeORMError(
                 `MongoDB driver does not support clearing table with cascade option`,

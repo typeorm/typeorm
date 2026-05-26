@@ -41,6 +41,7 @@ import type {
     UpdateOptions,
     UpdateResult,
     CountDocumentsOptions,
+    DropIndexesOptions,
 } from "../driver/mongodb/typings"
 import type { FindManyOptions } from "../find-options/FindManyOptions"
 
@@ -312,11 +313,16 @@ export class MongoRepository<
      * Index specifications are defined at http://docs.mongodb.org/manual/reference/command/createIndexes/.
      *
      * @param indexSpecs
+     * @param options
      */
-    createCollectionIndexes(indexSpecs: IndexDescription[]): Promise<string[]> {
+    createCollectionIndexes(
+        indexSpecs: IndexDescription[],
+        options?: CreateIndexesOptions,
+    ): Promise<string[]> {
         return this.manager.createCollectionIndexes(
             this.metadata.target,
             indexSpecs,
+            options,
         )
     }
 
@@ -385,9 +391,14 @@ export class MongoRepository<
 
     /**
      * Drops all indexes from the collection.
+     *
+     * @param options
      */
-    dropCollectionIndexes(): Promise<any> {
-        return this.manager.dropCollectionIndexes(this.metadata.tableName)
+    dropCollectionIndexes(options?: DropIndexesOptions): Promise<boolean> {
+        return this.manager.dropCollectionIndexes(
+            this.metadata.tableName,
+            options,
+        )
     }
 
     /**

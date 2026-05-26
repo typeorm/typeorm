@@ -37,6 +37,7 @@ import type {
     DeleteOptions,
     DeleteResult as DeleteResultMongoDb,
     Document,
+    DropIndexesOptions,
     Filter,
     FilterOperators,
     FindCursor,
@@ -62,7 +63,7 @@ import type {
     UpdateOptions,
     UpdateResult as UpdateResultMongoDb,
 } from "../driver/mongodb/typings"
-import type { DataSource } from "../data-source/DataSource"
+import type { DataSource } from "../data-source"
 import type { MongoFindManyOptions } from "../find-options/mongodb/MongoFindManyOptions"
 import type { MongoFindOneOptions } from "../find-options/mongodb/MongoFindOneOptions"
 import type { FindOptionsSelect } from "../find-options/FindOptionsSelect"
@@ -686,15 +687,18 @@ export class MongoEntityManager extends EntityManager {
      *
      * @param entityClassOrName
      * @param indexSpecs
+     * @param options
      */
     createCollectionIndexes<Entity>(
         entityClassOrName: EntityTarget<Entity>,
         indexSpecs: IndexDescription[],
+        options?: CreateIndexesOptions,
     ): Promise<string[]> {
         const metadata = this.dataSource.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.createCollectionIndexes(
             metadata.tableName,
             indexSpecs,
+            options,
         )
     }
 
@@ -785,12 +789,17 @@ export class MongoEntityManager extends EntityManager {
      * Drops all indexes from the collection.
      *
      * @param entityClassOrName
+     * @param options
      */
     dropCollectionIndexes<Entity>(
         entityClassOrName: EntityTarget<Entity>,
-    ): Promise<any> {
+        options?: DropIndexesOptions,
+    ): Promise<boolean> {
         const metadata = this.dataSource.getMetadata(entityClassOrName)
-        return this.mongoQueryRunner.dropCollectionIndexes(metadata.tableName)
+        return this.mongoQueryRunner.dropCollectionIndexes(
+            metadata.tableName,
+            options,
+        )
     }
 
     /**

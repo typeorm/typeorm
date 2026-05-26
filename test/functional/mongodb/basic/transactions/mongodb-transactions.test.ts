@@ -7,9 +7,28 @@ import {
 import type { DataSource, MongoEntityManager } from "../../../../../src"
 import { QueryRunnerAlreadyReleasedError } from "../../../../../src"
 import type { MongoQueryRunner } from "../../../../../src/driver/mongodb/MongoQueryRunner"
+import type { ClientSession } from "../../../../../src/driver/mongodb/typings"
 import { TransactionDocument } from "./entity/TransactionDocument"
 import sinon from "sinon"
 import { expect } from "chai"
+
+type TestClientSessionFixture = {
+    startTransaction: sinon.SinonSpy
+    commitTransaction: sinon.SinonStub
+    abortTransaction: sinon.SinonStub
+    endSession: sinon.SinonStub
+}
+
+type QueryRunnerWithCollection<TCollection> = {
+    getCollection(collectionName: string): TCollection
+}
+
+const createTestClientSession = (): TestClientSessionFixture => ({
+    startTransaction: sinon.spy(),
+    commitTransaction: sinon.stub().resolves(),
+    abortTransaction: sinon.stub().resolves(),
+    endSession: sinon.stub().resolves(),
+})
 
 describe("mongodb > transaction support", () => {
     let dataSources: DataSource[]
@@ -32,16 +51,12 @@ describe("mongodb > transaction support", () => {
                 const queryRunner =
                     dataSource.createQueryRunner() as MongoQueryRunner
 
-                const fakeSession = {
-                    startTransaction: sinon.spy(),
-                    commitTransaction: sinon.stub().resolves(),
-                    abortTransaction: sinon.stub().resolves(),
-                    endSession: sinon.stub().resolves(),
-                }
+                const fakeSession = createTestClientSession()
+                const session = fakeSession as unknown as ClientSession
 
                 const startSessionStub = sinon
                     .stub(queryRunner.databaseConnection, "startSession")
-                    .returns(fakeSession as any)
+                    .returns(session)
 
                 await queryRunner.startTransaction()
                 expect(queryRunner.isTransactionActive).to.be.true
@@ -63,23 +78,24 @@ describe("mongodb > transaction support", () => {
                 const queryRunner =
                     dataSource.createQueryRunner() as MongoQueryRunner
 
-                const session = {
-                    startTransaction: sinon.spy(),
-                    commitTransaction: sinon.stub().resolves(),
-                    abortTransaction: sinon.stub().resolves(),
-                    endSession: sinon.stub().resolves(),
-                }
+                const fakeSession = createTestClientSession()
+                const session = fakeSession as unknown as ClientSession
 
                 const insertOne = sinon.stub().resolves({ insertedId: 1 })
                 const collection = {
                     insertOne,
                 }
 
+                const queryRunnerWithCollection =
+                    queryRunner as unknown as QueryRunnerWithCollection<
+                        typeof collection
+                    >
+
                 const startSessionStub = sinon
                     .stub(queryRunner.databaseConnection, "startSession")
-                    .returns(session as any)
+                    .returns(session)
                 const getCollectionStub = sinon
-                    .stub(queryRunner as any, "getCollection")
+                    .stub(queryRunnerWithCollection, "getCollection")
                     .returns(collection)
 
                 await queryRunner.startTransaction()
@@ -106,12 +122,8 @@ describe("mongodb > transaction support", () => {
                 const queryRunner =
                     dataSource.createQueryRunner() as MongoQueryRunner
 
-                const session = {
-                    startTransaction: sinon.spy(),
-                    commitTransaction: sinon.stub().resolves(),
-                    abortTransaction: sinon.stub().resolves(),
-                    endSession: sinon.stub().resolves(),
-                }
+                const fakeSession = createTestClientSession()
+                const session = fakeSession as unknown as ClientSession
 
                 const initializeOrderedBulkOp = sinon.stub().returns({})
                 const initializeUnorderedBulkOp = sinon.stub().returns({})
@@ -120,11 +132,16 @@ describe("mongodb > transaction support", () => {
                     initializeUnorderedBulkOp,
                 }
 
+                const queryRunnerWithCollection =
+                    queryRunner as unknown as QueryRunnerWithCollection<
+                        typeof collection
+                    >
+
                 const startSessionStub = sinon
                     .stub(queryRunner.databaseConnection, "startSession")
-                    .returns(session as any)
+                    .returns(session)
                 const getCollectionStub = sinon
-                    .stub(queryRunner as any, "getCollection")
+                    .stub(queryRunnerWithCollection, "getCollection")
                     .returns(collection)
 
                 await queryRunner.startTransaction()
@@ -140,6 +157,89 @@ describe("mongodb > transaction support", () => {
                 expect(
                     initializeUnorderedBulkOp.firstCall.args[0],
                 ).to.have.property("session", session)
+
+                startSessionStub.restore()
+                getCollectionStub.restore()
+                await queryRunner.release()
+            }),
+        ))
+
+    it("should pass active transaction session into createCollectionIndexes", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner =
+                    dataSource.createQueryRunner() as MongoQueryRunner
+
+                const fakeSession = createTestClientSession()
+                const session = fakeSession as unknown as ClientSession
+
+                const createIndexes = sinon.stub().resolves(["idx_1"])
+                const collection = { createIndexes }
+
+                const queryRunnerWithCollection =
+                    queryRunner as unknown as QueryRunnerWithCollection<
+                        typeof collection
+                    >
+
+                const startSessionStub = sinon
+                    .stub(queryRunner.databaseConnection, "startSession")
+                    .returns(session)
+                const getCollectionStub = sinon
+                    .stub(queryRunnerWithCollection, "getCollection")
+                    .returns(collection)
+
+                await queryRunner.startTransaction()
+                await queryRunner.createCollectionIndexes(
+                    "transaction_document",
+                    [{ key: { name: 1 } }],
+                )
+                await queryRunner.rollbackTransaction()
+
+                expect(createIndexes.calledOnce).to.be.true
+                expect(createIndexes.firstCall.args[1]).to.have.property(
+                    "session",
+                    session,
+                )
+
+                startSessionStub.restore()
+                getCollectionStub.restore()
+                await queryRunner.release()
+            }),
+        ))
+
+    it("should pass active transaction session into dropCollectionIndexes", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner =
+                    dataSource.createQueryRunner() as MongoQueryRunner
+
+                const fakeSession = createTestClientSession()
+                const session = fakeSession as unknown as ClientSession
+
+                const dropIndexes = sinon.stub().resolves(true)
+                const collection = { dropIndexes }
+
+                const queryRunnerWithCollection =
+                    queryRunner as unknown as QueryRunnerWithCollection<
+                        typeof collection
+                    >
+
+                const startSessionStub = sinon
+                    .stub(queryRunner.databaseConnection, "startSession")
+                    .returns(session)
+                const getCollectionStub = sinon
+                    .stub(queryRunnerWithCollection, "getCollection")
+                    .returns(collection)
+
+                await queryRunner.startTransaction()
+                await queryRunner.dropCollectionIndexes("transaction_document")
+                await queryRunner.rollbackTransaction()
+
+                expect(dropIndexes.calledOnce).to.be.true
+                expect(dropIndexes.firstCall.args[0]).to.have.property(
+                    "session",
+                    session,
+                )
 
                 startSessionStub.restore()
                 getCollectionStub.restore()
@@ -186,16 +286,12 @@ describe("mongodb > transaction support", () => {
                     readPreference: "primary" as const,
                 }
 
-                const fakeSession = {
-                    startTransaction: sinon.spy(),
-                    commitTransaction: sinon.stub().resolves(),
-                    abortTransaction: sinon.stub().resolves(),
-                    endSession: sinon.stub().resolves(),
-                }
+                const fakeSession = createTestClientSession()
+                const session = fakeSession as unknown as ClientSession
 
                 const startSessionStub = sinon
                     .stub(queryRunner.databaseConnection, "startSession")
-                    .returns(fakeSession as any)
+                    .returns(session)
 
                 try {
                     await manager.transaction(transactionOptions, async () => {
@@ -258,6 +354,44 @@ describe("mongodb > transaction support", () => {
                     await queryRunner.insertOne("transaction_document", {
                         name: "after-release",
                     })
+                } catch (err) {
+                    error = err
+                }
+
+                expect(error).to.be.instanceOf(QueryRunnerAlreadyReleasedError)
+            }),
+        ))
+
+    it("should not allow clearDatabase after query runner release", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner =
+                    dataSource.createQueryRunner() as MongoQueryRunner
+
+                await queryRunner.release()
+
+                let error: unknown
+                try {
+                    await queryRunner.clearDatabase()
+                } catch (err) {
+                    error = err
+                }
+
+                expect(error).to.be.instanceOf(QueryRunnerAlreadyReleasedError)
+            }),
+        ))
+
+    it("should not allow clearTable after query runner release", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner =
+                    dataSource.createQueryRunner() as MongoQueryRunner
+
+                await queryRunner.release()
+
+                let error: unknown
+                try {
+                    await queryRunner.clearTable("transaction_document")
                 } catch (err) {
                     error = err
                 }
