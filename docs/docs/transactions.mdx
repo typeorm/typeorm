@@ -42,6 +42,28 @@ The most important restriction when working in a transaction is to **ALWAYS** us
 `transactionalEntityManager` in this example. DO NOT USE GLOBAL ENTITY MANAGER.
 All operations **MUST** be executed using the provided transactional entity manager.
 
+:::note MongoDB
+
+MongoDB transactions are supported when your MongoDB deployment supports them, such as a replica set or sharded cluster.
+
+When using MongoDB, you can also pass MongoDB transaction options as the first argument to `DataSource.transaction()` or `MongoEntityManager.transaction()`:
+
+```typescript
+await myDataSource.transaction(
+    {
+        readPreference: "primary",
+        maxCommitTimeMS: 2500,
+    },
+    async (transactionalEntityManager) => {
+        await transactionalEntityManager.save(users)
+    },
+)
+```
+
+TypeORM forwards the options to MongoDB's `session.startTransaction()` call, so the supported properties follow the MongoDB driver's `TransactionOptions` type.
+
+:::
+
 ## Specifying isolation level
 
 Specifying the isolation level for the transaction can be done by supplying it as the first parameter:

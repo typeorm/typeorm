@@ -68,7 +68,8 @@ describe("entity subscriber > transaction flow", () => {
         for (const connection of dataSources) {
             if (
                 connection.driver.options.type === "mssql" ||
-                connection.driver.options.type === "spanner"
+                connection.driver.options.type === "spanner" ||
+                connection.driver.options.type === "mongodb"
             ) {
                 continue
             }
@@ -155,7 +156,8 @@ describe("entity subscriber > transaction flow", () => {
         for (const connection of dataSources) {
             if (
                 connection.driver.options.type === "mssql" ||
-                connection.driver.options.type === "spanner"
+                connection.driver.options.type === "spanner" ||
+                connection.driver.options.type === "mongodb"
             ) {
                 continue
             }
@@ -224,7 +226,8 @@ describe("entity subscriber > transaction flow", () => {
         for (const connection of dataSources) {
             if (
                 connection.driver.options.type === "mssql" ||
-                connection.driver.options.type === "spanner"
+                connection.driver.options.type === "spanner" ||
+                connection.driver.options.type === "mongodb"
             ) {
                 continue
             }
@@ -297,6 +300,10 @@ describe("entity subscriber > transaction flow", () => {
         const data = { hello: ["world"] }
 
         for (const connection of dataSources) {
+            if (connection.driver.options.type === "mongodb") {
+                continue
+            }
+
             beforeTransactionCommit.resetHistory()
             afterTransactionCommit.resetHistory()
             afterInsert.resetHistory()

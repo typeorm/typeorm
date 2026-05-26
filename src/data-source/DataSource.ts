@@ -42,6 +42,7 @@ import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 import { buildSqlTag } from "../util/SqlTagUtils"
+import type { TransactionOptions } from "../driver/mongodb/typings"
 
 registerQueryBuilders()
 
@@ -484,11 +485,32 @@ export class DataSource {
         runInTransaction: (entityManager: EntityManager) => Promise<T>,
     ): Promise<T>
     async transaction<T>(
+        options: TransactionOptions,
+        runInTransaction: (entityManager: EntityManager) => Promise<T>,
+    ): Promise<T>
+    async transaction<T>(
         isolationOrRunInTransaction:
             | IsolationLevel
+            | TransactionOptions
             | ((entityManager: EntityManager) => Promise<T>),
         runInTransactionParam?: (entityManager: EntityManager) => Promise<T>,
     ): Promise<any> {
+        if (
+            isolationOrRunInTransaction &&
+            typeof isolationOrRunInTransaction === "object"
+        ) {
+            if (!InstanceChecker.isMongoEntityManager(this.manager)) {
+                throw new TypeORMError(
+                    `Transaction options object is supported only for MongoDB connections.`,
+                )
+            }
+
+            return (this.manager as MongoEntityManager).transaction(
+                isolationOrRunInTransaction,
+                runInTransactionParam as any,
+            )
+        }
+
         return this.manager.transaction(
             isolationOrRunInTransaction as any,
             runInTransactionParam as any,

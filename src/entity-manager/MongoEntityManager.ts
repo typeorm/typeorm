@@ -4,6 +4,8 @@ import type { EntityTarget } from "../common/EntityTarget"
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner"
 import type { MongoDriver } from "../driver/mongodb/MongoDriver"
+import type { IsolationLevel } from "../driver/types/IsolationLevel"
+import type { QueryRunner } from "../query-runner/QueryRunner"
 import { DocumentToEntityTransformer } from "../query-builder/transformer/DocumentToEntityTransformer"
 import type { FindManyOptions } from "../find-options/FindManyOptions"
 import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
@@ -13,7 +15,11 @@ import { InsertResult } from "../query-builder/result/InsertResult"
 import { UpdateResult } from "../query-builder/result/UpdateResult"
 import { DeleteResult } from "../query-builder/result/DeleteResult"
 import type { EntityMetadata } from "../metadata/EntityMetadata"
-import { EntityPropertyNotFoundError } from "../error"
+import {
+    EntityPropertyNotFoundError,
+    QueryRunnerProviderAlreadyReleasedError,
+    TypeORMError,
+} from "../error"
 
 import type {
     AggregateOptions,
@@ -50,6 +56,7 @@ import type {
     OrderedBulkOperation,
     RenameOptions,
     ReplaceOptions,
+    TransactionOptions,
     UnorderedBulkOperation,
     UpdateFilter,
     UpdateOptions,
@@ -72,6 +79,10 @@ export class MongoEntityManager extends EntityManager {
     readonly "@instanceof" = Symbol.for("MongoEntityManager")
 
     get mongoQueryRunner(): MongoQueryRunner {
+        if (this.queryRunner) {
+            return this.queryRunner as MongoQueryRunner
+        }
+
         return (this.dataSource.driver as MongoDriver)
             .queryRunner as MongoQueryRunner
     }
@@ -80,13 +91,80 @@ export class MongoEntityManager extends EntityManager {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(dataSource: DataSource) {
-        super(dataSource)
+    constructor(dataSource: DataSource, queryRunner?: QueryRunner) {
+        super(dataSource, queryRunner)
     }
 
     // -------------------------------------------------------------------------
     // Overridden Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Wraps given function execution (and all operations made there) in a transaction.
+     * Supports MongoDB transaction options as an alternative first parameter.
+     */
+    async transaction<T>(
+        runInTransaction: (entityManager: EntityManager) => Promise<T>,
+    ): Promise<T>
+
+    async transaction<T>(
+        isolationLevel: IsolationLevel,
+        runInTransaction: (entityManager: EntityManager) => Promise<T>,
+    ): Promise<T>
+
+    async transaction<T>(
+        options: TransactionOptions,
+        runInTransaction: (entityManager: EntityManager) => Promise<T>,
+    ): Promise<T>
+
+    async transaction<T>(
+        isolationOrOptionsOrRunInTransaction:
+            | IsolationLevel
+            | TransactionOptions
+            | ((entityManager: EntityManager) => Promise<T>),
+        runInTransactionParam?: (entityManager: EntityManager) => Promise<T>,
+    ): Promise<T> {
+        const isolation =
+            typeof isolationOrOptionsOrRunInTransaction === "string"
+                ? isolationOrOptionsOrRunInTransaction
+                : undefined
+        const options =
+            typeof isolationOrOptionsOrRunInTransaction === "object"
+                ? isolationOrOptionsOrRunInTransaction
+                : undefined
+        const runInTransaction =
+            typeof isolationOrOptionsOrRunInTransaction === "function"
+                ? isolationOrOptionsOrRunInTransaction
+                : runInTransactionParam
+
+        if (!runInTransaction) {
+            throw new TypeORMError(
+                `Transaction method requires callback in second parameter if first parameter is supplied.`,
+            )
+        }
+
+        if (this.queryRunner?.isReleased)
+            throw new QueryRunnerProviderAlreadyReleasedError()
+
+        const queryRunner = (this.queryRunner ??
+            this.dataSource.createQueryRunner()) as MongoQueryRunner
+
+        try {
+            await queryRunner.startTransaction(isolation, options)
+            const result = await runInTransaction(queryRunner.manager)
+            await queryRunner.commitTransaction()
+            return result
+        } catch (err) {
+            try {
+                await queryRunner.rollbackTransaction()
+            } catch {
+                // Ignore rollback errors and rethrow the original error.
+            }
+            throw err
+        } finally {
+            if (!this.queryRunner) await queryRunner.release()
+        }
+    }
 
     /**
      * Finds entities that match given find options.

@@ -70,17 +70,35 @@ jobs:
 
   mongodb:
     runs-on: ubuntu-latest
-    services:
-      mongodb:
-        image: mongo:8.2.5
-        ports:
-          - "27017:27017"
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
           download-build: true
+
+      - name: Start MongoDB replica set
+        run: |
+          docker run -d --name typeorm-mongodb -p 27017:27017 mongo:8.2.5 mongod --replSet rs0 --bind_ip_all
+
+          # Wait until mongod is ready to accept commands.
+          for i in {1..30}; do
+            if docker exec typeorm-mongodb mongosh --quiet --eval "db.adminCommand({ ping: 1 }).ok" | grep 1; then
+              break
+            fi
+            sleep 1
+          done
+
+          # Initialize replica set if this is the first startup.
+          docker exec typeorm-mongodb mongosh --quiet --eval 'try { rs.status().ok } catch (e) { rs.initiate({ _id: "rs0", members: [{ _id: 0, host: "localhost:27017" }] }) }'
+
+          # Wait until replica set reaches PRIMARY state.
+          for i in {1..30}; do
+            if docker exec typeorm-mongodb mongosh --quiet --eval "rs.status().ok" | grep 1; then
+              break
+            fi
+            sleep 1
+          done
 
       - run: jq 'map(select(.type == "mongodb"))' ormconfig.sample.json > ormconfig.json
       - run: pnpm exec c8 pnpm run test:ci

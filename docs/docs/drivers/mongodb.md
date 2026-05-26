@@ -12,6 +12,31 @@ Most of TypeORM functionality is RDBMS-specific, this page contains all MongoDB-
 npm install mongodb
 ```
 
+## Transactions
+
+MongoDB transactions are supported when your MongoDB deployment supports them, for example:
+
+- a single-node or multi-node replica set
+- a sharded cluster
+
+For local development with Docker, the MongoDB service in `docker-compose.yml` is configured as a single-node replica set (`rs0`).
+
+You can use MongoDB transaction options when starting a transaction. TypeORM forwards the options to the MongoDB driver's `session.startTransaction()` call.
+
+```typescript
+await dataSource.transaction(
+    {
+        readPreference: "primary",
+        maxCommitTimeMS: 2500,
+    },
+    async (transactionalEntityManager) => {
+        // use transactionalEntityManager here
+    },
+)
+```
+
+Supported MongoDB transaction options include `readConcern`, `writeConcern`, `readPreference`, and `maxCommitTimeMS`.
+
 ## Data Source Options
 
 - `appName` - The name of the application that created this MongoClient instance. MongoDB will print this value in the server log upon establishing each connection. It is also recorded in the slow query log and profile collections.
@@ -275,7 +300,7 @@ The example above returns each product with only `name` and `specs.weight` popul
 
 ## Using `MongoEntityManager` and `MongoRepository`
 
-You can use the majority of methods inside the `EntityManager` (except for RDBMS-specific, like `query` and `transaction`).
+You can use the majority of methods inside the `EntityManager` (except for RDBMS-specific, like `query`).
 For example:
 
 ```typescript

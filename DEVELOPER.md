@@ -24,6 +24,14 @@ For convenience, you can also use the [Docker](https://www.docker.com/) images p
 docker compose up postgres-17
 ```
 
+For MongoDB transactions, start the MongoDB replica-set container instead:
+
+```shell
+docker compose up mongodb
+```
+
+The local MongoDB service is configured as a single-node replica set (`rs0`), which is required for transaction support.
+
 ## Getting the Sources
 
 Fork and clone the repository:
@@ -131,6 +139,18 @@ If you place entities in `./entity/<entity-name>.ts` relative to your test file,
 they will automatically be loaded.
 
 To run the tests, setup your environment configuration by copying `ormconfig.sample.json` into `ormconfig.json` and replacing parameters with your own. The tests will be run for each database that is defined in that file. If you're working on something that's not database specific and you want to speed things up, you can pick which objects in the file make sense for you to keep.
+
+If you want to run only MongoDB-related tests, make sure your `ormconfig.json` keeps the MongoDB entry enabled and includes the replica set setting (`"replicaSet": "rs0"`). Then you can run the Mongo test suites with `--grep`:
+
+```shell
+pnpm run test:fast -- --grep "mongodb"
+```
+
+To run just the MongoDB transaction tests:
+
+```shell
+pnpm run test:fast -- --grep "mongodb > transaction support"
+```
 
 Run the tests as follows:
 
