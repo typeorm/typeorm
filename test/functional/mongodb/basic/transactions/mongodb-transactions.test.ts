@@ -4,8 +4,8 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import type { DataSource } from "../../../../../src"
-import type { MongoEntityManager } from "../../../../../src"
+import type { DataSource, MongoEntityManager } from "../../../../../src"
+import { QueryRunnerAlreadyReleasedError } from "../../../../../src"
 import type { MongoQueryRunner } from "../../../../../src/driver/mongodb/MongoQueryRunner"
 import { TransactionDocument } from "./entity/TransactionDocument"
 import sinon from "sinon"
@@ -93,6 +93,53 @@ describe("mongodb > transaction support", () => {
                     "session",
                     session,
                 )
+
+                startSessionStub.restore()
+                getCollectionStub.restore()
+                await queryRunner.release()
+            }),
+        ))
+
+    it("should pass active transaction session into bulk operation initializers", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner =
+                    dataSource.createQueryRunner() as MongoQueryRunner
+
+                const session = {
+                    startTransaction: sinon.spy(),
+                    commitTransaction: sinon.stub().resolves(),
+                    abortTransaction: sinon.stub().resolves(),
+                    endSession: sinon.stub().resolves(),
+                }
+
+                const initializeOrderedBulkOp = sinon.stub().returns({})
+                const initializeUnorderedBulkOp = sinon.stub().returns({})
+                const collection = {
+                    initializeOrderedBulkOp,
+                    initializeUnorderedBulkOp,
+                }
+
+                const startSessionStub = sinon
+                    .stub(queryRunner.databaseConnection, "startSession")
+                    .returns(session as any)
+                const getCollectionStub = sinon
+                    .stub(queryRunner as any, "getCollection")
+                    .returns(collection)
+
+                await queryRunner.startTransaction()
+                queryRunner.initializeOrderedBulkOp("transaction_document")
+                queryRunner.initializeUnorderedBulkOp("transaction_document")
+                await queryRunner.rollbackTransaction()
+
+                expect(initializeOrderedBulkOp.calledOnce).to.be.true
+                expect(initializeUnorderedBulkOp.calledOnce).to.be.true
+                expect(
+                    initializeOrderedBulkOp.firstCall.args[0],
+                ).to.have.property("session", session)
+                expect(
+                    initializeUnorderedBulkOp.firstCall.args[0],
+                ).to.have.property("session", session)
 
                 startSessionStub.restore()
                 getCollectionStub.restore()
@@ -195,6 +242,27 @@ describe("mongodb > transaction support", () => {
                 } finally {
                     managerTransactionSpy.restore()
                 }
+            }),
+        ))
+
+    it("should not allow collection operations after query runner release", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner =
+                    dataSource.createQueryRunner() as MongoQueryRunner
+
+                await queryRunner.release()
+
+                let error: unknown
+                try {
+                    await queryRunner.insertOne("transaction_document", {
+                        name: "after-release",
+                    })
+                } catch (err) {
+                    error = err
+                }
+
+                expect(error).to.be.instanceOf(QueryRunnerAlreadyReleasedError)
             }),
         ))
 })

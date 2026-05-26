@@ -456,7 +456,7 @@ export class MongoQueryRunner implements QueryRunner {
         options?: BulkWriteOptions,
     ): OrderedBulkOperation {
         return this.getCollection(collectionName).initializeOrderedBulkOp(
-            options,
+            this.getSessionOptions(options),
         )
     }
 
@@ -471,7 +471,7 @@ export class MongoQueryRunner implements QueryRunner {
         options?: BulkWriteOptions,
     ): UnorderedBulkOperation {
         return this.getCollection(collectionName).initializeUnorderedBulkOp(
-            options,
+            this.getSessionOptions(options),
         )
     }
 
@@ -1619,6 +1619,10 @@ export class MongoQueryRunner implements QueryRunner {
      * @param collectionName
      */
     protected getCollection(collectionName: string): Collection<any> {
+        if (this.isReleased) {
+            throw new QueryRunnerAlreadyReleasedError()
+        }
+
         return this.databaseConnection
             .db(this.dataSource.driver.database!)
             .collection(collectionName)

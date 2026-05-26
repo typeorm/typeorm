@@ -494,7 +494,18 @@ export class DataSource {
             | TransactionOptions
             | ((entityManager: EntityManager) => Promise<T>),
         runInTransactionParam?: (entityManager: EntityManager) => Promise<T>,
-    ): Promise<any> {
+    ): Promise<T> {
+        const runInTransaction =
+            typeof isolationOrRunInTransaction === "function"
+                ? isolationOrRunInTransaction
+                : runInTransactionParam
+
+        if (!runInTransaction) {
+            throw new TypeORMError(
+                `Transaction method requires callback in second parameter if first parameter is supplied.`,
+            )
+        }
+
         if (
             isolationOrRunInTransaction &&
             typeof isolationOrRunInTransaction === "object"
@@ -507,13 +518,17 @@ export class DataSource {
 
             return (this.manager as MongoEntityManager).transaction(
                 isolationOrRunInTransaction,
-                runInTransactionParam as any,
+                runInTransaction,
             )
         }
 
+        if (typeof isolationOrRunInTransaction === "function") {
+            return this.manager.transaction(isolationOrRunInTransaction)
+        }
+
         return this.manager.transaction(
-            isolationOrRunInTransaction as any,
-            runInTransactionParam as any,
+            isolationOrRunInTransaction,
+            runInTransaction,
         )
     }
 
