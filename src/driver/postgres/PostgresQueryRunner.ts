@@ -1326,24 +1326,45 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        // ALTER COLUMN ... TYPE with a USING cast preserves data, but only for
+        // ordinary scalar/length changes. Two cases must fall back to drop+add:
+        //
+        //   1. Enum / simple-enum involvement. These columns reference a
+        //      user-defined PG type (CREATE TYPE ... AS ENUM) and createFullType()
+        //      produces the literal "enum", which is not a real type, so the
+        //      generated ALTER and USING cast are invalid SQL. Enum-to-enum value
+        //      changes are handled later in this method via a dedicated flow.
+        //
+        //   2. isArray toggling. Casting between scalar and array forms (or
+        //      between different array element types) is not generally safe with
+        //      a simple ::type expression — drop+add gives a clean re-creation.
+        const involvesEnum =
+            oldColumn.type === "enum" ||
+            oldColumn.type === "simple-enum" ||
+            newColumn.type === "enum" ||
+            newColumn.type === "simple-enum"
+        const isArrayToggled = newColumn.isArray !== oldColumn.isArray
+        const typeChanged =
+            oldColumn.type !== newColumn.type ||
+            oldColumn.length !== newColumn.length ||
+            isArrayToggled
+
         if (
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
-                newColumn.generatedType === "STORED")
+                newColumn.generatedType === "STORED") ||
+            (typeChanged && (involvesEnum || isArrayToggled))
         ) {
-            // STORED generated columns cannot be altered; recreate the column
+            // STORED generated columns cannot be altered; recreate the column.
+            // Same path for enum involvement and array toggling (see above).
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
         } else {
-            if (
-                oldColumn.type !== newColumn.type ||
-                oldColumn.length !== newColumn.length ||
-                newColumn.isArray !== oldColumn.isArray
-            ) {
+            if (typeChanged) {
                 const newType = this.driver.createFullType(newColumn)
                 const oldType = this.driver.createFullType(oldColumn)
                 const columnName = oldColumn.name
