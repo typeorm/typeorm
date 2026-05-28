@@ -802,12 +802,13 @@ export class InsertQueryBuilder<
                     return false
 
                 // if user did not specified such list then return all columns except auto-increment one
-                // for Oracle we return auto-increment column as well because Oracle does not support DEFAULT VALUES expression
+                // for Oracle and SAP HANA we return auto-increment column as well because they do not support DEFAULT VALUES expression
                 if (
                     column.isGenerated &&
                     column.generationStrategy === "increment" &&
                     !(this.dataSource.driver.options.type === "spanner") &&
                     !(this.dataSource.driver.options.type === "oracle") &&
+                    !(this.dataSource.driver.options.type === "sap") &&
                     !DriverUtils.isSQLiteFamily(this.dataSource.driver) &&
                     !DriverUtils.isMySQLFamily(this.dataSource.driver) &&
                     !(this.dataSource.driver.options.type === "aurora-mysql") &&
@@ -1602,6 +1603,15 @@ export class InsertQueryBuilder<
                     column.generationStrategy === "uuid"
                 ) {
                     expression += "GENERATE_UUID()" // Produces a random universally unique identifier (UUID) as a STRING value.
+                } else if (
+                    this.dataSource.driver.options.type === "sap" &&
+                    column.isGenerated &&
+                    column.generationStrategy === "increment"
+                ) {
+                    // SAP HANA does not support the bare `DEFAULT VALUES` form,
+                    // but it does accept `DEFAULT` inside a VALUES list — use it
+                    // so generated identity columns get their sequence value.
+                    expression += "DEFAULT"
                 } else {
                     expression += "NULL" // otherwise simply use NULL and pray if column is nullable
                 }
