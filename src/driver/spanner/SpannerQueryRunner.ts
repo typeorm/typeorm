@@ -1005,19 +1005,19 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 newColumn.scale !== oldColumn.scale ||
                 newColumn.isArray !== oldColumn.isArray
             ) {
-                // alter column type / length / precision / scale / array property if changed
+                // alter column type / length / precision / scale / array property if changed (Spanner does not use TYPE keyword, and column name needs to be escaped)
                 upQueries.push(
                     new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
-                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN ${this.driver.escape(
+                            newColumn.name,
+                        )} ${this.driver.createFullType(newColumn)}`,
                     ),
                 )
                 downQueries.push(
                     new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
-                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN ${this.driver.escape(
+                            newColumn.name,
+                        )} ${this.driver.createFullType(oldColumn)}`,
                     ),
                 )
             }

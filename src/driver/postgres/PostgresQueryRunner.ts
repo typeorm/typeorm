@@ -1622,19 +1622,34 @@ export class PostgresQueryRunner
                 newColumn.scale !== oldColumn.scale ||
                 newColumn.isArray !== oldColumn.isArray
             ) {
+                // Use buildEnumName to get the correct user-defined Enum type name for enum or simple-enum columns, and append [] if it is an array
+                const newColumnType =
+                    newColumn.type === "enum" ||
+                    newColumn.type === "simple-enum"
+                        ? this.buildEnumName(table, newColumn) +
+                          (newColumn.isArray ? "[]" : "")
+                        : this.driver.createFullType(newColumn)
+
+                const oldColumnType =
+                    oldColumn.type === "enum" ||
+                    oldColumn.type === "simple-enum"
+                        ? this.buildEnumName(table, oldColumn) +
+                          (oldColumn.isArray ? "[]" : "")
+                        : this.driver.createFullType(oldColumn)
+
                 // alter column type / length / precision / scale / array property if changed
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                        }" TYPE ${newColumnType}`,
                     ),
                 )
                 downQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                        }" TYPE ${oldColumnType}`,
                     ),
                 )
             }
