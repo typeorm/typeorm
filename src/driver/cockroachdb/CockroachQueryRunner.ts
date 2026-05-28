@@ -1402,13 +1402,10 @@ export class CockroachQueryRunner
             )
 
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
-            newColumn.isArray !== oldColumn.isArray ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
         ) {
-            // To avoid data conversion, we just recreate column
+            // To avoid data conversion for generated columns, we just recreate column
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
@@ -1657,9 +1654,13 @@ export class CockroachQueryRunner
             }
 
             if (
+                newColumn.type !== oldColumn.type ||
+                newColumn.length !== oldColumn.length ||
                 newColumn.precision !== oldColumn.precision ||
-                newColumn.scale !== oldColumn.scale
+                newColumn.scale !== oldColumn.scale ||
+                newColumn.isArray !== oldColumn.isArray
             ) {
+                // alter column type / length / precision / scale / array property if changed
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
