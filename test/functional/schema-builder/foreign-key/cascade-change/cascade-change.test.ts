@@ -32,17 +32,20 @@ describe("schema builder > foreign key > cascade option change (issue #1986)", (
                 )!
                 const newDataSource = new DataSource(options)
                 await newDataSource.initialize()
-                const sqlInMemory = await newDataSource.driver
-                    .createSchemaBuilder()
-                    .log()
 
-                const upQueries = sqlInMemory.upQueries.map(
-                    (query) => query.query,
-                )
+                try {
+                    const sqlInMemory = await newDataSource.driver
+                        .createSchemaBuilder()
+                        .log()
 
-                expect(upQueries.length).to.equal(0)
+                    const upQueries = sqlInMemory.upQueries.map(
+                        (query) => query.query,
+                    )
 
-                await newDataSource.destroy()
+                    expect(upQueries.length).to.equal(0)
+                } finally {
+                    await newDataSource.destroy()
+                }
             }),
         ))
 
@@ -59,29 +62,32 @@ describe("schema builder > foreign key > cascade option change (issue #1986)", (
                 )!
                 const newDataSource = new DataSource(options)
                 await newDataSource.initialize()
-                const sqlInMemory = await newDataSource.driver
-                    .createSchemaBuilder()
-                    .log()
 
-                const upQueries = sqlInMemory.upQueries.map(
-                    (query) => query.query,
-                )
+                try {
+                    const sqlInMemory = await newDataSource.driver
+                        .createSchemaBuilder()
+                        .log()
 
-                expect(upQueries.length).to.be.greaterThan(0)
+                    const upQueries = sqlInMemory.upQueries.map(
+                        (query) => query.query,
+                    )
 
-                const dropQuery = upQueries.find((q) =>
-                    q.match(/ALTER TABLE [`"]?post[`"]? DROP FOREIGN KEY/),
-                )
-                const createQuery = upQueries.find((q) =>
-                    q.match(
-                        /ALTER TABLE [`"]?post[`"]?.*ADD.*CONSTRAINT.*ON DELETE CASCADE/,
-                    ),
-                )
+                    expect(upQueries.length).to.be.greaterThan(0)
 
-                expect(dropQuery).to.exist
-                expect(createQuery).to.exist
+                    const dropQuery = upQueries.find((q) =>
+                        q.match(/ALTER TABLE [`"]?post[`"]? DROP FOREIGN KEY/),
+                    )
+                    const createQuery = upQueries.find((q) =>
+                        q.match(
+                            /ALTER TABLE [`"]?post[`"]?.*ADD.*CONSTRAINT.*ON DELETE CASCADE/,
+                        ),
+                    )
 
-                await newDataSource.destroy()
+                    expect(dropQuery).to.exist
+                    expect(createQuery).to.exist
+                } finally {
+                    await newDataSource.destroy()
+                }
             }),
         ))
 })
