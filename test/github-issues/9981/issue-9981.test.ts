@@ -38,4 +38,14 @@ describe("github issues > #9981 --revert should respect transaction=false when u
                 }),
             ))
     })
+
+    describe("with transaction: 'all'", () => {
+        it("should revert migration with transaction=false", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await dataSource.runMigrations({ transaction: "each" }) // since overrides not allowed with transaction: "all"
+                    await dataSource.undoLastMigration({ transaction: "all" })
+                }),
+            ))
+    })
 })
