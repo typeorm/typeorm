@@ -453,10 +453,11 @@ export class MigrationExecutor {
         )
         this.dataSource.logger.logSchemaBuild(`Now reverting it...`)
 
+        // defaults for single migration
         const txModeDefault = {
             each: true,
             none: false,
-            all: false,
+            all: true, // safe to set this to true for a single migration
         }[this.transaction]
 
         let migrationTransactionMode = txModeDefault
