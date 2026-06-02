@@ -381,8 +381,8 @@ PostgreSQL replication supports per-endpoint pool configuration via `extra` on e
                 database: "mydb",
                 /**
                  * Rotate reader connections after 60 s so pg-pool
-                 * proactively replaces them before an Aurora failover
-                 * or proxy lifetime limit drops them silently.
+                 * proactively replaces them before a proxy or read
+                 * replica lifetime limit drops them silently.
                  */
                 extra: { maxLifetimeSeconds: 60 },
             },
