@@ -27,7 +27,7 @@ export class Post {
     @Column("double")
     rating: number
 
-    @Column({ type: "varchar", length: "50", charset: "utf8mb3" })
+    @Column("varchar", { length: "50" })
     tag: string
 
     @Column("set", { enum: ["read", "write", "admin"], default: ["read"] })
