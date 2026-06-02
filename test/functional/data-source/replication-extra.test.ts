@@ -1,3 +1,7 @@
+// Regression test for https://github.com/typeorm/typeorm/issues/12555
+// Verifies that credentials.extra in replication config is merged over the
+// top-level extra when creating pg.Pool instances.
+
 import { expect } from "chai"
 import * as sinon from "sinon"
 import { DataSource } from "../../../src"
@@ -36,7 +40,7 @@ const fakeClient = {
     release() {},
 }
 
-describe("github issues > #12555 per-endpoint extra pool configuration in replication mode", () => {
+describe("Replication per-endpoint extra pool configuration (#12555)", () => {
     let sandbox: sinon.SinonSandbox
 
     const capturedOptions: Record<string, unknown>[] = []
@@ -45,7 +49,6 @@ describe("github issues > #12555 per-endpoint extra pool configuration in replic
         sandbox = sinon.createSandbox()
         capturedOptions.length = 0
 
-        // Minimal fake pg.Pool that records constructor options
         const FakePool = function (this: any, opts: Record<string, unknown>) {
             capturedOptions.push({ ...opts })
             this.options = opts
@@ -145,7 +148,7 @@ describe("github issues > #12555 per-endpoint extra pool configuration in replic
 
         const [slaveOpts, masterOpts] = capturedOptions
 
-        // Both pools get top-level extra only
+        // Both pools get top-level extra only — no per-endpoint overrides
         expect(slaveOpts.idleTimeoutMillis).to.equal(5_000)
         expect(masterOpts.idleTimeoutMillis).to.equal(5_000)
         expect(slaveOpts.maxLifetimeSeconds).to.be.undefined
