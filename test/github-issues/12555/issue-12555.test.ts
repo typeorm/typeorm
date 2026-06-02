@@ -4,6 +4,38 @@ import { DataSource } from "../../../src"
 import { PlatformTools } from "../../../src/platform/PlatformTools"
 import type { PostgresDataSourceOptions } from "../../../src/driver/postgres/PostgresDataSourceOptions"
 
+const fakeClient = {
+    query(sql: string): Promise<{ rows: any[]; rowCount: number }> {
+        if (sql.includes("version()")) {
+            return Promise.resolve({
+                rows: [
+                    {
+                        version:
+                            "PostgreSQL 14.0 on x86_64-pc-linux-gnu, compiled by gcc 8.5.0, 64-bit",
+                    },
+                ],
+                rowCount: 1,
+            })
+        }
+        if (sql.includes("current_database()")) {
+            return Promise.resolve({
+                rows: [{ current_database: "mydb" }],
+                rowCount: 1,
+            })
+        }
+        if (sql.includes("current_schema()")) {
+            return Promise.resolve({
+                rows: [{ current_schema: "public" }],
+                rowCount: 1,
+            })
+        }
+        return Promise.resolve({ rows: [], rowCount: 0 })
+    },
+    on(_event: string, _cb: Function) {},
+    removeListener(_event: string, _cb: Function) {},
+    release() {},
+}
+
 describe("github issues > #12555 per-endpoint extra pool configuration in replication mode", () => {
     let sandbox: sinon.SinonSandbox
 
@@ -17,18 +49,9 @@ describe("github issues > #12555 per-endpoint extra pool configuration in replic
         const FakePool = function (this: any, opts: Record<string, unknown>) {
             capturedOptions.push({ ...opts })
             this.options = opts
-            this.on = () => this
-            this.connect = (_cb: Function) =>
-                _cb(
-                    null,
-                    {
-                        query: () =>
-                            Promise.resolve([{ server_version: "14.0" }]),
-                        release: () => {},
-                    },
-                    () => {},
-                )
-            this.end = () => Promise.resolve()
+            this.on = (_event: string, _cb: Function) => {}
+            this.connect = (cb: Function) => cb(null, fakeClient, () => {})
+            this.end = (cb: Function) => cb(null)
         } as any
 
         sandbox.stub(PlatformTools, "load").callsFake((lib: string) => {
