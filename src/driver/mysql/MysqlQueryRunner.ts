@@ -28,6 +28,7 @@ import { validateIsolationLevel } from "../validate-isolation-level"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { MysqlDriver } from "./MysqlDriver"
+import type { ColumnChangeClassification } from "../types/ColumnTypes"
 
 /**
  * Runs queries on a single mysql database connection.
@@ -1134,385 +1135,365 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 `Column "${oldColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
-        if (
-            (newColumn.isGenerated !== oldColumn.isGenerated &&
-                newColumn.generationStrategy !== "uuid") ||
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
-            (oldColumn.generatedType &&
-                newColumn.generatedType &&
-                oldColumn.generatedType !== newColumn.generatedType) ||
-            (!oldColumn.generatedType &&
-                newColumn.generatedType === "VIRTUAL") ||
-            (oldColumn.generatedType === "VIRTUAL" && !newColumn.generatedType)
-        ) {
-            await this.dropColumn(table, oldColumn)
-            await this.addColumn(table, newColumn)
+        const action = await this.resolveColumnChangeAction(
+            table,
+            oldColumn,
+            newColumn,
+        )
 
-            // update cloned table
-            clonedTable = table.clone()
-        } else {
-            if (newColumn.name !== oldColumn.name) {
-                // We don't change any column properties, just rename it.
-                upQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
-                            oldColumn.name
-                        }\` \`${newColumn.name}\` ${this.buildCreateColumnSql(
-                            oldColumn,
-                            true,
-                            true,
-                        )}`,
-                    ),
-                )
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
-                            newColumn.name
-                        }\` \`${oldColumn.name}\` ${this.buildCreateColumnSql(
-                            oldColumn,
-                            true,
-                            true,
-                        )}`,
-                    ),
-                )
+        switch (action) {
+            case "drop-add":
+                await this.dropColumn(table, oldColumn)
+                await this.addColumn(table, newColumn)
+                clonedTable = table.clone()
+                break
 
-                // rename index constraints
-                clonedTable.findColumnIndices(oldColumn).forEach((index) => {
-                    const oldUniqueName =
-                        this.dataSource.namingStrategy.indexName(
-                            clonedTable,
-                            index.columnNames,
-                        )
-
-                    // Skip renaming if Index has user defined constraint name
-                    if (index.name !== oldUniqueName) return
-
-                    // build new constraint name
-                    index.columnNames.splice(
-                        index.columnNames.indexOf(oldColumn.name),
-                        1,
-                    )
-                    index.columnNames.push(newColumn.name)
-                    const columnNames = index.columnNames
-                        .map((column) => `\`${column}\``)
-                        .join(", ")
-                    const newIndexName =
-                        this.dataSource.namingStrategy.indexName(
-                            clonedTable,
-                            index.columnNames,
-                            index.where,
-                        )
-
-                    // build queries
-                    let indexType = ""
-                    if (index.isUnique) indexType += "UNIQUE "
-                    if (index.isSpatial) indexType += "SPATIAL "
-                    if (index.isFulltext) indexType += "FULLTEXT "
-                    const indexParser =
-                        index.isFulltext && index.parser
-                            ? ` WITH PARSER ${index.parser}`
-                            : ""
-
+            case "alter":
+                if (newColumn.name !== oldColumn.name) {
+                    // We don't change any column properties, just rename it.
                     upQueries.push(
                         new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} DROP INDEX \`${
-                                index.name
-                            }\`, ADD ${indexType}INDEX \`${newIndexName}\` (${columnNames})${indexParser}`,
+                            `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                                oldColumn.name
+                            }\` \`${newColumn.name}\` ${this.buildCreateColumnSql(
+                                oldColumn,
+                                true,
+                                true,
+                            )}`,
                         ),
                     )
                     downQueries.push(
                         new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} DROP INDEX \`${newIndexName}\`, ADD ${indexType}INDEX \`${
-                                index.name
-                            }\` (${columnNames})${indexParser}`,
+                            `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                                newColumn.name
+                            }\` \`${oldColumn.name}\` ${this.buildCreateColumnSql(
+                                oldColumn,
+                                true,
+                                true,
+                            )}`,
                         ),
                     )
 
-                    // replace constraint name
-                    index.name = newIndexName
-                })
+                    // rename index constraints
+                    clonedTable
+                        .findColumnIndices(oldColumn)
+                        .forEach((index) => {
+                            const oldUniqueName =
+                                this.dataSource.namingStrategy.indexName(
+                                    clonedTable,
+                                    index.columnNames,
+                                )
 
-                // rename foreign key constraints
-                clonedTable
-                    .findColumnForeignKeys(oldColumn)
-                    .forEach((foreignKey) => {
-                        const foreignKeyName =
-                            this.dataSource.namingStrategy.foreignKeyName(
-                                clonedTable,
-                                foreignKey.columnNames,
-                                this.getTablePath(foreignKey),
-                                foreignKey.referencedColumnNames,
+                            // Skip renaming if Index has user defined constraint name
+                            if (index.name !== oldUniqueName) return
+
+                            // build new constraint name
+                            index.columnNames.splice(
+                                index.columnNames.indexOf(oldColumn.name),
+                                1,
                             )
-
-                        // Skip renaming if foreign key has user defined constraint name
-                        if (foreignKey.name !== foreignKeyName) return
-
-                        // build new constraint name
-                        foreignKey.columnNames.splice(
-                            foreignKey.columnNames.indexOf(oldColumn.name),
-                            1,
-                        )
-                        foreignKey.columnNames.push(newColumn.name)
-                        const columnNames = foreignKey.columnNames
-                            .map((column) => `\`${column}\``)
-                            .join(", ")
-                        const referencedColumnNames =
-                            foreignKey.referencedColumnNames
+                            index.columnNames.push(newColumn.name)
+                            const columnNames = index.columnNames
                                 .map((column) => `\`${column}\``)
-                                .join(",")
-                        const newForeignKeyName =
-                            this.dataSource.namingStrategy.foreignKeyName(
-                                clonedTable,
-                                foreignKey.columnNames,
-                                this.getTablePath(foreignKey),
-                                foreignKey.referencedColumnNames,
+                                .join(", ")
+                            const newIndexName =
+                                this.dataSource.namingStrategy.indexName(
+                                    clonedTable,
+                                    index.columnNames,
+                                    index.where,
+                                )
+
+                            // build queries
+                            let indexType = ""
+                            if (index.isUnique) indexType += "UNIQUE "
+                            if (index.isSpatial) indexType += "SPATIAL "
+                            if (index.isFulltext) indexType += "FULLTEXT "
+                            const indexParser =
+                                index.isFulltext && index.parser
+                                    ? ` WITH PARSER ${index.parser}`
+                                    : ""
+
+                            upQueries.push(
+                                new Query(
+                                    `ALTER TABLE ${this.escapePath(
+                                        table,
+                                    )} DROP INDEX \`${
+                                        index.name
+                                    }\`, ADD ${indexType}INDEX \`${newIndexName}\` (${columnNames})${indexParser}`,
+                                ),
+                            )
+                            downQueries.push(
+                                new Query(
+                                    `ALTER TABLE ${this.escapePath(
+                                        table,
+                                    )} DROP INDEX \`${newIndexName}\`, ADD ${indexType}INDEX \`${
+                                        index.name
+                                    }\` (${columnNames})${indexParser}`,
+                                ),
                             )
 
-                        // build queries
-                        let up =
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} DROP FOREIGN KEY \`${
-                                foreignKey.name
-                            }\`, ADD CONSTRAINT \`${newForeignKeyName}\` FOREIGN KEY (${columnNames}) ` +
-                            `REFERENCES ${this.escapePath(
-                                this.getTablePath(foreignKey),
-                            )}(${referencedColumnNames})`
-                        if (foreignKey.onDelete)
-                            up += ` ON DELETE ${foreignKey.onDelete}`
-                        if (foreignKey.onUpdate)
-                            up += ` ON UPDATE ${foreignKey.onUpdate}`
+                            // replace constraint name
+                            index.name = newIndexName
+                        })
 
-                        let down =
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} DROP FOREIGN KEY \`${newForeignKeyName}\`, ADD CONSTRAINT \`${
-                                foreignKey.name
-                            }\` FOREIGN KEY (${columnNames}) ` +
-                            `REFERENCES ${this.escapePath(
-                                this.getTablePath(foreignKey),
-                            )}(${referencedColumnNames})`
-                        if (foreignKey.onDelete)
-                            down += ` ON DELETE ${foreignKey.onDelete}`
-                        if (foreignKey.onUpdate)
-                            down += ` ON UPDATE ${foreignKey.onUpdate}`
+                    // rename foreign key constraints
+                    clonedTable
+                        .findColumnForeignKeys(oldColumn)
+                        .forEach((foreignKey) => {
+                            const foreignKeyName =
+                                this.dataSource.namingStrategy.foreignKeyName(
+                                    clonedTable,
+                                    foreignKey.columnNames,
+                                    this.getTablePath(foreignKey),
+                                    foreignKey.referencedColumnNames,
+                                )
 
-                        upQueries.push(new Query(up))
-                        downQueries.push(new Query(down))
+                            // Skip renaming if foreign key has user defined constraint name
+                            if (foreignKey.name !== foreignKeyName) return
 
-                        // replace constraint name
-                        foreignKey.name = newForeignKeyName
-                    })
+                            // build new constraint name
+                            foreignKey.columnNames.splice(
+                                foreignKey.columnNames.indexOf(oldColumn.name),
+                                1,
+                            )
+                            foreignKey.columnNames.push(newColumn.name)
+                            const columnNames = foreignKey.columnNames
+                                .map((column) => `\`${column}\``)
+                                .join(", ")
+                            const referencedColumnNames =
+                                foreignKey.referencedColumnNames
+                                    .map((column) => `\`${column}\``)
+                                    .join(",")
+                            const newForeignKeyName =
+                                this.dataSource.namingStrategy.foreignKeyName(
+                                    clonedTable,
+                                    foreignKey.columnNames,
+                                    this.getTablePath(foreignKey),
+                                    foreignKey.referencedColumnNames,
+                                )
 
-                // rename old column in the Table object
-                const oldTableColumn = clonedTable.columns.find(
-                    (column) => column.name === oldColumn.name,
-                )
-                clonedTable.columns[
-                    clonedTable.columns.indexOf(oldTableColumn!)
-                ].name = newColumn.name
-                oldColumn.name = newColumn.name
-            }
+                            // build queries
+                            let up =
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} DROP FOREIGN KEY \`${
+                                    foreignKey.name
+                                }\`, ADD CONSTRAINT \`${newForeignKeyName}\` FOREIGN KEY (${columnNames}) ` +
+                                `REFERENCES ${this.escapePath(
+                                    this.getTablePath(foreignKey),
+                                )}(${referencedColumnNames})`
+                            if (foreignKey.onDelete)
+                                up += ` ON DELETE ${foreignKey.onDelete}`
+                            if (foreignKey.onUpdate)
+                                up += ` ON UPDATE ${foreignKey.onUpdate}`
 
-            if (this.isColumnChanged(oldColumn, newColumn, true, true)) {
-                upQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
-                            oldColumn.name
-                        }\` ${this.buildCreateColumnSql(newColumn, true)}`,
-                    ),
-                )
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
-                            newColumn.name
-                        }\` ${this.buildCreateColumnSql(oldColumn, true)}`,
-                    ),
-                )
+                            let down =
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} DROP FOREIGN KEY \`${newForeignKeyName}\`, ADD CONSTRAINT \`${
+                                    foreignKey.name
+                                }\` FOREIGN KEY (${columnNames}) ` +
+                                `REFERENCES ${this.escapePath(
+                                    this.getTablePath(foreignKey),
+                                )}(${referencedColumnNames})`
+                            if (foreignKey.onDelete)
+                                down += ` ON DELETE ${foreignKey.onDelete}`
+                            if (foreignKey.onUpdate)
+                                down += ` ON UPDATE ${foreignKey.onUpdate}`
 
-                if (oldColumn.generatedType && !newColumn.generatedType) {
-                    // if column changed from generated to non-generated, delete record from typeorm metadata
+                            upQueries.push(new Query(up))
+                            downQueries.push(new Query(down))
 
-                    const currentDatabase = await this.getCurrentDatabase()
-                    const deleteQuery = this.deleteTypeormMetadataSql({
-                        schema: currentDatabase,
-                        table: table.name,
-                        type: MetadataTableType.GENERATED_COLUMN,
-                        name: oldColumn.name,
-                    })
-                    const insertQuery = this.insertTypeormMetadataSql({
-                        schema: currentDatabase,
-                        table: table.name,
-                        type: MetadataTableType.GENERATED_COLUMN,
-                        name: oldColumn.name,
-                        value: oldColumn.asExpression,
-                    })
+                            // replace constraint name
+                            foreignKey.name = newForeignKeyName
+                        })
 
-                    upQueries.push(deleteQuery)
-                    downQueries.push(insertQuery)
-                } else if (
-                    !oldColumn.generatedType &&
-                    newColumn.generatedType
+                    // rename old column in the Table object
+                    const oldTableColumn = clonedTable.columns.find(
+                        (column) => column.name === oldColumn.name,
+                    )
+                    clonedTable.columns[
+                        clonedTable.columns.indexOf(oldTableColumn!)
+                    ].name = newColumn.name
+                    oldColumn.name = newColumn.name
+                }
+
+                if (
+                    oldColumn.type !== newColumn.type ||
+                    oldColumn.length !== newColumn.length ||
+                    this.isColumnChanged(oldColumn, newColumn, true, true)
                 ) {
-                    // if column changed from non-generated to generated, insert record into typeorm metadata
-
-                    const currentDatabase = await this.getCurrentDatabase()
-                    const insertQuery = this.insertTypeormMetadataSql({
-                        schema: currentDatabase,
-                        table: table.name,
-                        type: MetadataTableType.GENERATED_COLUMN,
-                        name: newColumn.name,
-                        value: newColumn.asExpression,
-                    })
-                    const deleteQuery = this.deleteTypeormMetadataSql({
-                        schema: currentDatabase,
-                        table: table.name,
-                        type: MetadataTableType.GENERATED_COLUMN,
-                        name: newColumn.name,
-                    })
-
-                    upQueries.push(insertQuery)
-                    downQueries.push(deleteQuery)
-                } else if (oldColumn.asExpression !== newColumn.asExpression) {
-                    // if only expression changed, just update it in typeorm_metadata table
-                    const currentDatabase = await this.getCurrentDatabase()
-                    const updateQuery = this.dataSource
-                        .createQueryBuilder()
-                        .update(this.getTypeormMetadataTableName())
-                        .set({ value: newColumn.asExpression })
-                        .where("`type` = :type", {
-                            type: MetadataTableType.GENERATED_COLUMN,
-                        })
-                        .andWhere("`name` = :name", { name: oldColumn.name })
-                        .andWhere("`schema` = :schema", {
-                            schema: currentDatabase,
-                        })
-                        .andWhere("`table` = :table", { table: table.name })
-                        .getQueryAndParameters()
-
-                    const revertUpdateQuery = this.dataSource
-                        .createQueryBuilder()
-                        .update(this.getTypeormMetadataTableName())
-                        .set({ value: oldColumn.asExpression })
-                        .where("`type` = :type", {
-                            type: MetadataTableType.GENERATED_COLUMN,
-                        })
-                        .andWhere("`name` = :name", { name: newColumn.name })
-                        .andWhere("`schema` = :schema", {
-                            schema: currentDatabase,
-                        })
-                        .andWhere("`table` = :table", { table: table.name })
-                        .getQueryAndParameters()
-
-                    upQueries.push(new Query(updateQuery[0], updateQuery[1]))
-                    downQueries.push(
-                        new Query(revertUpdateQuery[0], revertUpdateQuery[1]),
-                    )
-                }
-            }
-
-            if (newColumn.isPrimary !== oldColumn.isPrimary) {
-                // if table have generated column, we must drop AUTO_INCREMENT before changing primary constraints.
-                const generatedColumn = clonedTable.columns.find(
-                    (column) =>
-                        column.isGenerated &&
-                        column.generationStrategy === "increment",
-                )
-                if (generatedColumn) {
-                    const nonGeneratedColumn = generatedColumn.clone()
-                    nonGeneratedColumn.isGenerated = false
-                    nonGeneratedColumn.generationStrategy = undefined
-
                     upQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
-                                generatedColumn.name
-                            }\` ${this.buildCreateColumnSql(
-                                nonGeneratedColumn,
-                                true,
-                            )}`,
+                                oldColumn.name
+                            }\` ${this.buildCreateColumnSql(newColumn, true)}`,
                         ),
                     )
                     downQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
-                                nonGeneratedColumn.name
-                            }\` ${this.buildCreateColumnSql(
-                                generatedColumn,
-                                true,
-                            )}`,
+                                newColumn.name
+                            }\` ${this.buildCreateColumnSql(oldColumn, true)}`,
                         ),
                     )
+
+                    if (oldColumn.generatedType && !newColumn.generatedType) {
+                        // if column changed from generated to non-generated, delete record from typeorm metadata
+
+                        const currentDatabase = await this.getCurrentDatabase()
+                        const deleteQuery = this.deleteTypeormMetadataSql({
+                            schema: currentDatabase,
+                            table: table.name,
+                            type: MetadataTableType.GENERATED_COLUMN,
+                            name: oldColumn.name,
+                        })
+                        const insertQuery = this.insertTypeormMetadataSql({
+                            schema: currentDatabase,
+                            table: table.name,
+                            type: MetadataTableType.GENERATED_COLUMN,
+                            name: oldColumn.name,
+                            value: oldColumn.asExpression,
+                        })
+
+                        upQueries.push(deleteQuery)
+                        downQueries.push(insertQuery)
+                    } else if (
+                        !oldColumn.generatedType &&
+                        newColumn.generatedType
+                    ) {
+                        // if column changed from non-generated to generated, insert record into typeorm metadata
+
+                        const currentDatabase = await this.getCurrentDatabase()
+                        const insertQuery = this.insertTypeormMetadataSql({
+                            schema: currentDatabase,
+                            table: table.name,
+                            type: MetadataTableType.GENERATED_COLUMN,
+                            name: newColumn.name,
+                            value: newColumn.asExpression,
+                        })
+                        const deleteQuery = this.deleteTypeormMetadataSql({
+                            schema: currentDatabase,
+                            table: table.name,
+                            type: MetadataTableType.GENERATED_COLUMN,
+                            name: newColumn.name,
+                        })
+
+                        upQueries.push(insertQuery)
+                        downQueries.push(deleteQuery)
+                    } else if (
+                        oldColumn.asExpression !== newColumn.asExpression
+                    ) {
+                        // if only expression changed, just update it in typeorm_metadata table
+                        const currentDatabase = await this.getCurrentDatabase()
+                        const updateQuery = this.dataSource
+                            .createQueryBuilder()
+                            .update(this.getTypeormMetadataTableName())
+                            .set({ value: newColumn.asExpression })
+                            .where("`type` = :type", {
+                                type: MetadataTableType.GENERATED_COLUMN,
+                            })
+                            .andWhere("`name` = :name", {
+                                name: oldColumn.name,
+                            })
+                            .andWhere("`schema` = :schema", {
+                                schema: currentDatabase,
+                            })
+                            .andWhere("`table` = :table", { table: table.name })
+                            .getQueryAndParameters()
+
+                        const revertUpdateQuery = this.dataSource
+                            .createQueryBuilder()
+                            .update(this.getTypeormMetadataTableName())
+                            .set({ value: oldColumn.asExpression })
+                            .where("`type` = :type", {
+                                type: MetadataTableType.GENERATED_COLUMN,
+                            })
+                            .andWhere("`name` = :name", {
+                                name: newColumn.name,
+                            })
+                            .andWhere("`schema` = :schema", {
+                                schema: currentDatabase,
+                            })
+                            .andWhere("`table` = :table", { table: table.name })
+                            .getQueryAndParameters()
+
+                        upQueries.push(
+                            new Query(updateQuery[0], updateQuery[1]),
+                        )
+                        downQueries.push(
+                            new Query(
+                                revertUpdateQuery[0],
+                                revertUpdateQuery[1],
+                            ),
+                        )
+                    }
                 }
 
-                const primaryColumns = clonedTable.primaryColumns
+                if (newColumn.isPrimary !== oldColumn.isPrimary) {
+                    // if table have generated column, we must drop AUTO_INCREMENT before changing primary constraints.
+                    const generatedColumn = clonedTable.columns.find(
+                        (column) =>
+                            column.isGenerated &&
+                            column.generationStrategy === "increment",
+                    )
+                    if (generatedColumn) {
+                        const nonGeneratedColumn = generatedColumn.clone()
+                        nonGeneratedColumn.isGenerated = false
+                        nonGeneratedColumn.generationStrategy = undefined
 
-                // if primary column state changed, we must always drop existed constraint.
-                if (primaryColumns.length > 0) {
-                    const columnNames = primaryColumns
-                        .map((column) => `\`${column.name}\``)
-                        .join(", ")
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} DROP PRIMARY KEY`,
-                        ),
-                    )
-                    downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} ADD PRIMARY KEY (${columnNames})`,
-                        ),
-                    )
-                }
+                        upQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                                    generatedColumn.name
+                                }\` ${this.buildCreateColumnSql(
+                                    nonGeneratedColumn,
+                                    true,
+                                )}`,
+                            ),
+                        )
+                        downQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                                    nonGeneratedColumn.name
+                                }\` ${this.buildCreateColumnSql(
+                                    generatedColumn,
+                                    true,
+                                )}`,
+                            ),
+                        )
+                    }
 
-                if (newColumn.isPrimary === true) {
-                    primaryColumns.push(newColumn)
-                    // update column in table
-                    const column = clonedTable.columns.find(
-                        (column) => column.name === newColumn.name,
-                    )
-                    column!.isPrimary = true
-                    const columnNames = primaryColumns
-                        .map((column) => `\`${column.name}\``)
-                        .join(", ")
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} ADD PRIMARY KEY (${columnNames})`,
-                        ),
-                    )
-                    downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} DROP PRIMARY KEY`,
-                        ),
-                    )
-                } else {
-                    const primaryColumn = primaryColumns.find(
-                        (c) => c.name === newColumn.name,
-                    )
-                    primaryColumns.splice(
-                        primaryColumns.indexOf(primaryColumn!),
-                        1,
-                    )
-                    // update column in table
-                    const column = clonedTable.columns.find(
-                        (column) => column.name === newColumn.name,
-                    )
-                    column!.isPrimary = false
+                    const primaryColumns = clonedTable.primaryColumns
 
-                    // if we have another primary keys, we must recreate constraint.
+                    // if primary column state changed, we must always drop existed constraint.
                     if (primaryColumns.length > 0) {
+                        const columnNames = primaryColumns
+                            .map((column) => `\`${column.name}\``)
+                            .join(", ")
+                        upQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} DROP PRIMARY KEY`,
+                            ),
+                        )
+                        downQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} ADD PRIMARY KEY (${columnNames})`,
+                            ),
+                        )
+                    }
+
+                    if (newColumn.isPrimary === true) {
+                        primaryColumns.push(newColumn)
+                        // update column in table
+                        const column = clonedTable.columns.find(
+                            (column) => column.name === newColumn.name,
+                        )
+                        column!.isPrimary = true
                         const columnNames = primaryColumns
                             .map((column) => `\`${column.name}\``)
                             .join(", ")
@@ -1530,111 +1511,149 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                                 )} DROP PRIMARY KEY`,
                             ),
                         )
+                    } else {
+                        const primaryColumn = primaryColumns.find(
+                            (c) => c.name === newColumn.name,
+                        )
+                        primaryColumns.splice(
+                            primaryColumns.indexOf(primaryColumn!),
+                            1,
+                        )
+                        // update column in table
+                        const column = clonedTable.columns.find(
+                            (column) => column.name === newColumn.name,
+                        )
+                        column!.isPrimary = false
+
+                        // if we have another primary keys, we must recreate constraint.
+                        if (primaryColumns.length > 0) {
+                            const columnNames = primaryColumns
+                                .map((column) => `\`${column.name}\``)
+                                .join(", ")
+                            upQueries.push(
+                                new Query(
+                                    `ALTER TABLE ${this.escapePath(
+                                        table,
+                                    )} ADD PRIMARY KEY (${columnNames})`,
+                                ),
+                            )
+                            downQueries.push(
+                                new Query(
+                                    `ALTER TABLE ${this.escapePath(
+                                        table,
+                                    )} DROP PRIMARY KEY`,
+                                ),
+                            )
+                        }
+                    }
+
+                    // if we have generated column, and we dropped AUTO_INCREMENT property before, we must bring it back
+                    if (generatedColumn) {
+                        const nonGeneratedColumn = generatedColumn.clone()
+                        nonGeneratedColumn.isGenerated = false
+                        nonGeneratedColumn.generationStrategy = undefined
+
+                        upQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                                    nonGeneratedColumn.name
+                                }\` ${this.buildCreateColumnSql(
+                                    generatedColumn,
+                                    true,
+                                )}`,
+                            ),
+                        )
+                        downQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                                    generatedColumn.name
+                                }\` ${this.buildCreateColumnSql(
+                                    nonGeneratedColumn,
+                                    true,
+                                )}`,
+                            ),
+                        )
                     }
                 }
 
-                // if we have generated column, and we dropped AUTO_INCREMENT property before, we must bring it back
-                if (generatedColumn) {
-                    const nonGeneratedColumn = generatedColumn.clone()
-                    nonGeneratedColumn.isGenerated = false
-                    nonGeneratedColumn.generationStrategy = undefined
-
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
-                                nonGeneratedColumn.name
-                            }\` ${this.buildCreateColumnSql(
-                                generatedColumn,
-                                true,
-                            )}`,
-                        ),
-                    )
-                    downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
-                                generatedColumn.name
-                            }\` ${this.buildCreateColumnSql(
-                                nonGeneratedColumn,
-                                true,
-                            )}`,
-                        ),
-                    )
-                }
-            }
-
-            if (newColumn.isUnique !== oldColumn.isUnique) {
-                if (newColumn.isUnique === true) {
-                    const uniqueIndex = new TableIndex({
-                        name: this.dataSource.namingStrategy.indexName(table, [
-                            newColumn.name,
-                        ]),
-                        columnNames: [newColumn.name],
-                        isUnique: true,
-                    })
-                    clonedTable.indices.push(uniqueIndex)
-                    clonedTable.uniques.push(
-                        new TableUnique({
-                            name: uniqueIndex.name,
-                            columnNames: uniqueIndex.columnNames,
-                        }),
-                    )
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
+                if (newColumn.isUnique !== oldColumn.isUnique) {
+                    if (newColumn.isUnique === true) {
+                        const uniqueIndex = new TableIndex({
+                            name: this.dataSource.namingStrategy.indexName(
                                 table,
-                            )} ADD UNIQUE INDEX \`${uniqueIndex.name}\` (\`${
-                                newColumn.name
-                            }\`)`,
-                        ),
-                    )
-                    downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} DROP INDEX \`${uniqueIndex.name}\``,
-                        ),
-                    )
-                } else {
-                    const uniqueIndex = clonedTable.indices.find((index) => {
-                        return (
-                            index.columnNames.length === 1 &&
-                            index.isUnique === true &&
-                            !!index.columnNames.find(
-                                (columnName) => columnName === newColumn.name,
-                            )
+                                [newColumn.name],
+                            ),
+                            columnNames: [newColumn.name],
+                            isUnique: true,
+                        })
+                        clonedTable.indices.push(uniqueIndex)
+                        clonedTable.uniques.push(
+                            new TableUnique({
+                                name: uniqueIndex.name,
+                                columnNames: uniqueIndex.columnNames,
+                            }),
                         )
-                    })
-                    clonedTable.indices.splice(
-                        clonedTable.indices.indexOf(uniqueIndex!),
-                        1,
-                    )
+                        upQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} ADD UNIQUE INDEX \`${uniqueIndex.name}\` (\`${
+                                    newColumn.name
+                                }\`)`,
+                            ),
+                        )
+                        downQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} DROP INDEX \`${uniqueIndex.name}\``,
+                            ),
+                        )
+                    } else {
+                        const uniqueIndex = clonedTable.indices.find(
+                            (index) => {
+                                return (
+                                    index.columnNames.length === 1 &&
+                                    index.isUnique === true &&
+                                    !!index.columnNames.find(
+                                        (columnName) =>
+                                            columnName === newColumn.name,
+                                    )
+                                )
+                            },
+                        )
+                        clonedTable.indices.splice(
+                            clonedTable.indices.indexOf(uniqueIndex!),
+                            1,
+                        )
 
-                    const tableUnique = clonedTable.uniques.find(
-                        (unique) => unique.name === uniqueIndex!.name,
-                    )
-                    clonedTable.uniques.splice(
-                        clonedTable.uniques.indexOf(tableUnique!),
-                        1,
-                    )
+                        const tableUnique = clonedTable.uniques.find(
+                            (unique) => unique.name === uniqueIndex!.name,
+                        )
+                        clonedTable.uniques.splice(
+                            clonedTable.uniques.indexOf(tableUnique!),
+                            1,
+                        )
 
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} DROP INDEX \`${uniqueIndex!.name}\``,
-                        ),
-                    )
-                    downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} ADD UNIQUE INDEX \`${uniqueIndex!.name}\` (\`${
-                                newColumn.name
-                            }\`)`,
-                        ),
-                    )
+                        upQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} DROP INDEX \`${uniqueIndex!.name}\``,
+                            ),
+                        )
+                        downQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} ADD UNIQUE INDEX \`${uniqueIndex!.name}\` (\`${
+                                    newColumn.name
+                                }\`)`,
+                            ),
+                        )
+                    }
                 }
-            }
+                break
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -1654,6 +1673,487 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         for (const { oldColumn, newColumn } of changedColumns) {
             await this.changeColumn(tableOrName, oldColumn, newColumn)
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // Column Change Classification (changeStrategy support)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Determines what action to take for a column type/length change based on
+     * the configured `changeStrategy` and the classification result.
+     *
+     * @param table
+     * @param oldColumn
+     * @param newColumn
+     */
+    protected async resolveColumnChangeAction(
+        table: Table,
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+    ): Promise<"drop-add" | "alter"> {
+        const generatedTypeChanged =
+            ((oldColumn.generatedType &&
+                newColumn.generatedType &&
+                oldColumn.generatedType !== newColumn.generatedType) ??
+                (!oldColumn.generatedType &&
+                    newColumn.generatedType === "VIRTUAL")) ||
+            (oldColumn.generatedType === "VIRTUAL" && !newColumn.generatedType)
+
+        if (generatedTypeChanged) return "drop-add"
+
+        const columnMetadata = this.dataSource.entityMetadatas
+            .find((m) => this.getTablePath(table) === this.getTablePath(m))
+            ?.columns.find((c) => c.databaseName === newColumn.name)
+
+        const strategy = columnMetadata?.changeStrategy ?? "drop-add"
+
+        const typeOrLengthChanged =
+            (newColumn.isGenerated !== oldColumn.isGenerated &&
+                newColumn.generationStrategy !== "uuid") ||
+            oldColumn.type !== newColumn.type ||
+            oldColumn.length !== newColumn.length
+
+        if (strategy === "drop-add") {
+            return typeOrLengthChanged ? "drop-add" : "alter"
+        }
+
+        const classification = this.classifyColumnChange(
+            oldColumn,
+            newColumn,
+            table,
+        )
+
+        if (classification === "widen" || classification === "no-change") {
+            return "alter"
+        }
+
+        // 'alter' strategy: always use ALTER, warn on narrow/incompatible
+        if (strategy === "alter") {
+            const label =
+                classification === "incompatible" ? "incompatible" : "narrow"
+            const oldType = oldColumn.type as ColumnType
+            const newType = newColumn.type as ColumnType
+            const isPrecisionChange =
+                oldType === newType &&
+                this.driver.temporalPrecisionTypes.includes(oldType)
+            const detail = isPrecisionChange
+                ? "ALTER will truncate precision."
+                : "ALTER will be attempted -- the database will reject if data does not fit."
+            this.sqlInMemory.warnings.push(
+                `column change in "${table.name}" [${label}]: ` +
+                    `${oldColumn.name} ${oldColumn.type}${oldColumn.length ? `(${oldColumn.length})` : ""} to ` +
+                    `${newColumn.type}${newColumn.length ? `(${newColumn.length})` : ""}\n` +
+                    `  ${detail}`,
+            )
+            return "alter"
+        }
+
+        // 'auto' strategy: ALTER when data fits, DROP+ADD when it doesn't
+        if (classification === "incompatible") {
+            this.sqlInMemory.warnings.push(
+                `column change in "${table.name}" requires drop+add: ` +
+                    `${oldColumn.name} ${oldColumn.type}${oldColumn.length ? `(${oldColumn.length})` : ""} to ` +
+                    `${newColumn.type}${newColumn.length ? `(${newColumn.length})` : ""} [incompatible]\n` +
+                    `  Using DROP+ADD to fulfill schema change.`,
+            )
+            return "drop-add"
+        }
+
+        // classification === "narrow" in auto mode: check data
+        const checkQuery = this.buildDataCheckQuery(table, oldColumn, newColumn)
+
+        if (!checkQuery) {
+            this.sqlInMemory.warnings.push(
+                `column change in "${table.name}" may truncate data: ` +
+                    `${oldColumn.name} ${oldColumn.type}${oldColumn.length ? `(${oldColumn.length})` : ""} to ` +
+                    `${newColumn.type}${newColumn.length ? `(${newColumn.length})` : ""} [narrow]\n` +
+                    `  No data check available -- ALTER will be used. Precision may be lost.`,
+            )
+            return "alter"
+        }
+
+        const exceeds = await this.dataExceedsBoundsForChange(
+            table,
+            oldColumn,
+            newColumn,
+        )
+        if (!exceeds) return "alter"
+
+        this.sqlInMemory.warnings.push(
+            `column change in "${table.name}" requires drop+add: ` +
+                `${oldColumn.name} ${oldColumn.type}${oldColumn.length ? `(${oldColumn.length})` : ""} to ` +
+                `${newColumn.type}${newColumn.length ? `(${newColumn.length})` : ""} [narrow]\n` +
+                `  Data exceeds new bounds -- using DROP+ADD.\n` +
+                `  Check: ${checkQuery}`,
+        )
+        return "drop-add"
+    }
+
+    protected classifyColumnChange(
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+        table: Table,
+    ): ColumnChangeClassification {
+        const oldType = oldColumn.type as ColumnType
+        const newType = newColumn.type as ColumnType
+
+        if (
+            (oldColumn.generatedType &&
+                newColumn.generatedType &&
+                oldColumn.generatedType !== newColumn.generatedType) ||
+            (!oldColumn.generatedType &&
+                newColumn.generatedType === "VIRTUAL") ||
+            (oldColumn.generatedType === "VIRTUAL" && !newColumn.generatedType)
+        ) {
+            return "incompatible"
+        }
+
+        if (this.columnParticipatesInFK(oldColumn, table)) {
+            if (
+                oldType !== newType ||
+                oldColumn.unsigned !== newColumn.unsigned
+            ) {
+                return "incompatible"
+            }
+        }
+
+        if (oldType === newType) {
+            return this.classifySameType(oldColumn, newColumn, oldType)
+        }
+
+        return this.classifyCrossType(oldColumn, newColumn, oldType, newType)
+    }
+
+    protected async dataExceedsBoundsForChange(
+        table: Table,
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+    ): Promise<boolean> {
+        const query = this.buildDataCheckQuery(table, oldColumn, newColumn)
+        if (!query) {
+            return false
+        }
+
+        try {
+            const result = await this.query(query)
+            const row = result[0]
+            const value = Object.values(row)[0]
+            return value === 1 || value === "1" || value === true
+        } catch (err) {
+            this.driver.dataSource.logger.logQueryError(
+                err as string,
+                query,
+                [],
+                this,
+            )
+            return true
+        }
+    }
+
+    private classifySameType(
+        oldCol: TableColumn,
+        newCol: TableColumn,
+        type: ColumnType,
+    ): ColumnChangeClassification {
+        let classification: ColumnChangeClassification = "no-change"
+
+        if (this.driver.withLengthColumnTypes.includes(type)) {
+            const oldLen = parseInt(oldCol.length || "0", 10)
+            const newLen = parseInt(newCol.length || "0", 10)
+            if (newLen > oldLen) classification = "widen"
+            else if (newLen < oldLen) classification = "narrow"
+        }
+
+        if (type === "decimal") {
+            const oldP = oldCol.precision ?? 10
+            const oldS = oldCol.scale ?? 0
+            const newP = newCol.precision ?? 10
+            const newS = newCol.scale ?? 0
+            const oldIntDigits = oldP - oldS
+            const newIntDigits = newP - newS
+            if (newIntDigits >= oldIntDigits && newS >= oldS) {
+                if (newIntDigits > oldIntDigits || newS > oldS)
+                    classification = "widen"
+            } else {
+                classification = "narrow"
+            }
+        }
+
+        if (this.driver.temporalPrecisionTypes.includes(type)) {
+            const oldPrec = oldCol.precision ?? 0
+            const newPrec = newCol.precision ?? 0
+            if (newPrec > oldPrec) classification = "widen"
+            else if (newPrec < oldPrec) classification = "narrow"
+        }
+
+        if (type === "enum" || type === "set") {
+            const oldVals = oldCol.enum ?? []
+            const newVals = newCol.enum ?? []
+            if (!this.arraysStrictEqual(oldVals, newVals)) {
+                const isPrefix =
+                    newVals.length > oldVals.length &&
+                    oldVals.every((val, idx) => newVals[idx] === val)
+                if (isPrefix) {
+                    classification = "widen"
+                } else {
+                    const newSet = new Set(newVals)
+                    const reordered = oldVals.some(
+                        (val, idx) =>
+                            newVals.indexOf(val) !== -1 &&
+                            newVals.indexOf(val) !== idx,
+                    )
+                    if (reordered) return "incompatible"
+                    const removed = oldVals.filter((v) => !newSet.has(v))
+                    if (removed.length > 0) classification = "narrow"
+                }
+            }
+        }
+
+        if (this.driver.intHierarchy.includes(type)) {
+            if (oldCol.unsigned && !newCol.unsigned) {
+                if (classification === "no-change") classification = "widen"
+            } else if (!oldCol.unsigned && newCol.unsigned) {
+                classification = "narrow"
+            }
+        }
+
+        if (!oldCol.isNullable && newCol.isNullable) {
+            if (classification === "no-change") classification = "widen"
+        } else if (oldCol.isNullable && !newCol.isNullable) {
+            classification = "narrow"
+        }
+
+        if (oldCol.charset && newCol.charset) {
+            const cr = this.classifyCharsetChange(
+                oldCol.charset,
+                newCol.charset,
+            )
+            if (cr === "widen" && classification === "no-change")
+                classification = "widen"
+            else if (cr === "incompatible") classification = "incompatible"
+        }
+
+        if (oldCol.collation !== newCol.collation) {
+            if (classification === "no-change") classification = "widen"
+        }
+
+        return classification
+    }
+
+    private classifyCrossType(
+        oldCol: TableColumn,
+        newCol: TableColumn,
+        oldType: ColumnType,
+        newType: ColumnType,
+    ): ColumnChangeClassification {
+        const oldIntIdx = this.driver.intHierarchy.indexOf(oldType)
+        const newIntIdx = this.driver.intHierarchy.indexOf(newType)
+        if (oldIntIdx !== -1 && newIntIdx !== -1) {
+            if (oldCol.unsigned !== newCol.unsigned) return "incompatible"
+            return newIntIdx > oldIntIdx ? "widen" : "narrow"
+        }
+
+        const oldTextIdx = this.driver.textHierarchy.indexOf(oldType)
+        const newTextIdx = this.driver.textHierarchy.indexOf(newType)
+        if (oldTextIdx !== -1 && newTextIdx !== -1) {
+            return newTextIdx > oldTextIdx ? "widen" : "narrow"
+        }
+
+        const oldBlobIdx = this.driver.blobHierarchy.indexOf(oldType)
+        const newBlobIdx = this.driver.blobHierarchy.indexOf(newType)
+        if (oldBlobIdx !== -1 && newBlobIdx !== -1) {
+            return newBlobIdx > oldBlobIdx ? "widen" : "narrow"
+        }
+
+        if (oldType === "float" && newType === "double") return "widen"
+        if (oldType === "double" && newType === "float") return "narrow"
+
+        if (
+            (oldType === "char" && newType === "varchar") ||
+            (oldType === "varchar" && newType === "char")
+        ) {
+            const oldLen = parseInt(oldCol.length || "0", 10)
+            const newLen = parseInt(newCol.length || "0", 10)
+            if (oldType === "char" && newType === "varchar") {
+                return newLen >= oldLen ? "widen" : "narrow"
+            }
+            return "narrow"
+        }
+
+        if (
+            (oldType === "timestamp" && newType === "datetime") ||
+            (oldType === "date" && newType === "datetime")
+        ) {
+            return "widen"
+        }
+
+        if (
+            (oldType === "datetime" && newType === "date") ||
+            (oldType === "datetime" && newType === "timestamp")
+        ) {
+            return "narrow"
+        }
+
+        if (
+            (this.driver.textHierarchy.includes(oldType) &&
+                this.driver.blobHierarchy.includes(newType)) ||
+            (this.driver.blobHierarchy.includes(oldType) &&
+                this.driver.textHierarchy.includes(newType))
+        ) {
+            return "incompatible"
+        }
+
+        return "incompatible"
+    }
+
+    private classifyCharsetChange(
+        oldCharset: string,
+        newCharset: string,
+    ): ColumnChangeClassification {
+        const old = oldCharset.toLowerCase()
+        const nw = newCharset.toLowerCase()
+        if (old === nw) return "no-change"
+        if ((old === "utf8" || old === "utf8mb3") && nw === "utf8mb4")
+            return "widen"
+        if (old === "utf8mb4" && (nw === "utf8" || nw === "utf8mb3"))
+            return "narrow"
+        if (
+            old === "latin1" &&
+            (nw === "utf8" || nw === "utf8mb3" || nw === "utf8mb4")
+        )
+            return "widen"
+        return "incompatible"
+    }
+
+    private columnParticipatesInFK(column: TableColumn, table: Table): boolean {
+        return table.foreignKeys.some((fk) =>
+            fk.columnNames.includes(column.name),
+        )
+    }
+
+    private arraysStrictEqual(a: string[], b: string[]): boolean {
+        if (a.length !== b.length) return false
+        return a.every((val, idx) => val === b[idx])
+    }
+
+    private buildDataCheckQuery(
+        table: Table,
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+    ): string | null {
+        const oldType = oldColumn.type as ColumnType
+        const newType = newColumn.type as ColumnType
+        const escapedTable = this.escapePath(table)
+        const escapedCol = `\`${oldColumn.name.replaceAll("`", "``")}\``
+
+        if (
+            oldType === newType &&
+            this.driver.withLengthColumnTypes.includes(oldType)
+        ) {
+            const oldLen = parseInt(oldColumn.length || "0", 10)
+            const newLen = parseInt(newColumn.length || "0", 10)
+            if (newLen < oldLen) {
+                if (oldType === "varbinary" || oldType === "binary") {
+                    return `SELECT EXISTS(SELECT 1 FROM ${escapedTable} WHERE LENGTH(${escapedCol}) > ${newLen} LIMIT 1)`
+                }
+                return `SELECT EXISTS(SELECT 1 FROM ${escapedTable} WHERE CHAR_LENGTH(${escapedCol}) > ${newLen} LIMIT 1)`
+            }
+        }
+
+        const oldIntIdx = this.driver.intHierarchy.indexOf(oldType)
+        const newIntIdx = this.driver.intHierarchy.indexOf(newType)
+        if (oldIntIdx !== -1 && newIntIdx !== -1 && newIntIdx < oldIntIdx) {
+            const key = newColumn.unsigned
+                ? `${newType as string} unsigned`
+                : `${newType as string}`
+            const range = this.driver.intRanges[key]
+            if (range) {
+                return `SELECT EXISTS(SELECT 1 FROM ${escapedTable} WHERE ${escapedCol} > ${range[1]} OR ${escapedCol} < ${range[0]} LIMIT 1)`
+            }
+        }
+
+        if ((oldType === "enum" || oldType === "set") && oldType === newType) {
+            const oldValues = oldColumn.enum ?? []
+            const newValues = newColumn.enum ?? []
+            const removed = oldValues.filter((v) => !newValues.includes(v))
+            if (removed.length > 0) {
+                if (oldType === "set") {
+                    const conditions = removed
+                        .map(
+                            (v) =>
+                                `FIND_IN_SET('${v.replaceAll("'", "''")}', ${escapedCol})`,
+                        )
+                        .join(" OR ")
+                    return `SELECT EXISTS(SELECT 1 FROM ${escapedTable} WHERE ${conditions} LIMIT 1)`
+                }
+                const inList = removed
+                    .map((v) => `'${v.replaceAll("'", "''")}'`)
+                    .join(",")
+                return `SELECT EXISTS(SELECT 1 FROM ${escapedTable} WHERE ${escapedCol} IN (${inList}) LIMIT 1)`
+            }
+        }
+
+        if (oldType === "decimal" && newType === "decimal") {
+            const newP = newColumn.precision ?? 10
+            const newS = newColumn.scale ?? 0
+            return `SELECT EXISTS(SELECT 1 FROM ${escapedTable} WHERE ${escapedCol} != CAST(${escapedCol} AS DECIMAL(${newP},${newS})) LIMIT 1)`
+        }
+
+        if (oldColumn.isNullable && !newColumn.isNullable) {
+            return `SELECT EXISTS(SELECT 1 FROM ${escapedTable} WHERE ${escapedCol} IS NULL LIMIT 1)`
+        }
+
+        if (oldType === "double" && newType === "float") {
+            return `SELECT EXISTS(SELECT 1 FROM ${escapedTable} WHERE ABS(${escapedCol}) > 3.4028235E+38 LIMIT 1)`
+        }
+
+        if (oldType === "datetime" && newType === "date") {
+            return `SELECT EXISTS(SELECT 1 FROM ${escapedTable} WHERE TIME(${escapedCol}) != '00:00:00' LIMIT 1)`
+        }
+
+        if (oldType === "datetime" && newType === "timestamp") {
+            return `SELECT EXISTS(SELECT 1 FROM ${escapedTable} WHERE ${escapedCol} < '1970-01-01 00:00:01' OR ${escapedCol} > '2038-01-19 03:14:07' LIMIT 1)`
+        }
+
+        const oldTextIdx = this.driver.textHierarchy.indexOf(oldType)
+        const newTextIdx = this.driver.textHierarchy.indexOf(newType)
+        if (oldTextIdx !== -1 && newTextIdx !== -1 && newTextIdx < oldTextIdx) {
+            const maxLengths: Record<string, number> = {
+                tinytext: 255,
+                text: 65535,
+                mediumtext: 16777215,
+            }
+            const limit = maxLengths[newType as string]
+            if (limit) {
+                return `SELECT EXISTS(SELECT 1 FROM ${escapedTable} WHERE CHAR_LENGTH(${escapedCol}) > ${limit} LIMIT 1)`
+            }
+        }
+
+        const oldBlobIdx = this.driver.blobHierarchy.indexOf(oldType)
+        const newBlobIdx = this.driver.blobHierarchy.indexOf(newType)
+        if (oldBlobIdx !== -1 && newBlobIdx !== -1 && newBlobIdx < oldBlobIdx) {
+            const maxLengths: Record<string, number> = {
+                tinyblob: 255,
+                blob: 65535,
+                mediumblob: 16777215,
+            }
+            const limit = maxLengths[newType as string]
+            if (limit) {
+                return `SELECT EXISTS(SELECT 1 FROM ${escapedTable} WHERE LENGTH(${escapedCol}) > ${limit} LIMIT 1)`
+            }
+        }
+
+        if (
+            oldType === newType &&
+            !oldColumn.unsigned &&
+            newColumn.unsigned &&
+            this.driver.intHierarchy.includes(oldType)
+        ) {
+            return `SELECT EXISTS(SELECT 1 FROM ${escapedTable} WHERE ${escapedCol} < 0 LIMIT 1)`
+        }
+
+        return null
     }
 
     /**

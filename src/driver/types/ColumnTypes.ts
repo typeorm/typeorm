@@ -228,3 +228,13 @@ export type ColumnType =
     | DateConstructor
     | NumberConstructor
     | StringConstructor
+
+/**
+ * Classification of a column type/length change for migration generation.
+ * Used by `changeStrategy` to decide ALTER vs DROP+ADD vs refuse.
+ */
+export type ColumnChangeClassification =
+    | "widen"
+    | "narrow"
+    | "incompatible"
+    | "no-change"

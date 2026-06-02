@@ -10,6 +10,7 @@ import type { EntityManager } from "../entity-manager/EntityManager"
 import type { TableColumn } from "../schema-builder/table/TableColumn"
 import type { Broadcaster } from "../subscriber/Broadcaster"
 import type { ReplicationMode } from "../driver/types/ReplicationMode"
+import type { ColumnChangeClassification } from "../driver/types/ColumnTypes"
 import { TypeORMError } from "../error/TypeORMError"
 import type { EntityMetadata } from "../metadata/EntityMetadata"
 import type { TableForeignKey } from "../schema-builder/table/TableForeignKey"
@@ -658,6 +659,40 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
             oldColumn.enum ?? [],
             newColumn.enum ?? [],
         )
+    }
+
+    /**
+     * Classifies a column type/length change. Override per-driver to enable
+     * `changeStrategy` support. Base returns "no-change" which causes
+     * the strategy logic to fall through to the driver's default behavior.
+     *
+     * @param _oldColumn
+     * @param _newColumn
+     * @param _table
+     */
+    protected classifyColumnChange(
+        _oldColumn: TableColumn,
+        _newColumn: TableColumn,
+        _table: Table,
+    ): ColumnChangeClassification {
+        return "no-change"
+    }
+
+    /**
+     * For 'auto' strategy: checks if existing data exceeds the bounds of the
+     * new column definition. Override per-driver. Base returns false (assume
+     * data fits — use ALTER and let the DB enforce constraints).
+     *
+     * @param _table
+     * @param _oldColumn
+     * @param _newColumn
+     */
+    protected async dataExceedsBoundsForChange(
+        _table: Table,
+        _oldColumn: TableColumn,
+        _newColumn: TableColumn,
+    ): Promise<boolean> {
+        return false
     }
 
     /**
