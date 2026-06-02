@@ -58,6 +58,27 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 
 Additional options can be added to the `extra` object and will be passed directly to the client library. See more in `pg`'s documentation for [Pool](https://node-postgres.com/apis/pool#new-pool) and [Client](https://node-postgres.com/apis/client#new-client).
 
+When using `replication`, each endpoint can also carry its own `extra` that is merged **over** the top-level `extra`, allowing different pool configuration per connection. This is useful for setting options like `maxLifetimeSeconds` only on read replicas:
+
+```typescript
+DataSource({
+    type: "postgres",
+    extra: { idleTimeoutMillis: 10_000 }, // applied to both pools
+    replication: {
+        master: { host: "writer.example.com", username: "app", database: "mydb", ... },
+        slaves: [
+            {
+                host: "reader.example.com",
+                username: "app",
+                database: "mydb",
+                extra: { maxLifetimeSeconds: 60 }, // applied to this slave pool only
+                ...
+            },
+        ],
+    },
+})
+```
+
 ## Column Types
 
 ### Column types for `postgres`
