@@ -6,8 +6,6 @@ import type { PostgresDataSourceOptions } from "../../../src/driver/postgres/Pos
 
 describe("github issues > #12555 per-endpoint extra pool configuration in replication mode", () => {
     let sandbox: sinon.SinonSandbox
-    let poolStub: sinon.SinonStub
-    let loadStub: sinon.SinonStub
 
     const capturedOptions: Record<string, unknown>[] = []
 
@@ -15,21 +13,25 @@ describe("github issues > #12555 per-endpoint extra pool configuration in replic
         sandbox = sinon.createSandbox()
         capturedOptions.length = 0
 
-        // Minimal fake pg.Pool that records constructor options and exposes a connect stub
+        // Minimal fake pg.Pool that records constructor options
         const FakePool = function (this: any, opts: Record<string, unknown>) {
             capturedOptions.push({ ...opts })
             this.options = opts
             this.on = () => this
-            this.connect = (_cb: Function) => _cb(null, { query: () => Promise.resolve([{ server_version: "14.0" }]), release: () => {} }, () => {})
+            this.connect = (_cb: Function) =>
+                _cb(
+                    null,
+                    {
+                        query: () =>
+                            Promise.resolve([{ server_version: "14.0" }]),
+                        release: () => {},
+                    },
+                    () => {},
+                )
             this.end = () => Promise.resolve()
         } as any
 
-        poolStub = sandbox.stub()
-        poolStub.callsFake(function (this: any, opts: any) {
-            return new FakePool(opts)
-        })
-
-        loadStub = sandbox.stub(PlatformTools, "load").callsFake((lib: string) => {
+        sandbox.stub(PlatformTools, "load").callsFake((lib: string) => {
             if (lib === "pg") {
                 return {
                     Pool: FakePool,
