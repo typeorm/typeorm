@@ -449,7 +449,7 @@ export class MongoQueryRunner implements QueryRunner {
     async collectionIndexExists(
         collectionName: string,
         indexes: string | string[],
-        options?: OperationOptions,
+        options?: ListIndexesOptions,
     ): Promise<boolean> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
         return this.getCollection(collectionName).indexExists(
@@ -703,11 +703,7 @@ export class MongoQueryRunner implements QueryRunner {
         this.isReleased = true
 
         if (this.isTransactionActive && this.session) {
-            try {
-                await this.session.abortTransaction()
-            } catch {
-                // Ignore abort errors on best-effort release.
-            }
+            await this.session.abortTransaction()
         }
 
         this.isTransactionActive = false
@@ -1691,11 +1687,7 @@ export class MongoQueryRunner implements QueryRunner {
 
         const session = this.session
         this.session = undefined
-        try {
-            await session.endSession()
-        } catch {
-            // Ignore endSession errors on best-effort cleanup.
-        }
+        await session.endSession()
     }
 
     /**

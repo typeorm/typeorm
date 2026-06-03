@@ -42,7 +42,6 @@ import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 import { buildSqlTag } from "../util/SqlTagUtils"
-import type { TransactionOptions } from "../driver/mongodb/typings"
 
 registerQueryBuilders()
 
@@ -476,6 +475,8 @@ export class DataSource {
     /**
      * Wraps given function execution (and all operations made there) into a transaction.
      * All database operations must be executed using provided entity manager.
+     *
+     * MongoDB-specific transaction options can be passed by using `dataSource.mongoManager.transaction(options, callback)`.
      */
     async transaction<T>(
         runInTransaction: (entityManager: EntityManager) => Promise<T>,
@@ -485,13 +486,8 @@ export class DataSource {
         runInTransaction: (entityManager: EntityManager) => Promise<T>,
     ): Promise<T>
     async transaction<T>(
-        options: TransactionOptions,
-        runInTransaction: (entityManager: EntityManager) => Promise<T>,
-    ): Promise<T>
-    async transaction<T>(
         isolationOrRunInTransaction:
             | IsolationLevel
-            | TransactionOptions
             | ((entityManager: EntityManager) => Promise<T>),
         runInTransactionParam?: (entityManager: EntityManager) => Promise<T>,
     ): Promise<T> {
@@ -506,22 +502,7 @@ export class DataSource {
             )
         }
 
-        if (
-            isolationOrRunInTransaction &&
-            typeof isolationOrRunInTransaction === "object"
-        ) {
-            if (!InstanceChecker.isMongoEntityManager(this.manager)) {
-                throw new TypeORMError(
-                    `Transaction options object is supported only for MongoDB connections.`,
-                )
-            }
-
-            return (this.manager as MongoEntityManager).transaction(
-                isolationOrRunInTransaction,
-                runInTransaction,
-            )
-        }
-
+        // MongoDB transactions does not specify isolationLevel. Transactions are configured through MongoDB TransactionOptions
         if (typeof isolationOrRunInTransaction === "function") {
             return this.manager.transaction(isolationOrRunInTransaction)
         }

@@ -158,11 +158,7 @@ export class MongoEntityManager extends EntityManager {
             await queryRunner.commitTransaction()
             return result
         } catch (err) {
-            try {
-                await queryRunner.rollbackTransaction()
-            } catch {
-                // Ignore rollback errors and rethrow the original error.
-            }
+            await queryRunner.rollbackTransaction()
             throw err
         } finally {
             if (!this.queryRunner) await queryRunner.release()
@@ -897,7 +893,7 @@ export class MongoEntityManager extends EntityManager {
     collectionIndexExists<Entity>(
         entityClassOrName: EntityTarget<Entity>,
         indexes: string | string[],
-        options?: OperationOptions,
+        options?: ListIndexesOptions,
     ): Promise<boolean> {
         const metadata = this.dataSource.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.collectionIndexExists(
