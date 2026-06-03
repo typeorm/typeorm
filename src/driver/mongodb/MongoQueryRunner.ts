@@ -416,10 +416,11 @@ export class MongoQueryRunner implements QueryRunner {
         update: UpdateFilter<Document>,
         options?: FindOneAndUpdateOptions,
     ): Promise<Document | null> {
+        const opts = this.getSessionOptions(options)
         return this.getCollection(collectionName).findOneAndUpdate(
             filter,
             update,
-            this.getSessionOptions(options),
+            opts,
         )
     }
 
@@ -434,9 +435,8 @@ export class MongoQueryRunner implements QueryRunner {
         options?: ListIndexesOptions,
     ): Promise<Document> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
-        return this.getCollection(collectionName).indexes(
-            this.getSessionOptions(options),
-        )
+        const opts = this.getSessionOptions(options)
+        return this.getCollection(collectionName).indexes(opts)
     }
 
     /**
@@ -452,10 +452,8 @@ export class MongoQueryRunner implements QueryRunner {
         options?: ListIndexesOptions,
     ): Promise<boolean> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
-        return this.getCollection(collectionName).indexExists(
-            indexes,
-            this.getSessionOptions(options),
-        )
+        const opts = this.getSessionOptions(options)
+        return this.getCollection(collectionName).indexExists(indexes, opts)
     }
 
     /**
@@ -468,9 +466,8 @@ export class MongoQueryRunner implements QueryRunner {
         collectionName: string,
         options?: IndexInformationOptions,
     ): Promise<any> {
-        return this.getCollection(collectionName).indexInformation(
-            this.getSessionOptions(options),
-        )
+        const opts = this.getSessionOptions(options)
+        return this.getCollection(collectionName).indexInformation(opts)
     }
 
     /**
