@@ -1691,7 +1691,11 @@ export class MongoQueryRunner implements QueryRunner {
 
         const session = this.session
         this.session = undefined
-        await session.endSession()
+        try {
+            await session.endSession()
+        } catch {
+            // Ignore endSession errors on best-effort cleanup.
+        }
     }
 
     /**

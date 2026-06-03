@@ -131,7 +131,8 @@ export class MongoEntityManager extends EntityManager {
                 ? isolationOrOptionsOrRunInTransaction
                 : undefined
         const options =
-            typeof isolationOrOptionsOrRunInTransaction === "object"
+            typeof isolationOrOptionsOrRunInTransaction === "object" &&
+            isolationOrOptionsOrRunInTransaction !== null
                 ? isolationOrOptionsOrRunInTransaction
                 : undefined
         const runInTransaction =

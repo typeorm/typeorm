@@ -150,7 +150,7 @@ services:
       test: "/hana/shared/HXE/exe/linuxx86_64/hdb/hdbsql -n localhost:39041 -u SYSTEM -p HXEHana1 \"\\s\""
       interval: 5s
 
-  # mongodb
+    # mongodb
   mongodb:
     image: "mongo:8.2.5"
     container_name: "typeorm-mongodb"
@@ -161,7 +161,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "mongosh --quiet --eval 'try { rs.status().ok } catch (e) { quit(1) }' | grep 1",
+          "mongosh --quiet --eval 'if (!db.hello().isWritablePrimary) { quit(1); }'",
         ]
       interval: 5s
       timeout: 5s
