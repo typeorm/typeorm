@@ -129,8 +129,8 @@ describe(`query builder > soft-delete global condition on joined entities`, () =
                 const sql = qbWithDeleted.getQuery()
                 // The ON clause should NOT contain deletedAt IS NULL
                 // (note: deletedAt still appears in SELECT columns, so we check the specific condition)
-                sql.should.not.contain('deletedAt" IS NULL')
-                sql.should.not.contain("deletedAt IS NULL")
+                // Use regex to handle different quoting styles (double quotes, backticks, none)
+                sql.should.not.match(/deletedAt["`]?\s+IS\s+NULL/i)
             }),
         ))
 
@@ -196,8 +196,7 @@ describe(`query builder > soft-delete global condition on joined entities`, () =
 
                 const sql = qb.getQuery()
                 // The conversation join should NOT have deletedAt IS NULL condition
-                sql.should.not.contain('deletedAt" IS NULL')
-                sql.should.not.contain("deletedAt IS NULL")
+                sql.should.not.match(/deletedAt["`]?\s+IS\s+NULL/i)
             }),
         ))
 
@@ -211,8 +210,7 @@ describe(`query builder > soft-delete global condition on joined entities`, () =
                     .leftJoinWithDeleted("user.conversations", "conversation")
 
                 const sql = qb.getQuery()
-                sql.should.not.contain('deletedAt" IS NULL')
-                sql.should.not.contain("deletedAt IS NULL")
+                sql.should.not.match(/deletedAt["`]?\s+IS\s+NULL/i)
                 sql.should.contain("LEFT JOIN")
             }),
         ))
@@ -231,8 +229,7 @@ describe(`query builder > soft-delete global condition on joined entities`, () =
 
                 const sql = qb.getQuery()
                 sql.should.contain("INNER JOIN")
-                sql.should.not.contain('deletedAt" IS NULL')
-                sql.should.not.contain("deletedAt IS NULL")
+                sql.should.not.match(/deletedAt["`]?\s+IS\s+NULL/i)
             }),
         ))
 })

@@ -2476,7 +2476,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.getTableName(destinationTableName)
                 const onCondition = joinAttr.condition
                     ? softDeleteCondition
-                        ? joinAttr.condition + " AND " + softDeleteCondition
+                        ? "(" +
+                          joinAttr.condition +
+                          ") AND " +
+                          softDeleteCondition
                         : joinAttr.condition
                     : softDeleteCondition || ""
                 return (
