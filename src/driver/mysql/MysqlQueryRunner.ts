@@ -1841,11 +1841,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             const value = Object.values(row)[0]
             return value === 1 || value === "1" || value === true
         } catch (err) {
-            this.driver.dataSource.logger.logQueryError(
-                err as string,
-                query,
-                [],
-                this,
+            const msg = err instanceof Error ? err.message : String(err)
+            this.sqlInMemory.warnings.push(
+                `Data check failed for column "${oldColumn.name}", falling back to DROP+ADD. ` +
+                    `Error: ${msg}. Query: ${query}`,
             )
             return true
         }
@@ -1911,9 +1910,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         if (this.driver.intHierarchy.includes(type)) {
-            if (oldCol.unsigned && !newCol.unsigned) {
-                if (classification === "no-change") classification = "widen"
-            } else if (!oldCol.unsigned && newCol.unsigned) {
+            if (oldCol.unsigned !== newCol.unsigned) {
                 classification = "narrow"
             }
         }
@@ -2151,6 +2148,18 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             this.driver.intHierarchy.includes(oldType)
         ) {
             return `SELECT EXISTS(SELECT 1 FROM ${escapedTable} WHERE ${escapedCol} < 0 LIMIT 1)`
+        }
+
+        if (
+            oldType === newType &&
+            oldColumn.unsigned &&
+            !newColumn.unsigned &&
+            this.driver.intHierarchy.includes(oldType)
+        ) {
+            const range = this.driver.intRanges[newType as string]
+            if (range) {
+                return `SELECT EXISTS(SELECT 1 FROM ${escapedTable} WHERE ${escapedCol} > ${range[1]} LIMIT 1)`
+            }
         }
 
         return null

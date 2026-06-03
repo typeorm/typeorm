@@ -576,6 +576,73 @@ describe("schema builder > column change strategy > execution", () => {
                 }),
             ))
 
+        it("UNSIGNED to signed with auto - data fits uses CHANGE", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (!DriverUtils.isMySQLFamily(dataSource.driver)) return
+
+                    await dataSource.query(
+                        `ALTER TABLE \`post\` ADD COLUMN \`counter\` int unsigned NOT NULL DEFAULT 0`,
+                    )
+                    await dataSource.query(
+                        `INSERT INTO \`post\` (\`title\`, \`views\`, \`score\`, \`status\`, \`rating\`, \`tag\`, \`flags\`, \`counter\`) VALUES ('t', 1, 1, 'draft', 1.0, 'a', 'read', 100)`,
+                    )
+
+                    const queryRunner = dataSource.createQueryRunner()
+                    const table = await queryRunner.getTable("post")
+                    const counterCol = table!.findColumnByName("counter")!
+                    const oldCol = counterCol.clone()
+                    const newCol = counterCol.clone()
+                    newCol.unsigned = false
+
+                    const classification = (
+                        queryRunner as any
+                    ).classifyColumnChange(oldCol, newCol, table)
+                    expect(classification).to.equal("narrow")
+
+                    await dataSource.query(
+                        `ALTER TABLE \`post\` DROP COLUMN \`counter\``,
+                    )
+                    await queryRunner.release()
+                }),
+            ))
+
+        it("UNSIGNED to signed with auto - data exceeds signed max uses DROP+ADD", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (!DriverUtils.isMySQLFamily(dataSource.driver)) return
+
+                    await dataSource.query(
+                        `ALTER TABLE \`post\` ADD COLUMN \`counter\` int unsigned NOT NULL DEFAULT 0`,
+                    )
+                    await dataSource.query(
+                        `INSERT INTO \`post\` (\`title\`, \`views\`, \`score\`, \`status\`, \`rating\`, \`tag\`, \`flags\`, \`counter\`) VALUES ('t', 1, 1, 'draft', 1.0, 'a', 'read', 3000000000)`,
+                    )
+
+                    const queryRunner = dataSource.createQueryRunner()
+                    const table = await queryRunner.getTable("post")
+                    const counterCol = table!.findColumnByName("counter")!
+                    const newCol = counterCol.clone()
+                    newCol.unsigned = false
+
+                    const query = (queryRunner as any).buildDataCheckQuery(
+                        table,
+                        counterCol,
+                        newCol,
+                    )
+                    expect(query).to.contain("> 2147483647")
+
+                    const result = await dataSource.query(query)
+                    const exists = Object.values(result[0])[0]
+                    expect(Number(exists)).to.equal(1)
+
+                    await dataSource.query(
+                        `ALTER TABLE \`post\` DROP COLUMN \`counter\``,
+                    )
+                    await queryRunner.release()
+                }),
+            ))
+
         it("incompatible type change with auto uses DROP+ADD with warning", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
