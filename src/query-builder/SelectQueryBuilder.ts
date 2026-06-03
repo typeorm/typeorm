@@ -649,6 +649,123 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     }
 
     /**
+     * INNER JOINs entity's property including soft-deleted rows for this specific join.
+     * The automatic "deletedAt IS NULL" condition is skipped for this join only.
+     *
+     * @param entityOrProperty
+     * @param alias
+     * @param condition
+     * @param parameters
+     */
+    innerJoinWithDeleted(
+        entityOrProperty:
+            | Function
+            | string
+            | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
+        alias: string,
+        condition?: string,
+        parameters?: ObjectLiteral,
+    ): this {
+        this.join(
+            "INNER",
+            entityOrProperty,
+            alias,
+            condition,
+            parameters,
+            undefined,
+            undefined,
+            undefined,
+            true,
+        )
+        return this
+    }
+
+    /**
+     * INNER JOINs entity's property including soft-deleted rows for this specific join,
+     * and adds all selection properties to SELECT.
+     * The automatic "deletedAt IS NULL" condition is skipped for this join only.
+     *
+     * @param entityOrProperty
+     * @param alias
+     * @param condition
+     * @param parameters
+     */
+    innerJoinAndSelectWithDeleted(
+        entityOrProperty:
+            | Function
+            | string
+            | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
+        alias: string,
+        condition?: string,
+        parameters?: ObjectLiteral,
+    ): this {
+        this.addSelect(alias)
+        this.innerJoinWithDeleted(
+            entityOrProperty,
+            alias,
+            condition,
+            parameters,
+        )
+        return this
+    }
+
+    /**
+     * LEFT JOINs entity's property including soft-deleted rows for this specific join.
+     * The automatic "deletedAt IS NULL" condition is skipped for this join only.
+     *
+     * @param entityOrProperty
+     * @param alias
+     * @param condition
+     * @param parameters
+     */
+    leftJoinWithDeleted(
+        entityOrProperty:
+            | Function
+            | string
+            | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
+        alias: string,
+        condition?: string,
+        parameters?: ObjectLiteral,
+    ): this {
+        this.join(
+            "LEFT",
+            entityOrProperty,
+            alias,
+            condition,
+            parameters,
+            undefined,
+            undefined,
+            undefined,
+            true,
+        )
+        return this
+    }
+
+    /**
+     * LEFT JOINs entity's property including soft-deleted rows for this specific join,
+     * and adds all selection properties to SELECT.
+     * The automatic "deletedAt IS NULL" condition is skipped for this join only.
+     *
+     * @param entityOrProperty
+     * @param alias
+     * @param condition
+     * @param parameters
+     */
+    leftJoinAndSelectWithDeleted(
+        entityOrProperty:
+            | Function
+            | string
+            | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
+        alias: string,
+        condition?: string,
+        parameters?: ObjectLiteral,
+    ): this {
+        this.addSelect(alias)
+        this.leftJoinWithDeleted(entityOrProperty, alias, condition, parameters)
+        return this
+    }
+
+    /**
      * INNER JOINs given subquery, SELECTs the data returned by a join and MAPs all that data to some entity's property.
      * This is extremely useful when you want to select some data and map it to some virtual property.
      * It will assume that there are multiple rows of selecting data, and mapped result will be an array.
@@ -2087,6 +2204,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         mapToProperty?: string,
         isMappingMany?: boolean,
         mapAsEntity?: Function | string,
+        withDeleted?: boolean,
     ): void {
         if (parameters) {
             this.setParameters(parameters)
@@ -2102,6 +2220,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         joinAttribute.isMappingMany = isMappingMany
         joinAttribute.entityOrProperty = entityOrProperty // relationName
         joinAttribute.condition = condition // joinInverseSideCondition
+        joinAttribute.withDeleted = withDeleted
         // joinAttribute.junctionAlias = joinAttribute.relation.isOwning ? parentAlias + "_" + destinationTableAlias : destinationTableAlias + "_" + parentAlias;
         this.expressionMap.joinAttributes.push(joinAttribute)
         const isEntity = this.dataSource.hasMetadata(entityOrProperty)
@@ -2126,15 +2245,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         const joinAttributeMetadata = joinAttribute.metadata
         if (joinAttributeMetadata) {
-            if (
-                joinAttributeMetadata.deleteDateColumn &&
-                !this.expressionMap.withDeleted
-            ) {
-                const conditionDeleteColumn = `${aliasName}.${joinAttributeMetadata.deleteDateColumn.propertyName} IS NULL`
-                joinAttribute.condition = joinAttribute.condition
-                    ? ` ${joinAttribute.condition} AND ${conditionDeleteColumn}`
-                    : `${conditionDeleteColumn}`
-            }
+            // Note: The soft-delete condition (deletedAt IS NULL) is now applied
+            // at query-build time in createJoinExpression(), not here at join-creation
+            // time. This ensures that .withDeleted() works regardless of call order.
+
             // todo: find and set metadata right there?
             joinAttribute.alias = this.expressionMap.createAlias({
                 type: "join",
@@ -2331,9 +2445,27 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             const relation = joinAttr.relation
             const destinationTableName = joinAttr.tablePath
             const destinationTableAlias = joinAttr.alias.name
+
+            // Apply soft-delete condition at query-build time (not join-creation time)
+            // so that .withDeleted() works regardless of call order.
+            // Skip if: the global withDeleted flag is set, OR this specific join has withDeleted.
+            let softDeleteCondition = ""
+            const joinMetadata = joinAttr.metadata
+            if (
+                joinMetadata?.deleteDateColumn &&
+                !this.expressionMap.withDeleted &&
+                !joinAttr.withDeleted
+            ) {
+                softDeleteCondition = `${destinationTableAlias}.${joinMetadata.deleteDateColumn.propertyName} IS NULL`
+            }
+
             let appendedCondition = joinAttr.condition
                 ? " AND (" + joinAttr.condition + ")"
                 : ""
+            if (softDeleteCondition) {
+                appendedCondition += " AND " + softDeleteCondition
+            }
+
             const parentAlias = joinAttr.parentAlias
 
             // if join was build without relation (e.g. without "post.category") then it means that we have direct
@@ -2342,6 +2474,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 const destinationJoin =
                     joinAttr.alias.subQuery ??
                     this.getTableName(destinationTableName)
+                const onCondition = joinAttr.condition
+                    ? softDeleteCondition
+                        ? joinAttr.condition + " AND " + softDeleteCondition
+                        : joinAttr.condition
+                    : softDeleteCondition || ""
                 return (
                     " " +
                     joinAttr.direction +
@@ -2350,7 +2487,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     " " +
                     this.escape(destinationTableAlias) +
                     this.createTableLockExpression() +
-                    (joinAttr.condition ? " ON " + joinAttr.condition : "")
+                    (onCondition ? " ON " + onCondition : "")
                 )
             }
 
