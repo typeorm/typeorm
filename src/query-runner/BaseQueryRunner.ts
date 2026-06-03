@@ -679,23 +679,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
     }
 
     /**
-     * For 'auto' strategy: checks if existing data exceeds the bounds of the
-     * new column definition. Override per-driver. Base returns false (assume
-     * data fits — use ALTER and let the DB enforce constraints).
-     *
-     * @param _table
-     * @param _oldColumn
-     * @param _newColumn
-     */
-    protected async dataExceedsBoundsForChange(
-        _table: Table,
-        _oldColumn: TableColumn,
-        _newColumn: TableColumn,
-    ): Promise<boolean> {
-        return false
-    }
-
-    /**
+     /**
      * Checks if column length is by default.
      *
      * @param table

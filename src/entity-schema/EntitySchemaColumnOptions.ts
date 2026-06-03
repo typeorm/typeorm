@@ -207,9 +207,9 @@ export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
 
     /**
      * Strategy for handling column type/length changes during migration generation.
-     * Currently supported by MySQL and MariaDB drivers only.
+     * MySQL and MariaDB only.
      *
-     * - "auto": ALTER if existing data fits, DROP+ADD if it doesn't (queries live DB)
+     * - "auto": ALTER for widen/no-change, DROP+ADD for narrow/incompatible (deterministic, no live queries)
      * - "alter": always ALTER (may truncate or fail at DB level)
      * - "drop-add": always DROP+ADD (default, data loss)
      */

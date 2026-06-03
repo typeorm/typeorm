@@ -1135,7 +1135,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 `Column "${oldColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
-        const action = await this.resolveColumnChangeAction(
+        const action = this.resolveColumnChangeAction(
             table,
             oldColumn,
             newColumn,
@@ -1687,11 +1687,11 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * @param oldColumn
      * @param newColumn
      */
-    protected async resolveColumnChangeAction(
+    protected resolveColumnChangeAction(
         table: Table,
         oldColumn: TableColumn,
         newColumn: TableColumn,
-    ): Promise<"drop-add" | "alter"> {
+    ): "drop-add" | "alter" {
         const generatedTypeChanged =
             ((oldColumn.generatedType &&
                 newColumn.generatedType &&
@@ -1749,7 +1749,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             return "alter"
         }
 
-        // 'auto' strategy: ALTER when data fits, DROP+ADD when it doesn't
+        // 'auto' strategy: ALTER for widen/no-change, DROP+ADD for narrow/incompatible
         if (classification === "incompatible") {
             this.sqlInMemory.warnings.push(
                 `column change in "${table.name}" requires drop+add: ` +
@@ -1760,32 +1760,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             return "drop-add"
         }
 
-        // classification === "narrow" in auto mode: check data
-        const checkQuery = this.buildDataCheckQuery(table, oldColumn, newColumn)
-
-        if (!checkQuery) {
-            this.sqlInMemory.warnings.push(
-                `column change in "${table.name}" may truncate data: ` +
-                    `${oldColumn.name} ${oldColumn.type}${oldColumn.length ? `(${oldColumn.length})` : ""} to ` +
-                    `${newColumn.type}${newColumn.length ? `(${newColumn.length})` : ""} [narrow]\n` +
-                    `  No data check available -- ALTER will be used. Precision may be lost.`,
-            )
-            return "alter"
-        }
-
-        const exceeds = await this.dataExceedsBoundsForChange(
-            table,
-            oldColumn,
-            newColumn,
-        )
-        if (!exceeds) return "alter"
-
+        // classification === "narrow" in auto mode: use DROP+ADD to avoid truncation
         this.sqlInMemory.warnings.push(
             `column change in "${table.name}" requires drop+add: ` +
                 `${oldColumn.name} ${oldColumn.type}${oldColumn.length ? `(${oldColumn.length})` : ""} to ` +
                 `${newColumn.type}${newColumn.length ? `(${newColumn.length})` : ""} [narrow]\n` +
-                `  Data exceeds new bounds -- using DROP+ADD.\n` +
-                `  Check: ${checkQuery}`,
+                `  Using DROP+ADD to prevent potential data truncation.`,
         )
         return "drop-add"
     }
@@ -1823,31 +1803,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         return this.classifyCrossType(oldColumn, newColumn, oldType, newType)
-    }
-
-    protected async dataExceedsBoundsForChange(
-        table: Table,
-        oldColumn: TableColumn,
-        newColumn: TableColumn,
-    ): Promise<boolean> {
-        const query = this.buildDataCheckQuery(table, oldColumn, newColumn)
-        if (!query) {
-            return false
-        }
-
-        try {
-            const result = await this.query(query)
-            const row = result[0]
-            const value = Object.values(row)[0]
-            return value === 1 || value === "1" || value === true
-        } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err)
-            this.sqlInMemory.warnings.push(
-                `Data check failed for column "${oldColumn.name}", falling back to DROP+ADD. ` +
-                    `Error: ${msg}. Query: ${query}`,
-            )
-            return true
-        }
     }
 
     private classifySameType(
@@ -2032,137 +1987,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     private arraysStrictEqual(a: string[], b: string[]): boolean {
         if (a.length !== b.length) return false
         return a.every((val, idx) => val === b[idx])
-    }
-
-    private buildDataCheckQuery(
-        table: Table,
-        oldColumn: TableColumn,
-        newColumn: TableColumn,
-    ): string | null {
-        const oldType = oldColumn.type as ColumnType
-        const newType = newColumn.type as ColumnType
-        const escapedTable = this.escapePath(table)
-        const escapedCol = `\`${oldColumn.name.replaceAll("`", "``")}\``
-
-        if (
-            oldType === newType &&
-            this.driver.withLengthColumnTypes.includes(oldType)
-        ) {
-            const oldLen = parseInt(oldColumn.length || "0", 10)
-            const newLen = parseInt(newColumn.length || "0", 10)
-            if (newLen < oldLen) {
-                if (oldType === "varbinary" || oldType === "binary") {
-                    return `SELECT EXISTS(SELECT 1 FROM ${escapedTable} WHERE LENGTH(${escapedCol}) > ${newLen} LIMIT 1)`
-                }
-                return `SELECT EXISTS(SELECT 1 FROM ${escapedTable} WHERE CHAR_LENGTH(${escapedCol}) > ${newLen} LIMIT 1)`
-            }
-        }
-
-        const oldIntIdx = this.driver.intHierarchy.indexOf(oldType)
-        const newIntIdx = this.driver.intHierarchy.indexOf(newType)
-        if (oldIntIdx !== -1 && newIntIdx !== -1 && newIntIdx < oldIntIdx) {
-            const key = newColumn.unsigned
-                ? `${newType as string} unsigned`
-                : `${newType as string}`
-            const range = this.driver.intRanges[key]
-            if (range) {
-                return `SELECT EXISTS(SELECT 1 FROM ${escapedTable} WHERE ${escapedCol} > ${range[1]} OR ${escapedCol} < ${range[0]} LIMIT 1)`
-            }
-        }
-
-        if ((oldType === "enum" || oldType === "set") && oldType === newType) {
-            const oldValues = oldColumn.enum ?? []
-            const newValues = newColumn.enum ?? []
-            const removed = oldValues.filter((v) => !newValues.includes(v))
-            if (removed.length > 0) {
-                if (oldType === "set") {
-                    const conditions = removed
-                        .map(
-                            (v) =>
-                                `FIND_IN_SET('${v.replaceAll("'", "''")}', ${escapedCol})`,
-                        )
-                        .join(" OR ")
-                    return `SELECT EXISTS(SELECT 1 FROM ${escapedTable} WHERE ${conditions} LIMIT 1)`
-                }
-                const inList = removed
-                    .map((v) => `'${v.replaceAll("'", "''")}'`)
-                    .join(",")
-                return `SELECT EXISTS(SELECT 1 FROM ${escapedTable} WHERE ${escapedCol} IN (${inList}) LIMIT 1)`
-            }
-        }
-
-        if (oldType === "decimal" && newType === "decimal") {
-            const newP = newColumn.precision ?? 10
-            const newS = newColumn.scale ?? 0
-            return `SELECT EXISTS(SELECT 1 FROM ${escapedTable} WHERE ${escapedCol} != CAST(${escapedCol} AS DECIMAL(${newP},${newS})) LIMIT 1)`
-        }
-
-        if (oldColumn.isNullable && !newColumn.isNullable) {
-            return `SELECT EXISTS(SELECT 1 FROM ${escapedTable} WHERE ${escapedCol} IS NULL LIMIT 1)`
-        }
-
-        if (oldType === "double" && newType === "float") {
-            return `SELECT EXISTS(SELECT 1 FROM ${escapedTable} WHERE ABS(${escapedCol}) > 3.4028235E+38 LIMIT 1)`
-        }
-
-        if (oldType === "datetime" && newType === "date") {
-            return `SELECT EXISTS(SELECT 1 FROM ${escapedTable} WHERE TIME(${escapedCol}) != '00:00:00' LIMIT 1)`
-        }
-
-        if (oldType === "datetime" && newType === "timestamp") {
-            return `SELECT EXISTS(SELECT 1 FROM ${escapedTable} WHERE ${escapedCol} < '1970-01-01 00:00:01' OR ${escapedCol} > '2038-01-19 03:14:07' LIMIT 1)`
-        }
-
-        const oldTextIdx = this.driver.textHierarchy.indexOf(oldType)
-        const newTextIdx = this.driver.textHierarchy.indexOf(newType)
-        if (oldTextIdx !== -1 && newTextIdx !== -1 && newTextIdx < oldTextIdx) {
-            const maxLengths: Record<string, number> = {
-                tinytext: 255,
-                text: 65535,
-                mediumtext: 16777215,
-            }
-            const limit = maxLengths[newType as string]
-            if (limit) {
-                return `SELECT EXISTS(SELECT 1 FROM ${escapedTable} WHERE CHAR_LENGTH(${escapedCol}) > ${limit} LIMIT 1)`
-            }
-        }
-
-        const oldBlobIdx = this.driver.blobHierarchy.indexOf(oldType)
-        const newBlobIdx = this.driver.blobHierarchy.indexOf(newType)
-        if (oldBlobIdx !== -1 && newBlobIdx !== -1 && newBlobIdx < oldBlobIdx) {
-            const maxLengths: Record<string, number> = {
-                tinyblob: 255,
-                blob: 65535,
-                mediumblob: 16777215,
-            }
-            const limit = maxLengths[newType as string]
-            if (limit) {
-                return `SELECT EXISTS(SELECT 1 FROM ${escapedTable} WHERE LENGTH(${escapedCol}) > ${limit} LIMIT 1)`
-            }
-        }
-
-        if (
-            oldType === newType &&
-            !oldColumn.unsigned &&
-            newColumn.unsigned &&
-            this.driver.intHierarchy.includes(oldType)
-        ) {
-            return `SELECT EXISTS(SELECT 1 FROM ${escapedTable} WHERE ${escapedCol} < 0 LIMIT 1)`
-        }
-
-        if (
-            oldType === newType &&
-            oldColumn.unsigned &&
-            !newColumn.unsigned &&
-            this.driver.intHierarchy.includes(oldType)
-        ) {
-            const range = this.driver.intRanges[newType as string]
-            if (range) {
-                return `SELECT EXISTS(SELECT 1 FROM ${escapedTable} WHERE ${escapedCol} > ${range[1]} LIMIT 1)`
-            }
-        }
-
-        return null
     }
 
     /**
