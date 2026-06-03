@@ -35,6 +35,7 @@ import type {
     InsertOneResult,
     ListIndexesCursor,
     ListIndexesOptions,
+    OperationOptions,
     OrderedBulkOperation,
     UnorderedBulkOperation,
     UpdateFilter,
@@ -469,11 +470,16 @@ export class MongoRepository<
      * Retrieve all the indexes on the collection.
      *
      * @param indexes
+     * @param options
      */
-    collectionIndexExists(indexes: string | string[]): Promise<boolean> {
+    collectionIndexExists(
+        indexes: string | string[],
+        options?: OperationOptions,
+    ): Promise<boolean> {
         return this.manager.collectionIndexExists(
             this.metadata.tableName,
             indexes,
+            options,
         )
     }
 
@@ -544,9 +550,11 @@ export class MongoRepository<
 
     /**
      * Returns if the collection is a capped collection.
+     *
+     * @param options
      */
-    isCapped(): Promise<any> {
-        return this.manager.isCapped(this.metadata.tableName)
+    isCapped(options?: OperationOptions): Promise<any> {
+        return this.manager.isCapped(this.metadata.tableName, options)
     }
 
     /**

@@ -31,6 +31,7 @@ import type {
     DropIndexesOptions,
     ClientSession,
     MongoClient,
+    OperationOptions,
     OptionalId,
     OrderedBulkOperation,
     RenameOptions,
@@ -339,6 +340,7 @@ export class MongoQueryRunner implements QueryRunner {
         indexName: string,
         options?: CommandOperationOptions,
     ): Promise<Document> {
+        if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
         return this.getCollection(collectionName).dropIndex(
             indexName,
             this.getSessionOptions(options),
@@ -355,6 +357,7 @@ export class MongoQueryRunner implements QueryRunner {
         collectionName: string,
         options?: DropIndexesOptions,
     ): Promise<boolean> {
+        if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
         return this.getCollection(collectionName).dropIndexes(
             this.getSessionOptions(options),
         )
@@ -424,9 +427,16 @@ export class MongoQueryRunner implements QueryRunner {
      * Retrieve all the indexes on the collection.
      *
      * @param collectionName
+     * @param options
      */
-    async collectionIndexes(collectionName: string): Promise<Document> {
-        return this.getCollection(collectionName).indexes()
+    async collectionIndexes(
+        collectionName: string,
+        options?: ListIndexesOptions,
+    ): Promise<Document> {
+        if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
+        return this.getCollection(collectionName).indexes(
+            this.getSessionOptions(options),
+        )
     }
 
     /**
@@ -434,12 +444,18 @@ export class MongoQueryRunner implements QueryRunner {
      *
      * @param collectionName
      * @param indexes
+     * @param options
      */
     async collectionIndexExists(
         collectionName: string,
         indexes: string | string[],
+        options?: OperationOptions,
     ): Promise<boolean> {
-        return this.getCollection(collectionName).indexExists(indexes)
+        if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
+        return this.getCollection(collectionName).indexExists(
+            indexes,
+            this.getSessionOptions(options),
+        )
     }
 
     /**
@@ -467,9 +483,9 @@ export class MongoQueryRunner implements QueryRunner {
         collectionName: string,
         options?: BulkWriteOptions,
     ): OrderedBulkOperation {
-        return this.getCollection(collectionName).initializeOrderedBulkOp(
-            this.getSessionOptions(options),
-        )
+        if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
+        const opts = this.getSessionOptions(options)
+        return this.getCollection(collectionName).initializeOrderedBulkOp(opts)
     }
 
     /**
@@ -482,8 +498,10 @@ export class MongoQueryRunner implements QueryRunner {
         collectionName: string,
         options?: BulkWriteOptions,
     ): UnorderedBulkOperation {
+        if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
+        const opts = this.getSessionOptions(options)
         return this.getCollection(collectionName).initializeUnorderedBulkOp(
-            this.getSessionOptions(options),
+            opts,
         )
     }
 
@@ -499,6 +517,7 @@ export class MongoQueryRunner implements QueryRunner {
         docs: OptionalId<Document>[],
         options?: BulkWriteOptions,
     ): Promise<InsertManyResult> {
+        if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
         return this.getCollection(collectionName).insertMany(
             docs,
             this.getSessionOptions(options),
@@ -527,9 +546,16 @@ export class MongoQueryRunner implements QueryRunner {
      * Returns if the collection is a capped collection.
      *
      * @param collectionName
+     * @param options
      */
-    async isCapped(collectionName: string): Promise<boolean> {
-        return this.getCollection(collectionName).isCapped()
+    async isCapped(
+        collectionName: string,
+        options?: OperationOptions,
+    ): Promise<boolean> {
+        if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
+        return this.getCollection(collectionName).isCapped(
+            this.getSessionOptions(options),
+        )
     }
 
     /**
@@ -666,6 +692,7 @@ export class MongoQueryRunner implements QueryRunner {
      * For MongoDB database we don't create a connection because its single connection already created by a driver.
      */
     async connect(): Promise<any> {
+        if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
         return this.databaseConnection
     }
 
@@ -1633,10 +1660,7 @@ export class MongoQueryRunner implements QueryRunner {
      * @param collectionName
      */
     protected getCollection(collectionName: string): Collection<any> {
-        if (this.isReleased) {
-            throw new QueryRunnerAlreadyReleasedError()
-        }
-
+        if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
         return this.databaseConnection
             .db(this.dataSource.driver.database!)
             .collection(collectionName)
@@ -1648,6 +1672,7 @@ export class MongoQueryRunner implements QueryRunner {
      * @param options
      */
     protected getSessionOptions<T extends object = object>(options?: T): T {
+        if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
         if (!this.session) {
             return (options ?? {}) as T
         }

@@ -53,6 +53,7 @@ import type {
     ListIndexesCursor,
     ListIndexesOptions,
     ObjectId,
+    OperationOptions,
     OptionalId,
     OrderedBulkOperation,
     RenameOptions,
@@ -872,12 +873,17 @@ export class MongoEntityManager extends EntityManager {
      * Retrieve all the indexes on the collection.
      *
      * @param entityClassOrName
+     * @param options
      */
     collectionIndexes<Entity>(
         entityClassOrName: EntityTarget<Entity>,
+        options?: ListIndexesOptions,
     ): Promise<Document> {
         const metadata = this.dataSource.getMetadata(entityClassOrName)
-        return this.mongoQueryRunner.collectionIndexes(metadata.tableName)
+        return this.mongoQueryRunner.collectionIndexes(
+            metadata.tableName,
+            options,
+        )
     }
 
     /**
@@ -885,15 +891,18 @@ export class MongoEntityManager extends EntityManager {
      *
      * @param entityClassOrName
      * @param indexes
+     * @param options
      */
     collectionIndexExists<Entity>(
         entityClassOrName: EntityTarget<Entity>,
         indexes: string | string[],
+        options?: OperationOptions,
     ): Promise<boolean> {
         const metadata = this.dataSource.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.collectionIndexExists(
             metadata.tableName,
             indexes,
+            options,
         )
     }
 
@@ -988,10 +997,14 @@ export class MongoEntityManager extends EntityManager {
      * Returns if the collection is a capped collection.
      *
      * @param entityClassOrName
+     * @param options
      */
-    isCapped<Entity>(entityClassOrName: EntityTarget<Entity>): Promise<any> {
+    isCapped<Entity>(
+        entityClassOrName: EntityTarget<Entity>,
+        options?: OperationOptions,
+    ): Promise<any> {
         const metadata = this.dataSource.getMetadata(entityClassOrName)
-        return this.mongoQueryRunner.isCapped(metadata.tableName)
+        return this.mongoQueryRunner.isCapped(metadata.tableName, options)
     }
 
     /**
