@@ -1177,6 +1177,8 @@ const users = await dataSource
 
 You will get the property `password` in your query.
 
+`select: false` only controls what is loaded from the database on a read. The in-memory entity returned by `repository.save()` is not affected — any value you supply for a `select: false` column is preserved on both the returned entity and the original reference passed to `save()`. To re-read those columns from the database afterwards, run a subsequent query with `addSelect`.
+
 ## Querying Deleted rows
 
 If the model you are querying has a column with the attribute `@DeleteDateColumn` set, the query builder will automatically query rows which are 'soft deleted'.
