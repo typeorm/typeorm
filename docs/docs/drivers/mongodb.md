@@ -19,8 +19,6 @@ MongoDB transactions are supported when your MongoDB deployment supports them, f
 - a single-node or multi-node replica set
 - a sharded cluster
 
-For local development with Docker, the MongoDB service in `docker-compose.yml` is configured as a single-node replica set (`rs0`).
-
 You can use MongoDB transaction options when starting a transaction. TypeORM forwards the options to the MongoDB driver's `session.startTransaction()` call.
 
 ```typescript
