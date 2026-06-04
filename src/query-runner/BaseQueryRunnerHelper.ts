@@ -114,9 +114,6 @@ export function isSafeAlter(
     const oldType = base(oldRaw)
     const newType = base(newRaw)
 
-    // No effective change in type string
-    if (oldRaw === newRaw) return true
-
     // --- families ------------------------------------------------------------
     const STR = new Set([
         "varchar",
@@ -174,17 +171,21 @@ export function isSafeAlter(
         "long raw",
     ])
 
+    if (BOOL.has(oldType) || BOOL.has(newType)) return false
+    if (ENUM.has(oldType) || ENUM.has(newType)) return false
+    if (UUID.has(oldType) || UUID.has(newType)) return false
+    if (BIN.has(oldType) || BIN.has(newType)) return false
+
+    // No effective change in type string
+    if (oldRaw === newRaw) return true
+
     const sameFamily =
         (STR.has(oldType) && STR.has(newType)) ||
         (NUM.has(oldType) && NUM.has(newType)) ||
         (TMP.has(oldType) && TMP.has(newType))
 
-    // reject cross-family or special families we’re not calling “safe”
+    // reject cross-family alters we’re not calling “safe”
     if (!sameFamily) return false
-    if (BOOL.has(oldType) || BOOL.has(newType)) return false
-    if (ENUM.has(oldType) || ENUM.has(newType)) return false
-    if (UUID.has(oldType) || UUID.has(newType)) return false
-    if (BIN.has(oldType) || BIN.has(newType)) return false
 
     // --- STRING safe cases ---------------------------------------------------
     if (STR.has(oldType) && STR.has(newType)) {
