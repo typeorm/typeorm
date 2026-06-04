@@ -329,6 +329,46 @@ describe("query builder > order-by", () => {
                     expect(loadedPosts[1].title).to.be.equal("hello world")
                 }),
             ))
+
+        it("should allow multi-column expression orderBy combined with a join and pagination", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
+                    const commentRepository = dataSource.getRepository(Comment)
+
+                    for (let i = 0; i < 5; i++) {
+                        const post = new Post()
+                        post.myOrder = i
+                        post.num1 = i
+                        post.num2 = 5 - i
+                        await postRepository.save(post)
+
+                        const comment = new Comment()
+                        comment.text = `comment-${i}`
+                        comment.postId = post.id
+                        await commentRepository.save(comment)
+                    }
+
+                    // an ORDER BY expression referencing two qualified columns
+                    // produces more than one "." in the order-by key. Combined
+                    // with a join and take this goes through the distinct
+                    // pagination path (createOrderByCombinedWithSelectExpression),
+                    // which used to mangle the expression into invalid SQL.
+                    const { entities } = await commentRepository
+                        .createQueryBuilder("comment")
+                        .leftJoinAndSelect("comment.post", "post")
+                        .orderBy("post.num1 + post.num2", "ASC")
+                        .take(3)
+                        .getRawAndEntities()
+
+                    // post.num1 + post.num2 == i + (5 - i) == 5 for every row,
+                    // so the query must simply run and honour `take`.
+                    expect(entities).to.have.lengthOf(3)
+                    for (const comment of entities) {
+                        expect(comment.post).to.not.be.undefined
+                    }
+                }),
+            ))
     })
 
     it("should properly escape column names or aliases in order by", () =>

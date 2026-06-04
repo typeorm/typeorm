@@ -3686,29 +3686,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         const selectString = Object.keys(orderBys)
             .map((orderCriteria) => {
                 if (orderCriteria.indexOf(".") !== -1) {
-                    const criteriaParts = orderCriteria.split(".")
-                    const aliasName = criteriaParts[0]
-                    const propertyPath = criteriaParts.slice(1).join(".")
-                    const alias = this.expressionMap.findAliasByName(aliasName)
-                    const column =
-                        alias.metadata.findColumnWithPropertyPath(
-                            propertyPath,
-                        ) ??
-                        alias.metadata.findColumnWithDatabaseName(propertyPath)
-                    const databaseName = column
-                        ? column.databaseName
-                        : propertyPath
-                    return (
-                        this.escape(parentAlias) +
-                        "." +
-                        this.escape(
-                            DriverUtils.buildAlias(
-                                this.dataSource.driver,
-                                undefined,
-                                aliasName,
-                                databaseName,
-                            ),
-                        )
+                    return this.replaceAliasColumnsForDistinctSelect(
+                        orderCriteria,
+                        parentAlias,
                     )
                 } else {
                     if (
@@ -3732,25 +3712,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         const orderByObject: OrderByCondition = {}
         Object.keys(orderBys).forEach((orderCriteria) => {
             if (orderCriteria.indexOf(".") !== -1) {
-                const criteriaParts = orderCriteria.split(".")
-                const aliasName = criteriaParts[0]
-                const propertyPath = criteriaParts.slice(1).join(".")
-                const alias = this.expressionMap.findAliasByName(aliasName)
-                const column =
-                    alias.metadata.findColumnWithPropertyPath(propertyPath) ??
-                    alias.metadata.findColumnWithDatabaseName(propertyPath)
-                const databaseName = column ? column.databaseName : propertyPath
                 orderByObject[
-                    this.escape(parentAlias) +
-                        "." +
-                        this.escape(
-                            DriverUtils.buildAlias(
-                                this.dataSource.driver,
-                                undefined,
-                                aliasName,
-                                databaseName,
-                            ),
-                        )
+                    this.replaceAliasColumnsForDistinctSelect(
+                        orderCriteria,
+                        parentAlias,
+                    )
                 ] = orderBys[orderCriteria]
             } else {
                 if (
@@ -3772,6 +3738,63 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         })
 
         return [selectString, orderByObject]
+    }
+
+    /**
+     * Rewrites the `alias.column` references found in an ORDER BY criteria so
+     * they point at the columns exposed by the distinct pagination subquery
+     * (which are flattened under `parentAlias`, e.g. `distinctAlias`).
+     *
+     * A criteria can either be a single qualified column (`post.title`) or an
+     * arbitrary SQL expression that references one or more columns
+     * (`post.num1 + post.num2`). In the latter case every qualified column
+     * reference belonging to a known alias is rewritten while the rest of the
+     * expression is left untouched, instead of treating the whole string as a
+     * single column name (which produced invalid SQL, see #11742).
+     *
+     * @param orderCriteria
+     * @param parentAlias
+     */
+    protected replaceAliasColumnsForDistinctSelect(
+        orderCriteria: string,
+        parentAlias: string,
+    ): string {
+        const buildReference = (aliasName: string, propertyPath: string) => {
+            const alias = this.expressionMap.findAliasByName(aliasName)
+            const column =
+                alias.metadata.findColumnWithPropertyPath(propertyPath) ??
+                alias.metadata.findColumnWithDatabaseName(propertyPath)
+            const databaseName = column ? column.databaseName : propertyPath
+            return (
+                this.escape(parentAlias) +
+                "." +
+                this.escape(
+                    DriverUtils.buildAlias(
+                        this.dataSource.driver,
+                        undefined,
+                        aliasName,
+                        databaseName,
+                    ),
+                )
+            )
+        }
+
+        // fast path: a plain `alias.property.path` column reference
+        const aliasNames = this.expressionMap.aliases.map((alias) => alias.name)
+        const singleColumnMatch = /^(\w+)\.([\w.]+)$/.exec(orderCriteria)
+        if (singleColumnMatch && aliasNames.includes(singleColumnMatch[1])) {
+            return buildReference(singleColumnMatch[1], singleColumnMatch[2])
+        }
+
+        // expression path: rewrite every `alias.property.path` token that
+        // refers to a known alias, leaving operators/functions/literals as is
+        return orderCriteria.replaceAll(
+            /(\w+)\.([\w.]+)/g,
+            (match, aliasName: string, propertyPath: string) =>
+                aliasNames.includes(aliasName)
+                    ? buildReference(aliasName, propertyPath)
+                    : match,
+        )
     }
 
     /**
