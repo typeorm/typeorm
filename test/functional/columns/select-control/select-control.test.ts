@@ -6,7 +6,7 @@ import {
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import type { DataSource } from "../../../../src/data-source/DataSource"
-import { Post } from "./entity/Post"
+import { Counters, Post } from "./entity/Post"
 
 describe("columns > select-control", () => {
     let dataSources: DataSource[]
@@ -87,7 +87,7 @@ describe("columns > select-control", () => {
             }),
         ))
 
-    it("should not return columns marked with select: false", () =>
+    it("should preserve user-supplied values for select: false columns on the entity returned by save()", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const postRepository = dataSource.getRepository(Post)
@@ -99,12 +99,13 @@ describe("columns > select-control", () => {
 
                 expect(savedPost).to.have.property("id")
                 expect(savedPost).to.have.property("title")
-                expect(savedPost).to.not.have.property("authorName")
-                expect(savedPost.counters).to.not.have.property("secretCode")
+                expect(savedPost.authorName).to.be.equal("Umed")
+                // and the original reference must not be mutated either
+                expect(post.authorName).to.be.equal("Umed")
             }),
         ))
 
-    it("should not return columns marked with select: false in embedded entities", () =>
+    it("should preserve user-supplied values for select: false columns in embedded entities on save()", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const postRepository = dataSource.getRepository(Post)
@@ -112,13 +113,15 @@ describe("columns > select-control", () => {
                 post.title = "Hello Post"
                 post.text = "Some text"
                 post.authorName = "Umed"
-                post.counters = { secretCode: "789" }
+                post.counters = new Counters()
+                post.counters.secretCode = "789"
                 const savedPost = await postRepository.save(post)
 
                 expect(savedPost).to.have.property("id")
                 expect(savedPost).to.have.property("title")
-                expect(savedPost).to.not.have.property("authorName")
-                expect(savedPost.counters).to.not.have.property("secretCode")
+                expect(savedPost.authorName).to.be.equal("Umed")
+                expect(savedPost.counters.secretCode).to.be.equal("789")
+                expect(post.counters.secretCode).to.be.equal("789")
             }),
         ))
 })
