@@ -679,7 +679,6 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
     }
 
     /**
-     /**
      * Checks if column length is by default.
      *
      * @param table
