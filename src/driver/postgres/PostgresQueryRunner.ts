@@ -1326,16 +1326,18 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
-        if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
-            newColumn.isArray !== oldColumn.isArray ||
-            (!oldColumn.generatedType &&
+        // Check if only generated type changes (STORED) - these need drop/add
+        const onlyGeneratedTypeChanged =
+            oldColumn.type === newColumn.type &&
+            oldColumn.length === newColumn.length &&
+            newColumn.isArray === oldColumn.isArray &&
+            ((!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
-            (oldColumn.asExpression !== newColumn.asExpression &&
-                newColumn.generatedType === "STORED")
-        ) {
-            // To avoid data conversion, we just recreate column
+                (oldColumn.asExpression !== newColumn.asExpression &&
+                    newColumn.generatedType === "STORED"))
+
+        if (onlyGeneratedTypeChanged) {
+            // For generated column type changes, we need to recreate the column
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
@@ -1616,6 +1618,28 @@ export class PostgresQueryRunner
                     clonedTable.columns.indexOf(oldTableColumn!)
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
+            }
+
+            // Handle column type changes without data loss
+            if (
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length ||
+                newColumn.isArray !== oldColumn.isArray
+            ) {
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                    ),
+                )
             }
 
             if (
