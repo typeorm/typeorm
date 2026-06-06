@@ -3910,7 +3910,15 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     bracketPropertyPath: string | undefined,
                     plainAlias: string | undefined,
                     plainPropertyPath: string | undefined,
+                    offset: number,
                 ) => {
+                    if (
+                        criteria[offset - 1] === ":" ||
+                        criteria.slice(offset - 4, offset) === ":..."
+                    ) {
+                        return match
+                    }
+
                     const { aliasName, propertyPath } =
                         getMatchedAliasAndPropertyPath(
                             doubleQuotedAlias,
