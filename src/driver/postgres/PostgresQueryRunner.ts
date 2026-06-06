@@ -1339,22 +1339,6 @@ export class PostgresQueryRunner
             // update cloned table
             clonedTable = table.clone()
         } else {
-            if (
-                oldColumn.type !== newColumn.type ||
-                oldColumn.length !== newColumn.length ||
-                newColumn.isArray !== oldColumn.isArray
-            ) {
-                upQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(newColumn)}`,
-                    ),
-                )
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(oldColumn)}`,
-                    ),
-                )
-            }
             if (oldColumn.name !== newColumn.name) {
                 // rename column
                 upQueries.push(
@@ -1629,6 +1613,41 @@ export class PostgresQueryRunner
                     clonedTable.columns.indexOf(oldTableColumn!)
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
+            }
+
+            if (
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length ||
+                newColumn.isArray !== oldColumn.isArray
+            ) {
+                // Use buildEnumName() for enum/simple-enum types since createFullType()
+                // would produce invalid "TYPE enum" / "TYPE simple-enum" SQL
+                const isEnumType =
+                    oldColumn.type === "enum" ||
+                    oldColumn.type === "simple-enum" ||
+                    newColumn.type === "enum" ||
+                    newColumn.type === "simple-enum"
+
+                const upType = isEnumType
+                    ? this.buildEnumName(table, newColumn) +
+                      (newColumn.isArray ? "[]" : "")
+                    : this.driver.createFullType(newColumn)
+
+                const downType = isEnumType
+                    ? this.buildEnumName(table, oldColumn) +
+                      (oldColumn.isArray ? "[]" : "")
+                    : this.driver.createFullType(oldColumn)
+
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" TYPE ${upType}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" TYPE ${downType}`,
+                    ),
+                )
             }
 
             if (
