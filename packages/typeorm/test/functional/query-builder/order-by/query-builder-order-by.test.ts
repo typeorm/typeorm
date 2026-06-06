@@ -415,6 +415,43 @@ describe("query builder > order-by", () => {
                     expect(entities).to.have.lengthOf(3)
                 }),
             ))
+
+        it("should allow quoted expression orderBy combined with a join and pagination", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
+                    const commentRepository = dataSource.getRepository(Comment)
+
+                    const short = new Post()
+                    short.myOrder = 1
+                    short.title = "hi"
+
+                    const long = new Post()
+                    long.myOrder = 2
+                    long.title = "hello world"
+
+                    await postRepository.save([short, long])
+
+                    for (const post of [short, long]) {
+                        const comment = new Comment()
+                        comment.text = `comment-${post.id}`
+                        comment.postId = post.id
+                        await commentRepository.save(comment)
+                    }
+
+                    // #11742: quoted identifiers in ORDER BY expressions must
+                    // also be rewritten for the outer distinct pagination query.
+                    const { entities } = await commentRepository
+                        .createQueryBuilder("comment")
+                        .leftJoinAndSelect("comment.post", "post")
+                        .orderBy(titleLength(dataSource), "DESC")
+                        .take(1)
+                        .getRawAndEntities()
+
+                    expect(entities).to.have.lengthOf(1)
+                    expect(entities[0].post.title).to.be.equal("hello world")
+                }),
+            ))
     })
 
     it("should properly escape column names or aliases in order by", () =>
