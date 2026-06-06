@@ -94,26 +94,28 @@ describe("schema builder > collation > collation changes", () => {
                 col.collation = NEW_COLLATION
                 col.length = "150"
 
-                const sqlInMemory = await connection.driver
-                    .createSchemaBuilder()
-                    .log()
-                const tableName = meta.tableName
-                const upJoined = sqlInMemory.upQueries
-                    .map((q) => q.query.replaceAll(/\s+/g, " ").trim())
-                    .join(" ")
-                const downJoined = sqlInMemory.downQueries
-                    .map((q) => q.query.replaceAll(/\s+/g, " ").trim())
-                    .join(" ")
+                try {
+                    const sqlInMemory = await connection.driver
+                        .createSchemaBuilder()
+                        .log()
+                    const tableName = meta.tableName
+                    const upJoined = sqlInMemory.upQueries
+                        .map((q) => q.query.replaceAll(/\s+/g, " ").trim())
+                        .join(" ")
+                    const downJoined = sqlInMemory.downQueries
+                        .map((q) => q.query.replaceAll(/\s+/g, " ").trim())
+                        .join(" ")
 
-                expect(upJoined).to.include(
-                    `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(150) COLLATE "${NEW_COLLATION}"`,
-                )
-                expect(downJoined).to.include(
-                    `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(100) COLLATE "${OLD_COLLATION}"`,
-                )
-
-                col.collation = OLD_COLLATION
-                col.length = OLD_LENGTH
+                    expect(upJoined).to.include(
+                        `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(150) COLLATE "${NEW_COLLATION}"`,
+                    )
+                    expect(downJoined).to.include(
+                        `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(100) COLLATE "${OLD_COLLATION}"`,
+                    )
+                } finally {
+                    col.collation = OLD_COLLATION
+                    col.length = OLD_LENGTH
+                }
             }),
         )
     })

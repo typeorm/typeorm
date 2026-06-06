@@ -1622,18 +1622,38 @@ export class PostgresQueryRunner
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {
+                // If collation is also changing (or already set), it must be
+                // included in the same ALTER COLUMN TYPE statement — otherwise
+                // a second TYPE statement would be emitted below, causing
+                // redundant table-locking DDL. We include the COLLATE clause
+                // here so the collation block below can skip emitting when the
+                // type dimensions are also changing.
+                const upNewCollation = newColumn.collation
+                    ? ` COLLATE "${newColumn.collation}"`
+                    : newColumn.collation !== oldColumn.collation
+                    ? ` COLLATE pg_catalog."default"`
+                    : ""
+                const downOldCollation = oldColumn.collation
+                    ? ` COLLATE "${oldColumn.collation}"`
+                    : newColumn.collation !== oldColumn.collation
+                    ? ` COLLATE pg_catalog."default"`
+                    : ""
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                        }" TYPE ${this.driver.createFullType(
+                            newColumn,
+                        )}${upNewCollation}`,
                     ),
                 )
                 downQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                        }" TYPE ${this.driver.createFullType(
+                            oldColumn,
+                        )}${downOldCollation}`,
                     ),
                 )
             }
@@ -2343,7 +2363,15 @@ export class PostgresQueryRunner
             }
 
             // update column collation
-            if (newColumn.collation !== oldColumn.collation) {
+            // NOTE: If length/precision/scale also changed, the TYPE+COLLATE statement
+            // was already emitted by the block above to avoid double-locking DDL.
+            // Here we only emit when collation alone changed.
+            if (
+                newColumn.collation !== oldColumn.collation &&
+                newColumn.length === oldColumn.length &&
+                newColumn.precision === oldColumn.precision &&
+                newColumn.scale === oldColumn.scale
+            ) {
                 // Guard against undefined collation (e.g. user removes collation).
                 // Mirror the downQuery pattern: fall back to pg_catalog."default" if no collation set.
                 const newCollation = newColumn.collation

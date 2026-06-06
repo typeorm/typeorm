@@ -107,29 +107,31 @@ describe("schema builder > change column", () => {
                     postMetadata.findColumnWithPropertyName("name")!
                 nameColumn.length = "500"
 
-                const sqlInMemory = await dataSource.driver
-                    .createSchemaBuilder()
-                    .log()
-                const upQueries = sqlInMemory.upQueries.map(
-                    (query) => query.query,
-                )
+                try {
+                    const sqlInMemory = await dataSource.driver
+                        .createSchemaBuilder()
+                        .log()
+                    const upQueries = sqlInMemory.upQueries.map(
+                        (query) => query.query,
+                    )
 
-                expect(upQueries).to.include(
-                    `ALTER TABLE "post" ALTER COLUMN "name" TYPE character varying(500)`,
-                )
-                expect(
-                    upQueries.some((query) =>
-                        query.includes(`DROP COLUMN "name"`),
-                    ),
-                ).to.be.false
+                    expect(upQueries).to.include(
+                        `ALTER TABLE "post" ALTER COLUMN "name" TYPE character varying(500)`,
+                    )
+                    expect(
+                        upQueries.some((query) =>
+                            query.includes(`DROP COLUMN "name"`),
+                        ),
+                    ).to.be.false
 
-                await dataSource.synchronize()
+                    await dataSource.synchronize()
 
-                const post = await dataSource.manager.findOneBy(Post, { id: 1 })
-                expect(post!.name).to.equal("My persisted post")
-
-                // revert changes
-                nameColumn.length = "255"
+                    const post = await dataSource.manager.findOneBy(Post, { id: 1 })
+                    expect(post!.name).to.equal("My persisted post")
+                } finally {
+                    // revert changes — always runs even if assertions throw
+                    nameColumn.length = "255"
+                }
             }),
         ))
 
