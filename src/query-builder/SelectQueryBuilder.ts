@@ -3761,10 +3761,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     ): string {
         const buildReference = (aliasName: string, propertyPath: string) => {
             const alias = this.expressionMap.findAliasByName(aliasName)
-            const column =
-                alias.metadata.findColumnWithPropertyPath(propertyPath) ??
-                alias.metadata.findColumnWithDatabaseName(propertyPath)
-            const databaseName = column ? column.databaseName : propertyPath
+            let databaseName = propertyPath
+            if (alias.hasMetadata) {
+                const column =
+                    alias.metadata.findColumnWithPropertyPath(propertyPath) ??
+                    alias.metadata.findColumnWithDatabaseName(propertyPath)
+                databaseName = column ? column.databaseName : propertyPath
+            }
             return (
                 this.escape(parentAlias) +
                 "." +
