@@ -18,7 +18,7 @@ export function toPortablePath(filepath: string): string {
             (match, p1, p2) => `/unc/${p1 ? `.dot/` : ``}${p2}`,
         )
 
-    return filepath.replace(/\\/g, `/`)
+    return filepath.replaceAll("\\", `/`)
 }
 
 /**

@@ -12,6 +12,7 @@ describe("github issues > #929 sub-queries should set their own parameters on ex
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

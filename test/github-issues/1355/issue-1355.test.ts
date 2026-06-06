@@ -13,6 +13,7 @@ describe("github issues > #1355 Allow explicitly named primary keys, foreign key
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

@@ -19,6 +19,9 @@ import {
     AppWindow,
 } from "lucide-react"
 
+import { databases } from "@site/src/constants/databases"
+
+import maintainers from "./maintainers.json"
 import styles from "./index.module.css"
 
 // Feature section data
@@ -264,43 +267,6 @@ function CodeExampleSection() {
 }
 
 function SupportedDatabases() {
-    const databases = [
-        { name: "MySQL", icon: "/img/databases/mysql.png", category: "core" },
-        {
-            name: "PostgreSQL",
-            icon: "/img/databases/postgresql.png",
-            category: "core",
-        },
-        {
-            name: "MariaDB",
-            icon: "/img/databases/mariadb.png",
-            category: "core",
-        },
-        { name: "SQLite", icon: "/img/databases/sqlite.png", category: "core" },
-        {
-            name: "MS SQL Server",
-            icon: "/img/databases/mssql.png",
-            category: "core",
-        },
-        { name: "Oracle", icon: "/img/databases/oracle.png", category: "core" },
-        {
-            name: "MongoDB",
-            icon: "/img/databases/mongodb.png",
-            category: "core",
-        },
-        {
-            name: "CockroachDB",
-            icon: "/img/databases/cockroachdb.png",
-            category: "core",
-        },
-        { name: "SAP HANA", icon: "/img/databases/sap.png", category: "core" },
-        {
-            name: "Google Spanner",
-            icon: "/img/databases/spanner.svg",
-            category: "core",
-        },
-    ]
-
     return (
         <section className={styles.databasesSection}>
             <div className="container">
@@ -308,17 +274,21 @@ function SupportedDatabases() {
                     Supported Databases
                 </Heading>
                 <div className={styles.databasesGrid}>
-                    {databases.map((db, index) => (
-                        <div key={index} className={styles.databaseItem}>
+                    {Object.values(databases).map((db) => (
+                        <div key={db.label} className={styles.databaseItem}>
                             <div className={styles.databaseLogo}>
-                                <img src={db.icon} alt={`${db.name} logo`} />
+                                <img src={db.icon} alt={`${db.label} logo`} />
                             </div>
                             <span className={styles.databaseName}>
-                                {db.name}
+                                {db.label}
                             </span>
                         </div>
                     ))}
                 </div>
+                <p className={styles.databasesDisclaimer}>
+                    All logos are trademarks of their respective owners, used
+                    for identification purposes only.
+                </p>
             </div>
         </section>
     )
@@ -355,20 +325,6 @@ function PlatformsSection() {
     )
 }
 
-const teamHighlights = [
-    { name: "Michael Bromley", github: "michaelbromley" },
-    { name: "David Höck", github: "dlhck" },
-    { name: "Lucian Mocanu", github: "alumni" },
-    { name: "Naor Peled", github: "naorpeled" },
-    { name: "Giorgio Boa", github: "gioboa" },
-    { name: "Piotr Kuczynski", github: "pkuczynski" },
-    { name: "Mohammed Gomaa", github: "G0maa" },
-    { name: "Julian Pufler", github: "pujux" },
-    { name: "Simon Garner", github: "sgarner" },
-    { name: "Pieter Wigboldus", github: "w3nl" },
-    { name: "Mike Guida", github: "mguida22" },
-]
-
 function MaintainersSection() {
     return (
         <section className={styles.maintainersSection}>
@@ -377,7 +333,7 @@ function MaintainersSection() {
                     Maintained By
                 </Heading>
                 <div className={styles.maintainersAvatars}>
-                    {teamHighlights.map((m) => (
+                    {maintainers.map((m) => (
                         <img
                             key={m.github}
                             src={`https://avatars.githubusercontent.com/${m.github}?s=100`}

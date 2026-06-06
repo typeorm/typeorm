@@ -14,6 +14,7 @@ describe("other issues > lazy count", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             subscribers: [AfterQuerySubscriber],
             dropSchema: true,

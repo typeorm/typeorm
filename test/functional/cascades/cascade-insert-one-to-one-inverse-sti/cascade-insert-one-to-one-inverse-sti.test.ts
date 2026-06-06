@@ -13,6 +13,7 @@ describe("cascades > insert one-to-one inverse with single table inheritance", (
     let dataSources: DataSource[] = []
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

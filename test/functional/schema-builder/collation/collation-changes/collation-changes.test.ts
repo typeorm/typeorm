@@ -48,11 +48,11 @@ describe("schema builder > collation > collation changes", () => {
 
                 // assert that the expected queries are in the generated SQL
                 const upJoined = sqlInMemory.upQueries
-                    .map((q) => q.query.replace(/\s+/g, " ").trim())
+                    .map((q) => q.query.replaceAll(/\s+/g, " ").trim())
                     .join(" ")
                 expect(upJoined).to.include(expectedUp)
                 const downJoined = sqlInMemory.downQueries
-                    .map((q) => q.query.replace(/\s+/g, " ").trim())
+                    .map((q) => q.query.replaceAll(/\s+/g, " ").trim())
                     .join(" ")
                 expect(downJoined).to.include(expectedDown)
 

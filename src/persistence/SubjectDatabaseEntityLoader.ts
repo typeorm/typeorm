@@ -38,117 +38,125 @@ export class SubjectDatabaseEntityLoader {
     ): Promise<void> {
         // we are grouping subjects by target to perform more optimized queries using WHERE IN operator
         // go through the groups and perform loading of database entities of each subject in the group
-        const promises = this.groupByEntityTargets().map(
-            async (subjectGroup) => {
-                // prepare entity ids of the subjects we need to load
-                const allIds: ObjectLiteral[] = []
-                const allSubjects: Subject[] = []
+        const loadSubjectGroup = async (subjectGroup: {
+            target: Function | string
+            subjects: Subject[]
+        }): Promise<void> => {
+            // prepare entity ids of the subjects we need to load
+            const allIds: ObjectLiteral[] = []
+            const allSubjects: Subject[] = []
+            subjectGroup.subjects.forEach((subject) => {
+                // we don't load if subject already has a database entity loaded
+                if (subject.databaseEntity || !subject.identifier) return
+
+                allIds.push(subject.identifier)
+                allSubjects.push(subject)
+            })
+
+            // if there no ids found (means all entities are new and have generated ids) - then nothing to load there
+            if (!allIds.length) return
+
+            const loadRelationPropertyPaths: string[] = []
+
+            // for the save, soft-remove and recover operation
+            // extract all property paths of the relations we need to load relation ids for
+            // this is for optimization purpose - this way we don't load relation ids for entities
+            // whose relations are undefined, and since they are undefined its really pointless to
+            // load something for them, since undefined properties are skipped by the orm
+            if (
+                operationType === "save" ||
+                operationType === "soft-remove" ||
+                operationType === "recover"
+            ) {
                 subjectGroup.subjects.forEach((subject) => {
-                    // we don't load if subject already has a database entity loaded
-                    if (subject.databaseEntity || !subject.identifier) return
+                    // gets all relation property paths that exist in the persisted entity.
+                    subject.metadata.relations.forEach((relation) => {
+                        const value = relation.getEntityValue(
+                            subject.entityWithFulfilledIds!,
+                        )
+                        if (value === undefined) return
 
-                    allIds.push(subject.identifier)
-                    allSubjects.push(subject)
-                })
-
-                // if there no ids found (means all entities are new and have generated ids) - then nothing to load there
-                if (!allIds.length) return
-
-                const loadRelationPropertyPaths: string[] = []
-
-                // for the save, soft-remove and recover operation
-                // extract all property paths of the relations we need to load relation ids for
-                // this is for optimization purpose - this way we don't load relation ids for entities
-                // whose relations are undefined, and since they are undefined its really pointless to
-                // load something for them, since undefined properties are skipped by the orm
-                if (
-                    operationType === "save" ||
-                    operationType === "soft-remove" ||
-                    operationType === "recover"
-                ) {
-                    subjectGroup.subjects.forEach((subject) => {
-                        // gets all relation property paths that exist in the persisted entity.
-                        subject.metadata.relations.forEach((relation) => {
-                            const value = relation.getEntityValue(
-                                subject.entityWithFulfilledIds!,
+                        if (
+                            loadRelationPropertyPaths.indexOf(
+                                relation.propertyPath,
+                            ) === -1
+                        )
+                            loadRelationPropertyPaths.push(
+                                relation.propertyPath,
                             )
-                            if (value === undefined) return
-
-                            if (
-                                loadRelationPropertyPaths.indexOf(
-                                    relation.propertyPath,
-                                ) === -1
-                            )
-                                loadRelationPropertyPaths.push(
-                                    relation.propertyPath,
-                                )
-                        })
-                    })
-                } else {
-                    // remove
-
-                    // for remove operation
-                    // we only need to load junction relation ids since only they are removed by cascades
-                    loadRelationPropertyPaths.push(
-                        ...subjectGroup.subjects[0].metadata.manyToManyRelations.map(
-                            (relation) => relation.propertyPath,
-                        ),
-                    )
-                }
-
-                const findOptions: FindManyOptions<any> = {
-                    loadEagerRelations: false,
-                    loadRelationIds: {
-                        relations: loadRelationPropertyPaths,
-                        disableMixedMap: true,
-                    },
-                    // include soft-deleted entities so save, soft-remove, recover,
-                    // and remove can find them by PK and load their relation IDs
-                    withDeleted: true,
-                }
-
-                // load database entities for all given ids
-                let entities: any[]
-                if (
-                    this.queryRunner.dataSource.driver.options.type ===
-                    "mongodb"
-                ) {
-                    const mongoRepo =
-                        this.queryRunner.manager.getRepository<ObjectLiteral>(
-                            subjectGroup.target,
-                        ) as MongoRepository<ObjectLiteral>
-                    entities = await mongoRepo.findByIds(allIds, findOptions)
-                } else {
-                    entities = await this.queryRunner.manager
-                        .getRepository<ObjectLiteral>(subjectGroup.target)
-                        .createQueryBuilder()
-                        .setFindOptions(findOptions)
-                        .whereInIds(allIds)
-                        .getMany()
-                }
-
-                // Now when we have entities we need to find subject of each entity
-                // and insert that entity into database entity of the found subjects.
-                // A single entity can be applied to many subjects as there might be duplicates.
-                // This will likely result in the same row being updated multiple times during a transaction.
-                entities.forEach((entity) => {
-                    const entityId =
-                        allSubjects[0].metadata.getEntityIdMap(entity)
-                    allSubjects.forEach((subject) => {
-                        if (subject.databaseEntity) return
-                        if (OrmUtils.compareIds(subject.identifier, entityId))
-                            subject.databaseEntity = entity
                     })
                 })
+            } else {
+                // remove
 
-                // this way we tell what subjects we tried to load database entities of
-                for (const subject of allSubjects) {
-                    subject.databaseEntityLoaded = true
-                }
-            },
-        )
+                // for remove operation
+                // we only need to load junction relation ids since only they are removed by cascades
+                loadRelationPropertyPaths.push(
+                    ...subjectGroup.subjects[0].metadata.manyToManyRelations.map(
+                        (relation) => relation.propertyPath,
+                    ),
+                )
+            }
 
-        await Promise.all(promises)
+            const findOptions: FindManyOptions<any> = {
+                loadEagerRelations: false,
+                loadRelationIds: {
+                    relations: loadRelationPropertyPaths,
+                    disableMixedMap: true,
+                },
+                // include soft-deleted entities so save, soft-remove, recover,
+                // and remove can find them by PK and load their relation IDs
+                withDeleted: true,
+            }
+
+            // load database entities for all given ids
+            let entities: any[]
+            if (this.queryRunner.dataSource.driver.options.type === "mongodb") {
+                const mongoRepo =
+                    this.queryRunner.manager.getRepository<ObjectLiteral>(
+                        subjectGroup.target,
+                    ) as MongoRepository<ObjectLiteral>
+                entities = await mongoRepo.findByIds(allIds, findOptions)
+            } else {
+                entities = await this.queryRunner.manager
+                    .getRepository<ObjectLiteral>(subjectGroup.target)
+                    .createQueryBuilder()
+                    .setFindOptions(findOptions)
+                    .whereInIds(allIds)
+                    .getMany()
+            }
+
+            // Now when we have entities we need to find subject of each entity
+            // and insert that entity into database entity of the found subjects.
+            // A single entity can be applied to many subjects as there might be duplicates.
+            // This will likely result in the same row being updated multiple times during a transaction.
+            entities.forEach((entity) => {
+                const entityId = allSubjects[0].metadata.getEntityIdMap(entity)
+                allSubjects.forEach((subject) => {
+                    if (subject.databaseEntity) return
+                    if (OrmUtils.compareIds(subject.identifier, entityId))
+                        subject.databaseEntity = entity
+                })
+            })
+
+            // this way we tell what subjects we tried to load database entities of
+            for (const subject of allSubjects) {
+                subject.databaseEntityLoaded = true
+            }
+        }
+
+        const subjectGroups = this.groupByEntityTargets()
+
+        // Avoid concurrent queries on the same pg client; see #12238.
+        // CockroachDB uses the pg package over a single connection too.
+        const driverType = this.queryRunner.dataSource.options.type
+        if (driverType === "postgres" || driverType === "cockroachdb") {
+            for (const subjectGroup of subjectGroups) {
+                await loadSubjectGroup(subjectGroup)
+            }
+        } else {
+            await Promise.all(subjectGroups.map(loadSubjectGroup))
+        }
     }
 
     // ---------------------------------------------------------------------

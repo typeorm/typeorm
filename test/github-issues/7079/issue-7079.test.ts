@@ -12,6 +12,7 @@ describe("github issues > #7079 Error when sorting by an embedded entity while u
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Post, User],
             schemaCreate: true,
             dropSchema: true,

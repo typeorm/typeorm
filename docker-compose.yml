@@ -110,13 +110,17 @@ services:
       # - oracle-data:/opt/oracle/oradata
       - ./docker/oracle/startup:/opt/oracle/scripts/startup:ro
 
-  # google cloud spanner
+  # spanner
   spanner:
-    image: alexmesser/spanner-emulator
+    image: roryq/spanner-emulator:latest
     container_name: "typeorm-spanner"
     ports:
       - "9010:9010"
       - "9020:9020"
+    environment:
+      SPANNER_PROJECT_ID: "typeorm"
+      SPANNER_INSTANCE_ID: "typeorm"
+      SPANNER_DATABASE_ID: "typeorm"
 
   # sap hana
   # works only on linux, minimum 10GB RAM for docker required
