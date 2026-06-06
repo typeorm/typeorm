@@ -3828,39 +3828,79 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             }
         }
 
+        const replaceColumnReferences = (criteria: string) =>
+            criteria.replaceAll(
+                qualifiedColumnReferencePattern,
+                (
+                    match,
+                    doubleQuotedAlias: string | undefined,
+                    doubleQuotedPropertyPath: string | undefined,
+                    backtickAlias: string | undefined,
+                    backtickPropertyPath: string | undefined,
+                    bracketAlias: string | undefined,
+                    bracketPropertyPath: string | undefined,
+                    plainAlias: string | undefined,
+                    plainPropertyPath: string | undefined,
+                ) => {
+                    const { aliasName, propertyPath } =
+                        getMatchedAliasAndPropertyPath(
+                            doubleQuotedAlias,
+                            doubleQuotedPropertyPath,
+                            backtickAlias,
+                            backtickPropertyPath,
+                            bracketAlias,
+                            bracketPropertyPath,
+                            plainAlias,
+                            plainPropertyPath,
+                        )
+                    return aliasName &&
+                        propertyPath &&
+                        aliasNames.includes(aliasName)
+                        ? buildReference(aliasName, propertyPath)
+                        : match
+                },
+            )
+
+        const replaceOutsideStringLiterals = (criteria: string) => {
+            let result = ""
+            let start = 0
+            let index = 0
+
+            while (index < criteria.length) {
+                if (criteria[index] !== "'") {
+                    index++
+                    continue
+                }
+
+                result += replaceColumnReferences(criteria.slice(start, index))
+
+                const quoteStart = index
+                index++
+                while (index < criteria.length) {
+                    if (criteria[index] !== "'") {
+                        index++
+                        continue
+                    }
+
+                    if (criteria[index + 1] === "'") {
+                        index += 2
+                        continue
+                    }
+
+                    index++
+                    break
+                }
+
+                result += criteria.slice(quoteStart, index)
+                start = index
+            }
+
+            return result + replaceColumnReferences(criteria.slice(start))
+        }
+
         // expression path: rewrite every plain or quoted `alias.property.path`
         // token that refers to a known alias, leaving operators/functions/literals as is
-        return orderCriteria.replaceAll(
-            qualifiedColumnReferencePattern,
-            (
-                match,
-                doubleQuotedAlias: string | undefined,
-                doubleQuotedPropertyPath: string | undefined,
-                backtickAlias: string | undefined,
-                backtickPropertyPath: string | undefined,
-                bracketAlias: string | undefined,
-                bracketPropertyPath: string | undefined,
-                plainAlias: string | undefined,
-                plainPropertyPath: string | undefined,
-            ) => {
-                const { aliasName, propertyPath } =
-                    getMatchedAliasAndPropertyPath(
-                        doubleQuotedAlias,
-                        doubleQuotedPropertyPath,
-                        backtickAlias,
-                        backtickPropertyPath,
-                        bracketAlias,
-                        bracketPropertyPath,
-                        plainAlias,
-                        plainPropertyPath,
-                    )
-                return aliasName &&
-                    propertyPath &&
-                    aliasNames.includes(aliasName)
-                    ? buildReference(aliasName, propertyPath)
-                    : match
-            },
-        )
+        return replaceOutsideStringLiterals(orderCriteria)
     }
 
     /**
