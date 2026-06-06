@@ -493,6 +493,48 @@ describe("query builder > order-by", () => {
                     expect(entities[0].post.title).to.be.equal("post.title")
                 }),
             ))
+
+        it("should not rewrite alias references inside orderBy parameter placeholders", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
+                    const commentRepository = dataSource.getRepository(Comment)
+
+                    const other = new Post()
+                    other.myOrder = 1
+                    other.title = "other"
+
+                    const target = new Post()
+                    target.myOrder = 2
+                    target.title = "target"
+
+                    await postRepository.save([other, target])
+
+                    for (const post of [other, target]) {
+                        const comment = new Comment()
+                        comment.text = `comment-${post.id}`
+                        comment.postId = post.id
+                        await commentRepository.save(comment)
+                    }
+
+                    // The column reference should be rewritten, but the
+                    // dotted parameter placeholder name must stay intact.
+                    const { entities } = await commentRepository
+                        .createQueryBuilder("comment")
+                        .leftJoinAndSelect("comment.post", "post")
+                        .orderBy(
+                            "CASE WHEN post.title = :post.title THEN 0 ELSE 1 END",
+                            "ASC",
+                        )
+                        .setParameter("post.title", "target")
+                        .addOrderBy("post.id", "ASC")
+                        .take(1)
+                        .getRawAndEntities()
+
+                    expect(entities).to.have.lengthOf(1)
+                    expect(entities[0].post.title).to.be.equal("target")
+                }),
+            ))
     })
 
     it("should properly escape column names or aliases in order by", () =>
