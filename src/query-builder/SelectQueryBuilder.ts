@@ -3782,21 +3782,84 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             )
         }
 
-        // fast path: a plain `alias.property.path` column reference
+        const qualifiedColumnReferencePattern =
+            /"([^"]+)"\."([^"]+)"|`([^`]+)`\.`([^`]+)`|\[([^\]]+)\]\.\[([^\]]+)\]|(\w+)\.([\w.]+)/g
+        const singleQualifiedColumnReferencePattern =
+            /^(?:"([^"]+)"\."([^"]+)"|`([^`]+)`\.`([^`]+)`|\[([^\]]+)\]\.\[([^\]]+)\]|(\w+)\.([\w.]+))$/
+        const getMatchedAliasAndPropertyPath = (
+            doubleQuotedAlias: string | undefined,
+            doubleQuotedPropertyPath: string | undefined,
+            backtickAlias: string | undefined,
+            backtickPropertyPath: string | undefined,
+            bracketAlias: string | undefined,
+            bracketPropertyPath: string | undefined,
+            plainAlias: string | undefined,
+            plainPropertyPath: string | undefined,
+        ) => ({
+            aliasName:
+                doubleQuotedAlias ??
+                backtickAlias ??
+                bracketAlias ??
+                plainAlias,
+            propertyPath:
+                doubleQuotedPropertyPath ??
+                backtickPropertyPath ??
+                bracketPropertyPath ??
+                plainPropertyPath,
+        })
+
+        // fast path: a plain or quoted `alias.property.path` column reference
         const aliasNames = this.expressionMap.aliases.map((alias) => alias.name)
-        const singleColumnMatch = /^(\w+)\.([\w.]+)$/.exec(orderCriteria)
-        if (singleColumnMatch && aliasNames.includes(singleColumnMatch[1])) {
-            return buildReference(singleColumnMatch[1], singleColumnMatch[2])
+        const singleColumnMatch =
+            singleQualifiedColumnReferencePattern.exec(orderCriteria)
+        if (singleColumnMatch) {
+            const { aliasName, propertyPath } = getMatchedAliasAndPropertyPath(
+                singleColumnMatch[1],
+                singleColumnMatch[2],
+                singleColumnMatch[3],
+                singleColumnMatch[4],
+                singleColumnMatch[5],
+                singleColumnMatch[6],
+                singleColumnMatch[7],
+                singleColumnMatch[8],
+            )
+            if (aliasName && propertyPath && aliasNames.includes(aliasName)) {
+                return buildReference(aliasName, propertyPath)
+            }
         }
 
-        // expression path: rewrite every `alias.property.path` token that
-        // refers to a known alias, leaving operators/functions/literals as is
+        // expression path: rewrite every plain or quoted `alias.property.path`
+        // token that refers to a known alias, leaving operators/functions/literals as is
         return orderCriteria.replaceAll(
-            /(\w+)\.([\w.]+)/g,
-            (match, aliasName: string, propertyPath: string) =>
-                aliasNames.includes(aliasName)
+            qualifiedColumnReferencePattern,
+            (
+                match,
+                doubleQuotedAlias: string | undefined,
+                doubleQuotedPropertyPath: string | undefined,
+                backtickAlias: string | undefined,
+                backtickPropertyPath: string | undefined,
+                bracketAlias: string | undefined,
+                bracketPropertyPath: string | undefined,
+                plainAlias: string | undefined,
+                plainPropertyPath: string | undefined,
+            ) => {
+                const { aliasName, propertyPath } =
+                    getMatchedAliasAndPropertyPath(
+                        doubleQuotedAlias,
+                        doubleQuotedPropertyPath,
+                        backtickAlias,
+                        backtickPropertyPath,
+                        bracketAlias,
+                        bracketPropertyPath,
+                        plainAlias,
+                        plainPropertyPath,
+                    )
+                return aliasName &&
+                    propertyPath &&
+                    aliasNames.includes(aliasName)
                     ? buildReference(aliasName, propertyPath)
-                    : match,
+                    : match
+            },
         )
     }
 
