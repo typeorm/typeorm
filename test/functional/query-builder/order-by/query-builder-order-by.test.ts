@@ -349,7 +349,7 @@ describe("query builder > order-by", () => {
                         await commentRepository.save(comment)
                     }
 
-                    // an ORDER BY expression referencing two qualified columns
+                    // #11742: an ORDER BY expression referencing two qualified columns
                     // produces more than one "." in the order-by key. Combined
                     // with a join and take this goes through the distinct
                     // pagination path (createOrderByCombinedWithSelectExpression),
@@ -367,6 +367,52 @@ describe("query builder > order-by", () => {
                     for (const comment of entities) {
                         expect(comment.post).to.not.be.undefined
                     }
+                }),
+            ))
+
+        it("should allow multi-column expression orderBy with subquery join and pagination", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
+                    const commentRepository = dataSource.getRepository(Comment)
+
+                    for (let i = 0; i < 5; i++) {
+                        const post = new Post()
+                        post.myOrder = i
+                        post.num1 = i
+                        post.num2 = 5 - i
+                        await postRepository.save(post)
+
+                        const comment = new Comment()
+                        comment.text = `comment-${i}`
+                        comment.postId = post.id
+                        await commentRepository.save(comment)
+                    }
+
+                    // Subquery aliases do not have entity metadata. The
+                    // expression rewriter should still rewrite their selected
+                    // columns without reading Alias.metadata.
+                    const { entities } = await postRepository
+                        .createQueryBuilder("post")
+                        .leftJoin(
+                            (subQuery) =>
+                                subQuery
+                                    .select("comment_inner.postId", "postId")
+                                    .addSelect(
+                                        "COUNT(comment_inner.id)",
+                                        "total",
+                                    )
+                                    .from(Comment, "comment_inner")
+                                    .groupBy("comment_inner.postId"),
+                            "sub",
+                            "sub.postId = post.id",
+                        )
+                        .addSelect("sub.total", "sub_total")
+                        .orderBy("post.num1 + sub.total", "ASC")
+                        .take(3)
+                        .getRawAndEntities()
+
+                    expect(entities).to.have.lengthOf(3)
                 }),
             ))
     })
