@@ -1621,19 +1621,24 @@ export class PostgresQueryRunner
                 newColumn.isArray !== oldColumn.isArray
             ) {
                 // Use buildEnumName() for enum/simple-enum types since createFullType()
-                // would produce invalid "TYPE enum" / "TYPE simple-enum" SQL
-                const isEnumType =
-                    oldColumn.type === "enum" ||
-                    oldColumn.type === "simple-enum" ||
+                // would produce invalid "TYPE enum" / "TYPE simple-enum" SQL.
+                // Check each side independently: only use buildEnumName for the side
+                // that is actually enum — prevents enum→non-enum or non-enum→enum
+                // from referencing the wrong type name.
+                const upIsEnum =
                     newColumn.type === "enum" ||
                     newColumn.type === "simple-enum"
 
-                const upType = isEnumType
+                const downIsEnum =
+                    oldColumn.type === "enum" ||
+                    oldColumn.type === "simple-enum"
+
+                const upType = upIsEnum
                     ? this.buildEnumName(table, newColumn) +
                       (newColumn.isArray ? "[]" : "")
                     : this.driver.createFullType(newColumn)
 
-                const downType = isEnumType
+                const downType = downIsEnum
                     ? this.buildEnumName(table, oldColumn) +
                       (oldColumn.isArray ? "[]" : "")
                     : this.driver.createFullType(oldColumn)
@@ -1648,6 +1653,24 @@ export class PostgresQueryRunner
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" TYPE ${downType}`,
                     ),
                 )
+
+                // When converting non-enum→enum, create the enum type first
+                // (addColumn already does this, changeColumn must too)
+                if (upIsEnum && !downIsEnum && newColumn.enum) {
+                    upQueries.splice(
+                        upQueries.length - 1,
+                        0,
+                        this.createEnumTypeSql(table, newColumn),
+                    )
+                }
+                // For the down migration: create old enum type if it was enum
+                if (downIsEnum && !upIsEnum && oldColumn.enum) {
+                    downQueries.splice(
+                        downQueries.length - 1,
+                        0,
+                        this.createEnumTypeSql(table, oldColumn),
+                    )
+                }
             }
 
             if (
