@@ -452,6 +452,47 @@ describe("query builder > order-by", () => {
                     expect(entities[0].post.title).to.be.equal("hello world")
                 }),
             ))
+
+        it("should not rewrite alias references inside orderBy string literals", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
+                    const commentRepository = dataSource.getRepository(Comment)
+
+                    const other = new Post()
+                    other.myOrder = 1
+                    other.title = "other"
+
+                    const literal = new Post()
+                    literal.myOrder = 2
+                    literal.title = "post.title"
+
+                    await postRepository.save([other, literal])
+
+                    for (const post of [other, literal]) {
+                        const comment = new Comment()
+                        comment.text = `comment-${post.id}`
+                        comment.postId = post.id
+                        await commentRepository.save(comment)
+                    }
+
+                    // The column reference should be rewritten, but the same
+                    // text inside the SQL string literal must stay literal.
+                    const { entities } = await commentRepository
+                        .createQueryBuilder("comment")
+                        .leftJoinAndSelect("comment.post", "post")
+                        .orderBy(
+                            "CASE WHEN post.title = 'post.title' THEN 0 ELSE 1 END",
+                            "ASC",
+                        )
+                        .addOrderBy("post.id", "ASC")
+                        .take(1)
+                        .getRawAndEntities()
+
+                    expect(entities).to.have.lengthOf(1)
+                    expect(entities[0].post.title).to.be.equal("post.title")
+                }),
+            ))
     })
 
     it("should properly escape column names or aliases in order by", () =>
