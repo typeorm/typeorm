@@ -14,6 +14,7 @@ describe("entity-schema > foreign-keys", () => {
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

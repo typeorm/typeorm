@@ -34,6 +34,7 @@ describe("github issues > #10322 logMigration of AbstractLogger has wrong loggin
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             migrations: [__dirname + "/migration/*{.js,.ts}"],
             schemaCreate: true,

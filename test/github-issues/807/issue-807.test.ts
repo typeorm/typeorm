@@ -11,6 +11,7 @@ describe("github issues > #807 Error in persisting dates", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

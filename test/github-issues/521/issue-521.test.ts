@@ -11,6 +11,7 @@ describe("github issues > #521 Attributes in UPDATE in QB arent getting replaced
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

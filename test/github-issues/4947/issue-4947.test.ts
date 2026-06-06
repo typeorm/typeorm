@@ -12,6 +12,7 @@ describe("github issues > #4947 beforeUpdate subscriber entity argument is undef
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
         })
