@@ -66,6 +66,18 @@ postCode: number
 
 If you need zero-padded display formatting, handle it in your application layer using `String.prototype.padStart()` or the MySQL `LPAD()` function in a raw query. The `unsigned` option for integer types is **not** affected by this change.
 
+#### `QueryBuilder.useIndex` signature changed
+
+When specifying the `USE INDEX` query hint, the `QueryBuilder.useIndex()` method no longer accepts raw SQL, but either an index name or an array of index names.
+
+```typescript
+// Before
+qb.useIndex("index1, `index#2`")
+
+// After
+qb.useIndex(["index1", "index#2"])
+```
+
 ### SQLite
 
 The `sqlite3` package has been dropped. Use `better-sqlite3` instead:
@@ -1060,7 +1072,7 @@ Container.set("UserRepository", dataSource.getRepository(User))
 
 ### NestJS
 
-NestJS users are not affected — the `@nestjs/typeorm` package has its own integration that does not depend on TypeORM's removed container system. However, `@nestjs/typeorm` v10 and the current v11.0.0 attempt to register the removed `Connection` class and will crash at startup. Make sure you are using a version of `@nestjs/typeorm` that includes the fix for TypeORM v1 compatibility.
+NestJS users are not affected — the `@nestjs/typeorm` package has its own integration that does not depend on TypeORM's removed container system. However, `@nestjs/typeorm` v10 and v11.0.0 attempt to register the removed `Connection` class and will crash at startup. Upgrade to `@nestjs/typeorm` v11.0.1 or later for TypeORM v1 compatibility. The `@typeorm/codemod` tool will bump it for you automatically.
 
 ## Other internal removals
 

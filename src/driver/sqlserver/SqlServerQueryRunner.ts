@@ -438,7 +438,7 @@ export class SqlServerQueryRunner
      */
     async getSchemas(database?: string): Promise<string[]> {
         const query = database
-            ? `SELECT * FROM "${database}"."sys"."schema"`
+            ? `SELECT * FROM "${database}"."sys"."schemas"`
             : `SELECT * FROM "sys"."schemas"`
         const results: ObjectLiteral[] = await this.query(query)
         return results.map((result) => result["name"])

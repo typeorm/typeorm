@@ -53,7 +53,15 @@ describe("driver > postgres > DataSource options > custom extension installation
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    after(async () => {
+        await Promise.all(
+            dataSources.map(async (dataSource) => {
+                await dataSource.query("DROP EXTENSION IF EXISTS tablefunc")
+                await dataSource.query("DROP EXTENSION IF EXISTS xml2")
+            }),
+        )
+        await closeTestingConnections(dataSources)
+    })
 
     it("should install specified extensions after connection", () =>
         Promise.all(
