@@ -1335,12 +1335,46 @@ export class PostgresQueryRunner
             (oldColumn.asExpression !== newColumn.asExpression &&
                 newColumn.generatedType === "STORED")
         ) {
-            // To avoid data conversion, we just recreate column
-            await this.dropColumn(table, oldColumn)
-            await this.addColumn(table, newColumn)
+            if (
+                (oldColumn.type !== newColumn.type ||
+                    oldColumn.length !== newColumn.length) &&
+                newColumn.isArray === oldColumn.isArray &&
+                !newColumn.generatedType &&
+                this.isAlterColumnTypeCompatible(oldColumn, newColumn)
+            ) {
+                // Use ALTER COLUMN … TYPE to preserve existing data.
+                // This avoids the destructive DROP + ADD path for compatible
+                // type-family or length-only changes (e.g. varchar(50) → varchar(100)).
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            oldColumn.name
+                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                    ),
+                )
+                // Reflect the new type/length in the in-memory table cache.
+                const clonedColumn = clonedTable.columns.find(
+                    (c) => c.name === oldColumn.name,
+                )
+                if (clonedColumn) {
+                    clonedColumn.type = newColumn.type
+                    clonedColumn.length = newColumn.length
+                }
+            } else {
+                // To avoid data conversion, we just recreate column
+                await this.dropColumn(table, oldColumn)
+                await this.addColumn(table, newColumn)
 
-            // update cloned table
-            clonedTable = table.clone()
+                // update cloned table
+                clonedTable = table.clone()
+            }
         } else {
             if (oldColumn.name !== newColumn.name) {
                 // rename column
@@ -5057,6 +5091,35 @@ export class PostgresQueryRunner
                 return disableEscape ? i : `"${i}"`
             })
             .join(".")
+    }
+
+    /**
+     * Returns `true` when an `ALTER TABLE … ALTER COLUMN … TYPE` statement
+     * can be used instead of `DROP COLUMN` + `ADD COLUMN`, preserving existing
+     * row data.
+     *
+     * PostgreSQL can implicitly cast between members of the same string-type
+     * family (`character varying`, `varchar`, `character`, `char`, `text`)
+     * without a USING clause, making this path safe for any length or alias
+     * change within that family.
+     *
+     * @param oldColumn
+     * @param newColumn
+     */
+    protected isAlterColumnTypeCompatible(
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+    ): boolean {
+        const stringFamily = new Set<string>([
+            "character varying",
+            "varchar",
+            "character",
+            "char",
+            "text",
+        ])
+        return (
+            stringFamily.has(oldColumn.type) && stringFamily.has(newColumn.type)
+        )
     }
 
     protected async getUserDefinedTypeName(table: Table, column: TableColumn) {

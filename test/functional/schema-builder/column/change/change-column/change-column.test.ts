@@ -472,4 +472,45 @@ describe("schema builder > change column", () => {
                 nameColumn.length = "255"
             }),
         ))
+    it("should preserve row data when widening a varchar column length (postgres)", () =>
+        Promise.all(
+            dataSources
+                .filter(
+                    (ds) =>
+                        ds.driver.options.type === "postgres" ||
+                        ds.driver.options.type === "aurora-postgres",
+                )
+                .map(async (dataSource) => {
+                    // Arrange: insert a row with a known name value
+                    const sentValue = "hello world"
+                    await dataSource.getRepository(Post).insert({
+                        id: 8001,
+                        version: "preserve-test",
+                        name: sentValue,
+                        tag: "preserve",
+                        likesCount: 0,
+                    })
+
+                    const postMetadata = dataSource.getMetadata(Post)
+                    const nameColumn =
+                        postMetadata.findColumnWithPropertyName("name")!
+                    const originalLength = nameColumn.length
+
+                    // Act: widen the varchar column and synchronize.
+                    // Before the fix, TypeORM would DROP + ADD the column,
+                    // silently erasing existing row data (issue #3357).
+                    nameColumn.length = "512"
+                    await dataSource.synchronize()
+
+                    // Assert: the row still exists and the value is intact
+                    const row = await dataSource
+                        .getRepository(Post)
+                        .findOneBy({ id: 8001 })
+                    expect(row).to.not.be.null
+                    expect(row!.name).to.equal(sentValue)
+
+                    // Revert metadata change
+                    nameColumn.length = originalLength
+                }),
+        ))
 })
