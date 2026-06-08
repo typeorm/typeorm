@@ -5098,10 +5098,21 @@ export class PostgresQueryRunner
      * can be used instead of `DROP COLUMN` + `ADD COLUMN`, preserving existing
      * row data.
      *
-     * PostgreSQL can implicitly cast between members of the same string-type
-     * family (`character varying`, `varchar`, `character`, `char`, `text`)
-     * without a USING clause, making this path safe for any length or alias
-     * change within that family.
+     * Rules:
+     * 1. Both types must belong to the PostgreSQL string-type family
+     *    (`character varying`, `varchar`, `character`, `char`, `text`).
+     * 2. The change must not narrow the maximum storable length.
+     *    - `varchar(50) → varchar(100)` : widening — safe.
+     *    - `varchar(100) → varchar(50)` : narrowing — kept as DROP+ADD so
+     *      existing rows longer than the new limit are not silently dropped
+     *      nor cause an unexpected runtime error.
+     *    - `varchar(N) → text`          : widening to unlimited — safe.
+     *    - `text → varchar(N)`          : narrowing from unlimited — kept
+     *      as DROP+ADD.
+     *
+     * This intentionally preserves the historical DROP+ADD behaviour for
+     * the narrowing case, matching the maintainer guidance on #11620
+     * (comment from @alumni, 2025-09-20).
      *
      * @param oldColumn
      * @param newColumn
@@ -5117,9 +5128,27 @@ export class PostgresQueryRunner
             "char",
             "text",
         ])
-        return (
-            stringFamily.has(oldColumn.type) && stringFamily.has(newColumn.type)
+        if (
+            !stringFamily.has(oldColumn.type) ||
+            !stringFamily.has(newColumn.type)
         )
+            return false
+
+        // `text` has no length cap — treat it as "unlimited".
+        const TEXT = "text"
+        const oldIsUnlimited = oldColumn.type === TEXT
+        const newIsUnlimited = newColumn.type === TEXT
+
+        // text → varchar(N): narrowing from unlimited — not safe.
+        if (oldIsUnlimited && !newIsUnlimited) return false
+
+        // varchar(N) → text: widening to unlimited — safe.
+        if (!oldIsUnlimited && newIsUnlimited) return true
+
+        // Both sides have an explicit length — only safe when not narrowing.
+        const oldLen = parseInt(oldColumn.length ?? "0", 10)
+        const newLen = parseInt(newColumn.length ?? "0", 10)
+        return newLen >= oldLen
     }
 
     protected async getUserDefinedTypeName(table: Table, column: TableColumn) {
