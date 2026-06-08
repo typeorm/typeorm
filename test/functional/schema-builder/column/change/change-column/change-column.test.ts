@@ -88,6 +88,7 @@ describe("schema builder > change column", () => {
             }),
         ))
 
+    // Regression test for #12563
     it("should preserve postgres column data when changing column length", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
@@ -105,6 +106,7 @@ describe("schema builder > change column", () => {
                 const postMetadata = dataSource.getMetadata(Post)
                 const nameColumn =
                     postMetadata.findColumnWithPropertyName("name")!
+                const originalLength = nameColumn.length
                 nameColumn.length = "500"
 
                 try {
@@ -130,7 +132,7 @@ describe("schema builder > change column", () => {
                     expect(post!.name).to.equal("My persisted post")
                 } finally {
                     // revert changes — always runs even if assertions throw
-                    nameColumn.length = "255"
+                    nameColumn.length = originalLength
                 }
             }),
         ))

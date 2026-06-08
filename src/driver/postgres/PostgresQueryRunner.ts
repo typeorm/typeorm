@@ -1620,21 +1620,19 @@ export class PostgresQueryRunner
             if (
                 newColumn.length !== oldColumn.length ||
                 newColumn.precision !== oldColumn.precision ||
-                newColumn.scale !== oldColumn.scale
+                newColumn.scale !== oldColumn.scale ||
+                newColumn.collation !== oldColumn.collation
             ) {
-                // If collation is also changing (or already set), it must be
-                // included in the same ALTER COLUMN TYPE statement — otherwise
-                // a second TYPE statement would be emitted below, causing
-                // redundant table-locking DDL. We include the COLLATE clause
-                // here so the collation block below can skip emitting when the
-                // type dimensions are also changing.
+                const escapedUpCollation = newColumn.collation ? newColumn.collation.replaceAll('"', '""') : ""
+                const escapedDownCollation = oldColumn.collation ? oldColumn.collation.replaceAll('"', '""') : ""
+
                 const upNewCollation = newColumn.collation
-                    ? ` COLLATE "${newColumn.collation}"`
+                    ? ` COLLATE "${escapedUpCollation}"`
                     : newColumn.collation !== oldColumn.collation
                     ? ` COLLATE pg_catalog."default"`
                     : ""
                 const downOldCollation = oldColumn.collation
-                    ? ` COLLATE "${oldColumn.collation}"`
+                    ? ` COLLATE "${escapedDownCollation}"`
                     : newColumn.collation !== oldColumn.collation
                     ? ` COLLATE pg_catalog."default"`
                     : ""
@@ -1656,6 +1654,16 @@ export class PostgresQueryRunner
                         )}${downOldCollation}`,
                     ),
                 )
+
+                const column = clonedTable.columns.find(
+                    (column) => column.name === newColumn.name,
+                )
+                if (column) {
+                    column.length = newColumn.length
+                    column.precision = newColumn.precision
+                    column.scale = newColumn.scale
+                    column.collation = newColumn.collation
+                }
             }
 
             if (
@@ -2362,46 +2370,7 @@ export class PostgresQueryRunner
                 )
             }
 
-            // update column collation
-            // NOTE: If length/precision/scale also changed, the TYPE+COLLATE statement
-            // was already emitted by the block above to avoid double-locking DDL.
-            // Here we only emit when collation alone changed.
-            if (
-                newColumn.collation !== oldColumn.collation &&
-                newColumn.length === oldColumn.length &&
-                newColumn.precision === oldColumn.precision &&
-                newColumn.scale === oldColumn.scale
-            ) {
-                // Guard against undefined collation (e.g. user removes collation).
-                // Mirror the downQuery pattern: fall back to pg_catalog."default" if no collation set.
-                const newCollation = newColumn.collation
-                    ? `"${newColumn.collation}"`
-                    : `pg_catalog."default"`
 
-                upQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
-                        }" TYPE ${this.driver.createFullType(
-                            newColumn,
-                        )} COLLATE ${newCollation}`,
-                    ),
-                )
-
-                const oldCollation = oldColumn.collation
-                    ? `"${oldColumn.collation}"`
-                    : `pg_catalog."default"` // if there's no old collation, use default
-
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
-                        }" TYPE ${this.driver.createFullType(
-                            oldColumn,
-                        )} COLLATE ${oldCollation}`,
-                    ),
-                )
-            }
 
             if (newColumn.generatedType !== oldColumn.generatedType) {
                 // Convert generated column data to normal column

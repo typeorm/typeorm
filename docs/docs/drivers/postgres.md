@@ -193,3 +193,8 @@ await dataSource.manager
     .from("thing")
     .getMany()
 ```
+
+
+### Schema Migrations
+
+When altering a column's `length`, `precision`, `scale`, or `collation` in PostgreSQL, TypeORM generates an `ALTER TABLE ... ALTER COLUMN ... TYPE ...` statement instead of dropping and recreating the column. This ensures that existing column data is preserved during these specific metadata changes.
