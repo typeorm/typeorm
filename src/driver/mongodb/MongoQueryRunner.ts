@@ -718,12 +718,12 @@ export class MongoQueryRunner implements QueryRunner {
      * @param transactionOptions
      */
     async startTransaction(
-        isolationLevel?: IsolationLevel,
+        isolationLevel?: IsolationLevel | "NONE",
         transactionOptions?: TransactionOptions,
     ): Promise<void> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
         if (this.isTransactionActive) throw new TransactionAlreadyStartedError()
-        if (isolationLevel !== undefined) {
+        if (isolationLevel !== undefined && isolationLevel !== "NONE") {
             throw new TypeORMError(
                 `MongoDB driver does not support transaction isolation levels.`,
             )
