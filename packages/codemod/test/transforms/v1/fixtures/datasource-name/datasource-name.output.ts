@@ -1,6 +1,15 @@
-import { DataSource } from "typeorm"
+import { DataSource, createConnection } from "typeorm"
 
 const dataSource = new DataSource({
+    type: "postgres",
+    database: "test",
+})
+
+// `createConnection({ name })` — the `name` option is removed too,
+// alongside the existing `new DataSource` case. Works because the
+// `datasource-name` transform runs before `global-functions` strips
+// the `createConnection` import.
+const conn = await createConnection({
     type: "postgres",
     database: "test",
 })

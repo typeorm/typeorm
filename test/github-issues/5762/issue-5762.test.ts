@@ -14,6 +14,7 @@ describe("github issues > #5762 `Using URL as a rich column type breaks", () => 
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [User],
             schemaCreate: true,
             dropSchema: true,

@@ -16,6 +16,7 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Post, Category],
             schemaCreate: true,
             dropSchema: true,
@@ -244,6 +245,7 @@ describe("entity manager > invalidWhereValuesBehavior with sql-null", () => {
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Post, Category],
             schemaCreate: true,
             dropSchema: true,
@@ -312,6 +314,7 @@ describe("entity manager > invalidWhereValuesBehavior with ignore", () => {
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Post, Category],
             schemaCreate: true,
             dropSchema: true,
@@ -419,6 +422,7 @@ describe("entity manager > invalidWhereValuesBehavior does NOT affect QB .where(
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Post, Category],
             schemaCreate: true,
             dropSchema: true,

@@ -58,6 +58,11 @@ export class SapDriver implements Driver {
     dataSource: DataSource
 
     /**
+     * Isolation levels supported by this driver.
+     */
+    supportedIsolationLevels = SapDriver.supportedIsolationLevels
+
+    /**
      * DataSource used by the driver.
      *
      * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
@@ -433,7 +438,7 @@ export class SapDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
-        sql = sql.replace(
+        sql = sql.replaceAll(
             /:(\.\.\.)?([A-Za-z0-9_.]+)/g,
             (full, isArray: string, key: string): string => {
                 if (!parameters.hasOwnProperty(key)) {
@@ -882,7 +887,9 @@ export class SapDriver implements Driver {
                 tableColumn.isUnique !==
                     this.normalizeIsUnique(columnMetadata) ||
                 (columnMetadata.generationStrategy !== "uuid" &&
-                    tableColumn.isGenerated !== columnMetadata.isGenerated)
+                    tableColumn.isGenerated !== columnMetadata.isGenerated) ||
+                (tableColumn.asExpression ?? "").trim() !==
+                    (columnMetadata.asExpression ?? "").trim()
             )
         })
     }
@@ -955,7 +962,7 @@ export class SapDriver implements Driver {
     protected escapeComment(comment?: string) {
         if (!comment) return comment
 
-        comment = comment.replace(/\u0000/g, "") // Null bytes aren't allowed in comments
+        comment = comment.replaceAll("\u0000", "") // Null bytes aren't allowed in comments
 
         return comment
     }

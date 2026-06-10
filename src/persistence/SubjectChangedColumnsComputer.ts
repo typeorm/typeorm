@@ -78,8 +78,14 @@ export class SubjectChangedColumnsComputer {
                     shouldTransformDatabaseEntity,
                 )
 
-                // filter out "relational columns" only in the case if there is a relation object in entity
-                if (column.relationMetadata) {
+                // Defer to computeDiffRelationalColumns only for auto-created
+                // join columns (propertyName matches the owning relation).
+                // User-defined columns that double as join columns must stay
+                // in the diff so their explicit entity value is never lost.
+                if (
+                    column.propertyName ===
+                    column.relationMetadata?.propertyName
+                ) {
                     const value = column.relationMetadata.getEntityValue(
                         subject.entity!,
                     )

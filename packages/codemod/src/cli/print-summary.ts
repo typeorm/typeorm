@@ -62,8 +62,9 @@ const printGrouped = (
     formatter: (line: string) => string = highlight,
 ): void => {
     for (const [line, count] of groupLines(lines)) {
-        const suffix = count > 1 ? ` ${colors.dim(`(${count} times)`)}` : ""
-        console.log(`${indent}${formatter(line)}${suffix}`)
+        const timesLabel = `(${count} times)`
+        const countSuffix = count > 1 ? ` ${colors.dim(timesLabel)}` : ""
+        console.log(`${indent}${formatter(line)}${countSuffix}`)
     }
 }
 

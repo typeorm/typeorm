@@ -59,6 +59,11 @@ export class OracleDriver implements Driver {
     dataSource: DataSource
 
     /**
+     * Isolation levels supported by this driver.
+     */
+    supportedIsolationLevels = OracleDriver.supportedIsolationLevels
+
+    /**
      * DataSource used by the driver.
      *
      * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
@@ -406,7 +411,7 @@ export class OracleDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
-        sql = sql.replace(
+        sql = sql.replaceAll(
             /:(\.\.\.)?([A-Za-z0-9_.]+)/g,
             (full, isArray: string, key: string): string => {
                 if (!parameters.hasOwnProperty(key)) {
@@ -560,7 +565,8 @@ export class OracleDriver implements Driver {
         if (columnMetadata.type === Boolean) {
             return value ? 1 : 0
         } else if (columnMetadata.type === "date") {
-            if (typeof value === "string") value = value.replace(/[^0-9-]/g, "")
+            if (typeof value === "string")
+                value = value.replaceAll(/[^0-9-]/g, "")
             return () =>
                 `TO_DATE('${DateUtils.mixedDateToDateString(value, {
                     utc: columnMetadata.utc,

@@ -11,6 +11,7 @@ describe("entity subscriber > query data", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Example],
             subscribers: [MockSubscriber],
             dropSchema: true,

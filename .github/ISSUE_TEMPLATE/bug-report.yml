@@ -78,6 +78,8 @@ body:
           required: false
         - label: better-sqlite3
           required: false
+        - label: capacitor
+          required: false
         - label: cockroachdb
           required: false
         - label: cordova
@@ -102,8 +104,6 @@ body:
           required: false
         - label: sqlite
           required: false
-        - label: sqlite-abstract
-          required: false
         - label: sqljs
           required: false
         - label: sqlserver
@@ -125,6 +125,12 @@ body:
           maintainers to resolve this issue.
     validations:
       required: true
+  - type: markdown
+    attributes:
+      value: >-
+        🛡️ **Security vulnerabilities:** Do not report security issues here.
+        Use [GitHub Security Advisories](https://github.com/typeorm/typeorm/security/advisories/new)
+        for private disclosure.
   - type: markdown
     attributes:
       value: |2-
