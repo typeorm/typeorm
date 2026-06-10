@@ -1,6 +1,7 @@
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { BaseDataSourceOptions } from "../data-source/BaseDataSourceOptions"
 import type { ColumnMetadata } from "../metadata/ColumnMetadata"
+import type { ColumnValueHandler } from "../metadata/value-handlers/ColumnValueHandler"
 import type { EntityMetadata } from "../metadata/EntityMetadata"
 import type { IndexMetadata } from "../metadata/IndexMetadata"
 import type { OnDeleteType } from "../metadata/types/OnDeleteType"
@@ -302,4 +303,9 @@ export interface Driver {
         indexA: IndexMetadata,
         indexB: TableIndex,
     ) => boolean
+
+    /** Returns a driver-specific ColumnValueHandler override, or undefined to use the default. */
+    resolveValueHandler?: (
+        column: ColumnMetadata,
+    ) => ColumnValueHandler | undefined
 }
