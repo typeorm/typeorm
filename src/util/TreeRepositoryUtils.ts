@@ -23,9 +23,9 @@ export class TreeRepositoryUtils {
                 joinColumn.referencedColumn ?? metadata.primaryColumns[0]
             // fixes issue #2518, default to databaseName property when givenDatabaseName is not set
             const joinColumnName =
-                joinColumn.givenDatabaseName || joinColumn.databaseName
+                joinColumn.givenDatabaseName ?? joinColumn.databaseName
             const referencedColumnName =
-                referencedColumn.givenDatabaseName ||
+                referencedColumn.givenDatabaseName ??
                 referencedColumn.databaseName
             const id = rawResult[alias + "_" + referencedColumnName]
             const parentId = rawResult[alias + "_" + joinColumnName]

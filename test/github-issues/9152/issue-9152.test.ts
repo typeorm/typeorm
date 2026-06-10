@@ -14,6 +14,7 @@ describe("github issues > #9152 Can't use LessThan for Union field", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Test],
         })
     })

@@ -13,6 +13,7 @@ describe("github issues > #5160 (MSSQL) DML statement cannot have any enabled tr
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Post],
             schemaCreate: true,
             dropSchema: true,
@@ -74,11 +75,11 @@ describe("github issues > #5160 (MSSQL) DML statement cannot have any enabled tr
                 const updatedPost = await connection
                     .createQueryBuilder(Post, "post")
                     .where({ id: post.id })
-                    .getOne()
+                    .getOneOrFail()
 
                 expect(updatedPost).is.not.undefined
-                updatedPost!.id.should.be.equal(post.id)
-                updatedPost!.triggerValue.should.be.equal(1)
+                updatedPost.id.should.be.equal(post.id)
+                updatedPost.triggerValue.should.be.equal(1)
             }),
         ))
 
@@ -106,11 +107,11 @@ describe("github issues > #5160 (MSSQL) DML statement cannot have any enabled tr
                 const updatedPost = await connection
                     .createQueryBuilder(Post, "post")
                     .where({ id: post.id })
-                    .getOne()
+                    .getOneOrFail()
 
                 expect(updatedPost).is.not.undefined
-                updatedPost!.id.should.be.equal(post.id)
-                updatedPost!.triggerValue.should.be.equal(1)
+                updatedPost.id.should.be.equal(post.id)
+                updatedPost.triggerValue.should.be.equal(1)
             }),
         ))
 })

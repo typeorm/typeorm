@@ -21,6 +21,7 @@ describe("repository > find options > relations", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
@@ -100,10 +101,8 @@ describe("repository > find options > relations", () => {
             dataSources.map(async (dataSource) => {
                 const loadedPost = await dataSource
                     .getRepository(Post)
-                    .findOne({
-                        where: {
-                            id: 1,
-                        },
+                    .findOneBy({
+                        id: 1,
                     })
                 loadedPost!.should.be.eql({
                     id: 1,

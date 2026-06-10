@@ -219,7 +219,7 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
      * @param parameters
      */
     protected static queryParams(parameters: any[] | undefined): string {
-        if (!parameters || !parameters.length) {
+        if (!parameters?.length) {
             return ""
         }
 
@@ -319,7 +319,9 @@ ${downSqls.join(`
     protected static prettifyQuery(query: string) {
         const formattedQuery = format(query, { indent: "    " })
         return (
-            "\n" + formattedQuery.replace(/^/gm, "            ") + "\n        "
+            "\n" +
+            formattedQuery.replaceAll(/^/gm, "            ") +
+            "\n        "
         )
     }
 }

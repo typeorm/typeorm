@@ -160,8 +160,8 @@ export class User {
   You can specify array of values or specify a enum class.
 - `enumName: string` - A name for generated enum type. If not specified, TypeORM will generate a enum type from entity and column names - so it's necessary if you intend to use the same enum type in different tables.
 - `primaryKeyConstraintName: string` - A name for the primary key constraint. If not specified, then constraint name is generated from the table name and the names of the involved columns.
-- `asExpression: string` - Generated column expression. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html) and [Postgres](https://www.postgresql.org/docs/12/ddl-generated-columns.html).
-- `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html) and [Postgres (Only "STORED")](https://www.postgresql.org/docs/12/ddl-generated-columns.html).
+- `asExpression: string` - Generated column expression. Supported by PostgreSQL/CockroachDB, MySQL/MariaDB, Oracle, SAP HANA, Spanner, SQLite, and SQL Server.
+- `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Supported by PostgreSQL (`STORED` only), CockroachDB, MySQL/MariaDB, Oracle (`VIRTUAL` only), Spanner (`STORED` only), SQLite, and SQL Server (`STORED` only, internally mapped to `PERSISTED`).
 - `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
 - `array: boolean` - Used for postgres and cockroachdb column types which can be array (for example int[]).
 - `transformer: ValueTransformer|ValueTransformer[]` - Specifies a value transformer (or array of value transformers) that is to be used to (un)marshal this column when reading or writing to the database. In case of an array, the value transformers will be applied in the natural order from entityValue to databaseValue, and in reverse order from databaseValue to entityValue.
@@ -587,7 +587,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@BeforeInsert`
 
@@ -605,7 +605,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@AfterInsert`
 
@@ -623,7 +623,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@BeforeUpdate`
 
@@ -641,7 +641,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@AfterUpdate`
 
@@ -659,7 +659,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@BeforeRemove`
 
@@ -677,7 +677,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@AfterRemove`
 
@@ -695,7 +695,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@BeforeSoftRemove`
 
@@ -713,7 +713,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@AfterSoftRemove`
 
@@ -731,7 +731,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@BeforeRecover`
 
@@ -749,7 +749,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@AfterRecover`
 
@@ -767,7 +767,7 @@ export class Post {
 }
 ```
 
-Learn more about [listeners](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [listeners](../listeners-and-subscribers.md).
 
 #### `@EventSubscriber`
 
@@ -809,7 +809,7 @@ export class PostSubscriber implements EntitySubscriberInterface {
 }
 ```
 
-Learn more about [subscribers](../advanced-topics/4-listeners-and-subscribers.md).
+Learn more about [subscribers](../listeners-and-subscribers.md).
 
 ## Other decorators
 
@@ -852,7 +852,7 @@ export class User {
 }
 ```
 
-Learn more about [indices](../advanced-topics/3-indices.md).
+Learn more about [indexes](../indexes.md).
 
 #### `@Unique`
 
@@ -879,7 +879,7 @@ export class User {
 }
 ```
 
-> Note: MySQL stores unique constraints as unique indices
+> Note: MySQL stores unique constraints as unique indexes
 
 #### `@Check`
 

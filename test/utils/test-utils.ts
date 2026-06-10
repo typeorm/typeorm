@@ -46,6 +46,14 @@ export interface TestingOptions {
     enabledDrivers?: DatabaseType[]
 
     /**
+     * List of drivers that should be excluded from this test suite. Applied
+     * after enabledDrivers — use this to opt a specific driver out of a test
+     * without enumerating every other driver. Typical use: marking a test as
+     * incompatible with a particular driver until the driver side is fixed.
+     */
+    disabledDrivers?: DatabaseType[]
+
+    /**
      * Entities needs to be included in the connection for the given test suite.
      */
     entities?: (string | Function | EntitySchema<any>)[]
@@ -168,16 +176,14 @@ export function setupSingleTestingConnection(
     options: TestingOptions,
 ): DataSourceOptions | undefined {
     const testingConnections = setupTestingConnections({
-        entities: options.entities ? options.entities : [],
-        subscribers: options.subscribers ? options.subscribers : [],
-        dropSchema: options.dropSchema ? options.dropSchema : false,
-        schemaCreate: options.schemaCreate ? options.schemaCreate : false,
+        entities: options.entities ?? [],
+        subscribers: options.subscribers ?? [],
+        dropSchema: options.dropSchema ?? false,
+        schemaCreate: options.schemaCreate ?? false,
         enabledDrivers: [driverType],
         cache: options.cache,
-        schema: options.schema ? options.schema : undefined,
-        namingStrategy: options.namingStrategy
-            ? options.namingStrategy
-            : undefined,
+        schema: options.schema ?? undefined,
+        namingStrategy: options.namingStrategy ?? undefined,
     })
     if (!testingConnections.length) return undefined
 
@@ -228,11 +234,10 @@ export function setupTestingConnections(
         .filter((connectionOptions) => {
             if (connectionOptions.skip === true) return false
 
-            if (
-                options &&
-                options.enabledDrivers &&
-                options.enabledDrivers.length
-            )
+            if (options?.disabledDrivers?.includes(connectionOptions.type!))
+                return false
+
+            if (options?.enabledDrivers?.length)
                 return (
                     options.enabledDrivers.indexOf(connectionOptions.type!) !==
                     -1
@@ -248,47 +253,39 @@ export function setupTestingConnections(
                 {},
                 connectionOptions as DataSourceOptions,
                 {
-                    entities:
-                        options && options.entities ? options.entities : [],
-                    migrations:
-                        options && options.migrations ? options.migrations : [],
-                    subscribers:
-                        options && options.subscribers
-                            ? options.subscribers
-                            : [],
-                    dropSchema:
-                        options && options.dropSchema !== undefined
-                            ? options.dropSchema
-                            : false,
-                    cache: options ? options.cache : undefined,
+                    entities: options?.entities ?? [],
+                    migrations: options?.migrations ?? [],
+                    subscribers: options?.subscribers ?? [],
+                    dropSchema: options?.dropSchema ?? false,
+                    cache: options?.cache,
                 },
             )
-            if (options && options.driverSpecific)
+            if (options?.driverSpecific)
                 newOptions = Object.assign(
                     {},
                     options.driverSpecific,
                     newOptions,
                 )
-            if (options && options.schemaCreate)
+            if (options?.schemaCreate)
                 newOptions.synchronize = options.schemaCreate
-            if (options && options.schema) newOptions.schema = options.schema
-            if (options && options.logging !== undefined)
+            if (options?.schema) newOptions.schema = options.schema
+            if (options?.logging !== undefined)
                 newOptions.logging = options.logging
-            if (options && options.createLogger !== undefined)
+            if (options?.createLogger !== undefined)
                 newOptions.logger = options.createLogger()
-            if (options && options.__dirname)
+            if (options?.__dirname)
                 newOptions.entities = [options.__dirname + "/entity/*{.js,.ts}"]
-            if (options && options.__dirname)
+            if (options?.__dirname)
                 newOptions.migrations = [
                     options.__dirname + "/migration/*{.js,.ts}",
                 ]
-            if (options && options.namingStrategy)
+            if (options?.namingStrategy)
                 newOptions.namingStrategy = options.namingStrategy
-            if (options && options.metadataTableName)
+            if (options?.metadataTableName)
                 newOptions.metadataTableName = options.metadataTableName
-            if (options && options.relationLoadStrategy)
+            if (options?.relationLoadStrategy)
                 newOptions.relationLoadStrategy = options.relationLoadStrategy
-            if (options && options.isolateWhereStatements)
+            if (options?.isolateWhereStatements)
                 newOptions.isolateWhereStatements =
                     options.isolateWhereStatements
 
@@ -345,9 +342,14 @@ getMetadataArgsStorage().entitySubscribers.push({
 
 export function createDataSource(options: DataSourceOptions): DataSource {
     if (options.type === "spanner") {
-        process.env.SPANNER_EMULATOR_HOST = "localhost:9010"
-        // process.env.GOOGLE_APPLICATION_CREDENTIALS =
-        //     "/Users/messer/Documents/google/typeorm-spanner-3b57e071cbf0.json"
+        const spannerOptions = options as DataSourceOptions & {
+            host?: string
+            port?: number
+        }
+
+        process.env.SPANNER_EMULATOR_HOST = `${spannerOptions.host ?? "localhost"}:${spannerOptions.port ?? 9010}`
+        process.env.METADATA_SERVER_DETECTION = "none"
+
         if (Array.isArray(options.subscribers)) {
             options.subscribers.push(
                 GeneratedColumnReplacerSubscriber as Function,

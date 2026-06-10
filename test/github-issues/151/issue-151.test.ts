@@ -13,6 +13,7 @@ describe("github issues > #151 joinAndSelect can't find entity from inverse side
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
@@ -31,17 +32,20 @@ describe("github issues > #151 joinAndSelect can't find entity from inverse side
 
                 await connection.manager.save(post)
 
-                const loadedPost = await connection.manager.findOne(Post, {
-                    where: {
-                        id: 1,
+                const loadedPost = await connection.manager.findOneOrFail(
+                    Post,
+                    {
+                        where: {
+                            id: 1,
+                        },
+                        relations: {
+                            category: true,
+                        },
                     },
-                    relations: {
-                        category: true,
-                    },
-                })
+                )
 
                 expect(loadedPost).not.to.be.null
-                loadedPost!.should.be.eql({
+                loadedPost.should.be.eql({
                     id: 1,
                     title: "Hello post",
                     category: {

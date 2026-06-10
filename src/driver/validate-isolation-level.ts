@@ -14,6 +14,12 @@ export const validateIsolationLevel = (
 ): void => {
     if (!isolationLevel) return
 
+    if (!supported || !Array.isArray(supported)) {
+        throw new TypeORMError(
+            `Driver must define supportedIsolationLevels to use isolationLevel option`,
+        )
+    }
+
     if (!supported.includes(isolationLevel)) {
         throw new TypeORMError(
             `${isolationLevel} isolation level is not supported`,

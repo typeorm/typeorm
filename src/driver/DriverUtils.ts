@@ -135,8 +135,7 @@ export class DriverUtils {
         buildOptions: { shorten?: boolean; joiner?: string } | undefined,
         ...alias: string[]
     ): string {
-        const joiner =
-            buildOptions && buildOptions.joiner ? buildOptions.joiner : "_"
+        const joiner = buildOptions?.joiner ?? "_"
 
         const newAlias = alias.length === 1 ? alias[0] : alias.join(joiner)
 
@@ -145,7 +144,7 @@ export class DriverUtils {
             maxAliasLength > 0 &&
             newAlias.length > maxAliasLength
         ) {
-            if (buildOptions && buildOptions.shorten === true) {
+            if (buildOptions?.shorten === true) {
                 const shortenedAlias = shorten(newAlias)
                 if (shortenedAlias.length < maxAliasLength) {
                     return shortenedAlias
@@ -170,28 +169,20 @@ export class DriverUtils {
     private static parseConnectionUrl(url: string) {
         const type = url.split(":")[0]
         const firstSlashes = url.indexOf("//")
-        const preBase = url.substr(firstSlashes + 2)
+        const preBase = url.slice(firstSlashes + 2)
         const secondSlash = preBase.indexOf("/")
         const base =
-            secondSlash !== -1 ? preBase.substr(0, secondSlash) : preBase
+            secondSlash === -1 ? preBase : preBase.slice(0, secondSlash)
         let afterBase =
-            secondSlash !== -1 ? preBase.substr(secondSlash + 1) : undefined
+            secondSlash === -1 ? undefined : preBase.slice(secondSlash + 1)
         // remove mongodb query params
         if (afterBase && afterBase.indexOf("?") !== -1) {
-            afterBase = afterBase.substr(0, afterBase.indexOf("?"))
+            afterBase = afterBase.slice(0, afterBase.indexOf("?"))
         }
+        // normalize empty string to undefined so downstream ?? works correctly
+        if (afterBase === "") afterBase = undefined
 
-        const lastAtSign = base.lastIndexOf("@")
-        const usernameAndPassword = base.substr(0, lastAtSign)
-        const hostAndPort = base.substr(lastAtSign + 1)
-
-        let username = usernameAndPassword
-        let password = ""
-        const firstColon = usernameAndPassword.indexOf(":")
-        if (firstColon !== -1) {
-            username = usernameAndPassword.substr(0, firstColon)
-            password = usernameAndPassword.substr(firstColon + 1)
-        }
+        const { username, password, hostAndPort } = this.parseCredentials(base)
         const [host, port] = hostAndPort.split(":")
 
         return {
@@ -200,7 +191,7 @@ export class DriverUtils {
             username: decodeURIComponent(username),
             password: decodeURIComponent(password),
             port: port ? parseInt(port) : undefined,
-            database: afterBase || undefined,
+            database: afterBase ?? undefined,
         }
     }
 
@@ -212,12 +203,14 @@ export class DriverUtils {
     private static parseMongoDBConnectionUrl(url: string) {
         const type = url.split(":")[0]
         const firstSlashes = url.indexOf("//")
-        const preBase = url.substr(firstSlashes + 2)
+        const preBase = url.slice(firstSlashes + 2)
         const secondSlash = preBase.indexOf("/")
         const base =
-            secondSlash !== -1 ? preBase.substr(0, secondSlash) : preBase
+            secondSlash === -1 ? preBase : preBase.slice(0, secondSlash)
         let afterBase =
-            secondSlash !== -1 ? preBase.substr(secondSlash + 1) : undefined
+            secondSlash === -1 ? undefined : preBase.slice(secondSlash + 1)
+        // normalize empty string to undefined so downstream ?? works correctly
+        if (afterBase === "") afterBase = undefined
         let afterQuestionMark: string
         let host = undefined
         let port = undefined
@@ -228,10 +221,7 @@ export class DriverUtils {
 
         if (afterBase && afterBase.indexOf("?") !== -1) {
             // split params
-            afterQuestionMark = afterBase.substr(
-                afterBase.indexOf("?") + 1,
-                afterBase.length,
-            )
+            afterQuestionMark = afterBase.slice(afterBase.indexOf("?") + 1)
 
             const optionsList = afterQuestionMark.split("&")
             let optionKey: string
@@ -246,20 +236,10 @@ export class DriverUtils {
 
             // specific replicaSet value to set options about hostReplicaSet
             replicaSet = optionsObject["replicaSet"]
-            afterBase = afterBase.substr(0, afterBase.indexOf("?"))
+            afterBase = afterBase.slice(0, afterBase.indexOf("?"))
         }
 
-        const lastAtSign = base.lastIndexOf("@")
-        const usernameAndPassword = base.substr(0, lastAtSign)
-        const hostAndPort = base.substr(lastAtSign + 1)
-
-        let username = usernameAndPassword
-        let password = ""
-        const firstColon = usernameAndPassword.indexOf(":")
-        if (firstColon !== -1) {
-            username = usernameAndPassword.substr(0, firstColon)
-            password = usernameAndPassword.substr(firstColon + 1)
-        }
+        const { username, password, hostAndPort } = this.parseCredentials(base)
 
         // If replicaSet have value set It as hostlist, If not set like standalone host
         if (replicaSet) {
@@ -275,7 +255,7 @@ export class DriverUtils {
             username: decodeURIComponent(username),
             password: decodeURIComponent(password),
             port: port ? parseInt(port) : undefined,
-            database: afterBase || undefined,
+            database: afterBase ?? undefined,
         }
 
         // Loop to set every options in connectionUrl to object
@@ -284,5 +264,28 @@ export class DriverUtils {
         }
 
         return connectionUrl
+    }
+
+    private static parseCredentials(base: string): {
+        username: string
+        password: string
+        hostAndPort: string
+    } {
+        const lastAtSign = base.lastIndexOf("@")
+        if (lastAtSign === -1) {
+            return { username: "", password: "", hostAndPort: base }
+        }
+
+        const hostAndPort = base.slice(lastAtSign + 1)
+        const credentials = base.slice(0, lastAtSign)
+        const colonIndex = credentials.indexOf(":")
+
+        return colonIndex === -1
+            ? { username: credentials, password: "", hostAndPort }
+            : {
+                  username: credentials.slice(0, colonIndex),
+                  password: credentials.slice(colonIndex + 1),
+                  hostAndPort,
+              }
     }
 }

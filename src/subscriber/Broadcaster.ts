@@ -8,10 +8,13 @@ import { BroadcasterResult } from "./BroadcasterResult"
 import type { EntitySubscriberInterface } from "./EntitySubscriberInterface"
 
 interface BroadcasterEvents {
-    BeforeQuery: (query: string, parameters: any[] | undefined) => void
+    BeforeQuery: (
+        query: string,
+        parameters: any[] | ObjectLiteral | undefined,
+    ) => void
     AfterQuery: (
         query: string,
-        parameters: any[] | undefined,
+        parameters: any[] | ObjectLiteral | undefined,
         success: boolean,
         executionTime: number | undefined,
         rawResults: any | undefined,
@@ -213,8 +216,8 @@ export class Broadcaster {
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
-                        updatedColumns: updatedColumns || [],
-                        updatedRelations: updatedRelations || [],
+                        updatedColumns: updatedColumns ?? [],
+                        updatedRelations: updatedRelations ?? [],
                     })
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult)
@@ -461,7 +464,7 @@ export class Broadcaster {
     broadcastBeforeQueryEvent(
         result: BroadcasterResult,
         query: string,
-        parameters: undefined | any[],
+        parameters: undefined | any[] | ObjectLiteral,
     ): void {
         if (this.queryRunner.dataSource.subscribers.length) {
             this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
@@ -496,7 +499,7 @@ export class Broadcaster {
     broadcastAfterQueryEvent(
         result: BroadcasterResult,
         query: string,
-        parameters: undefined | any[],
+        parameters: undefined | any[] | ObjectLiteral,
         success: boolean,
         executionTime: undefined | number,
         rawResults: undefined | any,
@@ -714,8 +717,8 @@ export class Broadcaster {
                         entity: entity,
                         metadata: metadata,
                         databaseEntity: databaseEntity,
-                        updatedColumns: updatedColumns || [],
-                        updatedRelations: updatedRelations || [],
+                        updatedColumns: updatedColumns ?? [],
+                        updatedRelations: updatedRelations ?? [],
                     })
                     if (executionResult instanceof Promise)
                         result.promises.push(executionResult)
@@ -1003,8 +1006,7 @@ export class Broadcaster {
         target: Function | string,
     ): boolean {
         return (
-            !subscriber.listenTo ||
-            !subscriber.listenTo() ||
+            !subscriber.listenTo?.() ||
             subscriber.listenTo() === Object ||
             subscriber.listenTo() === target ||
             subscriber.listenTo().isPrototypeOf(target)

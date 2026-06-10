@@ -66,6 +66,18 @@ postCode: number
 
 If you need zero-padded display formatting, handle it in your application layer using `String.prototype.padStart()` or the MySQL `LPAD()` function in a raw query. The `unsigned` option for integer types is **not** affected by this change.
 
+#### `QueryBuilder.useIndex` signature changed
+
+When specifying the `USE INDEX` query hint, the `QueryBuilder.useIndex()` method no longer accepts raw SQL, but either an index name or an array of index names.
+
+```typescript
+// Before
+qb.useIndex("index1, `index#2`")
+
+// After
+qb.useIndex(["index1", "index#2"])
+```
+
 ### SQLite
 
 The `sqlite3` package has been dropped. Use `better-sqlite3` instead:
@@ -248,6 +260,18 @@ new DataSource({
 })
 ```
 
+### Oracle
+
+The `LegacyOracleNamingStrategy` is no longer exported in the main TypeORM package. You can import it from `@typeorm/legacy-naming-strategies` if you still need it.
+
+```typescript
+// Before
+import { LegacyOracleNamingStrategy } from "typeorm"
+
+// After
+import { LegacyOracleNamingStrategy } from "@typeorm/legacy-naming-strategies"
+```
+
 ### SAP HANA
 
 Several deprecated SAP HANA connection aliases were removed.
@@ -265,20 +289,20 @@ Also note the default behavior changes in pool configuration:
 
 ### Expo
 
-Support for the legacy Expo SQLite driver has been removed. The legacy API was removed by Expo in SDK v52. Upgrade to **Expo SDK v52 or later** and use the modern async SQLite API:
+The minimum supported Expo SDK version is 52, which comes with a modern async SQLite API. TypeORM now loads `expo-sqlite` automatically, so the `driver` option is no longer required:
 
 ```typescript
 // Before
 new DataSource({
     type: "expo",
+    driver: require("expo-sqlite"),
     database: "db.sqlite",
 })
 
-// After — use Expo SDK v52+ with the modern async API
+// After
 new DataSource({
     type: "expo",
     database: "db.sqlite",
-    driver: require("expo-sqlite"),
 })
 ```
 
@@ -345,10 +369,10 @@ The `connection` property in the `Driver`, `QueryRunner`, `EntityManager`, `Quer
 
 The `ConnectionManager` class has been removed. If you were using it to manage multiple connections, create and manage your `DataSource` instances directly instead.
 
-`ConnectionOptionsReader` has also been simplified: `all()` was renamed to `get()` (returning all configs as an array), and the old `get(name)` and `has(name)` methods were removed.
+`ConnectionOptionsReader` has also been simplified: `all()` was renamed to `get()` (returning all configs as an array), and the old `get(name)` and `has(name)` methods were removed. It will now search for the `ormconfig` file in `process.cwd()` instead of the application path. You can use the `root` option to change the search location.
 
 ```typescript
-const reader = new ConnectionOptionsReader()
+const reader = new ConnectionOptionsReader({ root: "/path/to/config/" })
 
 // when your ormconfig has a single data source
 const [options] = await reader.get()
@@ -443,7 +467,21 @@ This setting guards all high-level APIs — find operations, repository/manager 
 
 ### Hashing
 
-The internal hashing implementation has been replaced with Node.js built-in `crypto`. If you use TypeORM's query result cache, existing cached entries will be invalidated after upgrading because the hash function produces different output. Caches will be rebuilt automatically — you may see a brief increase in cache misses.
+In TypeORM v1, the SHA1 hashing algorithm used for hashing is applied directly to the input. In the previous versions (v0.3), the input was first encoded using [encodeURIComponent](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent).
+
+If you use TypeORM's query result cache, existing cached entries will be invalidated after upgrading because the hash function produces different output. Caches will be rebuilt automatically — you may see a brief increase in cache misses.
+
+If you have table and columns names containing special characters, you can use `@typeorm/legacy-naming-strategies` to avoid changes in the database:
+
+```typescript
+import { NamingStrategyV03 } from "@typeorm/legacy-naming-strategies"
+
+const dataSource = new DataSource({
+    ...
+    namingStrategy: new NamingStrategyV03(),
+    ...
+})
+```
 
 ### Glob patterns
 
@@ -453,7 +491,23 @@ Glob patterns (used in entity/migration file discovery) are now handled by `tiny
 
 When `orphanedRowAction` is `"nullify"` (the default) and the foreign key column is non-nullable, orphaned children are now **deleted** instead of throwing a database constraint violation. Previously, TypeORM would attempt to set the FK to `null`, which failed on non-nullable columns.
 
+This only applies when the relation is loaded on the entity instance. TypeORM does not automatically load relations — it only traverses relation values that are already populated on the object. To ensure orphaned children are handled, load the relation before calling `remove` or `save`:
+
+```typescript
+const parent = await manager.findOne(Parent, {
+    where: { id: 1 },
+    relations: { children: true },
+})
+await manager.remove(parent)
+```
+
+If the relation is not loaded (i.e. the property is `undefined`), TypeORM will not detect or delete orphaned children, which may result in foreign key constraint violations.
+
 If you were relying on the error to prevent accidental child deletion, set `orphanedRowAction: "disable"` on the relation to preserve the old behavior.
+
+### Cascade remove now works for one-to-many relations
+
+Calling `manager.remove(entity)` with `cascade: true` or `cascade: ["remove"]` on a one-to-many relation now correctly deletes child entities before the parent. Previously, the child entities were not cascade-removed, causing the DELETE to fail with a foreign key constraint violation. Additionally, cascade operations are now scoped to the matching operation type — for example, `save()` only follows `insert`/`update` cascades and no longer traverses `remove`-only relations.
 
 ### Many-to-many junction rows and soft-deleted entities
 
@@ -468,6 +522,16 @@ await manager.save(user) // junction row for photo2 is now removed
 ```
 
 This only applies when the relation property is explicitly set. If it is `undefined`, no comparison is performed and junction rows are left intact.
+
+### Logger
+
+`FileLogger` lets the underlying platform (e.g. NodeJS) handle the paths instead of determining the path relative to the app root. You can provide an absolute path (or a path relative to `process.cwd()`) if the app is not started from its root folder:
+
+```typescript
+const dataSource = new DataSource({
+    logger: new FileLogger("all", { logPath: "/path/to/file.log" }),
+})
+```
 
 ## Columns
 
@@ -759,18 +823,6 @@ The removed type is `FindOptionsRelationByString`.
 
 ## QueryBuilder
 
-### Semicolons rejected in raw SQL expression methods
-
-The `select()`, `addSelect()`, `groupBy()`, `addGroupBy()`, `orderBy()`, and `addOrderBy()` methods on all query builders (`SelectQueryBuilder`, `UpdateQueryBuilder`, `SoftDeleteQueryBuilder`, and base `QueryBuilder`) now reject inputs containing semicolons at runtime to prevent SQL statement stacking attacks. The `orderBy()` methods also validate that order direction values are `"ASC"` or `"DESC"` and nulls values are `"NULLS FIRST"` or `"NULLS LAST"`. If you have legitimate SQL expressions that contain semicolons (e.g., inside string literals), use parameter binding instead:
-
-```typescript
-// This now throws
-qb.select("col; DROP TABLE post")
-
-// Use parameter binding for values
-qb.where("post.title = :title", { title: "value;with;semicolons" })
-```
-
 ### `printSql` removed
 
 The `printSql()` method on query builders has been removed. It was redundant because all executed queries are already automatically logged through the configured logger when query logging is enabled. Use `getSql()` or `getQueryAndParameters()` to inspect the generated SQL instead:
@@ -1020,16 +1072,17 @@ Container.set("UserRepository", dataSource.getRepository(User))
 
 ### NestJS
 
-NestJS users are not affected — the `@nestjs/typeorm` package has its own integration that does not depend on TypeORM's removed container system. However, `@nestjs/typeorm` v10 and the current v11.0.0 attempt to register the removed `Connection` class and will crash at startup. Make sure you are using a version of `@nestjs/typeorm` that includes the fix for TypeORM v1 compatibility.
+NestJS users are not affected — the `@nestjs/typeorm` package has its own integration that does not depend on TypeORM's removed container system. However, `@nestjs/typeorm` v10 and v11.0.0 attempt to register the removed `Connection` class and will crash at startup. Upgrade to `@nestjs/typeorm` v11.0.1 or later for TypeORM v1 compatibility. The `@typeorm/codemod` tool will bump it for you automatically.
 
 ## Other internal removals
 
 The following internal APIs have been removed. These only affect you if you were building custom drivers, extending QueryBuilder, or using low-level metadata APIs:
 
-| Removed                                        | Replacement                                       |
-| ---------------------------------------------- | ------------------------------------------------- |
-| `Broadcaster.broadcastLoadEventsForAll()`      | No replacement — use individual event subscribers |
-| `DriverUtils.buildColumnAlias()`               | Use `DriverUtils.buildAlias()`                    |
-| `EntityMetadata.createPropertyPath()` (static) | Removed with no public replacement                |
-| `QueryExpressionMap.nativeParameters`          | Use `QueryExpressionMap.parameters`               |
-| `RdbmsSchemaBuilder.renameTables()`            | Removed                                           |
+| Removed                                        | Replacement                                         |
+| ---------------------------------------------- | --------------------------------------------------- |
+| `EntityMetadata.createPropertyPath()` (static) | Removed with no public replacement                  |
+| `EntityMetadata.getValueMap()` `options` param | Remove the third argument — it was never functional |
+| `DriverUtils.buildColumnAlias()`               | Use `DriverUtils.buildAlias()`                      |
+| `Broadcaster.broadcastLoadEventsForAll()`      | No replacement — use individual event subscribers   |
+| `QueryExpressionMap.nativeParameters`          | Use `QueryExpressionMap.parameters`                 |
+| `RdbmsSchemaBuilder.renameTables()`            | Removed                                             |

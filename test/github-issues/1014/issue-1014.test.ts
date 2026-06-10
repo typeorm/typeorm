@@ -12,6 +12,7 @@ describe("github issues > #1014 Transaction doesn't rollback", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
@@ -37,14 +38,12 @@ describe("github issues > #1014 Transaction doesn't rollback", () => {
                 }
 
                 expect(error).to.be.instanceof(Error)
-                const loadedTestEntity = await connection.manager.findOneBy(
-                    TestEntity,
-                    {
+                const loadedTestEntity =
+                    await connection.manager.findOneByOrFail(TestEntity, {
                         id: 1,
-                    },
-                )
+                    })
                 expect(loadedTestEntity).not.to.be.null
-                loadedTestEntity!.should.be.eql({ id: 1, name: "Hello Test" })
+                loadedTestEntity.should.be.eql({ id: 1, name: "Hello Test" })
             }),
         ))
 })

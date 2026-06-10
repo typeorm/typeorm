@@ -59,6 +59,11 @@ export class OracleDriver implements Driver {
     dataSource: DataSource
 
     /**
+     * Isolation levels supported by this driver.
+     */
+    supportedIsolationLevels = OracleDriver.supportedIsolationLevels
+
+    /**
      * DataSource used by the driver.
      *
      * @deprecated since 1.0.0. Use {@link dataSource} instance instead.
@@ -346,13 +351,9 @@ export class OracleDriver implements Driver {
         if (!this.database || !this.schema) {
             const queryRunner = this.createQueryRunner("master")
 
-            if (!this.database) {
-                this.database = await queryRunner.getCurrentDatabase()
-            }
+            this.database ??= await queryRunner.getCurrentDatabase()
 
-            if (!this.schema) {
-                this.schema = await queryRunner.getCurrentSchema()
-            }
+            this.schema ??= await queryRunner.getCurrentSchema()
 
             await queryRunner.release()
         }
@@ -410,7 +411,7 @@ export class OracleDriver implements Driver {
         if (!parameters || !Object.keys(parameters).length)
             return [sql, escapedParameters]
 
-        sql = sql.replace(
+        sql = sql.replaceAll(
             /:(\.\.\.)?([A-Za-z0-9_.]+)/g,
             (full, isArray: string, key: string): string => {
                 if (!parameters.hasOwnProperty(key)) {
@@ -493,8 +494,8 @@ export class OracleDriver implements Driver {
             const parsed = this.parseTableName(target.name)
 
             return {
-                database: target.database || parsed.database || driverDatabase,
-                schema: target.schema || parsed.schema || driverSchema,
+                database: target.database ?? parsed.database ?? driverDatabase,
+                schema: target.schema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -504,11 +505,11 @@ export class OracleDriver implements Driver {
 
             return {
                 database:
-                    target.referencedDatabase ||
-                    parsed.database ||
+                    target.referencedDatabase ??
+                    parsed.database ??
                     driverDatabase,
                 schema:
-                    target.referencedSchema || parsed.schema || driverSchema,
+                    target.referencedSchema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -517,8 +518,8 @@ export class OracleDriver implements Driver {
             // EntityMetadata tableName is never a path
 
             return {
-                database: target.database || driverDatabase,
-                schema: target.schema || driverSchema,
+                database: target.database ?? driverDatabase,
+                schema: target.schema ?? driverSchema,
                 tableName: target.tableName,
             }
         }
@@ -564,7 +565,8 @@ export class OracleDriver implements Driver {
         if (columnMetadata.type === Boolean) {
             return value ? 1 : 0
         } else if (columnMetadata.type === "date") {
-            if (typeof value === "string") value = value.replace(/[^0-9-]/g, "")
+            if (typeof value === "string")
+                value = value.replaceAll(/[^0-9-]/g, "")
             return () =>
                 `TO_DATE('${DateUtils.mixedDateToDateString(value, {
                     utc: columnMetadata.utc,
@@ -1053,7 +1055,7 @@ export class OracleDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            const oracle = this.options.driver || PlatformTools.load("oracledb")
+            const oracle = this.options.driver ?? PlatformTools.load("oracledb")
             this.oracle = oracle
         } catch {
             throw new DriverPackageNotInstalledError("Oracle", "oracledb")
@@ -1120,7 +1122,7 @@ export class OracleDriver implements Driver {
             {
                 poolMax: options.poolSize,
             },
-            options.extra || {},
+            options.extra ?? {},
         )
 
         // pooling is enabled either when its set explicitly to true,

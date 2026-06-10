@@ -125,7 +125,7 @@ const category2 = await categoryCursor.next()
 ```
 
 - `transaction` - Provides a single transaction where multiple database requests will be executed in a single database transaction.
-  Learn more about [Transactions](../advanced-topics/2-transactions.md).
+  Learn more about [Transactions](../transactions.mdx).
 
 ```typescript
 await dataSource.transaction(async (manager) => {
@@ -149,6 +149,13 @@ const rawData = await dataSource.query(`SELECT * FROM USERS`)
 const rawData = await dataSource.query(
     "SELECT * FROM USERS WHERE name = ? and age = ?",
     ["John", 24],
+)
+
+// mysql2 additionally supports named parameters
+// when extra.namedPlaceholders is true
+const rawData = await dataSource.query(
+    "SELECT * FROM USERS WHERE name = :name and age = :age",
+    { name: "John", age: 24 },
 )
 
 // aurora-postgres, cockroachdb, postgres

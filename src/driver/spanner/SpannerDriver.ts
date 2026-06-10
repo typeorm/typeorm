@@ -35,11 +35,9 @@ export class SpannerDriver implements Driver {
     /**
      * Transaction isolation levels supported by this driver.
      *
-     * @see https://cloud.google.com/spanner/docs/transactions
+     * @see https://cloud.google.com/spanner/docs/isolation-levels
      */
     static readonly supportedIsolationLevels: IsolationLevel[] = [
-        "READ UNCOMMITTED",
-        "READ COMMITTED",
         "REPEATABLE READ",
         "SERIALIZABLE",
     ]
@@ -52,6 +50,11 @@ export class SpannerDriver implements Driver {
      * DataSource used by the driver.
      */
     dataSource: DataSource
+
+    /**
+     * Isolation levels supported by this driver.
+     */
+    supportedIsolationLevels = SpannerDriver.supportedIsolationLevels
 
     /**
      * DataSource used by the driver.
@@ -272,7 +275,7 @@ export class SpannerDriver implements Driver {
             return [sql, escapedParameters]
 
         const parameterIndexMap = new Map<string, number>()
-        sql = sql.replace(
+        sql = sql.replaceAll(
             /:(\.\.\.)?([A-Za-z0-9_.]+)/g,
             (full, isArray: string, key: string): string => {
                 if (!parameters.hasOwnProperty(key)) {
@@ -311,7 +314,7 @@ export class SpannerDriver implements Driver {
             },
         ) // todo: make replace only in value statements, otherwise problems
 
-        sql = sql.replace(
+        sql = sql.replaceAll(
             /([ ]+)?=([ ]+)?:(\.\.\.)?([A-Za-z0-9_.]+)/g,
             (
                 full,
@@ -381,8 +384,8 @@ export class SpannerDriver implements Driver {
             const parsed = this.parseTableName(target.name)
 
             return {
-                database: target.database || parsed.database || driverDatabase,
-                schema: target.schema || parsed.schema || driverSchema,
+                database: target.database ?? parsed.database ?? driverDatabase,
+                schema: target.schema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -392,11 +395,11 @@ export class SpannerDriver implements Driver {
 
             return {
                 database:
-                    target.referencedDatabase ||
-                    parsed.database ||
+                    target.referencedDatabase ??
+                    parsed.database ??
                     driverDatabase,
                 schema:
-                    target.referencedSchema || parsed.schema || driverSchema,
+                    target.referencedSchema ?? parsed.schema ?? driverSchema,
                 tableName: parsed.tableName,
             }
         }
@@ -405,8 +408,8 @@ export class SpannerDriver implements Driver {
             // EntityMetadata tableName is never a path
 
             return {
-                database: target.database || driverDatabase,
-                schema: target.schema || driverSchema,
+                database: target.database ?? driverDatabase,
+                schema: target.schema ?? driverSchema,
                 tableName: target.tableName,
             }
         }
@@ -415,7 +418,7 @@ export class SpannerDriver implements Driver {
 
         return {
             database:
-                (parts.length > 1 ? parts[0] : undefined) || driverDatabase,
+                (parts.length > 1 ? parts[0] : undefined) ?? driverDatabase,
             schema: driverSchema,
             tableName: parts.length > 1 ? parts[1] : parts[0],
         }
@@ -437,7 +440,7 @@ export class SpannerDriver implements Driver {
         if (value === null || value === undefined) return value
 
         if (columnMetadata.type === "numeric") {
-            const lib = this.options.driver || PlatformTools.load("spanner")
+            const lib = this.options.driver ?? PlatformTools.load("spanner")
             return lib.Spanner.numeric(value.toString())
         } else if (columnMetadata.type === "date") {
             return DateUtils.mixedDateToDateString(value, {
@@ -801,7 +804,7 @@ export class SpannerDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            const lib = this.options.driver || PlatformTools.load("spanner")
+            const lib = this.options.driver ?? PlatformTools.load("spanner")
 
             if (this.options.credentials) {
                 this.spanner = new lib.Spanner({
@@ -852,8 +855,8 @@ export class SpannerDriver implements Driver {
         ) {
             // we need to cut out "'" because in mysql we can understand returned value is a string or a function
             // as result compare cannot understand if default is really changed or not
-            columnMetadataValue = columnMetadataValue.replace(/^'+|'+$/g, "")
-            databaseValue = databaseValue.replace(/^'+|'+$/g, "")
+            columnMetadataValue = columnMetadataValue.replaceAll(/^'+|'+$/g, "")
+            databaseValue = databaseValue.replaceAll(/^'+|'+$/g, "")
         }
 
         return columnMetadataValue === databaseValue
@@ -892,7 +895,7 @@ export class SpannerDriver implements Driver {
     protected escapeComment(comment?: string) {
         if (!comment) return comment
 
-        comment = comment.replace(/\u0000/g, "") // Null bytes aren't allowed in comments
+        comment = comment.replaceAll("\u0000", "") // Null bytes aren't allowed in comments
 
         return comment
     }

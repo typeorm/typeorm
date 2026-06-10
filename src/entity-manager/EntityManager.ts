@@ -147,13 +147,13 @@ export class EntityManager {
             )
         }
 
-        if (this.queryRunner && this.queryRunner.isReleased)
+        if (this.queryRunner?.isReleased)
             throw new QueryRunnerProviderAlreadyReleasedError()
 
         // if query runner is already defined in this class, it means this entity manager was already created for a single connection
         // if its not defined we create a new query runner - single connection where we'll execute all our operations
         const queryRunner =
-            this.queryRunner || this.dataSource.createQueryRunner()
+            this.queryRunner ?? this.dataSource.createQueryRunner()
 
         try {
             await queryRunner.startTransaction(isolation)
@@ -180,7 +180,10 @@ export class EntityManager {
      * @param parameters
      * @see [Official docs](https://typeorm.io/docs/Working%20with%20Entity%20Manager/entity-manager-api/) for examples.
      */
-    async query<T = any>(query: string, parameters?: any[]): Promise<T> {
+    async query<T = any>(
+        query: string,
+        parameters?: any[] | ObjectLiteral,
+    ): Promise<T> {
         return this.dataSource.query(query, parameters, this.queryRunner)
     }
 
@@ -239,12 +242,12 @@ export class EntityManager {
             return this.dataSource.createQueryBuilder(
                 entityClass as EntityTarget<Entity>,
                 alias,
-                queryRunner || this.queryRunner,
+                queryRunner ?? this.queryRunner,
             )
         } else {
             return this.dataSource.createQueryBuilder(
-                (entityClass as QueryRunner | undefined) ||
-                    queryRunner ||
+                (entityClass as QueryRunner | undefined) ??
+                    queryRunner ??
                     this.queryRunner,
             )
         }
@@ -793,7 +796,7 @@ export class EntityManager {
         )
 
         const upsertType =
-            options.upsertType || this.dataSource.driver.supportedUpsertTypes[0]
+            options.upsertType ?? this.dataSource.driver.supportedUpsertTypes[0]
 
         const qb = this.createQueryBuilder()
             .insert()
@@ -1089,7 +1092,7 @@ export class EntityManager {
     ): Promise<boolean> {
         const metadata = this.dataSource.getMetadata(entityClass)
         return this.createQueryBuilder(entityClass, metadata.name)
-            .setFindOptions(options || {})
+            .setFindOptions(options ?? {})
             .getExists()
     }
 
@@ -1122,7 +1125,7 @@ export class EntityManager {
     ): Promise<number> {
         const metadata = this.dataSource.getMetadata(entityClass)
         return this.createQueryBuilder(entityClass, metadata.name)
-            .setFindOptions(options || {})
+            .setFindOptions(options ?? {})
             .getCount()
     }
 
@@ -1251,7 +1254,7 @@ export class EntityManager {
             entityClass as any,
             metadata.name,
         )
-            .setFindOptions(options || {})
+            .setFindOptions(options ?? {})
             .getMany()
     }
 
@@ -1291,7 +1294,7 @@ export class EntityManager {
             entityClass as any,
             metadata.name,
         )
-            .setFindOptions(options || {})
+            .setFindOptions(options ?? {})
             .getManyAndCount()
     }
 
@@ -1429,7 +1432,7 @@ export class EntityManager {
         const metadata = this.dataSource.getMetadata(entityClass)
 
         const queryRunner =
-            this.queryRunner || this.dataSource.createQueryRunner()
+            this.queryRunner ?? this.dataSource.createQueryRunner()
         try {
             return await queryRunner.clearTable(metadata.tablePath, options)
         } finally {

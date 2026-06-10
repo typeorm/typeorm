@@ -13,6 +13,7 @@ describe("github issues > #401 special keywords should be escaped in join querie
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

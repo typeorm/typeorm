@@ -16,6 +16,7 @@ describe("query builder > relation-id > one-to-many > embedded-with-multiple-pk"
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
@@ -168,10 +169,10 @@ describe("query builder > relation-id > one-to-many > embedded-with-multiple-pk"
                     .andWhere("post.counters.subcounters.version = :version", {
                         version: 1,
                     })
-                    .getOne()
+                    .getOneOrFail()
 
                 expect(
-                    loadedPost!.should.be.eql({
+                    loadedPost.should.be.eql({
                         id: 1,
                         title: "About BMW",
                         counters: {

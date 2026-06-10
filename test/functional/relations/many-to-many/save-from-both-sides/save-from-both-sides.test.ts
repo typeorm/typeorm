@@ -44,7 +44,7 @@ describe("relations > many-to-many > save from both sides", () => {
 
                 const loadedPlatform = await connection
                     .getRepository(Platform)
-                    .findOne({ where: { slug: "windows" } })
+                    .findOneBy({ slug: "windows" })
 
                 const jediAcademy = new Game()
                 jediAcademy.name = "SW Jedi Academy"
@@ -61,10 +61,10 @@ describe("relations > many-to-many > save from both sides", () => {
                     .where("platform.slug=:slug", { slug: "windows" })
                     .orderBy("platform.id")
                     .addOrderBy("game.id")
-                    .getOne()
+                    .getOneOrFail()
 
                 expect(completePlatform).not.to.be.null
-                completePlatform!.should.be.eql({
+                completePlatform.should.be.eql({
                     id: platform.id,
                     name: "Windows",
                     slug: "windows",

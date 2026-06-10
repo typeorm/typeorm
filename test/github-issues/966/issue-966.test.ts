@@ -12,6 +12,7 @@ describe("github issues > #966 Inheritance in embeddables", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
@@ -34,11 +35,11 @@ describe("github issues > #966 Inheritance in embeddables", () => {
 
                 await repository.save(user)
 
-                const loadedUser = await repository.findOneBy({
+                const loadedUser = await repository.findOneByOrFail({
                     id: user.id,
                 })
 
-                expect(info).to.deep.equal(loadedUser!.info)
+                expect(info).to.deep.equal(loadedUser.info)
             }),
         ))
 })

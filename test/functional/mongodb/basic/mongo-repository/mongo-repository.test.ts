@@ -228,8 +228,8 @@ describe("mongodb > MongoRepository", () => {
                             dataSource.getMongoRepository(PostWithDeleted)
                         await seedPosts(postRepository)
 
-                        const loadedPost = await postRepository.findOne({
-                            where: { title: "notDeleted" },
+                        const loadedPost = await postRepository.findOneBy({
+                            title: "notDeleted",
                         })
                         const loadedPostWithDeleted =
                             await postRepository.findOne({

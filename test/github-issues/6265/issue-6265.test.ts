@@ -14,6 +14,7 @@ describe("github issues > #6265 `fix: resolve issue with find with relations ret
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [User, Role],
             schemaCreate: true,
             dropSchema: true,

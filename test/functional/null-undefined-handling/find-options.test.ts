@@ -17,6 +17,7 @@ describe("find options > null and undefined handling", () => {
     describe("with default behavior (throw)", () => {
         before(async () => {
             dataSources = await createTestingConnections({
+                disabledDrivers: ["spanner"],
                 entities: [Post, Category],
                 schemaCreate: true,
                 dropSchema: true,
@@ -261,6 +262,7 @@ describe("find options > null and undefined handling", () => {
     describe("with invalidWhereValuesBehavior.null set to 'sql-null'", () => {
         before(async () => {
             dataSources = await createTestingConnections({
+                disabledDrivers: ["spanner"],
                 entities: [Post, Category],
                 schemaCreate: true,
                 dropSchema: true,
@@ -398,6 +400,7 @@ describe("find options > null and undefined handling", () => {
     describe("with invalidWhereValuesBehavior.undefined set to 'throw'", () => {
         before(async () => {
             dataSources = await createTestingConnections({
+                disabledDrivers: ["spanner"],
                 entities: [Post, Category],
                 schemaCreate: true,
                 dropSchema: true,
@@ -446,10 +449,8 @@ describe("find options > null and undefined handling", () => {
                 }
 
                 try {
-                    await dataSource.getRepository(Post).findOne({
-                        where: {
-                            text: undefined,
-                        },
+                    await dataSource.getRepository(Post).findOneBy({
+                        text: undefined,
                     })
                     expect.fail("Expected query to throw an error")
                 } catch (error) {
@@ -498,10 +499,8 @@ describe("find options > null and undefined handling", () => {
                     }
 
                     try {
-                        await dataSource.getRepository(Post).findOne({
-                            where: {
-                                category: undefined,
-                            },
+                        await dataSource.getRepository(Post).findOneBy({
+                            category: undefined,
                         })
                         expect.fail("Expected query to throw an error")
                     } catch (error) {
@@ -553,10 +552,8 @@ describe("find options > null and undefined handling", () => {
                     // Test Repository with findOne
                     const postWithRepo = await dataSource
                         .getRepository(Post)
-                        .findOne({
-                            where: {
-                                title: "Post #1",
-                            },
+                        .findOneBy({
+                            title: "Post #1",
                         })
 
                     expect(postWithRepo?.title).to.equal("Post #1")
@@ -589,6 +586,7 @@ describe("find options > null and undefined handling", () => {
     describe("with both invalidWhereValuesBehavior options enabled", () => {
         before(async () => {
             dataSources = await createTestingConnections({
+                disabledDrivers: ["spanner"],
                 entities: [Post, Category],
                 schemaCreate: true,
                 dropSchema: true,
@@ -702,10 +700,8 @@ describe("find options > null and undefined handling", () => {
                     // Test Repository with findOne
                     const postWithRepo = await dataSource
                         .getRepository(Post)
-                        .findOne({
-                            where: {
-                                title: "Post #2",
-                            },
+                        .findOneBy({
+                            title: "Post #2",
                         })
 
                     expect(postWithRepo?.title).to.equal("Post #2")
@@ -716,6 +712,7 @@ describe("find options > null and undefined handling", () => {
     describe("with ignore behavior", () => {
         before(async () => {
             dataSources = await createTestingConnections({
+                disabledDrivers: ["spanner"],
                 entities: [Post, Category],
                 schemaCreate: true,
                 dropSchema: true,
@@ -910,6 +907,7 @@ describe("find options > null and undefined handling", () => {
     describe("with invalidWhereValuesBehavior.null set to 'throw'", () => {
         before(async () => {
             dataSources = await createTestingConnections({
+                disabledDrivers: ["spanner"],
                 entities: [Post, Category],
                 schemaCreate: true,
                 dropSchema: true,

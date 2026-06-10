@@ -12,6 +12,7 @@ describe("github issues > #867 result of `findAndCount` is wrong when apply `ski
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

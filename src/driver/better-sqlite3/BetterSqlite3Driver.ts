@@ -55,8 +55,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode): QueryRunner {
-        if (!this.queryRunner)
-            this.queryRunner = new BetterSqlite3QueryRunner(this)
+        this.queryRunner ??= new BetterSqlite3QueryRunner(this)
 
         return this.queryRunner
     }
@@ -178,7 +177,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
     protected loadDependencies(): void {
         try {
             const sqlite =
-                this.options.driver || PlatformTools.load("better-sqlite3")
+                this.options.driver ?? PlatformTools.load("better-sqlite3")
             this.sqlite = sqlite
         } catch (e) {
             throw new DriverPackageNotInstalledError("SQLite", "better-sqlite3")

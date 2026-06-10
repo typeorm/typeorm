@@ -12,6 +12,7 @@ describe("query builder > parameters > date parameters", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Product],
             schemaCreate: true,
             dropSchema: true,

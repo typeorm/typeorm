@@ -16,6 +16,7 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Post, Category],
             schemaCreate: true,
             dropSchema: true,
@@ -244,6 +245,7 @@ describe("entity manager > invalidWhereValuesBehavior with sql-null", () => {
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Post, Category],
             schemaCreate: true,
             dropSchema: true,
@@ -274,14 +276,14 @@ describe("entity manager > invalidWhereValuesBehavior with sql-null", () => {
                 title: "Updated",
             })
 
-            const updated = await connection.manager.findOneBy(Post, {
+            const updated = await connection.manager.findOneByOrFail(Post, {
                 id: post.id,
             })
-            const notUpdated = await connection.manager.findOneBy(Post, {
+            const notUpdated = await connection.manager.findOneByOrFail(Post, {
                 id: post2.id,
             })
-            expect(updated!.title).to.equal("Updated")
-            expect(notUpdated!.title).to.equal("Other Post")
+            expect(updated.title).to.equal("Updated")
+            expect(notUpdated.title).to.equal("Other Post")
         }
     })
 
@@ -312,6 +314,7 @@ describe("entity manager > invalidWhereValuesBehavior with ignore", () => {
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Post, Category],
             schemaCreate: true,
             dropSchema: true,
@@ -383,10 +386,10 @@ describe("entity manager > invalidWhereValuesBehavior with ignore", () => {
                 { text: "Updated" },
             )
 
-            const updated = await connection.manager.findOneBy(Post, {
+            const updated = await connection.manager.findOneByOrFail(Post, {
                 id: post.id,
             })
-            expect(updated!.text).to.equal("Updated")
+            expect(updated.text).to.equal("Updated")
         }
     })
 
@@ -419,6 +422,7 @@ describe("entity manager > invalidWhereValuesBehavior does NOT affect QB .where(
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Post, Category],
             schemaCreate: true,
             dropSchema: true,

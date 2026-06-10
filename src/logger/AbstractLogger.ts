@@ -8,6 +8,7 @@ import type {
 import type { QueryRunner } from "../query-runner/QueryRunner"
 import type { LoggerOptions } from "./LoggerOptions"
 import { PlatformTools } from "../platform/PlatformTools"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
 
 export abstract class AbstractLogger implements Logger {
     // -------------------------------------------------------------------------
@@ -27,7 +28,11 @@ export abstract class AbstractLogger implements Logger {
      * @param parameters
      * @param queryRunner
      */
-    logQuery(query: string, parameters?: any[], queryRunner?: QueryRunner) {
+    logQuery(
+        query: string,
+        parameters?: any[] | ObjectLiteral,
+        queryRunner?: QueryRunner,
+    ) {
         if (!this.isLogEnabledFor("query")) {
             return
         }
@@ -56,7 +61,7 @@ export abstract class AbstractLogger implements Logger {
     logQueryError(
         error: string,
         query: string,
-        parameters?: any[],
+        parameters?: any[] | ObjectLiteral,
         queryRunner?: QueryRunner,
     ) {
         if (!this.isLogEnabledFor("query-error")) {
@@ -94,7 +99,7 @@ export abstract class AbstractLogger implements Logger {
     logQuerySlow(
         time: number,
         query: string,
-        parameters?: any[],
+        parameters?: any[] | ObjectLiteral,
         queryRunner?: QueryRunner,
     ) {
         if (!this.isLogEnabledFor("query-slow")) {
@@ -356,7 +361,8 @@ export abstract class AbstractLogger implements Logger {
                 if (
                     options.appendParameterAsComment &&
                     message.parameters &&
-                    message.parameters.length
+                    (!Array.isArray(message.parameters) ||
+                        message.parameters.length)
                 ) {
                     sql += ` -- PARAMETERS: ${this.stringifyParams(
                         message.parameters,
@@ -384,7 +390,7 @@ export abstract class AbstractLogger implements Logger {
      *
      * @param parameters
      */
-    protected stringifyParams(parameters: any[]) {
+    protected stringifyParams(parameters: any[] | ObjectLiteral) {
         try {
             return JSON.stringify(parameters)
         } catch (error) {

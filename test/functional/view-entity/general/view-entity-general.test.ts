@@ -18,6 +18,7 @@ describe("view entity > general", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
@@ -123,15 +124,16 @@ describe("view entity > general", () => {
 
                 const albumId =
                     dataSource.driver.options.type === "cockroachdb" ? "1" : 1
-                const photoAlbumCategory = await dataSource.manager.findOneBy(
-                    PhotoAlbumCategory,
-                    { id: 1 },
-                )
-                photoAlbumCategory!.id.should.be.equal(photoId1)
-                photoAlbumCategory!.name.should.be.equal("BMW E39")
-                photoAlbumCategory!.albumName.should.be.equal("BMW photos")
-                photoAlbumCategory!.categoryName.should.be.equal("Cars")
-                photoAlbumCategory!.photoAlbumId.should.be.equal(albumId)
+                const photoAlbumCategory =
+                    await dataSource.manager.findOneByOrFail(
+                        PhotoAlbumCategory,
+                        { id: 1 },
+                    )
+                photoAlbumCategory.id.should.be.equal(photoId1)
+                photoAlbumCategory.name.should.be.equal("BMW E39")
+                photoAlbumCategory.albumName.should.be.equal("BMW photos")
+                photoAlbumCategory.categoryName.should.be.equal("Cars")
+                photoAlbumCategory.photoAlbumId.should.be.equal(albumId)
 
                 const photoAlbums = await dataSource.manager.find(PhotoAlbum)
                 const photoId3 =

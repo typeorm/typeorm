@@ -1,3 +1,4 @@
+import { NamedPlaceholdersNotSupportedError } from "../../error"
 import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
@@ -49,19 +50,21 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
      */
     async query(
         query: string,
-        parameters?: any[],
+        parameters?: any[] | ObjectLiteral,
         useStructuredResult = false,
     ): Promise<any> {
         if (this.isReleased) {
             throw new QueryRunnerAlreadyReleasedError()
         }
+        if (parameters && !Array.isArray(parameters))
+            throw new NamedPlaceholdersNotSupportedError()
 
         const connection = this.driver.dataSource
 
         const databaseConnection = await this.connect()
 
         return new Promise((ok, fail) => {
-            const isInsertQuery = query.substr(0, 11) === "INSERT INTO"
+            const isInsertQuery = query.startsWith("INSERT INTO")
             connection.logger.logQuery(query, parameters, this)
 
             const handler = (err: any, raw: any) => {

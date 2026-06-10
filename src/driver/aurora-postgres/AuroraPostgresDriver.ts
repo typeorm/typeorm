@@ -4,6 +4,7 @@ import { PlatformTools } from "../../platform/PlatformTools"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DriverUtils } from "../DriverUtils"
 import { PostgresDriver } from "../postgres/PostgresDriver"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { AuroraPostgresDataSourceOptions } from "./AuroraPostgresDataSourceOptions"
 import { AuroraPostgresQueryRunner } from "./AuroraPostgresQueryRunner"
@@ -16,8 +17,27 @@ abstract class PostgresWrapper extends PostgresDriver {
 
 export class AuroraPostgresDriver extends PostgresWrapper {
     // -------------------------------------------------------------------------
+    // Static Properties
+    // -------------------------------------------------------------------------
+
+    /**
+     * Transaction isolation levels supported by this driver.
+     *
+     * @see https://www.postgresql.org/docs/current/transaction-iso.html
+     */
+    static readonly supportedIsolationLevels: IsolationLevel[] = [
+        "READ UNCOMMITTED",
+        "READ COMMITTED",
+        "REPEATABLE READ",
+        "SERIALIZABLE",
+    ]
+
+    // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
+
+    /** Isolation levels supported by this driver. */
+    supportedIsolationLevels = AuroraPostgresDriver.supportedIsolationLevels
 
     /**
      * Aurora Data API underlying library.
@@ -117,10 +137,7 @@ export class AuroraPostgresDriver extends PostgresWrapper {
      * @param columnMetadata
      */
     preparePersistentValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (
-            this.options.formatOptions &&
-            this.options.formatOptions.castParameters === false
-        ) {
+        if (this.options.formatOptions?.castParameters === false) {
             return super.preparePersistentValue(value, columnMetadata)
         }
 
@@ -140,10 +157,7 @@ export class AuroraPostgresDriver extends PostgresWrapper {
      * @param columnMetadata
      */
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
-        if (
-            this.options.formatOptions &&
-            this.options.formatOptions.castParameters === false
-        ) {
+        if (this.options.formatOptions?.castParameters === false) {
             return super.prepareHydratedValue(value, columnMetadata)
         }
 
@@ -165,7 +179,7 @@ export class AuroraPostgresDriver extends PostgresWrapper {
      */
     protected loadDependencies(): void {
         const driver =
-            this.options.driver ||
+            this.options.driver ??
             PlatformTools.load("typeorm-aurora-data-api-driver")
         const { pg } = driver
 

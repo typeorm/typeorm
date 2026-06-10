@@ -12,6 +12,7 @@ describe("github issues > #7041 When requesting nested relations on foreign key 
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Organization, Admin, User, OrganizationMembership],
             schemaCreate: true,
             dropSchema: true,

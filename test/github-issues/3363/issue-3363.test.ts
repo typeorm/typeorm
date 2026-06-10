@@ -13,6 +13,7 @@ describe("github issues > #3363 Isolation Level in transaction() from Connection
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
         })
@@ -49,20 +50,23 @@ describe("github issues > #3363 Isolation Level in transaction() from Connection
                     },
                 )
 
-                const post = await connection.manager.findOne(Post, {
-                    where: { title: "Post #1" },
+                const post = await connection.manager.findOneByOrFail(Post, {
+                    title: "Post #1",
                 })
                 expect(post).not.to.be.null
-                post!.should.be.eql({
+                post.should.be.eql({
                     id: postId,
                     title: "Post #1",
                 })
 
-                const category = await connection.manager.findOne(Category, {
-                    where: { name: "Category #1" },
-                })
+                const category = await connection.manager.findOneOrFail(
+                    Category,
+                    {
+                        where: { name: "Category #1" },
+                    },
+                )
                 expect(category).not.to.be.null
-                category!.should.be.eql({
+                category.should.be.eql({
                     id: categoryId,
                     name: "Category #1",
                 })
@@ -100,20 +104,23 @@ describe("github issues > #3363 Isolation Level in transaction() from Connection
                     },
                 )
 
-                const post = await connection.manager.findOne(Post, {
-                    where: { title: "Post #1" },
+                const post = await connection.manager.findOneByOrFail(Post, {
+                    title: "Post #1",
                 })
                 expect(post).not.to.be.null
-                post!.should.be.eql({
+                post.should.be.eql({
                     id: postId,
                     title: "Post #1",
                 })
 
-                const category = await connection.manager.findOne(Category, {
-                    where: { name: "Category #1" },
-                })
+                const category = await connection.manager.findOneOrFail(
+                    Category,
+                    {
+                        where: { name: "Category #1" },
+                    },
+                )
                 expect(category).not.to.be.null
-                category!.should.be.eql({
+                category.should.be.eql({
                     id: categoryId,
                     name: "Category #1",
                 })

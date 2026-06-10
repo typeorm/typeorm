@@ -14,6 +14,7 @@ describe("query builder > order-by", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
@@ -32,9 +33,9 @@ describe("query builder > order-by", () => {
 
                 const loadedPost = await dataSource.manager
                     .createQueryBuilder(Post, "post")
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.myOrder).to.be.equal(2)
+                expect(loadedPost.myOrder).to.be.equal(2)
             }),
         ))
 
@@ -51,9 +52,9 @@ describe("query builder > order-by", () => {
                 const loadedPost = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .addOrderBy("post.myOrder", "ASC")
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.myOrder).to.be.equal(1)
+                expect(loadedPost.myOrder).to.be.equal(1)
             }),
         ))
 
@@ -74,16 +75,16 @@ describe("query builder > order-by", () => {
                 const loadedPost1 = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .addOrderBy("post.myOrder", "ASC", "NULLS FIRST")
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost1!.myOrder).to.be.equal(1)
+                expect(loadedPost1.myOrder).to.be.equal(1)
 
                 const loadedPost2 = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .addOrderBy("post.myOrder", "ASC", "NULLS LAST")
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost2!.myOrder).to.be.equal(1)
+                expect(loadedPost2.myOrder).to.be.equal(1)
             }),
         ))
 
@@ -104,16 +105,16 @@ describe("query builder > order-by", () => {
                 const loadedPost1 = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .addOrderBy("post.myOrder IS NULL", "ASC")
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost1!.myOrder).to.be.equal(1)
+                expect(loadedPost1.myOrder).to.be.equal(1)
 
                 const loadedPost2 = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .addOrderBy("post.myOrder IS NOT NULL", "ASC")
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost2!.myOrder).to.be.equal(1)
+                expect(loadedPost2.myOrder).to.be.equal(1)
             }),
         ))
 
@@ -136,18 +137,18 @@ describe("query builder > order-by", () => {
                 const loadedPost1 = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .orderBy("post.num1 DIV post.num2")
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost1!.num1).to.be.equal(10)
-                expect(loadedPost1!.num2).to.be.equal(5)
+                expect(loadedPost1.num1).to.be.equal(10)
+                expect(loadedPost1.num2).to.be.equal(5)
 
                 const loadedPost2 = await dataSource.manager
                     .createQueryBuilder(Post, "post")
                     .orderBy("post.num1 DIV post.num2", "DESC")
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost2!.num1).to.be.equal(10)
-                expect(loadedPost2!.num2).to.be.equal(2)
+                expect(loadedPost2.num1).to.be.equal(10)
+                expect(loadedPost2.num2).to.be.equal(2)
             }),
         ))
 

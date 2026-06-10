@@ -172,7 +172,7 @@ export class QueryExpressionMap {
      * SELECT * FROM table_name USE INDEX (col1_index, col2_index) WHERE col1=1 AND col2=2 AND col3=3;
      *
      */
-    useIndex?: string
+    useIndex?: string[]
 
     /**
      * Locking mode.
@@ -362,7 +362,7 @@ export class QueryExpressionMap {
             this.mainAlias!.hasMetadata &&
             this.options.indexOf("disable-global-order") === -1
         ) {
-            const entityOrderBy = this.mainAlias!.metadata.orderBy || {}
+            const entityOrderBy = this.mainAlias!.metadata.orderBy ?? {}
             return Object.keys(entityOrderBy).reduce((orderBy, key) => {
                 orderBy[this.mainAlias!.name + "." + key] = entityOrderBy[key]
                 return orderBy

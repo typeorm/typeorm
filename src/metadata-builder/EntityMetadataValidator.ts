@@ -256,8 +256,7 @@ export class EntityMetadataValidator {
         entityMetadata.relations.forEach((relation) => {
             const isCircularCascadeRemove =
                 relation.isCascadeRemove &&
-                relation.inverseRelation &&
-                relation.inverseRelation!.isCascadeRemove
+                relation.inverseRelation?.isCascadeRemove
             if (isCircularCascadeRemove)
                 throw new TypeORMError(
                     `Relation ${entityMetadata.name}#${
@@ -307,10 +306,7 @@ export class EntityMetadataValidator {
     protected validateEagerRelations(entityMetadatas: EntityMetadata[]) {
         entityMetadatas.forEach((entityMetadata) => {
             entityMetadata.eagerRelations.forEach((relation) => {
-                if (
-                    relation.inverseRelation &&
-                    relation.inverseRelation.isEager
-                )
+                if (relation.inverseRelation?.isEager)
                     throw new TypeORMError(
                         `Circular eager relations are disallowed. ` +
                             `${entityMetadata.targetName}#${relation.propertyPath} contains "eager: true", and its inverse side ` +

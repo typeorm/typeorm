@@ -14,6 +14,7 @@ describe("query builder > relation-id > one-to-many > basic-functionality", () =
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
@@ -68,12 +69,12 @@ describe("query builder > relation-id > one-to-many > basic-functionality", () =
                     .createQueryBuilder(Post, "post")
                     .loadRelationIdAndMap("post.categoryIds", "post.categories")
                     .where("post.id = :id", { id: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.categoryIds).to.not.be.eql([])
-                expect(loadedPost!.categoryIds.length).to.be.equal(2)
-                expect(loadedPost!.categoryIds[0]).to.be.equal(1)
-                expect(loadedPost!.categoryIds[1]).to.be.equal(2)
+                expect(loadedPost.categoryIds).to.not.be.eql([])
+                expect(loadedPost.categoryIds.length).to.be.equal(2)
+                expect(loadedPost.categoryIds[0]).to.be.equal(1)
+                expect(loadedPost.categoryIds[1]).to.be.equal(2)
             }),
         ))
 
@@ -141,11 +142,11 @@ describe("query builder > relation-id > one-to-many > basic-functionality", () =
                             }),
                     )
                     .where("post.id = :id", { id: 1 })
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.categoryIds).to.not.be.eql([])
-                expect(loadedPost!.categoryIds.length).to.be.equal(1)
-                expect(loadedPost!.categoryIds[0]).to.be.equal(1)
+                expect(loadedPost.categoryIds).to.not.be.eql([])
+                expect(loadedPost.categoryIds.length).to.be.equal(1)
+                expect(loadedPost.categoryIds[0]).to.be.equal(1)
             }),
         ))
 
@@ -253,21 +254,21 @@ describe("query builder > relation-id > one-to-many > basic-functionality", () =
                     )
                     .where("post.id = :id", { id: 1 })
                     .orderBy("category.id")
-                    .getOne()
+                    .getOneOrFail()
 
-                expect(loadedPost!.categoryIds).to.not.be.eql([])
-                expect(loadedPost!.categoryIds.length).to.be.equal(2)
-                expect(loadedPost!.categoryIds[0]).to.be.equal(1)
-                expect(loadedPost!.categoryIds[1]).to.be.equal(2)
-                expect(loadedPost!.categories).to.not.be.eql([])
-                expect(loadedPost!.categories.length).to.be.equal(2)
-                expect(loadedPost!.categories[0].imageIds).to.not.be.eql([])
-                expect(loadedPost!.categories[0].imageIds.length).to.be.equal(2)
-                expect(loadedPost!.categories[0].imageIds[0]).to.be.equal(1)
-                expect(loadedPost!.categories[0].imageIds[1]).to.be.equal(2)
-                expect(loadedPost!.categories[1].imageIds).to.not.be.eql([])
-                expect(loadedPost!.categories[1].imageIds.length).to.be.equal(1)
-                expect(loadedPost!.categories[1].imageIds[0]).to.be.equal(3)
+                expect(loadedPost.categoryIds).to.not.be.eql([])
+                expect(loadedPost.categoryIds.length).to.be.equal(2)
+                expect(loadedPost.categoryIds[0]).to.be.equal(1)
+                expect(loadedPost.categoryIds[1]).to.be.equal(2)
+                expect(loadedPost.categories).to.not.be.eql([])
+                expect(loadedPost.categories.length).to.be.equal(2)
+                expect(loadedPost.categories[0].imageIds).to.not.be.eql([])
+                expect(loadedPost.categories[0].imageIds.length).to.be.equal(2)
+                expect(loadedPost.categories[0].imageIds[0]).to.be.equal(1)
+                expect(loadedPost.categories[0].imageIds[1]).to.be.equal(2)
+                expect(loadedPost.categories[1].imageIds).to.not.be.eql([])
+                expect(loadedPost.categories[1].imageIds.length).to.be.equal(1)
+                expect(loadedPost.categories[1].imageIds[0]).to.be.equal(3)
             }),
         ))
 })

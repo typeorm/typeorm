@@ -15,6 +15,7 @@ describe("github issues > #3847 FEATURE REQUEST - Naming strategy foreign key ov
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             namingStrategy,
         })
