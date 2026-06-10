@@ -2,8 +2,6 @@ import ansi from "ansis"
 import path from "path"
 
 import { DefaultCliArgumentsBuilder } from "./common/default-cli-arguments-builder"
-import yargs from "yargs"
-
 import type yargs from "yargs"
 import { PlatformTools } from "../platform/PlatformTools"
 import { camelCase } from "../util/StringUtils"

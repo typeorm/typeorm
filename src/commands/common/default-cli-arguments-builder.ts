@@ -1,4 +1,4 @@
-import yargs from "yargs"
+import type yargs from "yargs"
 
 export class DefaultCliArgumentsBuilder {
     constructor(private readonly _builder: yargs.Argv) {}

@@ -4,9 +4,6 @@ import path from "path"
 import process from "process"
 
 import { DefaultCliArgumentsBuilder } from "./common/default-cli-arguments-builder"
-import yargs from "yargs"
-import { DataSource } from "../data-source"
-
 import type yargs from "yargs"
 import type { DataSource } from "../data-source"
 import { PlatformTools } from "../platform/PlatformTools"
