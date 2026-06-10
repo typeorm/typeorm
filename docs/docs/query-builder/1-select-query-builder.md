@@ -1237,25 +1237,24 @@ const users = await dataSource
 
 You will get all the rows, including the ones which are deleted.
 
-Note that `withDeleted()` applies globally to all joins in the query. If you need to include soft-deleted rows only for specific joins, use the per-join variants:
+Note that `withDeleted()` applies globally to all joins in the query. If you need to include soft-deleted rows only for specific joins, pass `includeDeleted: true` as the last parameter to any join method:
 
 ```typescript
 // Include soft-deleted conversations, but still filter soft-deleted messages
 const users = await dataSource
     .createQueryBuilder(User, "user")
-    .leftJoinAndSelectWithDeleted("user.conversations", "conversation")
+    .leftJoinAndSelect(
+        "user.conversations",
+        "conversation",
+        undefined,
+        undefined,
+        true,
+    )
     .leftJoinAndSelect("conversation.messages", "message")
     .getMany()
 ```
 
-The following per-join methods are available:
-
-| Method                                           | Description                                                              |
-| ------------------------------------------------ | ------------------------------------------------------------------------ |
-| `leftJoinAndSelectWithDeleted(relation, alias)`  | LEFT JOIN + SELECT, includes soft-deleted rows for this join only        |
-| `leftJoinWithDeleted(relation, alias)`           | LEFT JOIN without select, includes soft-deleted rows for this join only  |
-| `innerJoinAndSelectWithDeleted(relation, alias)` | INNER JOIN + SELECT, includes soft-deleted rows for this join only       |
-| `innerJoinWithDeleted(relation, alias)`          | INNER JOIN without select, includes soft-deleted rows for this join only |
+The `includeDeleted` parameter is available on `leftJoin`, `leftJoinAndSelect`, `innerJoin`, and `innerJoinAndSelect`.
 
 ## Common table expressions
 

@@ -135,10 +135,10 @@ describe(`query builder > soft-delete global condition on joined entities`, () =
         ))
 
     // =======================================================================
-    // Fix 2: per-join withDeleted control (leftJoinAndSelectWithDeleted etc.)
+    // Fix 2: per-join includeDeleted parameter control
     // =======================================================================
 
-    it("leftJoinAndSelectWithDeleted() should include soft-deleted rows only for that specific join", () =>
+    it("leftJoinAndSelect with includeDeleted should include soft-deleted rows only for that specific join", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 await seedData(dataSource)
@@ -146,9 +146,12 @@ describe(`query builder > soft-delete global condition on joined entities`, () =
                 // Include soft-deleted conversations but keep default filter on messages
                 const users = await dataSource
                     .createQueryBuilder(User, "user")
-                    .leftJoinAndSelectWithDeleted(
+                    .leftJoinAndSelect(
                         "user.conversations",
                         "conversation",
+                        undefined,
+                        undefined,
+                        true,
                     )
                     .leftJoinAndSelect("conversation.messages", "message")
                     .getMany()
@@ -165,12 +168,12 @@ describe(`query builder > soft-delete global condition on joined entities`, () =
             }),
         ))
 
-    it("leftJoinAndSelectWithDeleted() should NOT affect other joins that still filter soft-deleted rows", () =>
+    it("leftJoinAndSelect without includeDeleted should NOT include soft-deleted rows", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 await seedData(dataSource)
 
-                // Without WithDeleted on conversations — only active conversation
+                // Without includeDeleted on conversations — only active conversation
                 const users = await dataSource
                     .createQueryBuilder(User, "user")
                     .leftJoinAndSelect("user.conversations", "conversation")
@@ -182,16 +185,19 @@ describe(`query builder > soft-delete global condition on joined entities`, () =
             }),
         ))
 
-    it("leftJoinAndSelectWithDeleted() SQL should only skip deletedAt for the targeted join", () =>
+    it("leftJoinAndSelect with includeDeleted SQL should only skip deletedAt for the targeted join", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 await seedData(dataSource)
 
                 const qb = dataSource
                     .createQueryBuilder(User, "user")
-                    .leftJoinAndSelectWithDeleted(
+                    .leftJoinAndSelect(
                         "user.conversations",
                         "conversation",
+                        undefined,
+                        undefined,
+                        true,
                     )
 
                 const sql = qb.getQuery()
@@ -200,14 +206,20 @@ describe(`query builder > soft-delete global condition on joined entities`, () =
             }),
         ))
 
-    it("leftJoinWithDeleted() should work without select", () =>
+    it("leftJoin with includeDeleted should work without select", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 await seedData(dataSource)
 
                 const qb = dataSource
                     .createQueryBuilder(User, "user")
-                    .leftJoinWithDeleted("user.conversations", "conversation")
+                    .leftJoin(
+                        "user.conversations",
+                        "conversation",
+                        undefined,
+                        undefined,
+                        true,
+                    )
 
                 const sql = qb.getQuery()
                 sql.should.not.match(/deletedAt["`]?\s+IS\s+NULL/i)
@@ -215,16 +227,19 @@ describe(`query builder > soft-delete global condition on joined entities`, () =
             }),
         ))
 
-    it("innerJoinAndSelectWithDeleted() should include soft-deleted rows on INNER JOIN", () =>
+    it("innerJoinAndSelect with includeDeleted should include soft-deleted rows on INNER JOIN", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 await seedData(dataSource)
 
                 const qb = dataSource
                     .createQueryBuilder(User, "user")
-                    .innerJoinAndSelectWithDeleted(
+                    .innerJoinAndSelect(
                         "user.conversations",
                         "conversation",
+                        undefined,
+                        undefined,
+                        true,
                     )
 
                 const sql = qb.getQuery()
