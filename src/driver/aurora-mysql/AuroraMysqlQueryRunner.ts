@@ -272,6 +272,13 @@ export class AuroraMysqlQueryRunner
         return query[0]["db_name"]
     }
 
+    async getVersion(): Promise<string> {
+        const result: [{ version: string }] = await this.query(
+            "SELECT version() as version",
+        )
+        return result[0].version.replace(/^([\d.]+).*$/, "$1")
+    }
+
     /**
      * Checks if schema with the given name exist.
      *
@@ -556,6 +563,7 @@ export class AuroraMysqlQueryRunner
                 newTable,
                 index.columnNames,
                 index.where,
+                index.columnOrders,
             )
 
             // build queries
@@ -779,6 +787,7 @@ export class AuroraMysqlQueryRunner
                 ]),
                 columnNames: [column.name],
                 isUnique: true,
+                columnOrders: { ...column.uniqueColumnOrders },
             })
             clonedTable.indices.push(uniqueIndex)
             clonedTable.uniques.push(
@@ -787,20 +796,8 @@ export class AuroraMysqlQueryRunner
                     columnNames: uniqueIndex.columnNames,
                 }),
             )
-            upQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(table)} ADD UNIQUE INDEX \`${
-                        uniqueIndex.name
-                    }\` (\`${column.name}\`)`,
-                ),
-            )
-            downQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(table)} DROP INDEX \`${
-                        uniqueIndex.name
-                    }\``,
-                ),
-            )
+            upQueries.push(this.createIndexSql(table, uniqueIndex))
+            downQueries.push(this.dropIndexSql(table, uniqueIndex))
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -939,6 +936,7 @@ export class AuroraMysqlQueryRunner
                             clonedTable,
                             index.columnNames,
                             index.where,
+                            index.columnOrders,
                         )
 
                     // build queries
@@ -1209,6 +1207,7 @@ export class AuroraMysqlQueryRunner
                         ]),
                         columnNames: [newColumn.name],
                         isUnique: true,
+                        columnOrders: { ...newColumn.uniqueColumnOrders },
                     })
                     clonedTable.indices.push(uniqueIndex)
                     clonedTable.uniques.push(
@@ -1217,22 +1216,8 @@ export class AuroraMysqlQueryRunner
                             columnNames: uniqueIndex.columnNames,
                         }),
                     )
-                    upQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} ADD UNIQUE INDEX \`${uniqueIndex.name}\` (\`${
-                                newColumn.name
-                            }\`)`,
-                        ),
-                    )
-                    downQueries.push(
-                        new Query(
-                            `ALTER TABLE ${this.escapePath(
-                                table,
-                            )} DROP INDEX \`${uniqueIndex.name}\``,
-                        ),
-                    )
+                    upQueries.push(this.createIndexSql(table, uniqueIndex))
+                    downQueries.push(this.dropIndexSql(table, uniqueIndex))
                 } else {
                     const uniqueIndex = clonedTable.indices.find((index) => {
                         return (
@@ -2589,6 +2574,14 @@ export class AuroraMysqlQueryRunner
                     table: table,
                     name: constraint["INDEX_NAME"],
                     columnNames: indices.map((i) => i["COLUMN_NAME"]),
+                    columnOrders: indices.reduce(
+                        (map, i) => {
+                            if (i["COLLATION"] === "D")
+                                map[i["COLUMN_NAME"]] = "DESC"
+                            return map
+                        },
+                        {} as { [col: string]: "ASC" | "DESC" },
+                    ),
                     isUnique: nonUnique === 0,
                     isSpatial: constraint["INDEX_TYPE"] === "SPATIAL",
                     isFulltext: constraint["INDEX_TYPE"] === "FULLTEXT",
@@ -2653,6 +2646,7 @@ export class AuroraMysqlQueryRunner
                         new TableIndex({
                             name: unique.name,
                             columnNames: unique.columnNames,
+                            columnOrders: { ...unique.columnOrders },
                             isUnique: true,
                         }),
                     )
@@ -2663,14 +2657,17 @@ export class AuroraMysqlQueryRunner
         if (table.indices.length > 0) {
             const indicesSql = table.indices
                 .map((index) => {
+                    const supportsOrder = !index.isSpatial && !index.isFulltext
                     const columnNames = index.columnNames
-                        .map((columnName) => `\`${columnName}\``)
+                        .map((columnName) => {
+                            const order =
+                                supportsOrder && index.columnOrders[columnName]
+                            return order
+                                ? `\`${columnName}\` ${order}`
+                                : `\`${columnName}\``
+                        })
                         .join(", ")
-                    index.name ??= this.dataSource.namingStrategy.indexName(
-                        table,
-                        index.columnNames,
-                        index.where,
-                    )
+                    index.name ??= this.generateIndexName(table, index)
 
                     let indexType = ""
                     if (index.isUnique) indexType += "UNIQUE "
@@ -2803,8 +2800,12 @@ export class AuroraMysqlQueryRunner
      * @param index
      */
     protected createIndexSql(table: Table, index: TableIndex): Query {
+        const supportsOrder = !index.isSpatial && !index.isFulltext
         const columns = index.columnNames
-            .map((columnName) => `\`${columnName}\``)
+            .map((columnName) => {
+                const order = supportsOrder && index.columnOrders[columnName]
+                return `\`${columnName}\`${order ? ` ${order}` : ""}`
+            })
             .join(", ")
         let indexType = ""
         if (index.isUnique) indexType += "UNIQUE "

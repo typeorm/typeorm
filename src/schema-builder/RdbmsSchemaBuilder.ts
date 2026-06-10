@@ -421,6 +421,26 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (indexMetadata.columns.length !== tableIndex.columnNames.length)
                 return true
 
+            // Compare column orders only when the driver actually persists
+            // DESC ordering. Drivers that silently convert DESC to ASC
+            // (MySQL < 8.0, MariaDB < 10.8) would otherwise loop: entity says
+            // DESC, DB always shows ASC after build => endless drop-recreate.
+            // Also skip for FULLTEXT/SPATIAL indexes: MySQL and SAP omit column
+            // ordering for those types, so comparing would cause the same loop.
+            if (
+                this.dataSource.driver.isDescIndexOrderingSupported() &&
+                !indexMetadata.isSpatial &&
+                !indexMetadata.isFulltext &&
+                indexMetadata.columns.some((col) => {
+                    const entityOrder =
+                        indexMetadata.columnOrderMap[col.databaseName] ?? "ASC"
+                    const dbOrder =
+                        tableIndex.columnOrders[col.databaseName] ?? "ASC"
+                    return entityOrder !== dbOrder
+                })
+            )
+                return true
+
             return !indexMetadata.columns.every(
                 (column) =>
                     tableIndex.columnNames.indexOf(column.databaseName) !== -1,

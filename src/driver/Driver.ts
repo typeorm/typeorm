@@ -291,6 +291,13 @@ export interface Driver {
     isFullTextColumnTypeSupported(): boolean
 
     /**
+     * Returns true if driver stores per-column DESC/ASC ordering in indexes.
+     * Drivers that silently convert DESC to ASC (e.g. MySQL < 8.0) return false
+     * to prevent infinite drop-recreate loops during schema sync.
+     */
+    isDescIndexOrderingSupported(): boolean
+
+    /**
      * Creates an escaped parameter.
      */
     createParameter(parameterName: string, index: number): string

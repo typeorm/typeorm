@@ -72,6 +72,12 @@ export class TableIndex {
      */
     where: string
 
+    /**
+     * Per-column sort orders for this index.
+     * Columns not listed here use the database default (ASC).
+     */
+    columnOrders: { [columnName: string]: "ASC" | "DESC" }
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -87,6 +93,7 @@ export class TableIndex {
         this.parser = options.parser
         this.where = options.where ?? ""
         this.type = options.type
+        this.columnOrders = options.columnOrders ?? {}
     }
 
     // -------------------------------------------------------------------------
@@ -108,6 +115,7 @@ export class TableIndex {
             parser: this.parser,
             where: this.where,
             type: this.type,
+            columnOrders: { ...this.columnOrders },
         })
     }
 
@@ -134,6 +142,7 @@ export class TableIndex {
             parser: indexMetadata.parser,
             where: indexMetadata.where,
             type: indexMetadata.type,
+            columnOrders: { ...indexMetadata.columnOrderMap },
         })
     }
 }

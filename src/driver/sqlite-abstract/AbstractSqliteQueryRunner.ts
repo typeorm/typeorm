@@ -334,11 +334,7 @@ export abstract class AbstractSqliteQueryRunner
         if (createIndices) {
             table.indices.forEach((index) => {
                 // new index may be passed without name. In this case we generate index name manually.
-                index.name ??= this.dataSource.namingStrategy.indexName(
-                    table,
-                    index.columnNames,
-                    index.where,
-                )
+                index.name ??= this.generateIndexName(table, index)
                 upQueries.push(this.createIndexSql(table, index))
                 downQueries.push(this.dropIndexSql(index))
             })
@@ -546,6 +542,7 @@ export abstract class AbstractSqliteQueryRunner
                 oldTable,
                 index.columnNames,
                 index.where,
+                index.columnOrders,
             )
 
             // Skip renaming if Index has user defined constraint name
@@ -555,6 +552,7 @@ export abstract class AbstractSqliteQueryRunner
                 newTable,
                 index.columnNames,
                 index.where,
+                index.columnOrders,
             )
         })
 
@@ -747,6 +745,7 @@ export abstract class AbstractSqliteQueryRunner
                                 table,
                                 index.columnNames,
                                 index.where,
+                                index.columnOrders,
                             )
 
                         index.columnNames.splice(
@@ -764,6 +763,7 @@ export abstract class AbstractSqliteQueryRunner
                                     changedTable,
                                     index.columnNames,
                                     index.where,
+                                    index.columnOrders,
                                 )
                         }
                     })
@@ -1849,9 +1849,12 @@ export abstract class AbstractSqliteQueryRunner
                             (dbIndex) => dbIndex["name"] === dbIndexName,
                         )
                         const indexInfos: ObjectLiteral[] = await this.query(
-                            `PRAGMA index_info("${dbIndex!["name"]}")`,
+                            `PRAGMA index_xinfo("${dbIndex!["name"]}")`,
                         )
-                        const indexColumns = indexInfos
+                        const validIndexInfos = indexInfos.filter(
+                            (info) => info["cid"] >= 0,
+                        )
+                        const indexColumns = validIndexInfos
                             .sort(
                                 (indexInfo1, indexInfo2) =>
                                     parseInt(indexInfo1["seqno"]) -
@@ -1865,10 +1868,22 @@ export abstract class AbstractSqliteQueryRunner
                         const isUnique =
                             dbIndex!["unique"] === "1" ||
                             dbIndex!["unique"] === 1
+                        const columnOrders = validIndexInfos.reduce(
+                            (map, info) => {
+                                if (
+                                    info["name"] &&
+                                    (info["desc"] === 1 || info["desc"] === "1")
+                                )
+                                    map[info["name"]] = "DESC"
+                                return map
+                            },
+                            {} as { [col: string]: "ASC" | "DESC" },
+                        )
                         return new TableIndex(<TableIndexOptions>{
                             table: table,
                             name: dbIndexPath,
                             columnNames: indexColumns,
+                            columnOrders,
                             isUnique: isUnique,
                             where: condition ? condition[1] : undefined,
                         })
@@ -2122,7 +2137,10 @@ export abstract class AbstractSqliteQueryRunner
      */
     protected createIndexSql(table: Table, index: TableIndex): Query {
         const columns = index.columnNames
-            .map((columnName) => `"${columnName}"`)
+            .map((columnName) => {
+                const order = index.columnOrders[columnName]
+                return `"${columnName}"${order ? ` ${order}` : ""}`
+            })
             .join(", ")
         const [database, tableName] = this.splitTablePath(table.name)
         return new Query(
@@ -2307,11 +2325,7 @@ export abstract class AbstractSqliteQueryRunner
         // recreate table indices
         newTable.indices.forEach((index) => {
             // new index may be passed without name. In this case we generate index name manually.
-            index.name ??= this.dataSource.namingStrategy.indexName(
-                newTable,
-                index.columnNames,
-                index.where,
-            )
+            index.name ??= this.generateIndexName(newTable, index)
             upQueries.push(this.createIndexSql(newTable, index))
             downQueries.push(this.dropIndexSql(index))
         })

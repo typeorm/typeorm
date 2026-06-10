@@ -13,6 +13,7 @@ import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DateUtils } from "../../util/DateUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
+import { VersionUtils } from "../../util/VersionUtils"
 import type { Driver } from "../Driver"
 import { DriverUtils } from "../DriverUtils"
 import type { ColumnType } from "../types/ColumnTypes"
@@ -98,6 +99,11 @@ export class AuroraMysqlDriver implements Driver {
      * Database name used to perform all write queries.
      */
     database?: string
+
+    /**
+     * Server version (e.g. "8.0.28") detected at connect time.
+     */
+    version?: string
 
     /**
      * Schema name used to perform all write queries.
@@ -353,11 +359,12 @@ export class AuroraMysqlDriver implements Driver {
      * Performs connection to the database.
      */
     async connect(): Promise<void> {
-        if (!this.database) {
-            const queryRunner = this.createQueryRunner("master")
-
-            this.database = await queryRunner.getCurrentDatabase()
-
+        const queryRunner = this.createQueryRunner("master")
+        try {
+            if (!this.database)
+                this.database = await queryRunner.getCurrentDatabase()
+            this.version = await queryRunner.getVersion()
+        } finally {
             await queryRunner.release()
         }
     }
@@ -1011,6 +1018,11 @@ export class AuroraMysqlDriver implements Driver {
      */
     isFullTextColumnTypeSupported(): boolean {
         return true
+    }
+
+    isDescIndexOrderingSupported(): boolean {
+        if (!this.version) return false
+        return VersionUtils.isGreaterOrEqual(this.version, "8.0.0")
     }
 
     /**

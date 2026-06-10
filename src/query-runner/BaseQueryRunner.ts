@@ -815,6 +815,9 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
             table,
             index.columnNames,
             index.where,
+            Object.keys(index.columnOrders).length > 0
+                ? index.columnOrders
+                : undefined,
         )
     }
 }

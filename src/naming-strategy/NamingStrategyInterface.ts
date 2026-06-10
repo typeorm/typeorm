@@ -93,6 +93,7 @@ export interface NamingStrategyInterface {
         tableOrName: Table | View | string,
         columns: string[],
         where?: string,
+        columnOrders?: { [columnName: string]: "ASC" | "DESC" },
     ): string
 
     /**
