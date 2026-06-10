@@ -953,20 +953,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 .map((column) => {
                     const name = this.escape(column.databaseName)
                     if (driver.options.type === "mssql") {
-                        if (
-                            this.expressionMap.queryType === "insert" ||
-                            this.expressionMap.queryType === "update" ||
-                            this.expressionMap.queryType === "soft-delete" ||
-                            this.expressionMap.queryType === "restore"
-                        ) {
-                            return "INSERTED." + name
-                        } else {
-                            return (
-                                this.escape(this.getMainTableName()) +
-                                "." +
-                                name
-                            )
-                        }
+                        return this.createMssqlReturningColumnExpression(name)
                     } else {
                         return name
                     }
@@ -999,10 +986,53 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
             return columnsExpression
         } else if (typeof this.expressionMap.returning === "string") {
+            if (
+                driver.options.type === "mssql" &&
+                this.expressionMap.returning === "*"
+            ) {
+                const mssqlReturningExpression =
+                    this.createMssqlReturningWildcardExpression()
+                if (mssqlReturningExpression) {
+                    return mssqlReturningExpression
+                }
+            }
             return this.expressionMap.returning
         }
 
         return ""
+    }
+
+    protected isMssqlInsertedAliasQueryType(): boolean {
+        return (
+            this.expressionMap.queryType === "insert" ||
+            this.expressionMap.queryType === "update" ||
+            this.expressionMap.queryType === "soft-delete" ||
+            this.expressionMap.queryType === "restore"
+        )
+    }
+
+    protected createMssqlReturningColumnExpression(name: string): string {
+        if (this.isMssqlInsertedAliasQueryType()) {
+            return "INSERTED." + name
+        }
+
+        if (this.expressionMap.queryType === "delete") {
+            return "DELETED." + name
+        }
+
+        return this.escape(this.getMainTableName()) + "." + name
+    }
+
+    protected createMssqlReturningWildcardExpression(): string | undefined {
+        if (this.isMssqlInsertedAliasQueryType()) {
+            return "INSERTED.*"
+        }
+
+        if (this.expressionMap.queryType === "delete") {
+            return "DELETED.*"
+        }
+
+        return undefined
     }
 
     /**

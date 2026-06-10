@@ -15,6 +15,7 @@ import { ObjectUtils } from "../util/ObjectUtils"
 import type { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
 import type { UpsertOptions } from "./UpsertOptions"
 import type { UpdateOptions } from "./UpdateOptions"
+import type { DeleteOptions } from "./DeleteOptions"
 import type { EntityTarget } from "../common/EntityTarget"
 import type { PickKeysByType } from "../common/PickKeysByType"
 import type { ObjectLiteral } from "../common/ObjectLiteral"
@@ -418,6 +419,7 @@ export class BaseEntity {
      * Does not check if entity exist in the database.
      *
      * @param criteria
+     * @param options
      */
     static delete<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
@@ -431,8 +433,9 @@ export class BaseEntity {
             | ObjectId
             | ObjectId[]
             | FindOptionsWhere<T>,
+        options?: DeleteOptions,
     ): Promise<DeleteResult> {
-        return this.getRepository<T>().delete(criteria)
+        return this.getRepository<T>().delete(criteria, options)
     }
 
     /**

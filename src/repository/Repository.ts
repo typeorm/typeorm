@@ -15,6 +15,7 @@ import type { ObjectId } from "../driver/mongodb/typings"
 import type { FindOptionsWhere } from "../find-options/FindOptionsWhere"
 import type { UpsertOptions } from "./UpsertOptions"
 import type { UpdateOptions } from "./UpdateOptions"
+import type { DeleteOptions } from "./DeleteOptions"
 import type { EntityTarget } from "../common/EntityTarget"
 import type { PickKeysByType } from "../common/PickKeysByType"
 import { buildSqlTag } from "../util/SqlTagUtils"
@@ -451,6 +452,7 @@ export class Repository<Entity extends ObjectLiteral> {
      * Does not check if entity exist in the database.
      *
      * @param criteria
+     * @param options
      */
     delete(
         criteria:
@@ -464,8 +466,9 @@ export class Repository<Entity extends ObjectLiteral> {
             | ObjectId[]
             | FindOptionsWhere<Entity>
             | FindOptionsWhere<Entity>[],
+        options?: DeleteOptions,
     ): Promise<DeleteResult> {
-        return this.manager.delete(this.metadata.target, criteria)
+        return this.manager.delete(this.metadata.target, criteria, options)
     }
 
     /**
@@ -474,9 +477,11 @@ export class Repository<Entity extends ObjectLiteral> {
      * Executes fast and efficient DELETE query without WHERE clause.
      *
      * WARNING! This method deletes ALL rows in the target table.
+     *
+     * @param options
      */
-    deleteAll(): Promise<DeleteResult> {
-        return this.manager.deleteAll(this.metadata.target)
+    deleteAll(options?: DeleteOptions): Promise<DeleteResult> {
+        return this.manager.deleteAll(this.metadata.target, options)
     }
 
     /**

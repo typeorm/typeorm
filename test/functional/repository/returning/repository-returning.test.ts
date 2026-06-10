@@ -99,4 +99,119 @@ describe("repository > returning", () => {
                 ])
             }),
         ))
+
+    it("allows specifying RETURNING via repository.delete options", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (!dataSource.driver.isReturningSqlSupported("delete")) {
+                    return
+                }
+
+                const repo = dataSource.getRepository(User)
+                const created = await repo.save({ name: "to-delete" })
+
+                const result = await repo.delete(created.id, {
+                    returning: ["id", "name"],
+                })
+
+                expect(result.raw).to.be.an("array")
+                expect(result.raw[0]).to.include({
+                    id: created.id,
+                    name: "to-delete",
+                })
+            }),
+        ))
+
+    it("allows specifying RETURNING via repository.delete with object criteria", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (!dataSource.driver.isReturningSqlSupported("delete")) {
+                    return
+                }
+
+                const repo = dataSource.getRepository(User)
+                const created = await repo.save({ name: "obj-delete" })
+
+                const result = await repo.delete(
+                    { name: "obj-delete" },
+                    { returning: ["id", "name"] },
+                )
+
+                expect(result.raw).to.be.an("array")
+                expect(result.raw[0]).to.include({
+                    id: created.id,
+                    name: "obj-delete",
+                })
+            }),
+        ))
+
+    it('allows specifying RETURNING "*" via repository.delete options', () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (!dataSource.driver.isReturningSqlSupported("delete")) {
+                    return
+                }
+
+                const repo = dataSource.getRepository(User)
+                const created = await repo.save({ name: "wildcard-delete" })
+
+                const result = await repo.delete(created.id, {
+                    returning: "*",
+                })
+
+                expect(result.raw).to.be.an("array")
+                expect(result.raw[0]).to.include({
+                    id: created.id,
+                    name: "wildcard-delete",
+                })
+            }),
+        ))
+
+    it("allows specifying RETURNING via repository.deleteAll options", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (!dataSource.driver.isReturningSqlSupported("delete")) {
+                    return
+                }
+
+                const repo = dataSource.getRepository(User)
+                const user1 = await repo.save({ name: "user1" })
+                const user2 = await repo.save({ name: "user2" })
+
+                const result = await repo.deleteAll({
+                    returning: ["id", "name"],
+                })
+
+                expect(result.raw).to.be.an("array")
+                expect(result.raw.length).to.equal(2)
+                expect(result.raw).to.deep.include.members([
+                    { id: user1.id, name: "user1" },
+                    { id: user2.id, name: "user2" },
+                ])
+            }),
+        ))
+
+    it('allows specifying RETURNING "*" via repository.deleteAll options', () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (!dataSource.driver.isReturningSqlSupported("delete")) {
+                    return
+                }
+
+                const repo = dataSource.getRepository(User)
+                const user1 = await repo.save({ name: "wildcard-user1" })
+                const user2 = await repo.save({ name: "wildcard-user2" })
+
+                const result = await repo.deleteAll({
+                    returning: "*",
+                })
+
+                expect(result.raw).to.be.an("array")
+                expect(result.raw.length).to.equal(2)
+                expect(result.raw).to.deep.include.members([
+                    { id: user1.id, name: "wildcard-user1" },
+                    { id: user2.id, name: "wildcard-user2" },
+                ])
+            }),
+        ))
 })

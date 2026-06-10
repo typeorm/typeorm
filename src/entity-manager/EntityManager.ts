@@ -27,6 +27,7 @@ import type { IsolationLevel } from "../driver/types/IsolationLevel"
 import { ObjectUtils } from "../util/ObjectUtils"
 import type { UpsertOptions } from "../repository/UpsertOptions"
 import type { UpdateOptions } from "../repository/UpdateOptions"
+import type { DeleteOptions } from "../repository/DeleteOptions"
 import { InstanceChecker } from "../util/InstanceChecker"
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { PickKeysByType } from "../common/PickKeysByType"
@@ -921,6 +922,7 @@ export class EntityManager {
      *
      * @param targetOrEntity
      * @param criteria
+     * @param options
      */
     delete<Entity extends ObjectLiteral>(
         targetOrEntity: EntityTarget<Entity>,
@@ -934,6 +936,7 @@ export class EntityManager {
             | ObjectId
             | ObjectId[]
             | any,
+        options?: DeleteOptions,
     ): Promise<DeleteResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
         if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
@@ -944,23 +947,31 @@ export class EntityManager {
             )
         }
 
+        const qb = this.createQueryBuilder().delete().from(targetOrEntity)
+
         if (OrmUtils.isPrimitiveCriteria(criteria)) {
-            return this.createQueryBuilder()
-                .delete()
-                .from(targetOrEntity)
-                .whereInIds(criteria)
-                .execute()
+            qb.whereInIds(criteria)
         } else {
-            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
-                criteria as ObjectLiteral,
-                this.dataSource.options.invalidWhereValuesBehavior,
-            )
-            return this.createQueryBuilder()
-                .delete()
-                .from(targetOrEntity)
-                .where(normalizedCriteria)
-                .execute()
+            const normalizedCriteria = Array.isArray(criteria)
+                ? criteria.map((criterion) =>
+                      OrmUtils.normalizeWhereCriteria(
+                          criterion as ObjectLiteral,
+                          this.dataSource.options.invalidWhereValuesBehavior,
+                      ),
+                  )
+                : OrmUtils.normalizeWhereCriteria(
+                      criteria as ObjectLiteral,
+                      this.dataSource.options.invalidWhereValuesBehavior,
+                  )
+
+            qb.where(normalizedCriteria)
         }
+
+        if (options?.returning !== undefined) {
+            qb.returning(options.returning)
+        }
+
+        return qb.execute()
     }
 
     /**
@@ -971,11 +982,19 @@ export class EntityManager {
      * WARNING! This method deletes ALL rows in the target table.
      *
      * @param targetOrEntity
+     * @param options
      */
     deleteAll<Entity extends ObjectLiteral>(
         targetOrEntity: EntityTarget<Entity>,
+        options?: DeleteOptions,
     ): Promise<DeleteResult> {
-        return this.createQueryBuilder().delete().from(targetOrEntity).execute()
+        const qb = this.createQueryBuilder().delete().from(targetOrEntity)
+
+        if (options?.returning !== undefined) {
+            qb.returning(options.returning)
+        }
+
+        return qb.execute()
     }
 
     /**
