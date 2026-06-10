@@ -238,4 +238,28 @@ describe("relations > eager relations > basic", () => {
                 expect(userJoinCount).to.equal(1)
             }),
         ))
+
+    it("should not throw QueryFailedError when using partial select with eager relations", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource)
+
+                // Regression test for PR #12499: QueryExpressionMap.clone() did not copy
+                // queryEntity, causing the pagination DISTINCT wrapper's inner
+                // query to omit primary key columns from the SELECT. When eager
+                // relations exist the wrapper references distinctAlias.<Entity>_id
+                // which then could not be found, producing a QueryFailedError.
+                let error: Error | undefined
+                try {
+                    await dataSource.manager.findOne(Post, {
+                        where: { id: 1 },
+                        select: { title: true },
+                    })
+                } catch (e) {
+                    error = e as Error
+                }
+
+                expect(error).to.be.undefined
+            }),
+        ))
 })
