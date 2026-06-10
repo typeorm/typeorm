@@ -3439,18 +3439,22 @@ export class PostgresQueryRunner
         const notExtensionOwned = (
             alias: string,
             nameCol: string,
-            relkind: string,
-        ): string =>
-            `AND NOT EXISTS (` +
-            `SELECT 1 FROM pg_depend d ` +
-            `JOIN pg_class c ON d.objid = c.oid ` +
-            `JOIN pg_namespace n ON c.relnamespace = n.oid ` +
-            `WHERE d.classid = 'pg_class'::regclass ` +
-            `AND c.relname = ${alias}.${nameCol} ` +
-            `AND n.nspname = ${alias}.schemaname ` +
-            `AND c.relkind = '${relkind}' ` +
-            `AND d.deptype = 'e'` +
-            `)`
+            relkinds: string[],
+        ): string => {
+            const kinds = relkinds.map((k) => `'${k}'`).join(", ")
+            return (
+                `AND NOT EXISTS (` +
+                `SELECT 1 FROM pg_depend d ` +
+                `JOIN pg_class c ON d.objid = c.oid ` +
+                `JOIN pg_namespace n ON c.relnamespace = n.oid ` +
+                `WHERE d.classid = 'pg_class'::regclass ` +
+                `AND c.relname = ${alias}.${nameCol} ` +
+                `AND n.nspname = ${alias}.schemaname ` +
+                `AND c.relkind IN (${kinds}) ` +
+                `AND d.deptype = 'e'` +
+                `)`
+            )
+        }
 
         const isAnotherTransactionActive = this.isTransactionActive
         if (!isAnotherTransactionActive) await this.startTransaction()
@@ -3459,7 +3463,7 @@ export class PostgresQueryRunner
             const views: ObjectLiteral[] = await this.query(
                 `SELECT quote_ident(v.schemaname) || '.' || quote_ident(v.viewname) as "name" ` +
                     `FROM "pg_views" v WHERE v."schemaname" = ANY($1) ` +
-                    notExtensionOwned("v", "viewname", "v"),
+                    notExtensionOwned("v", "viewname", ["v"]),
                 [schemas],
             )
             if (views.length > 0) {
@@ -3474,7 +3478,7 @@ export class PostgresQueryRunner
                 const matViews: ObjectLiteral[] = await this.query(
                     `SELECT quote_ident(v.schemaname) || '.' || quote_ident(v.matviewname) as "name" ` +
                         `FROM "pg_matviews" v WHERE v."schemaname" = ANY($1) ` +
-                        notExtensionOwned("v", "matviewname", "m"),
+                        notExtensionOwned("v", "matviewname", ["m"]),
                     [schemas],
                 )
                 if (matViews.length > 0) {
@@ -3488,7 +3492,7 @@ export class PostgresQueryRunner
             const tables: ObjectLiteral[] = await this.query(
                 `SELECT quote_ident(t.schemaname) || '.' || quote_ident(t.tablename) as "name" ` +
                     `FROM "pg_tables" t WHERE t."schemaname" = ANY($1) ` +
-                    notExtensionOwned("t", "tablename", "r"),
+                    notExtensionOwned("t", "tablename", ["r", "p"]),
                 [schemas],
             )
             if (tables.length > 0) {
