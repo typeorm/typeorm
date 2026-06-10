@@ -1,0 +1,116 @@
+# SECURITY: This workflow uses pull_request_target for write access on fork PRs.
+# It must NEVER check out or execute code from the PR branch.
+# All logic uses gh CLI / GitHub API only.
+
+name: PR Triage
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - edited
+
+concurrency:
+  group: ${{ github.workflow }}-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  issue-link:
+    if: >-
+      github.repository == 'typeorm/typeorm' &&
+      github.event.pull_request.user.type != 'Bot' &&
+      !contains(github.event.pull_request.labels.*.name, 'skip-issue-check')
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: read
+      checks: write
+    steps:
+      - name: Triage PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          EVENT_ACTION: ${{ github.event.action }}
+        run: |
+          set -euo pipefail
+
+          REPO="typeorm/typeorm"
+          CHECK_NAME="pr-triage / issue-link"
+          LABEL_LINKED="linked-issue"
+          LABEL_TRIAGE="needs-triage"
+          LABEL_DUPE="possible-duplicate"
+          FAIL_TITLE="No issue reference found"
+          FAIL_SUMMARY="Link this PR to an issue by adding one of: \
+          \`Fixes #NNNN\`, \`Closes #NNNN\`, or \`Resolves #NNNN\` \
+          to your PR description. If no issue exists, please create one first. \
+          Maintainers and bots are exempt via the \`skip-issue-check\` label."
+
+          ## Extract issue references ##
+          ## Matches: #N, typeorm/typeorm#N, and full issue URLs
+          ISSUES=$(echo "$PR_BODY" \
+            | grep -ioP '(?:fix(?:es)?|close[sd]?|resolve[sd]?)\s+(?:typeorm/typeorm)?(?:#(\d+)|https://github\.com/typeorm/typeorm/issues/(\d+))' \
+            | grep -oP '\d+' \
+            | grep -vE '^0+$' \
+            | sort -u \
+            || true)
+          FIRST_ISSUE=$(echo "$ISSUES" | head -1)
+
+          report_check() {
+            gh api "repos/${REPO}/check-runs" --method POST \
+              -f name="$CHECK_NAME" \
+              -f head_sha="$HEAD_SHA" \
+              -f status="completed" \
+              -f conclusion="$1" \
+              -f "output[title]=$2" \
+              -f "output[summary]=$3"
+          }
+
+          apply_label() {
+            gh pr edit "$PR_NUMBER" --repo "$REPO" \
+              --add-label "$1" --remove-label "$2" 2>/dev/null \
+              || gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "$1" \
+              || echo "Warning: failed to apply label $1"
+          }
+
+          ## Status check + triage label ##
+          if [ -z "$FIRST_ISSUE" ]; then
+            report_check "failure" "$FAIL_TITLE" "$FAIL_SUMMARY"
+            apply_label "$LABEL_TRIAGE" "$LABEL_LINKED"
+            exit 0
+          fi
+
+          report_check "success" "Issue linked: #${FIRST_ISSUE}" "PR references issue #${FIRST_ISSUE}."
+
+          LABEL_COUNT=$(gh issue view "$FIRST_ISSUE" --repo "$REPO" \
+            --json labels --jq '.labels | length' 2>/dev/null || echo "0")
+
+          if [ "$LABEL_COUNT" -gt 0 ]; then
+            apply_label "$LABEL_LINKED" "$LABEL_TRIAGE"
+          else
+            apply_label "$LABEL_TRIAGE" "$LABEL_LINKED"
+          fi
+
+          ## Duplicate check — short (#N) and qualified (typeorm/typeorm#N) forms ##
+          DUPES=$({
+            gh pr list --repo "$REPO" --state open --search "\"Fixes #${FIRST_ISSUE}\"" --json number --jq ".[].number"
+            gh pr list --repo "$REPO" --state open --search "\"Closes #${FIRST_ISSUE}\"" --json number --jq ".[].number"
+            gh pr list --repo "$REPO" --state open --search "\"Resolves #${FIRST_ISSUE}\"" --json number --jq ".[].number"
+            gh pr list --repo "$REPO" --state open --search "\"Closed #${FIRST_ISSUE}\"" --json number --jq ".[].number"
+            gh pr list --repo "$REPO" --state open --search "\"Resolved #${FIRST_ISSUE}\"" --json number --jq ".[].number"
+            gh pr list --repo "$REPO" --state open --search "\"Fixes ${REPO}#${FIRST_ISSUE}\"" --json number --jq ".[].number"
+            gh pr list --repo "$REPO" --state open --search "\"Closes ${REPO}#${FIRST_ISSUE}\"" --json number --jq ".[].number"
+            gh pr list --repo "$REPO" --state open --search "\"Resolves ${REPO}#${FIRST_ISSUE}\"" --json number --jq ".[].number"
+          } | sort -u | grep -v "^${PR_NUMBER}$" || true)
+
+          if [ -n "$DUPES" ]; then
+            DUPE_LIST=$(echo "$DUPES" | sed 's/^/#/' | tr '\n' ', ' | sed 's/,$//')
+            gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "$LABEL_DUPE" || true
+            if [ "$EVENT_ACTION" = "opened" ]; then
+              gh pr comment "$PR_NUMBER" --repo "$REPO" \
+                --body "Other open PRs also reference #${FIRST_ISSUE}: ${DUPE_LIST}. Maintainers may want to coordinate." || true
+            fi
+          else
+            gh pr edit "$PR_NUMBER" --repo "$REPO" --remove-label "$LABEL_DUPE" 2>/dev/null || true
+          fi
