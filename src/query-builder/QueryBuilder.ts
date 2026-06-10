@@ -1172,8 +1172,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             return ""
         }
 
-        let anyRecursive = false
-        const databaseRequireRecusiveHint =
+        let hasRecursiveCTEs = false
+        const doesDbRequireRecursiveHint =
             this.dataSource.driver.cteCapabilities.requiresRecursiveHint
 
         const cteStrings = this.expressionMap.commonTableExpressions.map(
@@ -1218,7 +1218,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     cteHeader += `(${escapedColumnNames.join(", ")})`
                 }
                 if (cte.options.recursive) {
-                    anyRecursive = true
+                    hasRecursiveCTEs = true
                 }
                 let materializeClause = ""
                 if (
@@ -1242,7 +1242,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         )
 
         const recursiveClause =
-            anyRecursive && databaseRequireRecusiveHint ? "RECURSIVE " : ""
+            hasRecursiveCTEs && doesDbRequireRecursiveHint ? "RECURSIVE " : ""
 
         return "WITH " + recursiveClause + cteStrings.join(", ") + " "
     }

@@ -71,6 +71,7 @@ describe("query builder > cte > recursive", () => {
                 }),
         ))
 
+    // GitHub issue #12489 - Recursive CTEs order dependent, can't have more than one
     it("should support multiple mixed-recursive CTEs", () =>
         Promise.all(
             dataSources
