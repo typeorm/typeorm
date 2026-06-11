@@ -1,4 +1,4 @@
-import { DataSource, TableForeignKey } from "../../../../src"
+import type { DataSource, TableForeignKey } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -14,6 +14,7 @@ describe("entity-schema > foreign-keys", () => {
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

@@ -11,6 +11,7 @@ import { JsonExampleEntity } from "./entity/JsonExampleEntity"
 describe("github issues > #9381 The column option 《transformer》 affects the result of the query condition generation", () => {
     it("transform and find values", async () => {
         const dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/ExampleEntity{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
@@ -40,10 +41,8 @@ describe("github issues > #9381 The column option 《transformer》 affects the 
                         value: 63,
                     },
                 ])
-                const findEqualsTransformer = await repository.findOne({
-                    where: {
-                        id: "1",
-                    },
+                const findEqualsTransformer = await repository.findOneBy({
+                    id: "1",
                 })
                 expect(findEqualsTransformer).to.be.eql({ id: "1", value: 15 })
             }),
@@ -54,6 +53,7 @@ describe("github issues > #9381 The column option 《transformer》 affects the 
 
     it("transform json values and find values", async () => {
         const dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/JsonExampleEntity{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
@@ -112,7 +112,7 @@ describe("github issues > #9381 The column option 《transformer》 affects the 
                 })
 
                 result = await repository.findOneBy({
-                    jsonvalue: JsonContains([5, 6, 7, 8] as any),
+                    jsonvalue: JsonContains([5, 6, 7, 8]),
                 })
                 expect(result).to.be.eql({
                     id: "7",

@@ -1,0 +1,309 @@
+---
+sidebar_label: Indexes
+---
+
+import Tabs from "@theme/Tabs"
+import TabItem from "@theme/TabItem"
+import {
+    DatabaseTabs,
+    DatabaseTab,
+} from "@site/src/components/tabs/database-tabs"
+
+# Using indexes
+
+Indexes are data structures that allow the database to locate rows without scanning the entire table. Without an index, a query must examine every row to find matches. With an index, the database can jump directly to the relevant rows — dramatically reducing the number of rows examined.
+
+Indexes accelerate read operations but add overhead to writes (inserts, updates, deletes) since the index must be kept in sync, so they should be created carefully and only when needed.
+
+Good candidates for indexes are columns frequently used in `WHERE` clauses, joins, and sorting. When more than one column is used as a filter, it might make sense to create a [composite index](../indexes.md#indexes-with-multiple-columns), however bear in mind that column order matters — place the most selective (most unique values) columns first.
+
+## Analyzing query performance
+
+Most databases let you inspect how a query is being executed, which is called an execution plan. Understanding such a plan helps you identify missing indexes and optimize how a query is constructed by comparing various ways of fetching the same data.
+
+<DatabaseTabs>
+<DatabaseTab value="cockroachdb">
+
+Use `EXPLAIN ANALYZE` (same syntax as PostgreSQL):
+
+```sql
+EXPLAIN ANALYZE SELECT * FROM "user" WHERE "firstName" = 'Timber';
+```
+
+Look for `full scan` (no index) vs `scan` with a specific index name.
+
+:::info Learn more
+
+- [Indexes](https://www.cockroachlabs.com/docs/stable/indexes.html)
+- [EXPLAIN](https://www.cockroachlabs.com/docs/stable/explain.html)
+
+:::
+
+</DatabaseTab>
+
+<DatabaseTab value="spanner">
+
+Use the [Query Plan visualizer](https://cloud.google.com/spanner/docs/query-execution-plans#query_plan_visualizer) in the Google Cloud Console, or run a query in `PLAN`/`PROFILE` mode via the `gcloud` CLI:
+
+```bash
+gcloud spanner databases execute-sql DATABASE_ID \
+    --instance=INSTANCE_ID \
+    --query-mode=PROFILE \
+    --sql="SELECT * FROM user WHERE firstName = 'Timber'"
+```
+
+Look for `Table Scan` (no index) vs `Index Scan` in the returned plan.
+
+:::info Learn more
+
+- [Secondary Indexes](https://cloud.google.com/spanner/docs/secondary-indexes)
+- [Query Execution Plans](https://cloud.google.com/spanner/docs/query-execution-plans)
+
+:::
+
+</DatabaseTab>
+
+<DatabaseTab value="mariadb">
+
+Use `EXPLAIN` or `ANALYZE` to inspect the query execution plan:
+
+```sql
+ANALYZE SELECT * FROM user WHERE firstName = 'Timber';
+```
+
+Check the `type` column — `ALL` means a full table scan, while `ref`, `range`, or `index` indicate index usage. The `key` column shows which index was chosen.
+
+:::info Learn more
+
+- [Optimization and Indexes](https://mariadb.com/kb/en/optimization-and-indexes/)
+- [EXPLAIN](https://mariadb.com/kb/en/explain/)
+- [ANALYZE Statement](https://mariadb.com/kb/en/analyze-statement/)
+
+:::
+
+</DatabaseTab>
+
+<DatabaseTab value="mongodb">
+
+Use the `explain()` method on a query to see the execution plan:
+
+```javascript
+db.user.find({ firstName: "Timber" }).explain("executionStats")
+```
+
+Look for `COLLSCAN` (collection scan — no index) vs `IXSCAN` (index scan).
+
+:::info Learn more
+
+- [Indexes](https://www.mongodb.com/docs/manual/indexes/)
+- [Explain Results](https://www.mongodb.com/docs/manual/reference/explain-results/)
+
+:::
+
+</DatabaseTab>
+
+<DatabaseTab value="mysql">
+
+Use `EXPLAIN` to inspect the query execution plan:
+
+```sql
+EXPLAIN SELECT * FROM user WHERE firstName = 'Timber';
+```
+
+Check the `type` column — `ALL` means a full table scan, while `ref`, `range`, or `index` indicate index usage. The `key` column shows which index was chosen.
+
+:::tip Aurora MySQL
+This also applies to Amazon Aurora MySQL, which uses the same query engine and EXPLAIN syntax. See [Aurora MySQL tuning](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/AuroraMySQL.Managing.Tuning.html) for Aurora-specific guidance.
+:::
+
+:::info Learn more
+
+- [Optimization and Indexes](https://dev.mysql.com/doc/refman/en/optimization-indexes.html)
+- [EXPLAIN Output Format](https://dev.mysql.com/doc/refman/en/explain-output.html)
+
+:::
+
+</DatabaseTab>
+
+<DatabaseTab value="oracle">
+
+Use `EXPLAIN PLAN` to inspect the execution plan:
+
+```sql
+EXPLAIN PLAN FOR SELECT * FROM "user" WHERE "firstName" = 'Timber';
+SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY);
+```
+
+Look for `TABLE ACCESS FULL` (no index) vs `INDEX RANGE SCAN` or `INDEX UNIQUE SCAN`.
+
+:::info Learn more
+
+- [Indexes and Index-Organized Tables](https://docs.oracle.com/en/database/oracle/oracle-database/23/cncpt/indexes-and-index-organized-tables.html)
+- [Generating and Displaying Execution Plans](https://docs.oracle.com/en/database/oracle/oracle-database/23/tgsql/generating-and-displaying-execution-plans.html)
+
+:::
+
+</DatabaseTab>
+
+<DatabaseTab value="postgres">
+
+Use `EXPLAIN ANALYZE` to see how PostgreSQL executes a query and whether it uses indexes:
+
+```sql
+EXPLAIN ANALYZE SELECT * FROM "user" WHERE "firstName" = 'Timber';
+```
+
+Look for `Seq Scan` (full table scan — no index used) vs `Index Scan` or `Index Only Scan` (index used).
+
+:::tip Aurora PostgreSQL
+This also applies to Amazon Aurora PostgreSQL, which uses the same query engine and EXPLAIN syntax. Aurora also offers [query plan management](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/AuroraPostgreSQL.Optimize.html) for capturing and controlling execution plans.
+:::
+
+:::info Learn more
+
+- [Indexes](https://www.postgresql.org/docs/current/indexes.html)
+- [EXPLAIN](https://www.postgresql.org/docs/current/sql-explain.html)
+- [Using EXPLAIN](https://www.postgresql.org/docs/current/using-explain.html)
+
+:::
+
+</DatabaseTab>
+
+<DatabaseTab value="sap">
+
+Use `EXPLAIN PLAN FOR` to inspect the execution plan:
+
+```sql
+EXPLAIN PLAN FOR SELECT * FROM "user" WHERE "firstName" = 'Timber';
+SELECT * FROM EXPLAIN_PLAN_TABLE;
+```
+
+Look for `TABLE SCAN` (no index) vs `INDEX SCAN` or `INDEX SEEK` in the operator column.
+
+:::info Learn more
+
+- [Indexes](https://help.sap.com/docs/hana-cloud-database/sap-hana-cloud-sap-hana-database-sql-reference-guide/indexes)
+- [EXPLAIN PLAN](https://help.sap.com/docs/hana-cloud-database/sap-hana-cloud-sap-hana-database-sql-reference-guide/explain-plan-statement-data-manipulation)
+
+:::
+
+</DatabaseTab>
+
+<DatabaseTab value="mssql">
+
+Use the execution plan to analyze queries. In SQL Server Management Studio, press `Ctrl+M` to include the actual execution plan, then run your query. Programmatically:
+
+```sql
+SET STATISTICS IO ON;
+SELECT * FROM [user] WHERE firstName = 'Timber';
+SET STATISTICS IO OFF;
+```
+
+Look for `Table Scan` (no index) vs `Index Seek` or `Index Scan` in the execution plan.
+
+:::info Learn more
+
+- [Indexes](https://learn.microsoft.com/en-us/sql/relational-databases/indexes/indexes)
+- [Execution Plans](https://learn.microsoft.com/en-us/sql/relational-databases/performance/execution-plans)
+
+:::
+
+</DatabaseTab>
+
+<DatabaseTab value="sqlite">
+
+Use `EXPLAIN QUERY PLAN` to see how SQLite resolves a query:
+
+```sql
+EXPLAIN QUERY PLAN SELECT * FROM user WHERE firstName = 'Timber';
+```
+
+Look for `SCAN` (no index) vs `SEARCH` (index used) in the output.
+
+:::info Learn more
+
+- [Query Planning](https://www.sqlite.org/queryplanner.html)
+- [EXPLAIN QUERY PLAN](https://www.sqlite.org/eqp.html)
+
+:::
+
+</DatabaseTab>
+</DatabaseTabs>
+
+## Defining indexes in TypeORM
+
+TypeORM supports creating indexes on table columns using the `@Index` decorator.
+
+<Tabs>
+<TabItem value="basic" label="Basic index">
+
+```typescript
+import { Entity, PrimaryGeneratedColumn, Column, Index } from "typeorm"
+
+@Entity()
+export class User {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    @Column()
+    @Index()
+    email: string
+
+    @Column()
+    firstName: string
+}
+```
+
+</TabItem>
+<TabItem value="composite" label="Composite index">
+
+```typescript
+import { Entity, PrimaryGeneratedColumn, Column, Index } from "typeorm"
+
+@Entity()
+@Index(["lastName", "firstName"]) // most selective column first
+export class User {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    @Column()
+    firstName: string
+
+    @Column()
+    lastName: string
+}
+```
+
+</TabItem>
+<TabItem value="join" label="Join column">
+
+```typescript
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    ManyToOne,
+    Index,
+} from "typeorm"
+import { User } from "./User"
+
+@Entity()
+export class Post {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    @Column()
+    title: string
+
+    @ManyToOne(() => User)
+    @Index() // index foreign key columns to speed up joins
+    author: User
+}
+```
+
+</TabItem>
+</Tabs>
+
+For a comprehensive overview of different index types (unique, spatial, fulltext, concurrent, and more), read the [Indexes](../indexes.md) guide.
+
+Proper indexing is often the single biggest performance improvement you can make — start by analyzing your slowest queries with the execution plan tools above, then add indexes where they matter most.

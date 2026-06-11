@@ -1,7 +1,6 @@
 import { expect } from "chai"
-import "../../utils/test-setup"
-import { DataSource } from "../../../src/data-source/DataSource"
-import { PlatformTools } from "../../../src/platform/PlatformTools"
+import { ObjectId } from "mongodb"
+import type { DataSource } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -11,21 +10,20 @@ import { Post } from "./entity/Post"
 import { PostV2 } from "./entity/PostV2"
 
 describe("github issues > #6552 MongoRepository delete by ObjectId deletes the wrong entity", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["mongodb"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            enabledDrivers: ["mongodb"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     // before the fix this would delete incorrectly post1 instead of post2
     it("should delete the correct entity when id column is called _id", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 // setup: create 2 posts
                 const post1 = new Post()
                 post1.title = "Post 1"
@@ -35,12 +33,10 @@ describe("github issues > #6552 MongoRepository delete by ObjectId deletes the w
                 post2.title = "Post 2"
                 await connection.manager.save(post2)
 
-                const objectIdInstance = PlatformTools.load("mongodb").ObjectId
-
                 // double check that post2._id is actually an ObjectId
                 expect(post2._id).to.be.not.null
                 expect(post2._id).to.be.not.undefined
-                expect(post2._id).to.be.instanceof(objectIdInstance)
+                expect(post2._id).to.be.instanceof(ObjectId)
 
                 // delete Post 2 by ObjectId directly
                 await connection.manager.delete(Post, post2._id)
@@ -63,7 +59,7 @@ describe("github issues > #6552 MongoRepository delete by ObjectId deletes the w
     // before the fix this wouldn't delete anything
     it("should delete the correct entity when id column is not called _id", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 const postV2Repository = connection.getMongoRepository(PostV2)
 
                 // setup: create 2 posts
@@ -75,12 +71,10 @@ describe("github issues > #6552 MongoRepository delete by ObjectId deletes the w
                 post2.title = "Post 2"
                 await postV2Repository.save(post2)
 
-                const objectIdInstance = PlatformTools.load("mongodb").ObjectId
-
                 // double check that post2.postId is actually an ObjectId
                 expect(post2.postId).to.be.not.null
                 expect(post2.postId).to.be.not.undefined
-                expect(post2.postId).to.be.instanceof(objectIdInstance)
+                expect(post2.postId).to.be.instanceof(ObjectId)
 
                 // delete Post 2 by ObjectId directly
                 await postV2Repository.delete(post2.postId)
@@ -103,7 +97,7 @@ describe("github issues > #6552 MongoRepository delete by ObjectId deletes the w
     // before the fix this passed (added here to make sure we don't cause any regressions)
     it("should delete the correct entity when deleting by _id query", () =>
         Promise.all(
-            connections.map(async function (connection) {
+            dataSources.map(async function (connection) {
                 // setup: create 2 posts
                 const post1 = new Post()
                 post1.title = "Post 1"
@@ -113,12 +107,10 @@ describe("github issues > #6552 MongoRepository delete by ObjectId deletes the w
                 post2.title = "Post 2"
                 await connection.manager.save(post2)
 
-                const objectIdInstance = PlatformTools.load("mongodb").ObjectId
-
                 // double check that post2._id is actually an ObjectId
                 expect(post2._id).to.be.not.null
                 expect(post2._id).to.be.not.undefined
-                expect(post2._id).to.be.instanceof(objectIdInstance)
+                expect(post2._id).to.be.instanceof(ObjectId)
 
                 // delete Post 2 by ObjectId directly
                 await connection.manager.delete(Post, { _id: post2._id })

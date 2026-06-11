@@ -1,3 +1,5 @@
+import type { DeferrableType } from "../metadata/types/DeferrableType"
+
 /**
  * Arguments for ExclusionMetadata class.
  */
@@ -16,4 +18,9 @@ export interface ExclusionMetadataArgs {
      * Exclusion expression.
      */
     expression: string
+
+    /**
+     * Indicate if exclusion constraints can be deferred.
+     */
+    deferrable?: DeferrableType
 }

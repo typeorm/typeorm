@@ -31,10 +31,13 @@
   If an item is not applicable, you can add "N/A" to the end.
 -->
 
--   [ ] Code is up-to-date with the `master` branch
--   [ ] This pull request links relevant issues as `Fixes #00000`
--   [ ] There are new or updated tests validating the change (`tests/**.test.ts`)
--   [ ] Documentation has been updated to reflect this change (`docs/docs/**.md`)
+- [ ] Code is up-to-date with the `master` branch
+- [ ] This pull request links a relevant issue using a closing keyword:
+      `Fixes #NNNN`, `Closes #NNNN`, or `Resolves #NNNN`
+- [ ] There are new or updated tests validating the change (`tests/**.test.ts`)
+- [ ] Documentation has been updated to reflect this change (`docs/docs/**.md`)
+
+> 🛡️ **Security fixes:** Do not submit security fixes as public PRs — the diff exposes the vulnerability. Use [GitHub Security Advisories](https://github.com/typeorm/typeorm/security/advisories/new) instead.
 
 <!--
   🎉 Thank you for contributing and making TypeORM even better!

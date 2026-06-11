@@ -3,7 +3,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../src/data-source/DataSource"
 import { Human } from "./entity/Human"
 import { Animal } from "./entity/Animal"
 import { Gender } from "./entity/GenderEnum"
@@ -11,17 +11,16 @@ import { EntityManager } from "../../../src/entity-manager/EntityManager"
 import { expect } from "chai"
 
 describe("github issues > #4106 Specify enum type name in postgres", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [Human, Animal],
-                dropSchema: true,
-                enabledDrivers: ["postgres"],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Human, Animal],
+            dropSchema: true,
+            enabledDrivers: ["postgres"],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     async function prepareData(connection: DataSource) {
         const human = new Human()
@@ -40,7 +39,7 @@ describe("github issues > #4106 Specify enum type name in postgres", () => {
 
     it("should create an enum with the name specified in column options -> enumName", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 const em = new EntityManager(connection)
                 const types =
                     await em.query(`SELECT typowner, n.nspname as "schema",
@@ -63,7 +62,7 @@ describe("github issues > #4106 Specify enum type name in postgres", () => {
 
     it("should insert data with the correct enum", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (connection) => {
                 await prepareData(connection)
 
                 const em = new EntityManager(connection)

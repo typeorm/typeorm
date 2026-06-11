@@ -1,4 +1,4 @@
-import { TableIndexTypes } from "./TableIndexTypes"
+import type { TableIndexTypes } from "./TableIndexTypes"
 
 /**
  * Database's table index options.

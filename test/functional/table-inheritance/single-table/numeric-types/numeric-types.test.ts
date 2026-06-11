@@ -5,26 +5,25 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { DataSource } from "../../../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import { Student } from "./entity/Student"
 import { Teacher } from "./entity/Teacher"
 import { Person } from "./entity/Person"
 
 describe("table-inheritance > single-table > numeric types", () => {
-    let connections: DataSource[]
-    before(
-        async () =>
-            (connections = await createTestingConnections({
-                entities: [Person, Student, Teacher],
-            })),
-    )
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Person, Student, Teacher],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should allow numeric types for the discriminator, including 0", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                if (connection.driver.options.type === "cockroachdb") {
+            dataSources.map(async (dataSource) => {
+                if (dataSource.driver.options.type === "cockroachdb") {
                     return
                 }
 
@@ -35,18 +34,18 @@ describe("table-inheritance > single-table > numeric types", () => {
                 const student = new Student()
                 student.name = "Alice"
                 student.faculty = "Economics"
-                await connection.getRepository(Student).save(student)
+                await dataSource.getRepository(Student).save(student)
 
                 const teacher = new Teacher()
                 teacher.name = "Roger"
                 teacher.specialization = "Math"
-                await connection.getRepository(Teacher).save(teacher)
+                await dataSource.getRepository(Teacher).save(teacher)
 
                 // -------------------------------------------------------------------------
                 // Select
                 // -------------------------------------------------------------------------
 
-                const persons = await connection.manager
+                const persons = await dataSource.manager
                     .createQueryBuilder(Person, "person")
                     .addOrderBy("person.id")
                     .getMany()

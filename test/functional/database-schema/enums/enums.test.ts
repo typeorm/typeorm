@@ -1,5 +1,5 @@
 import "reflect-metadata"
-import { DataSource } from "../../../../src"
+import type { DataSource } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -12,52 +12,54 @@ import {
     HeterogeneousEnum,
     StringNumericEnum,
 } from "./entity/EnumEntity"
+import { expect } from "chai"
 
 describe("database schema > enums", () => {
-    let connections: DataSource[]
+    let dataSources: DataSource[]
     before(async () => {
-        connections = await createTestingConnections({
+        dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres", "mysql", "mariadb", "cockroachdb"],
         })
     })
-    beforeEach(() => reloadTestingDatabases(connections))
-    after(() => closeTestingConnections(connections))
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
 
     it("should correctly use default values", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const enumEntityRepository =
-                    connection.getRepository(EnumEntity)
+                    dataSource.getRepository(EnumEntity)
 
                 const enumEntity = new EnumEntity()
                 enumEntity.id = 1
                 enumEntity.enumWithoutDefault = StringEnum.EDITOR
                 await enumEntityRepository.save(enumEntity)
 
-                const loadedEnumEntity = await enumEntityRepository.findOneBy({
+                const loadedEnumEntity =
+                    await enumEntityRepository.findOneByOrFail({
+                        id: 1,
+                    })
+
+                expect(loadedEnumEntity).to.be.eql({
                     id: 1,
+                    numericEnum: NumericEnum.MODERATOR,
+                    stringEnum: StringEnum.GHOST,
+                    stringNumericEnum: StringNumericEnum.FOUR,
+                    heterogeneousEnum: HeterogeneousEnum.NO,
+                    arrayDefinedStringEnum: "ghost",
+                    arrayDefinedNumericEnum: 12,
+                    enumWithoutDefault: StringEnum.EDITOR,
+                    nullableDefaultEnum: null,
                 })
-                loadedEnumEntity!.numericEnum.should.be.eq(
-                    NumericEnum.MODERATOR,
-                )
-                loadedEnumEntity!.stringEnum.should.be.eq(StringEnum.GHOST)
-                loadedEnumEntity!.stringNumericEnum.should.be.eq(
-                    StringNumericEnum.FOUR,
-                )
-                loadedEnumEntity!.heterogeneousEnum.should.be.eq(
-                    HeterogeneousEnum.NO,
-                )
-                loadedEnumEntity!.arrayDefinedStringEnum.should.be.eq("ghost")
-                loadedEnumEntity!.arrayDefinedNumericEnum.should.be.eq(12)
             }),
         ))
 
     it("should correctly save and retrieve", () =>
         Promise.all(
-            connections.map(async (connection) => {
+            dataSources.map(async (dataSource) => {
                 const enumEntityRepository =
-                    connection.getRepository(EnumEntity)
+                    dataSource.getRepository(EnumEntity)
 
                 const enumEntity = new EnumEntity()
                 enumEntity.id = 1
@@ -70,35 +72,35 @@ describe("database schema > enums", () => {
                 enumEntity.enumWithoutDefault = StringEnum.ADMIN
                 await enumEntityRepository.save(enumEntity)
 
-                const loadedEnumEntity = await enumEntityRepository.findOneBy({
+                const loadedEnumEntity =
+                    await enumEntityRepository.findOneByOrFail({
+                        id: 1,
+                    })
+                expect(loadedEnumEntity).to.be.eql({
                     id: 1,
+                    numericEnum: NumericEnum.EDITOR,
+                    stringEnum: StringEnum.ADMIN,
+                    stringNumericEnum: StringNumericEnum.TWO,
+                    heterogeneousEnum: HeterogeneousEnum.YES,
+                    arrayDefinedStringEnum: "editor",
+                    arrayDefinedNumericEnum: 13,
+                    enumWithoutDefault: StringEnum.ADMIN,
+                    nullableDefaultEnum: null,
                 })
-                loadedEnumEntity!.numericEnum.should.be.eq(NumericEnum.EDITOR)
-                loadedEnumEntity!.stringEnum.should.be.eq(StringEnum.ADMIN)
-                loadedEnumEntity!.stringNumericEnum.should.be.eq(
-                    StringNumericEnum.TWO,
-                )
-                loadedEnumEntity!.heterogeneousEnum.should.be.eq(
-                    HeterogeneousEnum.YES,
-                )
-                loadedEnumEntity!.arrayDefinedStringEnum.should.be.eq("editor")
-                loadedEnumEntity!.arrayDefinedNumericEnum.should.be.eq(13)
             }),
         ))
 
     it("should not generate queries when no model changes", () =>
         Promise.all(
-            connections.map(async (connection) => {
-                await connection.driver.createSchemaBuilder().build()
+            dataSources.map(async (dataSource) => {
+                await dataSource.driver.createSchemaBuilder().build()
 
-                const sqlInMemory = await connection.driver
+                const sqlInMemory = await dataSource.driver
                     .createSchemaBuilder()
                     .log()
 
-                console.log(sqlInMemory.upQueries)
-
-                sqlInMemory.upQueries.length.should.be.equal(0)
-                sqlInMemory.downQueries.length.should.be.equal(0)
+                expect(sqlInMemory.upQueries).to.have.length(0)
+                expect(sqlInMemory.downQueries).to.have.length(0)
             }),
         ))
 })

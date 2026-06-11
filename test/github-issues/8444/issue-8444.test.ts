@@ -5,7 +5,7 @@ import {
     createTestingConnections,
 } from "../../utils/test-utils"
 import { StrictlyInitializedEntity } from "./entity/StrictlyInitializedEntity"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 
 describe("github issues > #8444 entitySkipConstructor not working", () => {
     describe("without entitySkipConstructor", () => {
@@ -14,6 +14,7 @@ describe("github issues > #8444 entitySkipConstructor not working", () => {
                 DataSource[]
             > {
                 return await createTestingConnections({
+                    disabledDrivers: ["spanner"],
                     driverSpecific: {
                         entitySkipConstructor: false,
                     },
@@ -38,11 +39,12 @@ describe("github issues > #8444 entitySkipConstructor not working", () => {
     })
 
     describe("with entitySkipConstructor", () => {
-        let connections: DataSource[] = []
-        afterEach(() => closeTestingConnections(connections))
+        let dataSources: DataSource[] = []
+        after(() => closeTestingConnections(dataSources))
 
         it("createTestingConnections should succeed", async () => {
-            connections = await createTestingConnections({
+            dataSources = await createTestingConnections({
+                disabledDrivers: ["spanner"],
                 driverSpecific: {
                     entitySkipConstructor: true,
                 },

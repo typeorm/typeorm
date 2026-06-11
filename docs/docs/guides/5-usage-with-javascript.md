@@ -16,7 +16,7 @@ var dataSource = new typeorm.DataSource({
     password: "admin",
     database: "test",
     synchronize: true,
-    entities: [require("./entity/Post"), require("./entity/Category")],
+    entities: [require("./entities/Post"), require("./entities/Category")],
 })
 
 dataSource
@@ -105,5 +105,3 @@ module.exports = new EntitySchema({
     },
 })
 ```
-
-You can check out this example [typeorm/javascript-example](https://github.com/typeorm/javascript-example) to learn more.

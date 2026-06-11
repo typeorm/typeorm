@@ -1,5 +1,5 @@
-import { Table } from "../schema-builder/table/Table"
-import { View } from "../schema-builder/view/View"
+import type { Table } from "../schema-builder/table/Table"
+import type { View } from "../schema-builder/view/View"
 
 /**
  * Naming strategy defines how auto-generated names for such things like table name, or table column gonna be
@@ -7,15 +7,20 @@ import { View } from "../schema-builder/view/View"
  */
 export interface NamingStrategyInterface {
     /**
-     * Naming strategy name.
+     * Column name for materialized paths.
      */
-    name?: string
+    materializedPathColumnName: string
+
+    /**
+     * Column names for nested sets.
+     */
+    nestedSetColumnNames: { left: string; right: string }
 
     /**
      * Normalizes table name.
      *
      * @param targetName Name of the target entity that can be used to generate a table name.
-     * @param userSpecifiedName For example if user specified a table name in a decorator, e.g. @Entity("name")
+     * @param userSpecifiedName For example if user specified a table name in a decorator, e.g. `@Entity("name")`
      */
     tableName(targetName: string, userSpecifiedName: string | undefined): string
 
@@ -161,14 +166,4 @@ export interface NamingStrategyInterface {
      * Note that table name comes here already normalized by #tableName method.
      */
     prefixTableName(prefix: string, tableName: string): string
-
-    /**
-     * Column names for nested sets.
-     */
-    nestedSetColumnNames: { left: string; right: string }
-
-    /**
-     * Column name for materialized paths.
-     */
-    materializedPathColumnName: string
 }

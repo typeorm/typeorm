@@ -1,6 +1,6 @@
-import { EntityMetadata } from "../../metadata/EntityMetadata"
-import { ObjectLiteral } from "../../common/ObjectLiteral"
-import { EmbeddedMetadata } from "../../metadata/EmbeddedMetadata"
+import type { EntityMetadata } from "../../metadata/EntityMetadata"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import type { EmbeddedMetadata } from "../../metadata/EmbeddedMetadata"
 
 /**
  * Transforms raw document into entity object.
@@ -11,12 +11,7 @@ export class DocumentToEntityTransformer {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(
-        // private selectionMap: AliasMap,
-        // private joinMappings: JoinMapping[],
-        // private relationCountMetas: RelationCountAttribute[],
-        private enableRelationIdValues: boolean = false,
-    ) {}
+    constructor(private readonly enableRelationIdValues: boolean = false) {}
 
     // -------------------------------------------------------------------------
     // Public Methods
@@ -72,19 +67,6 @@ export class DocumentToEntityTransformer {
                     }
                 })
         }
-
-        /*this.joinMappings
-            .filter(joinMapping => joinMapping.parentName === alias.name && !joinMapping.alias.relationOwnerSelection && joinMapping.alias.target)
-            .map(joinMapping => {
-                const relatedEntities = this.transformRawResultsGroup(rawSqlResults, joinMapping.alias);
-                const isResultArray = joinMapping.isMany;
-                const result = !isResultArray ? relatedEntities[0] : relatedEntities;
-
-                if (result && (!isResultArray || result.length > 0)) {
-                    entity[joinMapping.propertyName] = result;
-                    hasData = true;
-                }
-            });*/
 
         // get value from columns selections and put them into object
         metadata.ownColumns.forEach((column) => {
@@ -143,10 +125,9 @@ export class DocumentToEntityTransformer {
                             ]
                         if (value === undefined) return
 
-                        if (!entity[embedded.propertyName])
-                            entity[embedded.propertyName] = embedded.create({
-                                fromDeserializer: true,
-                            })
+                        entity[embedded.propertyName] ??= embedded.create({
+                            fromDeserializer: true,
+                        })
 
                         entity[embedded.propertyName][column.propertyName] =
                             value
@@ -162,73 +143,6 @@ export class DocumentToEntityTransformer {
         }
 
         addEmbeddedValuesRecursively(entity, document, metadata.embeddeds)
-
-        // if relation is loaded then go into it recursively and transform its values too
-        /*metadata.relations.forEach(relation => {
-            const relationAlias = this.selectionMap.findSelectionByParent(alias.name, relation.propertyName);
-            if (relationAlias) {
-                const joinMapping = this.joinMappings.find(joinMapping => joinMapping.type === "join" && joinMapping.alias === relationAlias);
-                const relatedEntities = this.transformRawResultsGroup(rawSqlResults, relationAlias);
-                const isResultArray = relation.isManyToMany || relation.isOneToMany;
-                const result = !isResultArray ? relatedEntities[0] : relatedEntities;
-
-                if (result) {
-                    let propertyName = relation.propertyName;
-                    if (joinMapping) {
-                        propertyName = joinMapping.propertyName;
-                    }
-
-                    if (relation.isLazy) {
-                        entity["__" + propertyName + "__"] = result;
-                    } else {
-                        entity[propertyName] = result;
-                    }
-
-                    if (!isResultArray || result.length > 0)
-                        hasData = true;
-                }
-            }
-
-            // if relation has id field then relation id/ids to that field.
-            if (relation.isManyToMany) {
-                if (relationAlias) {
-                    const ids: any[] = [];
-                    const joinMapping = this.joinMappings.find(joinMapping => joinMapping.type === "relationId" && joinMapping.alias === relationAlias);
-
-                    if (relation.idField || joinMapping) {
-                        const propertyName = joinMapping ? joinMapping.propertyName : relation.idField as string;
-                        const junctionMetadata = relation.junctionEntityMetadata;
-                        const columnName = relation.isOwning ? junctionMetadata.columns[1].name : junctionMetadata.columns[0].name;
-
-                        rawSqlResults.forEach(results => {
-                            if (relationAlias) {
-                                const resultsKey = relationAlias.name + "_" + columnName;
-                                const value = this.driver.prepareHydratedValue(results[resultsKey], relation.referencedColumn);
-                                if (value !== undefined && value !== null)
-                                    ids.push(value);
-                            }
-                        });
-
-                        if (ids && ids.length)
-                            entity[propertyName] = ids;
-                    }
-                }
-            } else if (relation.idField) {
-                const relationName = relation.name;
-                entity[relation.idField] = this.driver.prepareHydratedValue(rawSqlResults[0][alias.name + "_" + relationName], relation.referencedColumn);
-            }
-
-            // if relation counter
-            this.relationCountMetas.forEach(joinMeta => {
-                if (joinMeta.alias === relationAlias) {
-                    // console.log("relation count was found for relation: ", relation);
-                    // joinMeta.entity = entity;
-                    joinMeta.entities.push({ entity: entity, metadata: metadata });
-                    // console.log(joinMeta);
-                    // console.log("---------------------");
-                }
-            });
-        });*/
 
         return hasData ? entity : null
     }

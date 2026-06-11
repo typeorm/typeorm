@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import type { ReactNode, ElementType } from "react"
 import React from "react"
 import clsx from "clsx"
 import Link from "@docusaurus/Link"
@@ -6,7 +6,22 @@ import useDocusaurusContext from "@docusaurus/useDocusaurusContext"
 import Layout from "@theme/Layout"
 import Heading from "@theme/Heading"
 import CodeBlock from "@theme/CodeBlock"
+import {
+    Settings,
+    FileCode,
+    Database,
+    Search,
+    Rocket,
+    Globe,
+    Monitor,
+    Smartphone,
+    Atom,
+    AppWindow,
+} from "lucide-react"
 
+import { databases } from "@site/src/constants/databases"
+
+import maintainers from "./maintainers.json"
 import styles from "./index.module.css"
 
 // Feature section data
@@ -15,37 +30,37 @@ const features = [
         title: "Flexible Patterns",
         description:
             "Supports both DataMapper and ActiveRecord patterns, giving you the flexibility to choose what works best for your project.",
-        icon: "⚙️",
+        icon: Settings,
     },
     {
         title: "TypeScript First",
         description:
             "Built from the ground up with TypeScript support, providing complete type safety for your database models.",
-        icon: "📝",
+        icon: FileCode,
     },
     {
         title: "Multi-Database Support",
         description:
             "Works with MySQL, PostgreSQL, MariaDB, SQLite, MS SQL Server, Oracle, MongoDB, and more.",
-        icon: "🗄️",
+        icon: Database,
     },
     {
         title: "Powerful QueryBuilder",
         description:
             "Elegant syntax for building complex queries with joins, pagination, and caching.",
-        icon: "🔍",
+        icon: Search,
     },
     {
         title: "Migrations & Schema",
         description:
             "First-class support for database migrations with automatic generation.",
-        icon: "🚀",
+        icon: Rocket,
     },
     {
         title: "Cross-Platform",
         description:
             "Works in Node.js, browsers, mobile, and desktop applications.",
-        icon: "🌐",
+        icon: Globe,
     },
 ]
 
@@ -150,10 +165,20 @@ function HomepageHeader() {
     )
 }
 
-function Feature({ title, description, icon }) {
+function Feature({
+    title,
+    description,
+    icon: Icon,
+}: {
+    title: string
+    description: string
+    icon: ElementType
+}) {
     return (
         <div className={clsx("col col--4", styles.featureItem)}>
-            <div className={styles.featureIcon}>{icon}</div>
+            <div className={styles.featureIcon}>
+                <Icon size={32} strokeWidth={1.5} />
+            </div>
             <div className={styles.featureContent}>
                 <Heading as="h3">{title}</Heading>
                 <p>{description}</p>
@@ -242,43 +267,6 @@ function CodeExampleSection() {
 }
 
 function SupportedDatabases() {
-    const databases = [
-        { name: "MySQL", icon: "/img/databases/mysql.png", category: "core" },
-        {
-            name: "PostgreSQL",
-            icon: "/img/databases/postgresql.png",
-            category: "core",
-        },
-        {
-            name: "MariaDB",
-            icon: "/img/databases/mariadb.png",
-            category: "core",
-        },
-        { name: "SQLite", icon: "/img/databases/sqlite.png", category: "core" },
-        {
-            name: "MS SQL Server",
-            icon: "/img/databases/mssql.png",
-            category: "core",
-        },
-        { name: "Oracle", icon: "/img/databases/oracle.png", category: "core" },
-        {
-            name: "MongoDB",
-            icon: "/img/databases/mongodb.png",
-            category: "core",
-        },
-        {
-            name: "CockroachDB",
-            icon: "/img/databases/cockroachdb.png",
-            category: "core",
-        },
-        { name: "SAP HANA", icon: "/img/databases/sap.png", category: "core" },
-        {
-            name: "Google Spanner",
-            icon: "/img/databases/spanner.svg",
-            category: "core",
-        },
-    ]
-
     return (
         <section className={styles.databasesSection}>
             <div className="container">
@@ -286,21 +274,33 @@ function SupportedDatabases() {
                     Supported Databases
                 </Heading>
                 <div className={styles.databasesGrid}>
-                    {databases.map((db, index) => (
-                        <div key={index} className={styles.databaseItem}>
+                    {Object.values(databases).map((db) => (
+                        <div key={db.label} className={styles.databaseItem}>
                             <div className={styles.databaseLogo}>
-                                <img src={db.icon} alt={`${db.name} logo`} />
+                                <img src={db.icon} alt={`${db.label} logo`} />
                             </div>
                             <span className={styles.databaseName}>
-                                {db.name}
+                                {db.label}
                             </span>
                         </div>
                     ))}
                 </div>
+                <p className={styles.databasesDisclaimer}>
+                    All logos are trademarks of their respective owners, used
+                    for identification purposes only.
+                </p>
             </div>
         </section>
     )
 }
+
+const platforms = [
+    { name: "NodeJS", icon: Monitor },
+    { name: "Browser", icon: Globe },
+    { name: "Mobile", icon: Smartphone },
+    { name: "React Native", icon: Atom },
+    { name: "Electron", icon: AppWindow },
+]
 
 function PlatformsSection() {
     return (
@@ -314,12 +314,42 @@ function PlatformsSection() {
                     Native, NativeScript, Expo, and Electron platforms.
                 </p>
                 <div className={styles.platformsIcons}>
-                    <span>🖥️ NodeJS</span>
-                    <span>🌐 Browser</span>
-                    <span>📱 Mobile</span>
-                    <span>⚛️ React Native</span>
-                    <span>🖼️ Electron</span>
+                    {platforms.map((p) => (
+                        <span key={p.name}>
+                            <p.icon size={18} strokeWidth={1.5} /> {p.name}
+                        </span>
+                    ))}
                 </div>
+            </div>
+        </section>
+    )
+}
+
+function MaintainersSection() {
+    return (
+        <section className={styles.maintainersSection}>
+            <div className="container">
+                <Heading as="h2" className={styles.sectionTitle}>
+                    Maintained By
+                </Heading>
+                <div className={styles.maintainersAvatars}>
+                    {maintainers.map((m) => (
+                        <img
+                            key={m.github}
+                            src={`https://avatars.githubusercontent.com/${m.github}?s=100`}
+                            alt={m.name}
+                            title={m.name}
+                            className={styles.maintainerAvatar}
+                            loading="lazy"
+                        />
+                    ))}
+                </div>
+                <Link
+                    className="button button--primary button--md"
+                    to="/maintainers"
+                >
+                    Meet the Team
+                </Link>
             </div>
         </section>
     )
@@ -372,6 +402,7 @@ export default function Home(): ReactNode {
                 <CodeExampleSection />
                 <SupportedDatabases />
                 <PlatformsSection />
+                <MaintainersSection />
                 <CallToAction />
             </main>
         </Layout>

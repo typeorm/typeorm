@@ -53,6 +53,10 @@ const config: Config = {
               ]
             : [],
 
+    stylesheets: [
+        "https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Sofia+Sans:wght@700&display=swap",
+    ],
+
     presets: [
         [
             "@docusaurus/preset-classic",
@@ -61,6 +65,24 @@ const config: Config = {
                     sidebarPath: "./sidebars.ts",
                     // Please change this to your repo.
                     // Remove this to remove the "edit this page" links.
+                    editUrl:
+                        "https://github.com/typeorm/typeorm/tree/master/docs/",
+                },
+                blog: {
+                    showReadingTime: true,
+                    blogTitle: "TypeORM Blog",
+                    blogDescription:
+                        "News, release updates, and insights from the TypeORM team.",
+                    blogSidebarTitle: "Recent Posts",
+                    blogSidebarCount: 10,
+                    postsPerPage: 10,
+                    feedOptions: {
+                        type: ["rss", "atom"],
+                        title: "TypeORM Blog",
+                        description:
+                            "News, release updates, and insights from the TypeORM team.",
+                        copyright: `Copyright © ${new Date().getFullYear()} TypeORM`,
+                    },
                     editUrl:
                         "https://github.com/typeorm/typeorm/tree/master/docs/",
                 },
@@ -74,22 +96,21 @@ const config: Config = {
             } satisfies Preset.Options,
         ],
     ],
-    themes: ["docusaurus-theme-search-typesense"],
     themeConfig: {
         // Replace with your project's social card
         image: "img/typeorm-social-card.jpg",
+        announcementBar: {
+            id: "v1_release",
+            content:
+                'TypeORM 1.0 is here! Check the <a href="/docs/releases/1.0/release-notes">release notes</a> and <a href="/docs/releases/1.0/upgrading-from-0.3">upgrading guide</a>.',
+            backgroundColor: "#d94400",
+            textColor: "#ffffff",
+            isCloseable: true,
+        },
         colorMode: {
             defaultMode: "light",
             disableSwitch: false,
             respectPrefersColorScheme: true,
-        },
-        announcementBar: {
-            id: "future_of_typeorm",
-            content:
-                '📣 <b>Announcement: The Future of TypeORM</b> &mdash; We\'re excited to share our vision for a revitalized TypeORM! <a rel="noopener noreferrer" href="/docs/future-of-typeorm">Read the full announcement</a>',
-            backgroundColor: "#180028",
-            textColor: "#FFFFFF",
-            isCloseable: true,
         },
         navbar: {
             title: "TypeORM",
@@ -108,17 +129,41 @@ const config: Config = {
                     label: "Docs",
                 },
                 {
+                    to: "/maintainers",
+                    label: "Maintainers",
+                    position: "left",
+                },
+                {
+                    to: "/blog",
+                    label: "Blog",
+                    position: "left",
+                },
+                {
                     type: "dropdown",
-                    label: "Version",
+                    label: "Version 1.x",
                     position: "right",
+                    className: "navbar__version-trigger",
                     items: [
                         {
-                            label: "Stable (v0.3)",
-                            href: "https://typeorm.io",
+                            html: '<span class="navbar__version-section-label">Latest</span>',
+                            to: "#",
+                            className: "navbar__version-section",
                         },
                         {
-                            label: "Dev (master)",
-                            href: "https://dev.typeorm.io",
+                            label: "Version 1.x",
+                            href: "https://typeorm.io",
+                            className:
+                                "navbar__version-item navbar__version-item--active",
+                        },
+                        {
+                            html: '<span class="navbar__version-section-label">Legacy</span>',
+                            to: "#",
+                            className: "navbar__version-section",
+                        },
+                        {
+                            label: "Version 0.3.x",
+                            href: "https://v0.typeorm.io",
+                            className: "navbar__version-item",
                         },
                     ],
                 },
@@ -152,11 +197,19 @@ const config: Config = {
                             label: "Stack Overflow",
                             href: "https://stackoverflow.com/questions/tagged/typeorm",
                         },
+                        {
+                            label: "Maintainers",
+                            to: "/maintainers",
+                        },
                     ],
                 },
                 {
                     title: "More",
                     items: [
+                        {
+                            label: "Blog",
+                            to: "/blog",
+                        },
                         {
                             label: "GitHub",
                             href: "https://github.com/typeorm/typeorm",
@@ -180,38 +233,6 @@ const config: Config = {
                 "json",
                 "sql",
             ],
-        },
-        typesense: {
-            // Replace this with the name of your index/collection.
-            // It should match the "index_name" entry in the scraper's "config.json" file.
-            typesenseCollectionName: "typeorm-docs",
-
-            typesenseServerConfig: {
-                nodes: [
-                    {
-                        host: "a46qefxi7yzt3hlbp-1.a1.typesense.net",
-                        port: 443,
-                        protocol: "https",
-                    },
-                    {
-                        host: "a46qefxi7yzt3hlbp-2.a1.typesense.net",
-                        port: 443,
-                        protocol: "https",
-                    },
-                    {
-                        host: "a46qefxi7yzt3hlbp-3.a1.typesense.net",
-                        port: 443,
-                        protocol: "https",
-                    },
-                ],
-                apiKey: "92eYxk4qbUKgDwS4dHFn1eMWd9qUYfd7", // SEARCH_ONLY_KEY
-            },
-
-            // Optional: Typesense search parameters: https://typesense.org/docs/0.24.0/api/search.html#search-parameters
-            typesenseSearchParameters: {},
-
-            // Optional
-            contextualSearch: true,
         },
     } satisfies Preset.ThemeConfig,
     plugins: [
@@ -248,6 +269,7 @@ const config: Config = {
                     "TypeORM is an ORM that can run in NodeJS, Browser, Cordova, Ionic, React Native, NativeScript, Expo, and Electron platforms and can be used with TypeScript and JavaScript.",
             } satisfies LLMsTXTPluginOptions,
         ],
+        "docusaurus-lunr-search",
     ],
 }
 

@@ -8,7 +8,7 @@ import { getTypeOrmConfig } from "../../utils/test-utils"
 describe("github issues > #799 sqlite: 'database' path should be created", () => {
     let dataSource: DataSource
 
-    const path = `${__dirname}/tmp/sqlitedb.db`
+    const path = `temp/issue-799/sqlitedb.db`
 
     before(() => rm(dirname(path), { recursive: true, force: true }))
     after(() => rm(dirname(path), { recursive: true, force: true }))
@@ -19,23 +19,6 @@ describe("github issues > #799 sqlite: 'database' path should be created", () =>
         }
     })
 
-    it("should create the whole path to database file", async function () {
-        // run test only if better-sqlite3 is enabled in ormconfig
-        const isEnabled = getTypeOrmConfig().some(
-            (conf) => conf.type === "sqlite" && conf.skip === false,
-        )
-        if (isEnabled === false) return
-
-        dataSource = new DataSource({
-            name: "sqlite",
-            type: "sqlite",
-            database: path,
-        })
-        await dataSource.initialize()
-
-        expect(dataSource.isInitialized).to.equal(true)
-    })
-
     it("should create the whole path to database file for better-sqlite3", async function () {
         // run test only if better-sqlite3 is enabled in ormconfig
         const isEnabled = getTypeOrmConfig().some(
@@ -44,7 +27,6 @@ describe("github issues > #799 sqlite: 'database' path should be created", () =>
         if (isEnabled === false) return
 
         dataSource = new DataSource({
-            name: "better-sqlite3",
             type: "better-sqlite3",
             database: path,
         })

@@ -1,13 +1,14 @@
-import {
+import type {
     Logger,
     LogLevel,
     LogMessage,
     LogMessageType,
     PrepareLogMessagesOptions,
 } from "./Logger"
-import { QueryRunner } from "../query-runner/QueryRunner"
-import { LoggerOptions } from "./LoggerOptions"
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import type { LoggerOptions } from "./LoggerOptions"
 import { PlatformTools } from "../platform/PlatformTools"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
 
 export abstract class AbstractLogger implements Logger {
     // -------------------------------------------------------------------------
@@ -22,8 +23,16 @@ export abstract class AbstractLogger implements Logger {
 
     /**
      * Logs query and parameters used in it.
+     *
+     * @param query
+     * @param parameters
+     * @param queryRunner
      */
-    logQuery(query: string, parameters?: any[], queryRunner?: QueryRunner) {
+    logQuery(
+        query: string,
+        parameters?: any[] | ObjectLiteral,
+        queryRunner?: QueryRunner,
+    ) {
         if (!this.isLogEnabledFor("query")) {
             return
         }
@@ -43,11 +52,16 @@ export abstract class AbstractLogger implements Logger {
 
     /**
      * Logs query that is failed.
+     *
+     * @param error
+     * @param query
+     * @param parameters
+     * @param queryRunner
      */
     logQueryError(
         error: string,
         query: string,
-        parameters?: any[],
+        parameters?: any[] | ObjectLiteral,
         queryRunner?: QueryRunner,
     ) {
         if (!this.isLogEnabledFor("query-error")) {
@@ -76,11 +90,16 @@ export abstract class AbstractLogger implements Logger {
 
     /**
      * Logs query that is slow.
+     *
+     * @param time
+     * @param query
+     * @param parameters
+     * @param queryRunner
      */
     logQuerySlow(
         time: number,
         query: string,
-        parameters?: any[],
+        parameters?: any[] | ObjectLiteral,
         queryRunner?: QueryRunner,
     ) {
         if (!this.isLogEnabledFor("query-slow")) {
@@ -112,6 +131,9 @@ export abstract class AbstractLogger implements Logger {
 
     /**
      * Logs events from the schema build process.
+     *
+     * @param message
+     * @param queryRunner
      */
     logSchemaBuild(message: string, queryRunner?: QueryRunner) {
         if (!this.isLogEnabledFor("schema-build")) {
@@ -130,6 +152,9 @@ export abstract class AbstractLogger implements Logger {
 
     /**
      * Logs events from the migration run process.
+     *
+     * @param message
+     * @param queryRunner
      */
     logMigration(message: string, queryRunner?: QueryRunner) {
         if (!this.isLogEnabledFor("migration")) {
@@ -149,6 +174,10 @@ export abstract class AbstractLogger implements Logger {
     /**
      * Perform logging using given logger, or by default to the console.
      * Log has its own level and message.
+     *
+     * @param level
+     * @param message
+     * @param queryRunner
      */
     log(
         level: "log" | "info" | "warn",
@@ -210,6 +239,8 @@ export abstract class AbstractLogger implements Logger {
 
     /**
      * Check is logging for level or message type is enabled.
+     *
+     * @param type
      */
     protected isLogEnabledFor(type?: LogLevel | LogMessageType) {
         switch (type) {
@@ -285,6 +316,10 @@ export abstract class AbstractLogger implements Logger {
 
     /**
      * Prepare and format log messages
+     *
+     * @param logMessage
+     * @param options
+     * @param queryRunner
      */
     protected prepareLogMessages(
         logMessage:
@@ -319,14 +354,15 @@ export abstract class AbstractLogger implements Logger {
                 if (options.formatSql) {
                     sql = PlatformTools.formatSql(
                         sql,
-                        queryRunner?.connection?.options.type,
+                        queryRunner?.dataSource?.options.type,
                     )
                 }
 
                 if (
                     options.appendParameterAsComment &&
                     message.parameters &&
-                    message.parameters.length
+                    (!Array.isArray(message.parameters) ||
+                        message.parameters.length)
                 ) {
                     sql += ` -- PARAMETERS: ${this.stringifyParams(
                         message.parameters,
@@ -351,8 +387,10 @@ export abstract class AbstractLogger implements Logger {
     /**
      * Converts parameters to a string.
      * Sometimes parameters can have circular objects and therefor we are handle this case too.
+     *
+     * @param parameters
      */
-    protected stringifyParams(parameters: any[]) {
+    protected stringifyParams(parameters: any[] | ObjectLiteral) {
         try {
             return JSON.stringify(parameters)
         } catch (error) {
