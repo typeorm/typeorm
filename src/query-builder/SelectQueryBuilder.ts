@@ -362,7 +362,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-        includeDeleted?: boolean,
     ): this
 
     /**
@@ -376,7 +375,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-        includeDeleted?: boolean,
     ): this
 
     /**
@@ -389,7 +387,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-        includeDeleted?: boolean,
     ): this
 
     /**
@@ -402,7 +399,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-        includeDeleted?: boolean,
     ): this
 
     /**
@@ -414,7 +410,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * @param alias
      * @param condition
      * @param parameters
-     * @param includeDeleted - when true, skips the soft-delete condition for this join
      */
     innerJoin(
         entityOrProperty:
@@ -424,19 +419,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-        includeDeleted?: boolean,
     ): this {
-        this.join(
-            "INNER",
-            entityOrProperty,
-            alias,
-            condition,
-            parameters,
-            undefined,
-            undefined,
-            undefined,
-            includeDeleted,
-        )
+        this.join("INNER", entityOrProperty, alias, condition, parameters)
         return this
     }
 
@@ -452,7 +436,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-        includeDeleted?: boolean,
     ): this
 
     /**
@@ -466,7 +449,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-        includeDeleted?: boolean,
     ): this
 
     /**
@@ -479,7 +461,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-        includeDeleted?: boolean,
     ): this
 
     /**
@@ -492,7 +473,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-        includeDeleted?: boolean,
     ): this
 
     /**
@@ -504,7 +484,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * @param alias
      * @param condition
      * @param parameters
-     * @param includeDeleted - when true, skips the soft-delete condition for this join
      */
     leftJoin(
         entityOrProperty:
@@ -514,19 +493,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-        includeDeleted?: boolean,
     ): this {
-        this.join(
-            "LEFT",
-            entityOrProperty,
-            alias,
-            condition,
-            parameters,
-            undefined,
-            undefined,
-            undefined,
-            includeDeleted,
-        )
+        this.join("LEFT", entityOrProperty, alias, condition, parameters)
         return this
     }
 
@@ -542,7 +510,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-        includeDeleted?: boolean,
     ): this
 
     /**
@@ -556,7 +523,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-        includeDeleted?: boolean,
     ): this
 
     /**
@@ -569,7 +535,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-        includeDeleted?: boolean,
     ): this
 
     /**
@@ -582,7 +547,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-        includeDeleted?: boolean,
     ): this
 
     /**
@@ -594,7 +558,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * @param alias
      * @param condition
      * @param parameters
-     * @param includeDeleted - when true, skips the soft-delete condition for this join
      */
     innerJoinAndSelect(
         entityOrProperty:
@@ -604,16 +567,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-        includeDeleted?: boolean,
     ): this {
         this.addSelect(alias)
-        this.innerJoin(
-            entityOrProperty,
-            alias,
-            condition,
-            parameters,
-            includeDeleted,
-        )
+        this.innerJoin(entityOrProperty, alias, condition, parameters)
         return this
     }
 
@@ -629,7 +585,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-        includeDeleted?: boolean,
     ): this
 
     /**
@@ -643,7 +598,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-        includeDeleted?: boolean,
     ): this
 
     /**
@@ -656,7 +610,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-        includeDeleted?: boolean,
     ): this
 
     /**
@@ -669,7 +622,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-        includeDeleted?: boolean,
     ): this
 
     /**
@@ -681,7 +633,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * @param alias
      * @param condition
      * @param parameters
-     * @param includeDeleted - when true, skips the soft-delete condition for this join
      */
     leftJoinAndSelect(
         entityOrProperty:
@@ -691,16 +642,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         condition?: string,
         parameters?: ObjectLiteral,
-        includeDeleted?: boolean,
     ): this {
         this.addSelect(alias)
-        this.leftJoin(
-            entityOrProperty,
-            alias,
-            condition,
-            parameters,
-            includeDeleted,
-        )
+        this.leftJoin(entityOrProperty, alias, condition, parameters)
         return this
     }
 
@@ -1650,10 +1594,26 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     }
 
     /**
-     * Disables the global condition of "non-deleted" for the entity with delete date columns.
+     * Disables the soft-delete condition ("deletedAt IS NULL") for the
+     * preceding join, or globally when called before any join is added.
+     *
+     * Usage:
+     *   // per-join – only "conversation" includes soft-deleted rows
+     *   qb.leftJoinAndSelect("user.conversations", "conversation").withDeleted()
+     *     .leftJoinAndSelect("conversation.messages", "message")
+     *
+     *   // global – all joins include soft-deleted rows
+     *   qb.withDeleted()
+     *     .leftJoinAndSelect("user.conversations", "conversation")
+     *     .leftJoinAndSelect("conversation.messages", "message")
      */
     withDeleted(): this {
-        this.expressionMap.withDeleted = true
+        const joins = this.expressionMap.joinAttributes
+        if (joins.length > 0) {
+            joins[joins.length - 1].withDeleted = true
+        } else {
+            this.expressionMap.withDeleted = true
+        }
         return this
     }
 
@@ -2143,7 +2103,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         mapToProperty?: string,
         isMappingMany?: boolean,
         mapAsEntity?: Function | string,
-        withDeleted?: boolean,
     ): void {
         if (parameters) {
             this.setParameters(parameters)
@@ -2159,7 +2118,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         joinAttribute.isMappingMany = isMappingMany
         joinAttribute.entityOrProperty = entityOrProperty // relationName
         joinAttribute.condition = condition // joinInverseSideCondition
-        joinAttribute.withDeleted = withDeleted
         // joinAttribute.junctionAlias = joinAttribute.relation.isOwning ? parentAlias + "_" + destinationTableAlias : destinationTableAlias + "_" + parentAlias;
         this.expressionMap.joinAttributes.push(joinAttribute)
         const isEntity = this.dataSource.hasMetadata(entityOrProperty)
@@ -2184,10 +2142,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         const joinAttributeMetadata = joinAttribute.metadata
         if (joinAttributeMetadata) {
-            // Note: The soft-delete condition (deletedAt IS NULL) is now applied
-            // at query-build time in createJoinExpression(), not here at join-creation
-            // time. This ensures that .withDeleted() works regardless of call order.
-
             // todo: find and set metadata right there?
             joinAttribute.alias = this.expressionMap.createAlias({
                 type: "join",
