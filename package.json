@@ -105,6 +105,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@google-cloud/spanner": "^8.7.1",
+    "@js-temporal/polyfill": "^0.5.1",
     "@sap/hana-client": "^2.28.20",
     "@stryker-mutator/core": "^9.6.1",
     "@stryker-mutator/mocha-runner": "^9.6.1",
