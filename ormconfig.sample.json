@@ -55,6 +55,7 @@
     "type": "mongodb",
     "host": "localhost",
     "port": 27017,
+    "replicaSet": "rs0",
     "database": "test",
     "logging": false
   },
