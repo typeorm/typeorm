@@ -699,6 +699,7 @@ export class OrmUtils {
                 typeof value === "object" &&
                 !Array.isArray(value) &&
                 !(value instanceof Date) &&
+                !isUint8Array(value) &&
                 !InstanceChecker.isFindOperator(value)
             ) {
                 const nested = OrmUtils.normalizeWhereCriteria(
