@@ -955,6 +955,7 @@ export abstract class AbstractSqliteDriver implements Driver {
                 tableColumn.isNullable !== columnMetadata.isNullable ||
                 tableColumn.generatedType !== columnMetadata.generatedType ||
                 tableColumn.asExpression !== columnMetadata.asExpression ||
+                tableColumn.collation !== columnMetadata.collation ||
                 tableColumn.isUnique !==
                     this.normalizeIsUnique(columnMetadata) ||
                 !!(
