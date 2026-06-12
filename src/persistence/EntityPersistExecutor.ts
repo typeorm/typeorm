@@ -110,10 +110,38 @@ export class EntityPersistExecutor {
                 // load database entities for all subjects we have
                 // next step is to load database entities for all operate subjects
                 // console.time("loading...");
-                await new SubjectDatabaseEntityLoader(
-                    queryRunner,
-                    subjects,
-                ).load(this.mode)
+                if (
+                    this.mode === "save" &&
+                    this.options?.skipExistingRecordCheck
+                ) {
+                    // Subjects that can be inserted are assumed new: mark them
+                    // loaded (no databaseEntity) so the executor always INSERTs.
+                    // Subjects that can only be updated (e.g. cascade: ['update']
+                    // without cascade: ['insert']) still need the DB lookup so
+                    // mustBeUpdated evaluates correctly for them.
+                    const updateOnlySubjects = subjects.filter(
+                        (s) => !s.canBeInserted && s.canBeUpdated,
+                    )
+                    subjects.forEach((subject) => {
+                        if (
+                            subject.canBeInserted &&
+                            subject.identifier &&
+                            !subject.databaseEntity
+                        )
+                            subject.databaseEntityLoaded = true
+                    })
+                    if (updateOnlySubjects.length > 0) {
+                        await new SubjectDatabaseEntityLoader(
+                            queryRunner,
+                            updateOnlySubjects,
+                        ).load(this.mode)
+                    }
+                } else {
+                    await new SubjectDatabaseEntityLoader(
+                        queryRunner,
+                        subjects,
+                    ).load(this.mode)
+                }
                 // console.timeEnd("loading...");
 
                 // console.time("other subjects...");
