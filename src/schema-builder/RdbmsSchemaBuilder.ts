@@ -17,6 +17,7 @@ import { View } from "./view/View"
 import { ViewUtils } from "./util/ViewUtils"
 import { DriverUtils } from "../driver/DriverUtils"
 import type { PostgresQueryRunner } from "../driver/postgres/PostgresQueryRunner"
+import type { CockroachQueryRunner } from "../driver/cockroachdb/CockroachQueryRunner"
 import { TypeORMError } from "../error"
 import type { IndexMetadata } from "../metadata/IndexMetadata"
 
@@ -454,10 +455,14 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             await Promise.all(dropQueries)
         }
-        if (this.dataSource.options.type === "postgres") {
-            const postgresQueryRunner: PostgresQueryRunner = <
-                PostgresQueryRunner
-            >this.queryRunner
+        if (
+            ["postgres", "cockroachdb"].includes(
+                this.dataSource.driver.options.type,
+            )
+        ) {
+            const viewQueryRunner = this.queryRunner as
+                | PostgresQueryRunner
+                | CockroachQueryRunner
             for (const metadata of this.viewEntityToSyncMetadatas) {
                 const view = this.views.find(
                     (view) =>
@@ -476,10 +481,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                         this.dataSource.logger.logSchemaBuild(
                             `dropping an index: "${tableIndex.name}" from view ${view.name}`,
                         )
-                        await postgresQueryRunner.dropViewIndex(
-                            view,
-                            tableIndex,
-                        )
+                        await viewQueryRunner.dropViewIndex(view, tableIndex)
                     })
 
                 await Promise.all(dropQueries)
@@ -1011,16 +1013,17 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      * Creates indices for materialized views.
      */
     protected async createNewViewIndices(): Promise<void> {
-        // Only PostgreSQL supports indices for materialized views.
+        // Only PostgreSQL and CockroachDB support indices for materialized views.
         if (
-            this.dataSource.options.type !== "postgres" ||
-            !DriverUtils.isPostgresFamily(this.dataSource.driver)
+            !["postgres", "cockroachdb"].includes(
+                this.dataSource.driver.options.type,
+            )
         ) {
             return
         }
-        const postgresQueryRunner: PostgresQueryRunner = <PostgresQueryRunner>(
-            this.queryRunner
-        )
+        const viewQueryRunner = this.queryRunner as
+            | PostgresQueryRunner
+            | CockroachQueryRunner
         for (const metadata of this.viewEntityToSyncMetadatas) {
             // check if view does not exist yet
             const view = this.views.find((view) => {
@@ -1068,7 +1071,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                     .map((index) => `"${index.name}"`)
                     .join(", ")} in view "${view.name}"`,
             )
-            await postgresQueryRunner.createViewIndices(view, newIndices)
+            await viewQueryRunner.createViewIndices(view, newIndices)
         }
     }
 
