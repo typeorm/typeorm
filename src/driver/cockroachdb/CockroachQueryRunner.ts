@@ -1403,7 +1403,6 @@ export class CockroachQueryRunner
 
         if (
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
@@ -1415,6 +1414,7 @@ export class CockroachQueryRunner
             // update cloned table
             clonedTable = table.clone()
         } else {
+
             if (oldColumn.name !== newColumn.name) {
                 // rename column
                 upQueries.push(
@@ -1657,6 +1657,7 @@ export class CockroachQueryRunner
             }
 
             if (
+                newColumn.length !== oldColumn.length ||
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {
