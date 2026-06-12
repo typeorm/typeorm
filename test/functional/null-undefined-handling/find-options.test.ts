@@ -705,6 +705,26 @@ describe("find options > null and undefined handling", () => {
                     expect(postWithRepo?.title).to.equal("Post #2")
                 }),
             ))
+
+        it("should handle array FindOptionsWhere values correctly", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await prepareData(dataSource)
+
+                    const posts = await dataSource.getRepository(Post).find({
+                        where: [
+                            { title: "Post #1" },
+                            { category: { name: "Category #1" } },
+                        ],
+                        order: { title: "ASC" },
+                    })
+
+                    expect(posts.map((post) => post.title)).to.deep.equal([
+                        "Post #1",
+                        "Post #2",
+                    ])
+                }),
+            ))
     })
 
     describe("with ignore behavior", () => {
