@@ -1,5 +1,4 @@
-import "reflect-metadata"
-import "../../utils/test-setup"
+import { expect } from "chai"
 import type { DataSource } from "../../../src"
 import { TypeORMError } from "../../../src"
 import {
@@ -7,9 +6,8 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
-import { expect } from "chai"
+import { Post } from "./entity/Post"
 
 describe("find options > null and undefined handling", () => {
     let dataSources: DataSource[]
@@ -705,6 +703,26 @@ describe("find options > null and undefined handling", () => {
                         })
 
                     expect(postWithRepo?.title).to.equal("Post #2")
+                }),
+            ))
+
+        it("should handle array FindOptionsWhere values correctly", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await prepareData(dataSource)
+
+                    const posts = await dataSource.getRepository(Post).find({
+                        where: [
+                            { title: "Post #1" },
+                            { category: { name: "Category #1" } },
+                        ],
+                        order: { title: "ASC" },
+                    })
+
+                    expect(posts.map((post) => post.title)).to.deep.equal([
+                        "Post #1",
+                        "Post #2",
+                    ])
                 }),
             ))
     })
