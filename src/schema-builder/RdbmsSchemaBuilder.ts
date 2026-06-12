@@ -131,7 +131,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
     /**
      * Create the typeorm_metadata table if necessary.
-     *
      * @param queryRunner
      */
     async createMetadataTableIfNecessary(
@@ -856,9 +855,40 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             const primaryTableColumns = table.columns.filter(
                 (column) => column.isPrimary,
             )
+
+            const effectiveOldPkName = primaryTableColumns[0]
+                ?.primaryKeyConstraintName
+                ? primaryTableColumns[0].primaryKeyConstraintName
+                : this.connection.namingStrategy.primaryKeyName(
+                      table,
+                      primaryTableColumns.map((column) => column.name),
+                  )
+            const effectiveNewPkName = primaryMetadataColumns[0]
+                ?.primaryKeyConstraintName
+                ? primaryMetadataColumns[0].primaryKeyConstraintName
+                : this.connection.namingStrategy.primaryKeyName(
+                      table,
+                      primaryMetadataColumns.map(
+                          (column) => column.databaseName,
+                      ),
+                  )
+
+            const pkNameChanged =
+                primaryTableColumns.length > 0 &&
+                primaryMetadataColumns.length > 0 &&
+                primaryTableColumns.length === primaryMetadataColumns.length &&
+                effectiveOldPkName !== effectiveNewPkName &&
+                (DriverUtils.isPostgresFamily(this.connection.driver) ||
+                    this.connection.driver.options.type === "mssql" ||
+                    this.connection.driver.options.type === "oracle" ||
+                    this.connection.driver.options.type === "cockroachdb")
+
             if (
-                primaryTableColumns.length !== primaryMetadataColumns.length &&
-                primaryMetadataColumns.length > 1
+                (primaryTableColumns.length !== primaryMetadataColumns.length &&
+                    primaryMetadataColumns.length > 1) ||
+                (primaryMetadataColumns.length === primaryTableColumns.length &&
+                    primaryMetadataColumns.length > 0 &&
+                    pkNameChanged)
             ) {
                 const changedPrimaryColumns = primaryMetadataColumns.map(
                     (primaryMetadataColumn) => {
@@ -1224,7 +1254,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
     /**
      * Drops all foreign keys where given column of the given table is being used.
-     *
      * @param tablePath
      * @param columnName
      */
@@ -1288,7 +1317,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
     /**
      * Drops all composite indices, related to given column.
-     *
      * @param tablePath
      * @param columnName
      */
@@ -1318,7 +1346,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
     /**
      * Drops all composite uniques, related to given column.
-     *
      * @param tablePath
      * @param columnName
      */
@@ -1348,7 +1375,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
     /**
      * Creates new columns from the given column metadatas.
-     *
      * @param columns
      */
     protected metadataColumnsToTableColumnOptions(
@@ -1364,7 +1390,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
     /**
      * Creates typeorm service table for storing user defined Views and generate columns.
-     *
      * @param queryRunner
      */
     protected async createTypeormMetadataTable(queryRunner: QueryRunner) {
