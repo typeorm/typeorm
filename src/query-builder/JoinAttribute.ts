@@ -37,6 +37,12 @@ export class JoinAttribute {
     condition?: string
 
     /**
+     * Indicates if this join has a user-provided condition
+     * (as opposed to one auto-injected by TypeORM, e.g. for soft delete).
+     */
+    hasUserCondition?: boolean
+
+    /**
      * Property + alias of the object where to joined data should be mapped.
      */
     mapToProperty?: string

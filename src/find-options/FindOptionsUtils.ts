@@ -337,6 +337,7 @@ export class FindOptionsUtils {
             let addJoin = true
             for (const join of qb.expressionMap.joinAttributes) {
                 if (
+                    join.hasUserCondition === true ||
                     join.mapToProperty !== undefined ||
                     join.isMappingMany !== undefined ||
                     (join.direction !== "LEFT" && join.direction !== "INNER") ||
