@@ -811,7 +811,7 @@ export class EntityManager {
             return qb.execute()
         } else {
             const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
-                criteria as ObjectLiteral,
+                criteria as ObjectLiteral | ObjectLiteral[],
                 this.connection.options.invalidWhereValuesBehavior,
             )
             const qb = this.createQueryBuilder()
@@ -885,7 +885,7 @@ export class EntityManager {
                 .execute()
         } else {
             const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
-                criteria as ObjectLiteral,
+                criteria as ObjectLiteral | ObjectLiteral[],
                 this.connection.options.invalidWhereValuesBehavior,
             )
             return this.createQueryBuilder()
@@ -946,7 +946,7 @@ export class EntityManager {
                 .execute()
         } else {
             const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
-                criteria as ObjectLiteral,
+                criteria as ObjectLiteral | ObjectLiteral[],
                 this.connection.options.invalidWhereValuesBehavior,
             )
             return this.createQueryBuilder()
@@ -994,7 +994,7 @@ export class EntityManager {
                 .execute()
         } else {
             const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
-                criteria as ObjectLiteral,
+                criteria as ObjectLiteral | ObjectLiteral[],
                 this.connection.options.invalidWhereValuesBehavior,
             )
             return this.createQueryBuilder()

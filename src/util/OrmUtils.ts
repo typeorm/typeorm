@@ -4,7 +4,7 @@ import {
     PrimitiveCriteria,
     SinglePrimitiveCriteria,
 } from "../common/PrimitiveCriteria"
-import { InstanceChecker } from "./InstanceChecker"
+import type { InvalidFindOptionsWhereBehavior } from "../driver/types/InvalidFindOptionsWhereBehavior"
 import { TypeORMError } from "../error"
 import { IsNull } from "../find-options/operator/IsNull"
 
@@ -594,22 +594,30 @@ export class OrmUtils {
      * based on the provided invalidWhereValuesBehavior config.
      * @param criteria
      * @param options
-     * @param options.null
-     * @param options.undefined
      * @param path
      */
     static normalizeWhereCriteria(
-        criteria: ObjectLiteral,
-        options?: {
-            null?: "ignore" | "sql-null" | "throw"
-            undefined?: "ignore" | "throw"
-        },
+        criteria: ObjectLiteral | ObjectLiteral[],
+        options?: InvalidFindOptionsWhereBehavior,
         path?: string,
-    ): ObjectLiteral {
-        if (!options) return criteria
+    ): ObjectLiteral | ObjectLiteral[] {
+        if (!options) {
+            return criteria
+        }
+
+        // multiple criteria are possible at the top level
+        if (!path && Array.isArray(criteria)) {
+            return criteria.map(
+                (criterion, index): ObjectLiteral =>
+                    OrmUtils.normalizeWhereCriteria(
+                        criterion,
+                        options,
+                        String(index),
+                    ),
+            )
+        }
 
         const result: ObjectLiteral = {}
-
         for (const [key, value] of Object.entries(criteria)) {
             const propertyPath = path ? `${path}.${key}` : key
 
@@ -621,7 +629,7 @@ export class OrmUtils {
                             `Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
                     )
                 }
-                // "ignore" — skip this key
+                // else: "ignore" — skip this key
             } else if (value === null) {
                 const behavior = options.null || "ignore"
                 if (behavior === "throw") {
@@ -633,13 +641,8 @@ export class OrmUtils {
                 } else if (behavior === "sql-null") {
                     result[key] = IsNull()
                 }
-                // "ignore" — skip this key
-            } else if (
-                typeof value === "object" &&
-                !Array.isArray(value) &&
-                !(value instanceof Date) &&
-                !InstanceChecker.isFindOperator(value)
-            ) {
+                // else: "ignore" — skip this key
+            } else if (OrmUtils.isPlainObject(value)) {
                 const nested = OrmUtils.normalizeWhereCriteria(
                     value,
                     options,

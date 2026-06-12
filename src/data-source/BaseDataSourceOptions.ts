@@ -1,11 +1,12 @@
-import { EntitySchema } from "../entity-schema/EntitySchema"
-import { LoggerOptions } from "../logger/LoggerOptions"
-import { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
-import { DatabaseType } from "../driver/types/DatabaseType"
-import { Logger } from "../logger/Logger"
-import { DataSource } from "../data-source/DataSource"
 import { QueryResultCache } from "../cache/QueryResultCache"
 import { MixedList } from "../common/MixedList"
+import { DataSource } from "../data-source/DataSource"
+import { DatabaseType } from "../driver/types/DatabaseType"
+import type { InvalidFindOptionsWhereBehavior } from "../driver/types/InvalidFindOptionsWhereBehavior"
+import { EntitySchema } from "../entity-schema/EntitySchema"
+import { Logger } from "../logger/Logger"
+import { LoggerOptions } from "../logger/LoggerOptions"
+import { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
 
 /**
  * BaseDataSourceOptions is set of DataSourceOptions shared by all database types.
@@ -218,20 +219,5 @@ export interface BaseDataSourceOptions {
     /**
      * Controls how null and undefined values are handled in find operations.
      */
-    readonly invalidWhereValuesBehavior?: {
-        /**
-         * How to handle null values in where conditions.
-         * - 'ignore': Skip null properties (default)
-         * - 'sql-null': Transform null to SQL NULL
-         * - 'throw': Throw an error when null is encountered
-         */
-        readonly null?: "ignore" | "sql-null" | "throw"
-
-        /**
-         * How to handle undefined values in where conditions.
-         * - 'ignore': Skip undefined properties (default)
-         * - 'throw': Throw an error when undefined is encountered
-         */
-        readonly undefined?: "ignore" | "throw"
-    }
+    readonly invalidWhereValuesBehavior?: InvalidFindOptionsWhereBehavior
 }

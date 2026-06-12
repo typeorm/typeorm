@@ -1,14 +1,13 @@
-import "reflect-metadata"
-import "../../utils/test-setup"
-import { DataSource, TypeORMError } from "../../../src"
+import { expect } from "chai"
+import type { DataSource } from "../../../src"
+import { TypeORMError } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
-import { expect } from "chai"
+import { Post } from "./entity/Post"
 
 describe("entity manager > invalidWhereValuesBehavior with throw", () => {
     let dataSources: DataSource[]
