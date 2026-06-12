@@ -85,7 +85,7 @@ describe(`OrmUtils`, () => {
             expect(OrmUtils.mergeDeep(2, 1, 2)).to.equal(2)
         })
 
-        it("should handle ordering and indempotence.", () => {
+        it("should handle ordering and idempotence.", () => {
             const a = { a: 1 }
             const b = { a: 2 }
             expect(OrmUtils.mergeDeep(a, b)).to.deep.equal(b)
@@ -296,6 +296,18 @@ describe(`OrmUtils`, () => {
                 { undefined: "ignore" },
             )
             expect(result).to.deep.equal({ name: "Alice" })
+        })
+
+        it("ignores null and undefined on entity class instances", () => {
+            class User {
+                id = 1
+                name = "Alice"
+                parentId: number | null = null
+                deletedAt: Date | undefined = undefined
+            }
+            const entity = new User()
+            const result = OrmUtils.normalizeWhereCriteria(entity)
+            expect(result).to.deep.equal({ id: 1, name: "Alice" })
         })
     })
 })

@@ -662,7 +662,13 @@ export class OrmUtils {
         options?: InvalidFindOptionsWhereBehavior,
         path?: string,
     ): ObjectLiteral {
-        options ??= {}
+        if (OrmUtils.isPlainObject(criteria)) {
+            options ??= {}
+        } else {
+            // Entity class instances may carry nullable columns (e.g. foreign keys)
+            // that are not intended as filter conditions — default to ignoring them.
+            options ??= { null: "ignore", undefined: "ignore" }
+        }
 
         // multiple criteria are possible at the top level
         if (!path && Array.isArray(criteria)) {
