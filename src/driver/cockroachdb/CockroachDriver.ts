@@ -759,6 +759,16 @@ export class CockroachDriver implements Driver {
             return undefined
         }
 
+        if (typeof defaultValue === "function") {
+            const value = defaultValue()
+            if (value.toUpperCase() === "CURRENT_TIMESTAMP") {
+                return "current_timestamp()"
+            } else if (value.toUpperCase() === "CURRENT_DATE") {
+                return "current_date()"
+            }
+            return value
+        }
+
         if (
             (columnMetadata.type === "enum" ||
                 columnMetadata.type === "simple-enum") &&
@@ -789,16 +799,6 @@ export class CockroachDriver implements Driver {
 
         if (typeof defaultValue === "boolean") {
             return defaultValue ? "true" : "false"
-        }
-
-        if (typeof defaultValue === "function") {
-            const value = defaultValue()
-            if (value.toUpperCase() === "CURRENT_TIMESTAMP") {
-                return "current_timestamp()"
-            } else if (value.toUpperCase() === "CURRENT_DATE") {
-                return "current_date()"
-            }
-            return value
         }
 
         if (typeof defaultValue === "string") {
