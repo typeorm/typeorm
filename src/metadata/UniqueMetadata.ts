@@ -40,6 +40,12 @@ export class UniqueMetadata {
     deferrable?: DeferrableType
 
     /**
+     * UNIQUE NULLS NOT DISTINCT constraint allows only a single NULL value to appear in a UNIQUE index.
+     * Works only in PostgreSQL.
+     */
+    nullsNotDistinct?: boolean
+
+    /**
      * User specified unique constraint name.
      */
     givenName?: string
@@ -83,6 +89,7 @@ export class UniqueMetadata {
             this.givenName = options.args.name
             this.givenColumnNames = options.args.columns
             this.deferrable = options.args.deferrable
+            this.nullsNotDistinct = options.args.nullsNotDistinct
         }
     }
 
