@@ -667,7 +667,7 @@ export class OrmUtils {
         },
         path?: string,
     ): ObjectLiteral {
-        if (!options) return criteria
+        options ??= {}
 
         const result: ObjectLiteral = {}
 

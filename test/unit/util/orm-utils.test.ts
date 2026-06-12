@@ -270,4 +270,32 @@ describe(`OrmUtils`, () => {
             ).to.equal(false)
         })
     })
+
+    describe("normalizeWhereCriteria", () => {
+        it("throws on undefined values when options is not provided", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ name: undefined }),
+            ).to.throw(/Undefined value.*'name'/)
+        })
+
+        it("throws on null values when options is not provided", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ email: null }),
+            ).to.throw(/Null value.*'email'/)
+        })
+
+        it("throws on undefined in nested objects when options is not provided", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ user: { id: undefined } }),
+            ).to.throw(/Undefined value.*'user\.id'/)
+        })
+
+        it("ignores undefined when options.undefined is 'ignore'", () => {
+            const result = OrmUtils.normalizeWhereCriteria(
+                { name: "Alice", email: undefined },
+                { undefined: "ignore" },
+            )
+            expect(result).to.deep.equal({ name: "Alice" })
+        })
+    })
 })
