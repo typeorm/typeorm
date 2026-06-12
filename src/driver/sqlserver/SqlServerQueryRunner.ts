@@ -1370,13 +1370,10 @@ export class SqlServerQueryRunner
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            newColumn.type !== oldColumn.type ||
-            newColumn.length !== oldColumn.length ||
             newColumn.asExpression !== oldColumn.asExpression ||
             newColumn.generatedType !== oldColumn.generatedType
         ) {
             // SQL Server does not support changing of IDENTITY column, so we must drop column and recreate it again.
-            // Also, we recreate column if column type changed
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
@@ -1704,6 +1701,39 @@ export class SqlServerQueryRunner
                     clonedTable.columns.indexOf(oldTableColumn!)
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
+            }
+
+            // Handle column type changes without data loss
+            if (
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length
+            ) {
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(
+                            table,
+                        )} ALTER COLUMN ${this.buildCreateColumnSql(
+                            table,
+                            newColumn,
+                            true,
+                            false,
+                            true,
+                        )}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(
+                            table,
+                        )} ALTER COLUMN ${this.buildCreateColumnSql(
+                            table,
+                            oldColumn,
+                            true,
+                            false,
+                            true,
+                        )}`,
+                    ),
+                )
             }
 
             if (
