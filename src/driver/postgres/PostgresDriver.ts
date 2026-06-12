@@ -229,6 +229,7 @@ export class PostgresDriver implements Driver {
         "ltree",
         "vector",
         "halfvec",
+        "sparsevec",
     ]
 
     /**
@@ -254,6 +255,7 @@ export class PostgresDriver implements Driver {
         "bit varying",
         "vector",
         "halfvec",
+        "sparsevec",
     ]
 
     /**
@@ -686,7 +688,9 @@ export class PostgresDriver implements Driver {
             (metadata) => {
                 return metadata.columns.some(
                     (column) =>
-                        column.type === "vector" || column.type === "halfvec",
+                        column.type === "vector" ||
+                        column.type === "halfvec" ||
+                        column.type === "sparsevec",
                 )
             },
         )
@@ -813,6 +817,8 @@ export class PostgresDriver implements Driver {
             } else {
                 return value
             }
+        } else if (columnMetadata.type === "sparsevec") {
+            return value
         } else if (columnMetadata.type === "hstore") {
             if (typeof value === "string") {
                 return value
@@ -1386,7 +1392,11 @@ export class PostgresDriver implements Driver {
             } else {
                 type = column.type
             }
-        } else if (column.type === "vector" || column.type === "halfvec") {
+        } else if (
+            column.type === "vector" ||
+            column.type === "halfvec" ||
+            column.type === "sparsevec"
+        ) {
             type =
                 column.type + (column.length ? "(" + column.length + ")" : "")
         }
