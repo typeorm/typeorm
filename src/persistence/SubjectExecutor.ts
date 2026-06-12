@@ -497,15 +497,7 @@ export class SubjectExecutor {
                             subject.generatedMap!,
                         )
                         if (value !== undefined && value !== null) {
-                            const preparedValue =
-                                this.queryRunner.dataSource.driver.prepareHydratedValue(
-                                    value,
-                                    column,
-                                )
-                            column.setEntityValue(
-                                subject.generatedMap!,
-                                preparedValue,
-                            )
+                            column.setEntityValue(subject.generatedMap!, value)
                         }
                     })
                 }
