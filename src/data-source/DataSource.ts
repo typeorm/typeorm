@@ -9,6 +9,7 @@ import {
     CannotConnectAlreadyConnectedError,
     CannotExecuteNotConnectedError,
     EntityMetadataNotFoundError,
+    PrepareEntityMetadataError,
     QueryRunnerProviderAlreadyReleasedError,
     TypeORMError,
 } from "../error"
@@ -733,6 +734,17 @@ export class DataSource {
             await connectionMetadataBuilder.buildEntityMetadatas(
                 flattenedEntities,
             )
+
+        if (this.options.prepareEntityMetadata) {
+            for (const meta of entityMetadatas) {
+                try {
+                    await this.options.prepareEntityMetadata(meta)
+                } catch (err) {
+                    throw new PrepareEntityMetadataError(meta, err)
+                }
+            }
+        }
+
         ObjectUtils.assign(this, {
             entityMetadatas: entityMetadatas,
             entityMetadatasMap: new Map(

@@ -7,6 +7,7 @@ import type { Logger } from "../logger/Logger"
 import type { DataSource } from "../data-source/DataSource"
 import type { QueryResultCache } from "../cache/QueryResultCache"
 import type { MixedList } from "../common/MixedList"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
 
 /**
  * BaseDataSourceOptions is set of DataSourceOptions shared by all database types.
@@ -239,4 +240,24 @@ export interface BaseDataSourceOptions {
          */
         readonly undefined?: "ignore" | "throw"
     }
+
+    /**
+     * An optional hook called for each {@link EntityMetadata} instance after it
+     * is built by TypeORM's internal {@link ConnectionMetadataBuilder}, but
+     * before it is assigned to the data source and validated.
+     *
+     * Use this to mutate column types, constraints, or any other metadata
+     * property on a per-datasource basis without touching the global
+     * {@link MetadataArgsStorage} (which would affect all data sources).
+     *
+     * @example
+     * // Map SQL Server's `bit` columns to `boolean` for a SQLite test datasource
+     * prepareEntityMetadata(meta) {
+     *     meta.columns
+     *         .filter(c => c.type === 'bit')
+     *         .forEach(c => c.type = 'boolean');
+     * }
+     *
+     */
+    readonly prepareEntityMetadata?: (meta: EntityMetadata) => unknown
 }
