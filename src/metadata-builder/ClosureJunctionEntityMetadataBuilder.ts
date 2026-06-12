@@ -1,7 +1,7 @@
-import { EntityMetadata } from "../metadata/EntityMetadata"
+import { DataSource } from "../data-source/DataSource"
 import { ColumnMetadata } from "../metadata/ColumnMetadata"
+import { EntityMetadata } from "../metadata/EntityMetadata"
 import { ForeignKeyMetadata } from "../metadata/ForeignKeyMetadata"
-import type { DataSource } from "../data-source/DataSource"
 import { IndexMetadata } from "../metadata/IndexMetadata"
 
 /**
@@ -35,7 +35,8 @@ export class ClosureJunctionEntityMetadataBuilder {
                     parentClosureEntityMetadata.treeOptions?.closureTableName ??
                     parentClosureEntityMetadata.tableNameWithoutPrefix,
                 type: "closure-junction",
-                schema: parentClosureEntityMetadata.schema,
+                schema: parentClosureEntityMetadata.treeOptions
+                    ?.closureTableSchema,
                 database: parentClosureEntityMetadata.database,
             },
         })
