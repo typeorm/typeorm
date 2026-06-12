@@ -1129,6 +1129,15 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 return `UPPER(${condition.parameters[0]}) LIKE UPPER(${condition.parameters[1]})`
             case "like":
                 return `${condition.parameters[0]} LIKE ${condition.parameters[1]}`
+            case "regexp":
+                if (
+                    driver.options.type === "postgres" ||
+                    driver.options.type === "cockroachdb"
+                ) {
+                    return `${condition.parameters[0]} ~ ${condition.parameters[1]}`
+                }
+
+                return `${condition.parameters[0]} REGEXP ${condition.parameters[1]}`
             case "between":
                 return `${condition.parameters[0]} BETWEEN ${condition.parameters[1]} AND ${condition.parameters[2]}`
             case "in":
