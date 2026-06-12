@@ -204,4 +204,14 @@ export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
      * @see https://typeorm.io/decorator-reference#virtualcolumn for more details.
      */
     query?: (alias: string) => string
+
+    /**
+     * Strategy for handling column type/length changes during migration generation.
+     * MySQL and MariaDB only.
+     *
+     * - "auto": ALTER for widen/no-change, DROP+ADD for narrow/incompatible (deterministic, no live queries)
+     * - "alter": always ALTER (may truncate or fail at DB level)
+     * - "drop-add": always DROP+ADD (default, data loss)
+     */
+    changeStrategy?: "auto" | "alter" | "drop-add"
 }
