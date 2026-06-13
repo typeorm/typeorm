@@ -7,7 +7,7 @@ export class AlreadyHasActiveConnectionError extends TypeORMError {
     constructor(connectionName: string) {
         super(
             `Cannot create a new connection named "${connectionName}", because connection with such name ` +
-                `already exist and it now has an active connection session.`,
+                `already exists and it now has an active connection session.`,
         )
     }
 }

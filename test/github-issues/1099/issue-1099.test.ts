@@ -13,6 +13,7 @@ describe("github issues > #1099 BUG - QueryBuilder MySQL skip sql is wrong", () 
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

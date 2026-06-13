@@ -13,6 +13,7 @@ describe("entity-listeners", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             dropSchema: true,
             schemaCreate: true,

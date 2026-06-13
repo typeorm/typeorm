@@ -12,6 +12,7 @@ describe("github issues > #4277 Using cache in findAndCount and getManyAndCount 
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,

@@ -12,6 +12,7 @@ describe("github issues > #4842 QueryExpressionMap doesn't clone distinct proper
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

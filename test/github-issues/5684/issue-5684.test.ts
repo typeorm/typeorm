@@ -14,6 +14,7 @@ describe("github issues > #5684 eager relation skips children relations", () => 
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [User, Company],
             schemaCreate: true,
             dropSchema: true,

@@ -1,12 +1,13 @@
-import type { EntitySchema } from "../entity-schema/EntitySchema"
-import type { LoggerOptions } from "../logger/LoggerOptions"
-import type { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
-import type { DatabaseType } from "../driver/types/DatabaseType"
-import type { IsolationLevel } from "../driver/types/IsolationLevel"
-import type { Logger } from "../logger/Logger"
-import type { DataSource } from "../data-source/DataSource"
 import type { QueryResultCache } from "../cache/QueryResultCache"
 import type { MixedList } from "../common/MixedList"
+import type { DataSource } from "../data-source/DataSource"
+import type { DatabaseType } from "../driver/types/DatabaseType"
+import type { InvalidFindOptionsWhereBehavior } from "../driver/types/InvalidFindOptionsWhereBehavior"
+import type { IsolationLevel } from "../driver/types/IsolationLevel"
+import type { EntitySchema } from "../entity-schema/EntitySchema"
+import type { Logger } from "../logger/Logger"
+import type { LoggerOptions } from "../logger/LoggerOptions"
+import type { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
 
 /**
  * BaseDataSourceOptions is set of DataSourceOptions shared by all database types.
@@ -128,9 +129,13 @@ export interface BaseDataSourceOptions {
     readonly entitySkipConstructor?: boolean
 
     /**
-     * Extra connection options to be passed to the underlying driver.
+     * Extra connection options passed through to the underlying driver client
+     * (e.g. `pg`, `mysql2`, `tedious`, `mongodb`).
      *
-     * todo: deprecate this and move all database-specific types into hts own connection options object.
+     * Use this for driver-native settings that are not modeled as typed
+     * options on the per-driver `DataSourceOptions`. Prefer the typed
+     * per-driver options when they exist; `extra` is the escape hatch for
+     * anything the driver supports but TypeORM does not expose directly.
      */
     readonly extra?: any
 
@@ -219,20 +224,5 @@ export interface BaseDataSourceOptions {
     /**
      * Controls how null and undefined values are handled in find operations.
      */
-    readonly invalidWhereValuesBehavior?: {
-        /**
-         * How to handle null values in where conditions.
-         * - 'ignore': Skip null properties
-         * - 'sql-null': Transform null to SQL NULL
-         * - 'throw': Throw an error when null is encountered (default)
-         */
-        readonly null?: "ignore" | "sql-null" | "throw"
-
-        /**
-         * How to handle undefined values in where conditions.
-         * - 'ignore': Skip undefined properties
-         * - 'throw': Throw an error when undefined is encountered (default)
-         */
-        readonly undefined?: "ignore" | "throw"
-    }
+    readonly invalidWhereValuesBehavior?: InvalidFindOptionsWhereBehavior
 }

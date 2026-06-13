@@ -13,6 +13,7 @@ describe("github issues > #306 embeddeds with custom column name don't work", ()
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

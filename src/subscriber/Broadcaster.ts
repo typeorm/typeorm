@@ -8,10 +8,13 @@ import { BroadcasterResult } from "./BroadcasterResult"
 import type { EntitySubscriberInterface } from "./EntitySubscriberInterface"
 
 interface BroadcasterEvents {
-    BeforeQuery: (query: string, parameters: any[] | undefined) => void
+    BeforeQuery: (
+        query: string,
+        parameters: any[] | ObjectLiteral | undefined,
+    ) => void
     AfterQuery: (
         query: string,
-        parameters: any[] | undefined,
+        parameters: any[] | ObjectLiteral | undefined,
         success: boolean,
         executionTime: number | undefined,
         rawResults: any | undefined,
@@ -461,7 +464,7 @@ export class Broadcaster {
     broadcastBeforeQueryEvent(
         result: BroadcasterResult,
         query: string,
-        parameters: undefined | any[],
+        parameters: undefined | any[] | ObjectLiteral,
     ): void {
         if (this.queryRunner.dataSource.subscribers.length) {
             this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
@@ -496,7 +499,7 @@ export class Broadcaster {
     broadcastAfterQueryEvent(
         result: BroadcasterResult,
         query: string,
-        parameters: undefined | any[],
+        parameters: undefined | any[] | ObjectLiteral,
         success: boolean,
         executionTime: undefined | number,
         rawResults: undefined | any,

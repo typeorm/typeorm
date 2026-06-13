@@ -16,6 +16,7 @@ describe("github issue > #1282 FEATURE REQUEST - Naming strategy joinTableColumn
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             namingStrategy,
         })

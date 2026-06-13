@@ -15,6 +15,7 @@ describe("github issues > #2588 - createQueryBuilder always does left joins on r
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

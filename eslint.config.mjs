@@ -1,9 +1,12 @@
 import js from "@eslint/js"
 import chaiFriendly from "eslint-plugin-chai-friendly"
 import { jsdoc } from "eslint-plugin-jsdoc"
+import unicorn from "eslint-plugin-unicorn"
 import { defineConfig, globalIgnores } from "eslint/config"
 import globals from "globals"
 import ts from "typescript-eslint"
+
+const __dirname = import.meta.dirname
 
 export default defineConfig([
     globalIgnores([
@@ -11,7 +14,7 @@ export default defineConfig([
         "docs/**",
         "node_modules/**",
         "packages/**",
-        "sample/playground/**",
+        "playground/**",
         "src/driver/mongodb/{typings.ts,bson.typings.ts}",
         "temp/**",
     ]),
@@ -21,6 +24,7 @@ export default defineConfig([
         languageOptions: {
             parser: ts.parser,
             parserOptions: {
+                tsconfigRootDir: __dirname,
                 project: "tsconfig.json",
             },
             globals: {
@@ -31,6 +35,7 @@ export default defineConfig([
         plugins: {
             js,
             ts,
+            unicorn,
         },
         extends: [js.configs.recommended, ...ts.configs.recommendedTypeChecked],
         rules: {
@@ -40,6 +45,10 @@ export default defineConfig([
             "@typescript-eslint/prefer-nullish-coalescing": "error",
             "@typescript-eslint/prefer-optional-chain": "error",
             "@typescript-eslint/prefer-string-starts-ends-with": "error",
+
+            "unicorn/prefer-string-replace-all": "error",
+            "unicorn/prefer-string-slice": "error",
+            "unicorn/prefer-string-starts-ends-with": "error",
 
             // exceptions from typescript-eslint/recommended
             "@typescript-eslint/ban-ts-comment": "warn",

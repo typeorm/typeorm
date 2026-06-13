@@ -231,6 +231,6 @@ The driver-specific `options.isolationLevel` and `options.connectionIsolationLev
 
 In practice, this makes `options.isolationLevel` and `options.connectionIsolationLevel` unreliable for applications that also use per-transaction isolation levels.
 
-**Recommended alternative:** Use the top-level `isolationLevel` DataSource option (available on all drivers) instead. This applies the isolation level explicitly on each transaction start, bypassing the pool limitation entirely. See [Transactions > Default Isolation Level](../transactions.md#default-isolation-level).
+**Recommended alternative:** Use the top-level `isolationLevel` DataSource option (available on all drivers) instead. This applies the isolation level explicitly on each transaction start, bypassing the pool limitation entirely. See [Transactions > Default Isolation Level](../transactions.mdx#default-isolation-level).
 
 This is an upstream limitation tracked in [tediousjs/node-mssql#1483](https://github.com/tediousjs/node-mssql/issues/1483).

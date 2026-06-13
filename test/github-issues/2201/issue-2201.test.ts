@@ -10,6 +10,7 @@ import { User } from "./entity/ver2/user"
 describe("github issues > #2201 - Create a select query when using a (custom) junction table", () => {
     it("Should create only two PM columns ('order_id' and 'user_id')", async () => {
         const connections = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/ver1/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
@@ -32,6 +33,7 @@ describe("github issues > #2201 - Create a select query when using a (custom) ju
 
     it("Should not try to update the junction table when not needed", async () => {
         const connections = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/ver2/*{.js,.ts}"],
             enabledDrivers: ["postgres"],
             schemaCreate: true,

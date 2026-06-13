@@ -655,9 +655,7 @@ export class EntityMetadata {
     ): ObjectLiteral | undefined {
         if (!entity) return undefined
 
-        return EntityMetadata.getValueMap(entity, this.primaryColumns, {
-            skipNulls: true,
-        })
+        return EntityMetadata.getValueMap(entity, this.primaryColumns)
     }
 
     /**
@@ -971,17 +969,14 @@ export class EntityMetadata {
      *
      * @param entity
      * @param columns
-     * @param options
-     * @param options.skipNulls
      */
     static getValueMap(
         entity: ObjectLiteral,
         columns: ColumnMetadata[],
-        options?: { skipNulls?: boolean },
     ): ObjectLiteral | undefined {
         return columns.reduce(
             (map, column) => {
-                const value = column.getEntityValueMap(entity, options)
+                const value = column.getEntityValueMap(entity)
 
                 // make sure that none of the values of the columns are not missing
                 if (map === undefined || value === null || value === undefined)

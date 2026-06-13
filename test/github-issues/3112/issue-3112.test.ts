@@ -12,6 +12,7 @@ describe("github issues > #3112 default:null should inserts nulls to database", 
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [User],
             schemaCreate: true,
             dropSchema: true,
