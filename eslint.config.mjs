@@ -66,7 +66,6 @@ export default defineConfig([
                     destructuredArrayIgnorePattern: "^_",
                 },
             ],
-            "@typescript-eslint/no-wrapper-object-types": "off",
             "prefer-const": ["error", { destructuring: "all" }],
 
             // exceptions from typescript-eslint/recommended-type-checked

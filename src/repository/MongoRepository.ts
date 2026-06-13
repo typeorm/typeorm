@@ -416,7 +416,7 @@ export class MongoRepository<
      */
     findOneAndReplace(
         query: ObjectLiteral,
-        replacement: Object,
+        replacement: object,
         options?: FindOneAndReplaceOptions,
     ): Promise<Document | null> {
         return this.manager.findOneAndReplace(
@@ -436,7 +436,7 @@ export class MongoRepository<
      */
     findOneAndUpdate(
         query: ObjectLiteral,
-        update: Object,
+        update: object,
         options?: FindOneAndUpdateOptions,
     ): Promise<Document | null> {
         return this.manager.findOneAndUpdate(

@@ -14,7 +14,7 @@ export function TreeChildren(options?: {
         | boolean
         | ("insert" | "update" | "remove" | "soft-remove" | "recover")[]
 }): PropertyDecorator {
-    return function (object: Object, propertyName: string) {
+    return function (object: object, propertyName: string) {
         options ??= {} as RelationOptions
 
         // now try to determine it its lazy relation

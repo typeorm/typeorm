@@ -36,7 +36,7 @@ export function JoinTable(
 export function JoinTable(
     options?: JoinTableOptions | JoinTableMultipleColumnsOptions,
 ): PropertyDecorator {
-    return function (object: Object, propertyName: string) {
+    return function (object: object, propertyName: string) {
         options =
             options ??
             ({} as JoinTableOptions | JoinTableMultipleColumnsOptions)

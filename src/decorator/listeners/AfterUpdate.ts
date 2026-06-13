@@ -6,7 +6,7 @@ import type { EntityListenerMetadataArgs } from "../../metadata-args/EntityListe
  * Calls a method on which this decorator is applied after this entity update.
  */
 export function AfterUpdate(): PropertyDecorator {
-    return function (object: Object, propertyName: string) {
+    return function (object: object, propertyName: string) {
         getMetadataArgsStorage().entityListeners.push({
             target: object.constructor,
             propertyName: propertyName,
