@@ -453,6 +453,40 @@ describe("query builder > order-by", () => {
                 }),
             ))
 
+        it("should allow dollar-sign aliases in expression orderBy with pagination", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
+                    const commentRepository = dataSource.getRepository(Comment)
+
+                    for (let i = 0; i < 5; i++) {
+                        const post = new Post()
+                        post.myOrder = i
+                        post.num1 = i
+                        await postRepository.save(post)
+
+                        const comment = new Comment()
+                        comment.text = `comment-${i}`
+                        comment.postId = post.id
+                        await commentRepository.save(comment)
+                    }
+
+                    // TypeORM aliases are arbitrary strings. A dollar sign in
+                    // the alias should not prevent distinct pagination
+                    // ORDER BY rewriting.
+                    const { entities } = await commentRepository
+                        .createQueryBuilder("comment")
+                        .leftJoinAndSelect("comment.post", "post$")
+                        .orderBy("post$.num1", "DESC")
+                        .take(2)
+                        .getRawAndEntities()
+
+                    expect(entities).to.have.lengthOf(2)
+                    expect(entities[0].post.num1).to.be.equal(4)
+                    expect(entities[1].post.num1).to.be.equal(3)
+                }),
+            ))
+
         it("should not rewrite alias references inside orderBy string literals", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
