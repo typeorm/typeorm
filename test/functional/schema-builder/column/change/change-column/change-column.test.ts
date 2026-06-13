@@ -58,6 +58,30 @@ describe("schema builder > change column", () => {
                 nameColumn.length = "500"
                 textColumn.length = "300"
 
+                if (dataSource.driver.options.type === "postgres") {
+                    const sqlInMemory = await dataSource.driver
+                        .createSchemaBuilder()
+                        .log()
+                    const upQueries = sqlInMemory.upQueries.map(
+                        (query) => query.query,
+                    )
+                    const downQueries = sqlInMemory.downQueries.map(
+                        (query) => query.query,
+                    )
+
+                    expect(
+                        upQueries.some((query) =>
+                            query.includes("DROP COLUMN"),
+                        ),
+                    ).to.be.false
+                    expect(upQueries).to.include(
+                        'ALTER TABLE "post" ALTER COLUMN "name" TYPE character varying(500)',
+                    )
+                    expect(downQueries).to.include(
+                        'ALTER TABLE "post" ALTER COLUMN "name" TYPE character varying',
+                    )
+                }
+
                 await dataSource.synchronize()
 
                 const queryRunner = dataSource.createQueryRunner()
