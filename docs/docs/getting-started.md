@@ -1162,28 +1162,6 @@ The photo albums will be left joined and their metadata will be inner-joined.
 You'll use the query builder in your application a lot.
 Learn more about QueryBuilder [here](./query-builder/1-select-query-builder.md).
 
-## Samples
-
-Take a look at the samples in [sample](https://github.com/typeorm/typeorm/tree/master/sample) for examples of usage.
-
-There are a few repositories that you can clone and start with:
-
-- [Example how to use TypeORM with TypeScript](https://github.com/typeorm/typescript-example)
-- [Example how to use TypeORM with JavaScript](https://github.com/typeorm/javascript-example)
-- [Example how to use TypeORM with JavaScript and Babel](https://github.com/typeorm/babel-example)
-- [Example how to use TypeORM with TypeScript and SystemJS in Browser](https://github.com/typeorm/browser-example)
-- [Example how to use TypeORM with TypeScript and React in Browser](https://github.com/ItayGarin/typeorm-react-swc)
-- [Example how to use Express and TypeORM](https://github.com/typeorm/typescript-express-example)
-- [Example how to use Koa and TypeORM](https://github.com/typeorm/typescript-koa-example)
-- [Example how to use TypeORM with MongoDB](https://github.com/typeorm/mongo-typescript-example)
-- [Example how to use TypeORM in a Cordova app](https://github.com/typeorm/cordova-example)
-- [Example how to use TypeORM with an Ionic app](https://github.com/typeorm/ionic-example)
-- [Example how to use TypeORM with React Native](https://github.com/typeorm/react-native-example)
-- [Example how to use TypeORM with Nativescript-Vue](https://github.com/typeorm/nativescript-vue-typeorm-sample)
-- [Example how to use TypeORM with Nativescript-Angular](https://github.com/betov18x/nativescript-angular-typeorm-example)
-- [Example how to use TypeORM with Electron using JavaScript](https://github.com/typeorm/electron-javascript-example)
-- [Example how to use TypeORM with Electron using TypeScript](https://github.com/typeorm/electron-typescript-example)
-
 ## Extensions
 
 There are several extensions that simplify working with TypeORM and integrating it with other modules:

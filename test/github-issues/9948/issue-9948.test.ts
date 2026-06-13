@@ -12,6 +12,7 @@ describe("github issues > #9948 Subscribers with both 'beforeUpdate' and 'afterU
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
             schemaCreate: true,

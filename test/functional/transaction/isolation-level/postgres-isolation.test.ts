@@ -23,26 +23,16 @@ const getCurrentTransactionLevelAndAssert = async (
     const actualIsolationLevel = (await entityManager.query(query))[0]
         .transaction_isolation
 
-    if (
-        entityManager.dataSource.driver.options.type === "cockroachdb" &&
-        expectedIsolationLevel === "READ UNCOMMITTED"
-    ) {
-        // CockroachDB does not support READ UNCOMMITTED isolation level, it uses READ COMMITTED
-        expect(actualIsolationLevel).to.equal("read committed")
-    } else {
-        expect(actualIsolationLevel).to.equal(
-            expectedIsolationLevel.toLowerCase(),
-        )
-    }
+    expect(actualIsolationLevel).to.equal(expectedIsolationLevel.toLowerCase())
 }
 
-describe("transaction > isolation level > postgres / cockroachdb", () => {
+describe("transaction > isolation level > postgres", () => {
     describe("defined for transaction", () => {
         let dataSources: DataSource[]
         before(async () => {
             dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["postgres", "cockroachdb"],
+                enabledDrivers: ["postgres"],
             })
         })
         beforeEach(() => reloadTestingDatabases(dataSources))
@@ -117,5 +107,47 @@ describe("transaction > isolation level > postgres / cockroachdb", () => {
                 )
             }
         })
+    })
+
+    describe("defined in data source", () => {
+        for (const isolationLevel of supportedLevels) {
+            describe(isolationLevel, () => {
+                let dataSources: DataSource[]
+                before(async () => {
+                    // Create schema without isolation level to avoid
+                    // DDL failures under weak isolation
+                    const setup = await createTestingConnections({
+                        entities: [__dirname + "/entity/*{.js,.ts}"],
+                        enabledDrivers: ["postgres"],
+                        schemaCreate: true,
+                        dropSchema: true,
+                    })
+                    await closeTestingConnections(setup)
+
+                    dataSources = await createTestingConnections({
+                        entities: [__dirname + "/entity/*{.js,.ts}"],
+                        enabledDrivers: ["postgres"],
+                        driverSpecific: {
+                            isolationLevel,
+                        },
+                    })
+                })
+                after(() => closeTestingConnections(dataSources))
+
+                it(`should apply ${isolationLevel} as default`, () =>
+                    Promise.all(
+                        dataSources.map(async (dataSource) => {
+                            await dataSource.manager.transaction(
+                                async (entityManager) => {
+                                    await getCurrentTransactionLevelAndAssert(
+                                        entityManager,
+                                        isolationLevel,
+                                    )
+                                },
+                            )
+                        }),
+                    ))
+            })
+        }
     })
 })

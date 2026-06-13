@@ -35,6 +35,7 @@ import type { SqljsEntityManager } from "../entity-manager/SqljsEntityManager"
 import { RelationLoader } from "../query-builder/RelationLoader"
 import { ObjectUtils } from "../util/ObjectUtils"
 import type { IsolationLevel } from "../driver/types/IsolationLevel"
+import { validateIsolationLevel } from "../driver/validate-isolation-level"
 import type { ReplicationMode } from "../driver/types/ReplicationMode"
 import { RelationIdLoader } from "../query-builder/RelationIdLoader"
 import { DriverUtils } from "../driver/DriverUtils"
@@ -236,6 +237,12 @@ export class DataSource {
      */
     async initialize(): Promise<this> {
         if (this.isInitialized) throw new CannotConnectAlreadyConnectedError()
+
+        // validate isolationLevel before connecting
+        validateIsolationLevel(
+            this.driver.supportedIsolationLevels,
+            this.options.isolationLevel,
+        )
 
         // connect to the database via its driver
         await this.driver.connect()
@@ -499,7 +506,7 @@ export class DataSource {
      */
     async query<T = any>(
         query: string,
-        parameters?: any[],
+        parameters?: any[] | ObjectLiteral,
         queryRunner?: QueryRunner,
     ): Promise<T> {
         if (InstanceChecker.isMongoEntityManager(this.manager))

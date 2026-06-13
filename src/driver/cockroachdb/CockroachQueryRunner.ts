@@ -1,5 +1,6 @@
 import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { TypeORMError } from "../../error"
+import { NamedPlaceholdersNotSupportedError } from "../../error/NamedPlaceholdersNotSupportedError"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
@@ -27,7 +28,7 @@ import type { IsolationLevel } from "../types/IsolationLevel"
 import { validateIsolationLevel } from "../validate-isolation-level"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
-import { CockroachDriver } from "./CockroachDriver"
+import type { CockroachDriver } from "./CockroachDriver"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -189,8 +190,10 @@ export class CockroachQueryRunner
      * @param isolationLevel
      */
     async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
+        isolationLevel ??= this.dataSource.options.isolationLevel
+
         validateIsolationLevel(
-            CockroachDriver.supportedIsolationLevels,
+            this.driver.supportedIsolationLevels,
             isolationLevel,
         )
 
@@ -282,10 +285,12 @@ export class CockroachQueryRunner
      */
     async query(
         query: string,
-        parameters?: any[],
+        parameters?: any[] | ObjectLiteral,
         useStructuredResult = false,
     ): Promise<any> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
+        if (parameters && !Array.isArray(parameters))
+            throw new NamedPlaceholdersNotSupportedError()
 
         const databaseConnection = await this.connect()
 
@@ -721,28 +726,29 @@ export class CockroachQueryRunner
             (column) => column.generatedType && column.asExpression,
         )
 
-        for (const column of generatedColumns) {
-            const currentSchema = await this.getCurrentSchema()
-            let { schema } = this.driver.parseTableName(table)
-            schema ??= currentSchema
+        if (generatedColumns.length > 0) {
+            const parsedTableName = this.driver.parseTableName(table)
+            parsedTableName.schema ??= await this.getCurrentSchema()
 
-            const insertQuery = this.insertTypeormMetadataSql({
-                schema: schema,
-                table: table.name,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression,
-            })
+            for (const column of generatedColumns) {
+                const insertQuery = this.insertTypeormMetadataSql({
+                    schema: parsedTableName.schema,
+                    table: table.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                    value: column.asExpression,
+                })
 
-            const deleteQuery = this.deleteTypeormMetadataSql({
-                schema: schema,
-                table: table.name,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-            })
+                const deleteQuery = this.deleteTypeormMetadataSql({
+                    schema: parsedTableName.schema,
+                    table: table.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                })
 
-            upQueries.push(insertQuery)
-            downQueries.push(deleteQuery)
+                upQueries.push(insertQuery)
+                downQueries.push(deleteQuery)
+            }
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -820,28 +826,29 @@ export class CockroachQueryRunner
             (column) => column.generatedType && column.asExpression,
         )
 
-        for (const column of generatedColumns) {
-            const currentSchema = await this.getCurrentSchema()
-            let { schema } = this.driver.parseTableName(table)
-            schema ??= currentSchema
+        if (generatedColumns.length > 0) {
+            const parsedTableName = this.driver.parseTableName(table)
+            parsedTableName.schema ??= await this.getCurrentSchema()
 
-            const deleteQuery = this.deleteTypeormMetadataSql({
-                schema: schema,
-                table: table.name,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-            })
+            for (const column of generatedColumns) {
+                const deleteQuery = this.deleteTypeormMetadataSql({
+                    schema: parsedTableName.schema,
+                    table: table.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                })
 
-            const insertQuery = this.insertTypeormMetadataSql({
-                schema: schema,
-                table: table.name,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression,
-            })
+                const insertQuery = this.insertTypeormMetadataSql({
+                    schema: parsedTableName.schema,
+                    table: table.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                    value: column.asExpression,
+                })
 
-            upQueries.push(deleteQuery)
-            downQueries.push(insertQuery)
+                upQueries.push(deleteQuery)
+                downQueries.push(insertQuery)
+            }
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -3201,7 +3208,7 @@ export class CockroachQueryRunner
             return []
         }
 
-        const columnsCondiiton = dbTables
+        const columnsCondition = dbTables
             .map(({ table_name, table_schema }) => {
                 return `("table_schema" = '${table_schema}' AND "table_name" = '${table_name}')`
             })
@@ -3210,11 +3217,11 @@ export class CockroachQueryRunner
             `SELECT "columns".*, "attr"."attgenerated" as "generated_type", ` +
             `pg_catalog.col_description((quote_ident(table_catalog) || '.' || quote_ident(table_schema) || '.' || quote_ident(table_name))::regclass::oid, ordinal_position) as description ` +
             `FROM "information_schema"."columns" ` +
-            `LEFT JOIN "pg_class" AS "cls" ON "cls"."relname" = "table_name" ` +
-            `LEFT JOIN "pg_namespace" AS "ns" ON "ns"."oid" = "cls"."relnamespace" AND "ns"."nspname" = "table_schema" ` +
+            `LEFT JOIN "pg_namespace" AS "ns" ON "ns"."nspname" = "table_schema" ` +
+            `LEFT JOIN "pg_class" AS "cls" ON "cls"."relnamespace" = "ns"."oid" AND "cls"."relname" = "table_name" ` +
             `LEFT JOIN "pg_attribute" AS "attr" ON "attr"."attrelid" = "cls"."oid" AND "attr"."attname" = "column_name" AND "attr"."attnum" = "ordinal_position" ` +
             `WHERE "is_hidden" = 'NO' AND ` +
-            columnsCondiiton
+            `(${columnsCondition})`
 
         const constraintsCondition = dbTables
             .map(({ table_name, table_schema }) => {
@@ -3271,7 +3278,7 @@ export class CockroachQueryRunner
             .map((dbTable) => `'${dbTable.table_schema}'`)
             .join(", ")
         const enumsSql =
-            `SELECT "t"."typname" AS "name", string_agg("e"."enumlabel", '|') AS "value" ` +
+            `SELECT "t"."typname" AS "name", string_agg("e"."enumlabel", '|' ORDER BY "e"."enumsortorder") AS "value" ` +
             `FROM "pg_enum" "e" ` +
             `INNER JOIN "pg_type" "t" ON "t"."oid" = "e"."enumtypid" ` +
             `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
@@ -3341,15 +3348,14 @@ export class CockroachQueryRunner
                             ) {
                                 tableColumn.collation = dbColumn[
                                     "crdb_sql_type"
-                                ].substring(
+                                ].slice(
                                     dbColumn["crdb_sql_type"].indexOf(
                                         "COLLATE",
                                     ) +
                                         "COLLATE".length +
                                         1,
-                                    dbColumn["crdb_sql_type"].length,
                                 )
-                                tableColumn.type = tableColumn.type.substring(
+                                tableColumn.type = tableColumn.type.slice(
                                     0,
                                     dbColumn["crdb_sql_type"].indexOf(
                                         "COLLATE",
@@ -3358,7 +3364,7 @@ export class CockroachQueryRunner
                             }
 
                             if (tableColumn.type.indexOf("(") !== -1)
-                                tableColumn.type = tableColumn.type.substring(
+                                tableColumn.type = tableColumn.type.slice(
                                     0,
                                     tableColumn.type.indexOf("("),
                                 )
@@ -3417,8 +3423,8 @@ export class CockroachQueryRunner
                             // ----
                             // so, we must remove this underscore character from enum type name
                             let udtName = dbColumn["udt_name"]
-                            if (udtName.indexOf("_") === 0) {
-                                udtName = udtName.substring(1, udtName.length)
+                            if (udtName.startsWith("_")) {
+                                udtName = udtName.slice(1)
                             }
 
                             const enumType = dbEnums.find((dbEnum) => {
@@ -3573,7 +3579,7 @@ export class CockroachQueryRunner
                                 } else {
                                     tableColumn.default = dbColumn[
                                         "column_default"
-                                    ].replace(/:::[\w\s[\]"]+/g, "")
+                                    ].replaceAll(/:::[\w\s[\]"]+/g, "")
                                     tableColumn.default =
                                         tableColumn.default.replace(
                                             /^(-?[\d.]+)$/,
@@ -3729,7 +3735,7 @@ export class CockroachQueryRunner
                     (constraint) => {
                         return new TableExclusion({
                             name: constraint["constraint_name"],
-                            expression: constraint["expression"].substring(8), // trim EXCLUDE from start of expression
+                            expression: constraint["expression"].slice(8), // trim EXCLUDE from start of expression
                         })
                     },
                 )
@@ -4416,8 +4422,8 @@ export class CockroachQueryRunner
         // ----
         // so, we must remove this underscore character from enum type name
         let udtName = result[0]["udt_name"]
-        if (udtName.indexOf("_") === 0) {
-            udtName = udtName.substring(1, udtName.length)
+        if (udtName.startsWith("_")) {
+            udtName = udtName.slice(1)
         }
         return {
             schema: result[0]["udt_schema"],
@@ -4435,7 +4441,7 @@ export class CockroachQueryRunner
             return "NULL"
         }
 
-        comment = comment.replace(/'/g, "''").replace(/\u0000/g, "") // Null bytes aren't allowed in comments
+        comment = comment.replaceAll("'", "''").replaceAll("\u0000", "") // Null bytes aren't allowed in comments
 
         return `'${comment}'`
     }

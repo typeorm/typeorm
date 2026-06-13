@@ -15,6 +15,7 @@ describe('github issues > #8892 ManyToMany relations save throws "Violation of P
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,

@@ -14,7 +14,7 @@ export class Category {
     @Column()
     name: string
 
-    @Column({ nullable: true, type: "varchar" })
+    @Column({ nullable: true, type: String })
     slug: string | null
 
     @OneToMany(() => Post, (post) => post.category)

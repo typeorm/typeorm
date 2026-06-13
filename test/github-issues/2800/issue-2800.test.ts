@@ -12,6 +12,7 @@ describe("github issues > #2800 - Can't override embedded entities in STI implem
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,

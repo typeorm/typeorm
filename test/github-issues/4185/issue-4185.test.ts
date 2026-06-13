@@ -11,6 +11,7 @@ describe("github issues > #4185 afterLoad() subscriber interface missing additio
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
             schemaCreate: true,

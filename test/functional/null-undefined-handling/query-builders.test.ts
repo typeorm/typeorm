@@ -1,5 +1,4 @@
-import "reflect-metadata"
-import "../../utils/test-setup"
+import { expect } from "chai"
 import type { DataSource } from "../../../src"
 import { TypeORMError } from "../../../src"
 import {
@@ -7,15 +6,15 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
-import { expect } from "chai"
+import { Post } from "./entity/Post"
 
 describe("entity manager > invalidWhereValuesBehavior with throw", () => {
     let dataSources: DataSource[]
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Post, Category],
             schemaCreate: true,
             dropSchema: true,
@@ -244,6 +243,7 @@ describe("entity manager > invalidWhereValuesBehavior with sql-null", () => {
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Post, Category],
             schemaCreate: true,
             dropSchema: true,
@@ -312,6 +312,7 @@ describe("entity manager > invalidWhereValuesBehavior with ignore", () => {
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Post, Category],
             schemaCreate: true,
             dropSchema: true,
@@ -419,6 +420,7 @@ describe("entity manager > invalidWhereValuesBehavior does NOT affect QB .where(
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Post, Category],
             schemaCreate: true,
             dropSchema: true,

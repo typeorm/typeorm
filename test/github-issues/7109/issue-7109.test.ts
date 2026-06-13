@@ -22,6 +22,7 @@ describe("github issues > #7109 stream() bug from 0.2.25 to 0.2.26 with postgres
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,

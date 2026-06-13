@@ -14,6 +14,7 @@ describe("github issues > #8444 entitySkipConstructor not working", () => {
                 DataSource[]
             > {
                 return await createTestingConnections({
+                    disabledDrivers: ["spanner"],
                     driverSpecific: {
                         entitySkipConstructor: false,
                     },
@@ -43,6 +44,7 @@ describe("github issues > #8444 entitySkipConstructor not working", () => {
 
         it("createTestingConnections should succeed", async () => {
             dataSources = await createTestingConnections({
+                disabledDrivers: ["spanner"],
                 driverSpecific: {
                     entitySkipConstructor: true,
                 },

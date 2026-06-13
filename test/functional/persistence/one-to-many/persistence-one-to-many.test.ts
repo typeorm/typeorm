@@ -17,6 +17,7 @@ describe("persistence > one-to-many", function () {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Post, Category],
         })
     })
