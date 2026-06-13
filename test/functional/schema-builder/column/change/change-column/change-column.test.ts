@@ -58,6 +58,30 @@ describe("schema builder > change column", () => {
                 nameColumn.length = "500"
                 textColumn.length = "300"
 
+                if (dataSource.driver.options.type === "postgres") {
+                    const sqlInMemory = await dataSource.driver
+                        .createSchemaBuilder()
+                        .log()
+                    const upQueries = sqlInMemory.upQueries.map(
+                        (query) => query.query,
+                    )
+                    const downQueries = sqlInMemory.downQueries.map(
+                        (query) => query.query,
+                    )
+
+                    expect(
+                        upQueries.some((query) =>
+                            query.includes("DROP COLUMN"),
+                        ),
+                    ).to.be.false
+                    expect(upQueries).to.include(
+                        'ALTER TABLE "post" ALTER COLUMN "name" TYPE character varying(500)',
+                    )
+                    expect(downQueries).to.include(
+                        'ALTER TABLE "post" ALTER COLUMN "name" TYPE character varying',
+                    )
+                }
+
                 await dataSource.synchronize()
 
                 const queryRunner = dataSource.createQueryRunner()
@@ -85,6 +109,44 @@ describe("schema builder > change column", () => {
                 // revert changes
                 nameColumn.length = "255"
                 textColumn.length = "255"
+            }),
+        ))
+
+    it("should update cached column length after changing column length", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (dataSource.driver.options.type !== "postgres") return
+
+                const queryRunner = dataSource.createQueryRunner()
+
+                try {
+                    const table = await queryRunner.getTable("post")
+                    const oldColumn = table!.findColumnByName("name")!
+                    const newColumn = oldColumn.clone()
+                    newColumn.length = "500"
+
+                    queryRunner.enableSqlMemory()
+
+                    await queryRunner.changeColumn(
+                        "post",
+                        oldColumn.name,
+                        newColumn,
+                    )
+                    queryRunner.clearSqlMemory()
+
+                    await queryRunner.changeColumn(
+                        "post",
+                        oldColumn.name,
+                        newColumn.clone(),
+                    )
+
+                    const sqlInMemory = queryRunner.getMemorySql()
+                    expect(sqlInMemory.upQueries).to.be.empty
+                    expect(sqlInMemory.downQueries).to.be.empty
+                } finally {
+                    queryRunner.disableSqlMemory()
+                    await queryRunner.release()
+                }
             }),
         ))
 

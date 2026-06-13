@@ -1328,7 +1328,6 @@ export class PostgresQueryRunner
 
         if (
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1620,7 +1619,8 @@ export class PostgresQueryRunner
 
             if (
                 newColumn.precision !== oldColumn.precision ||
-                newColumn.scale !== oldColumn.scale
+                newColumn.scale !== oldColumn.scale ||
+                newColumn.length !== oldColumn.length
             ) {
                 upQueries.push(
                     new Query(
@@ -2344,13 +2344,17 @@ export class PostgresQueryRunner
 
             // update column collation
             if (newColumn.collation !== oldColumn.collation) {
+                const newCollation = newColumn.collation
+                    ? `"${newColumn.collation}"`
+                    : `pg_catalog."default"` // if there's no new collation, use default
+
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE "${
-                            newColumn.collation
-                        }"`,
+                        }" TYPE ${this.driver.createFullType(
+                            newColumn,
+                        )} COLLATE ${newCollation}`,
                     ),
                 )
 
@@ -2362,7 +2366,9 @@ export class PostgresQueryRunner
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE ${oldCollation}`,
+                        }" TYPE ${this.driver.createFullType(
+                            oldColumn,
+                        )} COLLATE ${oldCollation}`,
                     ),
                 )
             }
@@ -2461,6 +2467,12 @@ export class PostgresQueryRunner
                     // )
                 }
             }
+
+            const newTableColumn = clonedTable.columns.find(
+                (column) => column.name === newColumn.name,
+            )
+            clonedTable.columns[clonedTable.columns.indexOf(newTableColumn!)] =
+                newColumn.clone()
         }
 
         await this.executeQueries(upQueries, downQueries)
