@@ -6,7 +6,7 @@ export class Dependency {
     @PrimaryColumn()
     fromId: number
 
-    @ManyToOne(() => Example, (example: Example) => example.id, {
+    @ManyToOne(() => Example, (example: Example) => example.dependencies, {
         orphanedRowAction: "delete",
     })
     from: Example
@@ -14,7 +14,7 @@ export class Dependency {
     @PrimaryColumn()
     toId: number
 
-    @ManyToOne(() => Example, (example: Example) => example.id, {
+    @ManyToOne(() => Example, {
         orphanedRowAction: "delete",
     })
     to: Example
