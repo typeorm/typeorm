@@ -136,4 +136,51 @@ describe("schema builder > collation > collation changes", () => {
             }),
         )
     })
+
+    it("ALTER ... COLLATE query should use default when collation is removed", async () => {
+        await Promise.all(
+            dataSources.map(async (connection) => {
+                const meta = connection.getMetadata(Item)
+                const col = meta.columns.find(
+                    (c) => c.propertyName === COLUMN_NAME,
+                )!
+                const OLD_COLLATION = col.collation
+                col.collation = undefined
+
+                const sqlInMemory = await connection.driver
+                    .createSchemaBuilder()
+                    .log()
+                const tableName = meta.tableName
+                const expectedUp = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(100) COLLATE pg_catalog."default"`
+                const expectedDown = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(100) COLLATE "${OLD_COLLATION}"`
+                const undefinedCollationUp = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(100) COLLATE "undefined"`
+
+                const upJoined = sqlInMemory.upQueries
+                    .map((q) => q.query.replaceAll(/\s+/g, " ").trim())
+                    .join(" ")
+                expect(upJoined).to.include(expectedUp)
+                expect(upJoined).to.not.include(undefinedCollationUp)
+
+                const downJoined = sqlInMemory.downQueries
+                    .map((q) => q.query.replaceAll(/\s+/g, " ").trim())
+                    .join(" ")
+                expect(downJoined).to.include(expectedDown)
+
+                const queryRunner = connection.createQueryRunner()
+
+                try {
+                    await connection.synchronize()
+
+                    const table = await queryRunner.getTable(meta.tableName)
+                    const appliedColumn = table!.columns.find(
+                        (c) => c.name === COLUMN_NAME,
+                    )!
+                    expect(appliedColumn.collation).to.be.undefined
+                } finally {
+                    await queryRunner.release()
+                    col.collation = OLD_COLLATION
+                }
+            }),
+        )
+    })
 })
