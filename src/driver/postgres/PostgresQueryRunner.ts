@@ -779,7 +779,9 @@ export class PostgresQueryRunner
      * @param ifExists
      */
     async dropView(target: View | string, ifExists?: boolean): Promise<void> {
-        const viewName = InstanceChecker.isView(target) ? target.name : target
+        const viewName = InstanceChecker.isView(target)
+            ? this.driver.buildTableName(target.name, target.schema)
+            : target
 
         let view: View
         try {
@@ -3519,7 +3521,7 @@ export class PostgresQueryRunner
                       .map(({ schema, tableName }) => {
                           schema ??= this.driver.options.schema ?? currentSchema
 
-                          return `("t"."schema" = '${schema}' AND "t"."name" = '${tableName}')`
+                          return `("n"."nspname" = '${schema}' AND "i"."relname" = '${tableName}')`
                       })
                       .join(" OR ")
 
@@ -3550,14 +3552,15 @@ export class PostgresQueryRunner
             `WHERE "t"."relkind" IN ('m') AND "cnst"."contype" IS NULL AND (${constraintsCondition})`
 
         const query =
-            `SELECT "t".* FROM ${this.escapePath(
-                this.getTypeormMetadataTableName(),
-            )} "t" ` +
-            `INNER JOIN "pg_catalog"."pg_class" "c" ON "c"."relname" = "t"."name" ` +
-            `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "c"."relnamespace" AND "n"."nspname" = "t"."schema" ` +
-            `WHERE "t"."type" IN ('${MetadataTableType.VIEW}', '${
-                MetadataTableType.MATERIALIZED_VIEW
-            }') ${viewsCondition ? `AND (${viewsCondition})` : ""}`
+            `SELECT CASE WHEN "i"."relkind" = 'm' THEN '${MetadataTableType.MATERIALIZED_VIEW}' ELSE '${MetadataTableType.VIEW}' END AS "type", ` +
+            `"n"."nspname" AS "schema", ` +
+            `"i"."relname" AS "name", ` +
+            `COALESCE("v"."definition", "mv"."definition") AS "value" ` +
+            `FROM "pg_class" "i" ` +
+            `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "i"."relnamespace" ` +
+            `LEFT JOIN "pg_views" "v" ON "v"."viewname" = "i"."relname" AND "v"."schemaname" = "n"."nspname" ` +
+            `LEFT JOIN "pg_matviews" "mv" ON "mv"."matviewname" = "i"."relname" AND "mv"."schemaname" = "n"."nspname" ` +
+            `WHERE "i"."relkind" IN ('v', 'm') ${viewsCondition ? `AND (${viewsCondition})` : ""}`
 
         const dbViews = await this.query(query)
         const dbIndices: ObjectLiteral[] = await this.query(indicesSql)
