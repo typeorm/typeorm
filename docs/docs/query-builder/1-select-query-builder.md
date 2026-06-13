@@ -1239,6 +1239,31 @@ const users = await dataSource
 
 You will get all the rows, including the ones which are deleted.
 
+When `withDeleted()` is called **before** any join, it applies globally to all joins. When chained **after** a specific join method, it applies only to that join:
+
+```typescript
+// Per-join: include soft-deleted conversations, but still filter soft-deleted messages
+const users = await dataSource
+    .createQueryBuilder(User, "user")
+    .leftJoinAndSelect("user.conversations", "conversation")
+    .withDeleted() // applies only to the "conversation" join above
+    .leftJoinAndSelect("conversation.messages", "message")
+    .getMany()
+```
+
+You can chain `.withDeleted()` after `leftJoin`, `leftJoinAndSelect`, `innerJoin`, and `innerJoinAndSelect`. You can also apply it to multiple joins independently:
+
+```typescript
+// Both joins include soft-deleted rows
+const users = await dataSource
+    .createQueryBuilder(User, "user")
+    .leftJoinAndSelect("user.conversations", "conversation")
+    .withDeleted()
+    .leftJoinAndSelect("conversation.messages", "message")
+    .withDeleted()
+    .getMany()
+```
+
 ## Common table expressions
 
 `QueryBuilder` instances

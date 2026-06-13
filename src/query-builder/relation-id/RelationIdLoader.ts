@@ -368,7 +368,7 @@ export class RelationIdLoader {
                     .innerJoin(junctionTableName, junctionAlias, condition)
                     .setParameters(parameters)
 
-                if (this.withDeleted) qb.withDeleted()
+                if (this.withDeleted) qb.expressionMap.withDeleted = true
 
                 // apply condition (custom query builder factory)
                 if (relationIdAttr.queryBuilderFactory)

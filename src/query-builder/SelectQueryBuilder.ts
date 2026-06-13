@@ -1594,10 +1594,26 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     }
 
     /**
-     * Disables the global condition of "non-deleted" for the entity with delete date columns.
+     * Disables the soft-delete condition ("deletedAt IS NULL") for the
+     * preceding join, or globally when called before any join is added.
+     *
+     * Usage:
+     *   // per-join – only "conversation" includes soft-deleted rows
+     *   qb.leftJoinAndSelect("user.conversations", "conversation").withDeleted()
+     *     .leftJoinAndSelect("conversation.messages", "message")
+     *
+     *   // global – all joins include soft-deleted rows
+     *   qb.withDeleted()
+     *     .leftJoinAndSelect("user.conversations", "conversation")
+     *     .leftJoinAndSelect("conversation.messages", "message")
      */
     withDeleted(): this {
-        this.expressionMap.withDeleted = true
+        const joins = this.expressionMap.joinAttributes
+        if (joins.length > 0) {
+            joins[joins.length - 1].withDeleted = true
+        } else {
+            this.expressionMap.withDeleted = true
+        }
         return this
     }
 
@@ -2126,15 +2142,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         const joinAttributeMetadata = joinAttribute.metadata
         if (joinAttributeMetadata) {
-            if (
-                joinAttributeMetadata.deleteDateColumn &&
-                !this.expressionMap.withDeleted
-            ) {
-                const conditionDeleteColumn = `${aliasName}.${joinAttributeMetadata.deleteDateColumn.propertyName} IS NULL`
-                joinAttribute.condition = joinAttribute.condition
-                    ? ` ${joinAttribute.condition} AND ${conditionDeleteColumn}`
-                    : `${conditionDeleteColumn}`
-            }
             // todo: find and set metadata right there?
             joinAttribute.alias = this.expressionMap.createAlias({
                 type: "join",
@@ -2331,9 +2338,27 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             const relation = joinAttr.relation
             const destinationTableName = joinAttr.tablePath
             const destinationTableAlias = joinAttr.alias.name
+
+            // Apply soft-delete condition at query-build time (not join-creation time)
+            // so that .withDeleted() works regardless of call order.
+            // Skip if: the global withDeleted flag is set, OR this specific join has withDeleted.
+            let softDeleteCondition = ""
+            const joinMetadata = joinAttr.metadata
+            if (
+                joinMetadata?.deleteDateColumn &&
+                !this.expressionMap.withDeleted &&
+                !joinAttr.withDeleted
+            ) {
+                softDeleteCondition = `${destinationTableAlias}.${joinMetadata.deleteDateColumn.propertyName} IS NULL`
+            }
+
             let appendedCondition = joinAttr.condition
                 ? " AND (" + joinAttr.condition + ")"
                 : ""
+            if (softDeleteCondition) {
+                appendedCondition += " AND " + softDeleteCondition
+            }
+
             const parentAlias = joinAttr.parentAlias
 
             // if join was build without relation (e.g. without "post.category") then it means that we have direct
@@ -2342,6 +2367,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 const destinationJoin =
                     joinAttr.alias.subQuery ??
                     this.getTableName(destinationTableName)
+                const onCondition = joinAttr.condition
+                    ? softDeleteCondition
+                        ? "(" +
+                          joinAttr.condition +
+                          ") AND " +
+                          softDeleteCondition
+                        : joinAttr.condition
+                    : softDeleteCondition || ""
                 return (
                     " " +
                     joinAttr.direction +
@@ -2350,7 +2383,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     " " +
                     this.escape(destinationTableAlias) +
                     this.createTableLockExpression() +
-                    (joinAttr.condition ? " ON " + joinAttr.condition : "")
+                    (onCondition ? " ON " + onCondition : "")
                 )
             }
 

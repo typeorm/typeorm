@@ -51,6 +51,12 @@ export class JoinAttribute {
      */
     mapAsEntity?: Function | string
 
+    /**
+     * When true, the automatic soft-delete condition (deletedAt IS NULL) is
+     * skipped for this specific join, regardless of the global withDeleted flag.
+     */
+    withDeleted?: boolean
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
