@@ -112,6 +112,44 @@ describe("schema builder > change column", () => {
             }),
         ))
 
+    it("should update cached column length after changing column length", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (dataSource.driver.options.type !== "postgres") return
+
+                const queryRunner = dataSource.createQueryRunner()
+
+                try {
+                    const table = await queryRunner.getTable("post")
+                    const oldColumn = table!.findColumnByName("name")!
+                    const newColumn = oldColumn.clone()
+                    newColumn.length = "500"
+
+                    queryRunner.enableSqlMemory()
+
+                    await queryRunner.changeColumn(
+                        "post",
+                        oldColumn.name,
+                        newColumn,
+                    )
+                    queryRunner.clearSqlMemory()
+
+                    await queryRunner.changeColumn(
+                        "post",
+                        oldColumn.name,
+                        newColumn.clone(),
+                    )
+
+                    const sqlInMemory = queryRunner.getMemorySql()
+                    expect(sqlInMemory.upQueries).to.be.empty
+                    expect(sqlInMemory.downQueries).to.be.empty
+                } finally {
+                    queryRunner.disableSqlMemory()
+                    await queryRunner.release()
+                }
+            }),
+        ))
+
     it("should correctly change column type", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {

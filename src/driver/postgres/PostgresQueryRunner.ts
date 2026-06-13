@@ -2467,6 +2467,12 @@ export class PostgresQueryRunner
                     // )
                 }
             }
+
+            const newTableColumn = clonedTable.columns.find(
+                (column) => column.name === newColumn.name,
+            )
+            clonedTable.columns[clonedTable.columns.indexOf(newTableColumn!)] =
+                newColumn.clone()
         }
 
         await this.executeQueries(upQueries, downQueries)
