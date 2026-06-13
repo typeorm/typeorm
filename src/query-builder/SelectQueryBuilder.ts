@@ -2391,7 +2391,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         // if join was build without relation (e.g. without "post.category") then it means that we have direct
         // table to join, without junction table involved. This means we simply join direct table.
         if (!parentAlias || !relation) {
-            const destinationJoin = joinAttr.alias.subQuery ?? this.getTableName(destinationTableName)
+            const destinationJoin =
+                joinAttr.alias.subQuery ??
+                this.getTableName(destinationTableName)
             return this.buildJoinClause(
                 joinAttr.direction,
                 destinationJoin,
