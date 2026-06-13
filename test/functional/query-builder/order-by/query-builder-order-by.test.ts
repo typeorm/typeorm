@@ -329,6 +329,212 @@ describe("query builder > order-by", () => {
                     expect(loadedPosts[1].title).to.be.equal("hello world")
                 }),
             ))
+
+        it("should allow multi-column expression orderBy combined with a join and pagination", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
+                    const commentRepository = dataSource.getRepository(Comment)
+
+                    for (let i = 0; i < 5; i++) {
+                        const post = new Post()
+                        post.myOrder = i
+                        post.num1 = i
+                        post.num2 = 5 - i
+                        await postRepository.save(post)
+
+                        const comment = new Comment()
+                        comment.text = `comment-${i}`
+                        comment.postId = post.id
+                        await commentRepository.save(comment)
+                    }
+
+                    // #11742: an ORDER BY expression referencing two qualified columns
+                    // produces more than one "." in the order-by key. Combined
+                    // with a join and take this goes through the distinct
+                    // pagination path (createOrderByCombinedWithSelectExpression),
+                    // which used to mangle the expression into invalid SQL.
+                    const { entities } = await commentRepository
+                        .createQueryBuilder("comment")
+                        .leftJoinAndSelect("comment.post", "post")
+                        .orderBy("post.num1 + post.num2", "ASC")
+                        .take(3)
+                        .getRawAndEntities()
+
+                    // post.num1 + post.num2 == i + (5 - i) == 5 for every row,
+                    // so the query must simply run and honour `take`.
+                    expect(entities).to.have.lengthOf(3)
+                    for (const comment of entities) {
+                        expect(comment.post).to.not.be.undefined
+                    }
+                }),
+            ))
+
+        it("should allow multi-column expression orderBy with subquery join and pagination", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
+                    const commentRepository = dataSource.getRepository(Comment)
+
+                    for (let i = 0; i < 5; i++) {
+                        const post = new Post()
+                        post.myOrder = i
+                        post.num1 = i
+                        post.num2 = 5 - i
+                        await postRepository.save(post)
+
+                        const comment = new Comment()
+                        comment.text = `comment-${i}`
+                        comment.postId = post.id
+                        await commentRepository.save(comment)
+                    }
+
+                    // Subquery aliases do not have entity metadata. The
+                    // expression rewriter should still rewrite their selected
+                    // columns without reading Alias.metadata.
+                    const { entities } = await postRepository
+                        .createQueryBuilder("post")
+                        .leftJoin(
+                            (subQuery) =>
+                                subQuery
+                                    .select("comment_inner.postId", "postId")
+                                    .addSelect(
+                                        "COUNT(comment_inner.id)",
+                                        "total",
+                                    )
+                                    .from(Comment, "comment_inner")
+                                    .groupBy("comment_inner.postId"),
+                            "sub",
+                            "sub.postId = post.id",
+                        )
+                        .addSelect("sub.total", "sub_total")
+                        .orderBy("post.num1 + sub.total", "ASC")
+                        .take(3)
+                        .getRawAndEntities()
+
+                    expect(entities).to.have.lengthOf(3)
+                }),
+            ))
+
+        it("should allow quoted expression orderBy combined with a join and pagination", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
+                    const commentRepository = dataSource.getRepository(Comment)
+
+                    const short = new Post()
+                    short.myOrder = 1
+                    short.title = "hi"
+
+                    const long = new Post()
+                    long.myOrder = 2
+                    long.title = "hello world"
+
+                    await postRepository.save([short, long])
+
+                    for (const post of [short, long]) {
+                        const comment = new Comment()
+                        comment.text = `comment-${post.id}`
+                        comment.postId = post.id
+                        await commentRepository.save(comment)
+                    }
+
+                    // #11742: quoted identifiers in ORDER BY expressions must
+                    // also be rewritten for the outer distinct pagination query.
+                    const { entities } = await commentRepository
+                        .createQueryBuilder("comment")
+                        .leftJoinAndSelect("comment.post", "post")
+                        .orderBy(titleLength(dataSource), "DESC")
+                        .take(1)
+                        .getRawAndEntities()
+
+                    expect(entities).to.have.lengthOf(1)
+                    expect(entities[0].post.title).to.be.equal("hello world")
+                }),
+            ))
+
+        it("should not rewrite alias references inside orderBy string literals", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
+                    const commentRepository = dataSource.getRepository(Comment)
+
+                    const other = new Post()
+                    other.myOrder = 1
+                    other.title = "other"
+
+                    const literal = new Post()
+                    literal.myOrder = 2
+                    literal.title = "post.title"
+
+                    await postRepository.save([other, literal])
+
+                    for (const post of [other, literal]) {
+                        const comment = new Comment()
+                        comment.text = `comment-${post.id}`
+                        comment.postId = post.id
+                        await commentRepository.save(comment)
+                    }
+
+                    // The column reference should be rewritten, but the same
+                    // text inside the SQL string literal must stay literal.
+                    const { entities } = await commentRepository
+                        .createQueryBuilder("comment")
+                        .leftJoinAndSelect("comment.post", "post")
+                        .orderBy(
+                            "CASE WHEN post.title = 'post.title' THEN 0 ELSE 1 END",
+                            "ASC",
+                        )
+                        .addOrderBy("post.id", "ASC")
+                        .take(1)
+                        .getRawAndEntities()
+
+                    expect(entities).to.have.lengthOf(1)
+                    expect(entities[0].post.title).to.be.equal("post.title")
+                }),
+            ))
+
+        it("should not rewrite alias references inside orderBy parameter placeholders", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const postRepository = dataSource.getRepository(Post)
+                    const commentRepository = dataSource.getRepository(Comment)
+
+                    const other = new Post()
+                    other.myOrder = 1
+                    other.title = "other"
+
+                    const target = new Post()
+                    target.myOrder = 2
+                    target.title = "target"
+
+                    await postRepository.save([other, target])
+
+                    for (const post of [other, target]) {
+                        const comment = new Comment()
+                        comment.text = `comment-${post.id}`
+                        comment.postId = post.id
+                        await commentRepository.save(comment)
+                    }
+
+                    // The column reference should be rewritten, but the
+                    // dotted parameter placeholder name must stay intact.
+                    const { entities } = await commentRepository
+                        .createQueryBuilder("comment")
+                        .leftJoinAndSelect("comment.post", "post")
+                        .orderBy(
+                            "CASE WHEN post.title = :post.title THEN 0 ELSE 1 END",
+                            "ASC",
+                        )
+                        .setParameter("post.title", "target")
+                        .addOrderBy("post.id", "ASC")
+                        .take(1)
+                        .getRawAndEntities()
+
+                    expect(entities).to.have.lengthOf(1)
+                    expect(entities[0].post.title).to.be.equal("target")
+                }),
+            ))
     })
 
     it("should properly escape column names or aliases in order by", () =>
