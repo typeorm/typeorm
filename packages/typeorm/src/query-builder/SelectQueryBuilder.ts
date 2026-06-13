@@ -3863,9 +3863,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         }
 
         const qualifiedColumnReferencePattern =
-            /"([^"]+)"\."([^"]+)"|`([^`]+)`\.`([^`]+)`|\[([^\]]+)\]\.\[([^\]]+)\]|(\w+)\.([\w.]+)/g
+            /"([^"]+)"\."([^"]+)"|`([^`]+)`\.`([^`]+)`|\[([^\]]+)\]\.\[([^\]]+)\]|([A-Za-z0-9_$]+)\.([A-Za-z0-9_$.]+)/g
         const singleQualifiedColumnReferencePattern =
-            /^(?:"([^"]+)"\."([^"]+)"|`([^`]+)`\.`([^`]+)`|\[([^\]]+)\]\.\[([^\]]+)\]|(\w+)\.([\w.]+))$/
+            /^(?:"([^"]+)"\."([^"]+)"|`([^`]+)`\.`([^`]+)`|\[([^\]]+)\]\.\[([^\]]+)\]|([A-Za-z0-9_$]+)\.([A-Za-z0-9_$.]+))$/
         const getMatchedAliasAndPropertyPath = (
             doubleQuotedAlias: string | undefined,
             doubleQuotedPropertyPath: string | undefined,
