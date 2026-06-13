@@ -94,43 +94,48 @@ describe("schema builder > collation > collation changes", () => {
                 const col = meta.columns.find(
                     (c) => c.propertyName === COLUMN_NAME,
                 )!
+                const OLD_LENGTH = col.length
                 const OLD_COLLATION = col.collation
-                col.length = "500"
-                col.collation = NEW_COLLATION
-
-                const sqlInMemory = await connection.driver
-                    .createSchemaBuilder()
-                    .log()
-                const tableName = meta.tableName
-                const expectedUp = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(500) COLLATE "${NEW_COLLATION}"`
-                const expectedDown = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(100) COLLATE "${OLD_COLLATION}"`
-                const strippedLengthUp = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying COLLATE "${NEW_COLLATION}"`
-
-                const upJoined = sqlInMemory.upQueries
-                    .map((q) => q.query.replaceAll(/\s+/g, " ").trim())
-                    .join(" ")
-                expect(upJoined).to.include(expectedUp)
-                expect(upJoined).to.not.include(strippedLengthUp)
-
-                const downJoined = sqlInMemory.downQueries
-                    .map((q) => q.query.replaceAll(/\s+/g, " ").trim())
-                    .join(" ")
-                expect(downJoined).to.include(expectedDown)
-
-                const queryRunner = connection.createQueryRunner()
 
                 try {
-                    await connection.synchronize()
+                    col.length = "500"
+                    col.collation = NEW_COLLATION
 
-                    const table = await queryRunner.getTable(meta.tableName)
-                    const appliedColumn = table!.columns.find(
-                        (c) => c.name === COLUMN_NAME,
-                    )!
-                    expect(appliedColumn.length).to.equal("500")
-                    expect(appliedColumn.collation).to.equal(NEW_COLLATION)
+                    const sqlInMemory = await connection.driver
+                        .createSchemaBuilder()
+                        .log()
+                    const tableName = meta.tableName
+                    const expectedUp = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(500) COLLATE "${NEW_COLLATION}"`
+                    const expectedDown = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(100) COLLATE "${OLD_COLLATION}"`
+                    const strippedLengthUp = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying COLLATE "${NEW_COLLATION}"`
+
+                    const upJoined = sqlInMemory.upQueries
+                        .map((q) => q.query.replaceAll(/\s+/g, " ").trim())
+                        .join(" ")
+                    expect(upJoined).to.include(expectedUp)
+                    expect(upJoined).to.not.include(strippedLengthUp)
+
+                    const downJoined = sqlInMemory.downQueries
+                        .map((q) => q.query.replaceAll(/\s+/g, " ").trim())
+                        .join(" ")
+                    expect(downJoined).to.include(expectedDown)
+
+                    const queryRunner = connection.createQueryRunner()
+
+                    try {
+                        await connection.synchronize()
+
+                        const table = await queryRunner.getTable(meta.tableName)
+                        const appliedColumn = table!.columns.find(
+                            (c) => c.name === COLUMN_NAME,
+                        )!
+                        expect(appliedColumn.length).to.equal("500")
+                        expect(appliedColumn.collation).to.equal(NEW_COLLATION)
+                    } finally {
+                        await queryRunner.release()
+                    }
                 } finally {
-                    await queryRunner.release()
-                    col.length = "100"
+                    col.length = OLD_LENGTH
                     col.collation = OLD_COLLATION
                 }
             }),
@@ -145,39 +150,43 @@ describe("schema builder > collation > collation changes", () => {
                     (c) => c.propertyName === COLUMN_NAME,
                 )!
                 const OLD_COLLATION = col.collation
-                col.collation = undefined
-
-                const sqlInMemory = await connection.driver
-                    .createSchemaBuilder()
-                    .log()
-                const tableName = meta.tableName
-                const expectedUp = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(100) COLLATE pg_catalog."default"`
-                const expectedDown = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(100) COLLATE "${OLD_COLLATION}"`
-                const undefinedCollationUp = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(100) COLLATE "undefined"`
-
-                const upJoined = sqlInMemory.upQueries
-                    .map((q) => q.query.replaceAll(/\s+/g, " ").trim())
-                    .join(" ")
-                expect(upJoined).to.include(expectedUp)
-                expect(upJoined).to.not.include(undefinedCollationUp)
-
-                const downJoined = sqlInMemory.downQueries
-                    .map((q) => q.query.replaceAll(/\s+/g, " ").trim())
-                    .join(" ")
-                expect(downJoined).to.include(expectedDown)
-
-                const queryRunner = connection.createQueryRunner()
 
                 try {
-                    await connection.synchronize()
+                    col.collation = undefined
 
-                    const table = await queryRunner.getTable(meta.tableName)
-                    const appliedColumn = table!.columns.find(
-                        (c) => c.name === COLUMN_NAME,
-                    )!
-                    expect(appliedColumn.collation).to.be.undefined
+                    const sqlInMemory = await connection.driver
+                        .createSchemaBuilder()
+                        .log()
+                    const tableName = meta.tableName
+                    const expectedUp = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(100) COLLATE pg_catalog."default"`
+                    const expectedDown = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(100) COLLATE "${OLD_COLLATION}"`
+                    const undefinedCollationUp = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(100) COLLATE "undefined"`
+
+                    const upJoined = sqlInMemory.upQueries
+                        .map((q) => q.query.replaceAll(/\s+/g, " ").trim())
+                        .join(" ")
+                    expect(upJoined).to.include(expectedUp)
+                    expect(upJoined).to.not.include(undefinedCollationUp)
+
+                    const downJoined = sqlInMemory.downQueries
+                        .map((q) => q.query.replaceAll(/\s+/g, " ").trim())
+                        .join(" ")
+                    expect(downJoined).to.include(expectedDown)
+
+                    const queryRunner = connection.createQueryRunner()
+
+                    try {
+                        await connection.synchronize()
+
+                        const table = await queryRunner.getTable(meta.tableName)
+                        const appliedColumn = table!.columns.find(
+                            (c) => c.name === COLUMN_NAME,
+                        )!
+                        expect(appliedColumn.collation).to.be.undefined
+                    } finally {
+                        await queryRunner.release()
+                    }
                 } finally {
-                    await queryRunner.release()
                     col.collation = OLD_COLLATION
                 }
             }),
