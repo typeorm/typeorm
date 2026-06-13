@@ -4,21 +4,20 @@ import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../utils/test-utils"
-import { DataSource } from "../../../src"
+import type { DataSource } from "../../../src"
 import { Dependency } from "./entity/dependency"
 import { Example } from "./entity/example"
 
 describe("github issues > #10952 Incorrect entity identification and persistence on composite foreign primary key endo-relation entities", () => {
     let dataSources: DataSource[]
 
-    before(
-        async () =>
-            (dataSources = await createTestingConnections({
-                entities: [__dirname + "/entity/*{.js,.ts}"],
-                schemaCreate: true,
-                dropSchema: true,
-            })),
-    )
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
     after(() => closeTestingConnections(dataSources))
 
     it("should persist composite foreign primary keyed endo-relations correctly", () =>
