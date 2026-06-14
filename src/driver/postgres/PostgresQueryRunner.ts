@@ -1326,20 +1326,39 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
-        if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
-            newColumn.isArray !== oldColumn.isArray ||
-            (!oldColumn.generatedType &&
-                newColumn.generatedType === "STORED") ||
-            (oldColumn.asExpression !== newColumn.asExpression &&
-                newColumn.generatedType === "STORED")
-        ) {
-            // To avoid data conversion, we just recreate column
+        // Check if only length changed on a string type — safe to ALTER without data loss
+        const onlyLengthChanged =
+            oldColumn.type === newColumn.type &&
+            oldColumn.length !== newColumn.length &&
+            newColumn.isArray === oldColumn.isArray &&
+            !(!oldColumn.generatedType && newColumn.generatedType === "STORED") &&
+            !(oldColumn.asExpression !== newColumn.asExpression && newColumn.generatedType === "STORED")
+
+        const needsRecreate =
+            !onlyLengthChanged && (
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length ||
+                newColumn.isArray !== oldColumn.isArray ||
+                (!oldColumn.generatedType &&
+                    newColumn.generatedType === "STORED") ||
+                (oldColumn.asExpression !== newColumn.asExpression &&
+                    newColumn.generatedType === "STORED")
+            )
+
+        if (needsRecreate) {
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
-
-            // update cloned table
+            clonedTable = table.clone()
+        } else if (onlyLengthChanged) {
+            // Use ALTER COLUMN TYPE to change length — preserves existing data
+            const newType = newColumn.length ? `${newColumn.type}(${newColumn.length})` : newColumn.type
+            const oldType = oldColumn.length ? `${oldColumn.type}(${oldColumn.length})` : oldColumn.type
+            upQueries.push(new Query(
+                `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" TYPE ${newType}`
+            ))
+            downQueries.push(new Query(
+                `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" TYPE ${oldType}`
+            ))
             clonedTable = table.clone()
         } else {
             if (oldColumn.name !== newColumn.name) {
