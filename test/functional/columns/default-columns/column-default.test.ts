@@ -18,6 +18,7 @@ describe("columns > default columns", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
+    // GitHub issue #11990 - Defaults not respected for tstzrange columns
     it("should have correct default value in schema", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {

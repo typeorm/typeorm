@@ -1847,33 +1847,35 @@ export class PostgresDriver implements Driver {
      * @param value
      */
     protected normalizeDatetimeFunction(value: string) {
-        // check if input is exactly a datetime function
-        const upperCaseValue = value.trim().toUpperCase()
+        const match = value
+            .trim()
+            .toUpperCase()
+            .match(
+                /^(CURRENT_TIMESTAMP|CURRENT_DATE|CURRENT_TIME|LOCALTIMESTAMP|LOCALTIME)(\(\d+\))?$/,
+            )
 
-        // extract precision, e.g. "(3)"
-        const precision = value.match(/\(\d+\)/)
+        if (!match) return value
 
-        if (/^CURRENT_TIMESTAMP(\(\d+\))?$/.test(upperCaseValue)) {
-            return precision
-                ? `('now'::text)::timestamp${precision[0]} with time zone`
-                : "now()"
-        } else if (/^CURRENT_DATE$/.test(upperCaseValue)) {
-            return "('now'::text)::date"
-        } else if (/^CURRENT_TIME(\(\d+\))?$/.test(upperCaseValue)) {
-            return precision
-                ? `('now'::text)::time${precision[0]} with time zone`
-                : "('now'::text)::time with time zone"
-        } else if (/^LOCALTIMESTAMP(\(\d+\))?$/.test(upperCaseValue)) {
-            return precision
-                ? `('now'::text)::timestamp${precision[0]} without time zone`
-                : "('now'::text)::timestamp without time zone"
-        } else if (/^LOCALTIME(\(\d+\))?$/.test(upperCaseValue)) {
-            return precision
-                ? `('now'::text)::time${precision[0]} without time zone`
-                : "('now'::text)::time without time zone"
+        const [, funcName, precision = ""] = match
+
+        const prefix = "('now'::text)"
+
+        switch (funcName) {
+            case "CURRENT_TIMESTAMP":
+                return precision
+                    ? `${prefix}::timestamp${precision} with time zone`
+                    : "now()"
+            case "CURRENT_DATE":
+                return `${prefix}::date`
+            case "CURRENT_TIME":
+                return `${prefix}::time${precision} with time zone`
+            case "LOCALTIMESTAMP":
+                return `${prefix}::timestamp${precision} without time zone`
+            case "LOCALTIME":
+                return `${prefix}::time${precision} without time zone`
+            default:
+                return value
         }
-
-        return value
     }
 
     /**
