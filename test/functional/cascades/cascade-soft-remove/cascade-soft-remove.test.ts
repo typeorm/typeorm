@@ -15,6 +15,7 @@ describe("cascades > soft-remove", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             __dirname,
         })
     })

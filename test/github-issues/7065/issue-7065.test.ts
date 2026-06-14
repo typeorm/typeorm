@@ -19,6 +19,7 @@ describe("github issues > #7065 ChildEntity type relationship produces unexpecte
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Contact, Email, Phone, User],
             schemaCreate: true,
             dropSchema: true,

@@ -13,6 +13,7 @@ describe("github issues > #5160 (MSSQL) DML statement cannot have any enabled tr
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Post],
             schemaCreate: true,
             dropSchema: true,

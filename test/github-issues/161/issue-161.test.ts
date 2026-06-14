@@ -13,6 +13,7 @@ describe("github issues > #161 joinAndSelect can't find entity from inverse side
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

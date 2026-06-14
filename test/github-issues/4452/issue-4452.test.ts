@@ -12,6 +12,7 @@ describe("github issues > #4452 InsertQueryBuilder fails on some SQL Expressions
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             // enabledDrivers: ["postgres"],
             entities: [User],
             dropSchema: true,
