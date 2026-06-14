@@ -1617,11 +1617,14 @@ export class PostgresQueryRunner
                 oldColumn.name = newColumn.name
             }
 
-            if (
+            const isTypeChanged =
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale ||
                 newColumn.length !== oldColumn.length
-            ) {
+            const isCollationChanged =
+                newColumn.collation !== oldColumn.collation
+
+            if (isTypeChanged && !isCollationChanged) {
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
@@ -2343,7 +2346,7 @@ export class PostgresQueryRunner
             }
 
             // update column collation
-            if (newColumn.collation !== oldColumn.collation) {
+            if (isCollationChanged) {
                 const newCollation = newColumn.collation
                     ? `"${newColumn.collation}"`
                     : `pg_catalog."default"` // if there's no new collation, use default

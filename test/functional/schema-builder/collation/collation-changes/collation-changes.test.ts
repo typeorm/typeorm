@@ -114,11 +114,25 @@ describe("schema builder > collation > collation changes", () => {
                         .join(" ")
                     expect(upJoined).to.include(expectedUp)
                     expect(upJoined).to.not.include(strippedLengthUp)
+                    const columnTypeUpQueries = sqlInMemory.upQueries.filter(
+                        (q) =>
+                            q.query.includes(
+                                `ALTER COLUMN "${COLUMN_NAME}" TYPE`,
+                            ),
+                    )
+                    expect(columnTypeUpQueries).to.have.length(1)
 
                     const downJoined = sqlInMemory.downQueries
                         .map((q) => q.query.replaceAll(/\s+/g, " ").trim())
                         .join(" ")
                     expect(downJoined).to.include(expectedDown)
+                    const columnTypeDownQueries =
+                        sqlInMemory.downQueries.filter((q) =>
+                            q.query.includes(
+                                `ALTER COLUMN "${COLUMN_NAME}" TYPE`,
+                            ),
+                        )
+                    expect(columnTypeDownQueries).to.have.length(1)
 
                     const queryRunner = connection.createQueryRunner()
 
