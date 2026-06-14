@@ -1326,21 +1326,43 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        // Check if only type or length changed (safe to ALTER without data loss)
+        const onlyTypeLengthChanged =
+            (oldColumn.type !== newColumn.type || oldColumn.length !== newColumn.length) &&
+            newColumn.isArray === oldColumn.isArray &&
+            !(!oldColumn.generatedType && newColumn.generatedType === "STORED") &&
+            !(oldColumn.asExpression !== newColumn.asExpression && newColumn.generatedType === "STORED")
+
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
                 newColumn.generatedType === "STORED")
         ) {
-            // To avoid data conversion, we just recreate column
+            // Structural changes that require recreation (array, generated columns)
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
+        } else if (onlyTypeLengthChanged) {
+            // Safe ALTER COLUMN TYPE — preserves data
+            const columnType = this.connection.driver.createFullType(newColumn)
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" TYPE ${columnType}`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" TYPE ${this.connection.driver.createFullType(oldColumn)}`,
+                ),
+            )
+            // update cloned table
+            clonedTable.columns = clonedTable.columns.map((column) =>
+                column.name === oldColumn.name ? newColumn.clone() : column,
+            )
         } else {
             if (oldColumn.name !== newColumn.name) {
                 // rename column
