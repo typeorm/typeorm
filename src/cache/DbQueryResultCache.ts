@@ -246,55 +246,57 @@ export class DbQueryResultCache implements QueryResultCache {
             }
         }
 
-        if (savedCache?.identifier) {
-            // if exist then update
-            const qb = queryRunner.manager
-                .createQueryBuilder()
-                .update(this.queryResultCacheTable)
-                .set(insertedValues)
+        try {
+            if (savedCache?.identifier) {
+                // if exist then update
+                const qb = queryRunner.manager
+                    .createQueryBuilder()
+                    .update(this.queryResultCacheTable)
+                    .set(insertedValues)
 
-            qb.where(`${qb.escape("identifier")} = :condition`, {
-                condition: insertedValues.identifier,
-            })
-            await qb.execute()
-        } else if (savedCache?.query) {
-            // if exist then update
-            const qb = queryRunner.manager
-                .createQueryBuilder()
-                .update(this.queryResultCacheTable)
-                .set(insertedValues)
-
-            if (this.dataSource.driver.options.type === "oracle") {
-                qb.where(`dbms_lob.compare("query", :condition) = 0`, {
-                    condition: insertedValues.query,
+                qb.where(`${qb.escape("identifier")} = :condition`, {
+                    condition: insertedValues.identifier,
                 })
+                await qb.execute()
+            } else if (savedCache?.query) {
+                // if exist then update
+                const qb = queryRunner.manager
+                    .createQueryBuilder()
+                    .update(this.queryResultCacheTable)
+                    .set(insertedValues)
+
+                if (this.dataSource.driver.options.type === "oracle") {
+                    qb.where(`dbms_lob.compare("query", :condition) = 0`, {
+                        condition: insertedValues.query,
+                    })
+                } else {
+                    qb.where(`${qb.escape("query")} = :condition`, {
+                        condition: insertedValues.query,
+                    })
+                }
+
+                await qb.execute()
             } else {
-                qb.where(`${qb.escape("query")} = :condition`, {
-                    condition: insertedValues.query,
-                })
+                // Spanner does not support auto-generated columns
+                if (
+                    this.dataSource.driver.options.type === "spanner" &&
+                    !insertedValues.id
+                ) {
+                    insertedValues.id = RandomGenerator.uuidv4()
+                }
+
+                // otherwise insert
+                await queryRunner.manager
+                    .createQueryBuilder()
+                    .insert()
+                    .into(this.queryResultCacheTable)
+                    .values(insertedValues)
+                    .execute()
             }
-
-            await qb.execute()
-        } else {
-            // Spanner does not support auto-generated columns
-            if (
-                this.dataSource.driver.options.type === "spanner" &&
-                !insertedValues.id
-            ) {
-                insertedValues.id = RandomGenerator.uuidv4()
+        } finally {
+            if (shouldCreateQueryRunner) {
+                await queryRunner.release()
             }
-
-            // otherwise insert
-            await queryRunner.manager
-                .createQueryBuilder()
-                .insert()
-                .into(this.queryResultCacheTable)
-                .values(insertedValues)
-                .execute()
-        }
-
-        if (shouldCreateQueryRunner) {
-            await queryRunner.release()
         }
     }
 
