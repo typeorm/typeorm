@@ -150,6 +150,45 @@ describe("schema builder > change column", () => {
             }),
         ))
 
+    it("should throw when changed postgres column is absent from cached table", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (dataSource.driver.options.type !== "postgres") return
+
+                const queryRunner = dataSource.createQueryRunner()
+
+                try {
+                    const table = await queryRunner.getTable("post")
+                    const oldColumn = table!.findColumnByName("name")!.clone()
+                    oldColumn.name = "missing_name"
+
+                    const newColumn = oldColumn.clone()
+                    newColumn.length = "500"
+
+                    queryRunner.enableSqlMemory()
+
+                    let thrownError: Error | undefined
+                    try {
+                        await queryRunner.changeColumn(
+                            "post",
+                            oldColumn,
+                            newColumn,
+                        )
+                    } catch (error) {
+                        thrownError = error as Error
+                    }
+
+                    expect(thrownError).to.be.instanceOf(Error)
+                    expect(thrownError!.message).to.contain(
+                        `Column "missing_name" was not found in the "post" table.`,
+                    )
+                } finally {
+                    queryRunner.disableSqlMemory()
+                    await queryRunner.release()
+                }
+            }),
+        ))
+
     it("should correctly change column type", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {

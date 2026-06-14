@@ -2468,11 +2468,15 @@ export class PostgresQueryRunner
                 }
             }
 
-            const newTableColumn = clonedTable.columns.find(
+            const newTableColumnIndex = clonedTable.columns.findIndex(
                 (column) => column.name === newColumn.name,
             )
-            clonedTable.columns[clonedTable.columns.indexOf(newTableColumn!)] =
-                newColumn.clone()
+            if (newTableColumnIndex === -1)
+                throw new TypeORMError(
+                    `Column "${newColumn.name}" was not found in the "${table.name}" table.`,
+                )
+
+            clonedTable.columns[newTableColumnIndex] = newColumn.clone()
         }
 
         await this.executeQueries(upQueries, downQueries)
