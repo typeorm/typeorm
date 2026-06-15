@@ -1,4 +1,4 @@
-import {AbstractSqliteDataSourceOptions} from "../sqlite-abstract/AbstractSqliteDataSourceOptions";
+import type { AbstractSqliteDataSourceOptions } from "../sqlite-abstract/AbstractSqliteDataSourceOptions";
 
 /**
  * NativeScript-specific connection options.
