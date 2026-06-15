@@ -20,6 +20,10 @@ npm install sql.js
 
 See [Data Source Options](../data-source/2-data-source-options.md) for the common data source options.
 
+### Common sqlite data source options
+
+- `preserveForeignKeysDuringMigrations` - Keeps SQLite foreign-key checks enabled during migrations (default `false`).
+
 ### `better-sqlite3` data source options
 
 - `database` - Database path. For example, `"mydb.sqlite"`.
