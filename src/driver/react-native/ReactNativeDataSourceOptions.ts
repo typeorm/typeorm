@@ -1,9 +1,9 @@
-import type { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import {AbstractSqliteDataSourceOptions} from "../sqlite-abstract/AbstractSqliteDataSourceOptions";
 
 /**
  * Sqlite-specific connection options.
  */
-export interface ReactNativeDataSourceOptions extends BaseDataSourceOptions {
+export interface ReactNativeDataSourceOptions extends AbstractSqliteDataSourceOptions {
     /**
      * Database type.
      */
@@ -26,6 +26,7 @@ export interface ReactNativeDataSourceOptions extends BaseDataSourceOptions {
     readonly location: string
 
     readonly poolSize?: never
+
     /**
      * Encryption key for encryption supported databases
      */

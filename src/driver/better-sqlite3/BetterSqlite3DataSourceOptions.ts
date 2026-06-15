@@ -1,9 +1,9 @@
-import type { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import {AbstractSqliteDataSourceOptions} from "../sqlite-abstract/AbstractSqliteDataSourceOptions";
 
 /**
  * Sqlite-specific connection options.
  */
-export interface BetterSqlite3DataSourceOptions extends BaseDataSourceOptions {
+export interface BetterSqlite3DataSourceOptions extends AbstractSqliteDataSourceOptions {
     /**
      * Database type.
      */
