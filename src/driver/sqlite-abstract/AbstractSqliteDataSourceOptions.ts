@@ -1,4 +1,4 @@
-import type { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions";
+import type { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 
 /**
  * Sqlite-specific connection options.

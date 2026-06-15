@@ -1,4 +1,4 @@
-import type { AbstractSqliteDataSourceOptions } from "../sqlite-abstract/AbstractSqliteDataSourceOptions";
+import type { AbstractSqliteDataSourceOptions } from "../sqlite-abstract/AbstractSqliteDataSourceOptions"
 
 /**
  * Expo SQLite-specific connection options.
