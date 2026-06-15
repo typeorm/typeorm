@@ -863,31 +863,6 @@ export class SpannerDriver implements Driver {
     }
 
     /**
-     * If parameter is a datetime function, e.g. "CURRENT_TIMESTAMP", normalizes it.
-     * Otherwise returns original input.
-     *
-     * @param value
-     */
-    protected normalizeDatetimeFunction(value?: string) {
-        if (!value) return value
-
-        // check if input is datetime function
-        const isDatetimeFunction =
-            value.toUpperCase().indexOf("CURRENT_TIMESTAMP") !== -1 ||
-            value.toUpperCase().indexOf("NOW") !== -1
-
-        if (isDatetimeFunction) {
-            // extract precision, e.g. "(3)"
-            const precision = value.match(/\(\d+\)/)
-            return precision
-                ? `CURRENT_TIMESTAMP${precision[0]}`
-                : "CURRENT_TIMESTAMP"
-        } else {
-            return value
-        }
-    }
-
-    /**
      * Escapes a given comment.
      *
      * @param comment
