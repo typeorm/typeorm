@@ -661,25 +661,26 @@ export class OrmUtils {
         criteria: ObjectLiteral | ObjectLiteral[],
         options?: InvalidFindOptionsWhereBehavior,
         path?: string,
-    ): ObjectLiteral {
-        if (OrmUtils.isPlainObject(criteria)) {
-            options ??= {}
-        } else {
-            // Entity class instances may carry nullable columns (e.g. foreign keys)
-            // that are not intended as filter conditions — default to ignoring them.
-            options ??= { null: "ignore", undefined: "ignore" }
-        }
-
-        // multiple criteria are possible at the top level
+    ): ObjectLiteral | ObjectLiteral[] {
+        // multiple criteria are possible at the top level (OR semantics)
         if (!path && Array.isArray(criteria)) {
+            options ??= {}
             return criteria.map(
                 (criterion, index): ObjectLiteral =>
                     OrmUtils.normalizeWhereCriteria(
                         criterion,
                         options,
                         String(index),
-                    ),
+                    ) as ObjectLiteral,
             )
+        }
+
+        if (OrmUtils.isPlainObject(criteria)) {
+            options ??= {}
+        } else {
+            // Entity class instances may carry nullable columns (e.g. foreign keys)
+            // that are not intended as filter conditions — default to ignoring them.
+            options ??= { null: "ignore", undefined: "ignore" }
         }
 
         const result: ObjectLiteral = {}

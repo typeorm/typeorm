@@ -309,5 +309,26 @@ describe(`OrmUtils`, () => {
             const result = OrmUtils.normalizeWhereCriteria(entity)
             expect(result).to.deep.equal({ id: 1, name: "Alice" })
         })
+
+        it("throws on undefined/null in array criteria (OR semantics)", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria([
+                    { id: 1 },
+                    { name: undefined },
+                ]),
+            ).to.throw(/Undefined value.*'1\.name'/)
+
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria([{ email: null }]),
+            ).to.throw(/Null value.*'0\.email'/)
+        })
+
+        it("normalizes valid array criteria without throwing", () => {
+            const result = OrmUtils.normalizeWhereCriteria([
+                { id: 1 },
+                { name: "Bob" },
+            ])
+            expect(result).to.deep.equal([{ id: 1 }, { name: "Bob" }])
+        })
     })
 })
