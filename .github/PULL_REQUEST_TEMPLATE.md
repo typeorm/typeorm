@@ -32,7 +32,8 @@
 -->
 
 - [ ] Code is up-to-date with the `master` branch
-- [ ] This pull request links relevant issues as `Fixes #00000`
+- [ ] This pull request links a relevant issue using a closing keyword:
+      `Fixes #NNNN`, `Closes #NNNN`, or `Resolves #NNNN`
 - [ ] There are new or updated tests validating the change (`tests/**.test.ts`)
 - [ ] Documentation has been updated to reflect this change (`docs/docs/**.md`)
 
