@@ -18,7 +18,6 @@ describe("repository > find methods", () => {
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [Post, Category, UserEntity],
-            enabledDrivers: ["postgres"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
