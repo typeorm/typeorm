@@ -223,3 +223,6 @@ Join our community of supporters and help sustain TypeORM. [Become a community s
 Make a one-time or recurring contribution of your choice. [Become a sponsor](https://opencollective.com/typeorm)
 
 <a href="https://opencollective.com/typeorm" target="_blank"><img src="https://opencollective.com/typeorm/tiers/sponsor.svg?avatarHeight=36"></a>
+
+
+Qodo test do not merge
