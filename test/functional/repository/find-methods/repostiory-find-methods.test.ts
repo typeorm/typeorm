@@ -18,6 +18,7 @@ describe("repository > find methods", () => {
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [Post, Category, UserEntity],
+            enabledDrivers: ["postgres"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
@@ -141,9 +142,9 @@ describe("repository > find methods", () => {
                     const repository = dataSource.getRepository(Category)
 
                     await repository.save([
-                        { name: "Bears" },
-                        { name: "Bears" },
-                        { name: "Cats" },
+                        { id: 1, name: "Bears" },
+                        { id: 2, name: "Bears" },
+                        { id: 3, name: "Cats" },
                     ])
 
                     const count1 = await repository.count({
@@ -200,12 +201,17 @@ describe("repository > find methods", () => {
                     const postRepository = dataSource.getRepository(Post)
 
                     const bear1 = await categoryRepository.save({
+                        id: 1,
                         name: "Bears",
                     })
                     const bear2 = await categoryRepository.save({
+                        id: 2,
                         name: "Bears",
                     })
-                    const cats = await categoryRepository.save({ name: "Cats" })
+                    const cats = await categoryRepository.save({
+                        id: 3,
+                        name: "Cats",
+                    })
 
                     const firstPost = new Post()
                     firstPost.id = 1
@@ -253,12 +259,17 @@ describe("repository > find methods", () => {
                     const postRepository = dataSource.getRepository(Post)
 
                     const bear1 = await categoryRepository.save({
+                        id: 1,
                         name: "Bears",
                     })
                     const bear2 = await categoryRepository.save({
+                        id: 2,
                         name: "Bears",
                     })
-                    const cats = await categoryRepository.save({ name: "Cats" })
+                    const cats = await categoryRepository.save({
+                        id: 3,
+                        name: "Cats",
+                    })
 
                     const firstPost = new Post()
                     firstPost.id = 1
