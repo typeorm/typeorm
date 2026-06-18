@@ -229,24 +229,24 @@ describe("metadata-builder > closure-junction-entity-metadata > schema handling"
                 )
             }))
         it("should build the closure table in the correct schema", () =>
-            dataSources.map(async (dataSource) => {
-                const queryRunner = dataSource.createQueryRunner()
-                try {
-                    const entityMetadata =
-                        dataSource.getMetadata(CategoryWithSchema)
-                    const table = await queryRunner.getTable(
-                        [
-                            schemaName,
-                            dataSource.namingStrategy.closureJunctionTableName(
-                                entityMetadata.tableNameWithoutPrefix,
-                            ),
-                        ].join("."),
-                    )
-                    expect(table).not.to.be.undefined
-                } finally {
-                    await queryRunner.release()
-                }
-            }))
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
+                    try {
+                        const entityMetadata =
+                            dataSource.getMetadata(CategoryWithSchema)
+                        const closureMetadata =
+                            entityMetadata.closureJunctionTable!
+
+                        const table = await queryRunner.getTable(
+                            closureMetadata.tablePath,
+                        )
+                        expect(table).not.to.be.undefined
+                    } finally {
+                        await queryRunner.release()
+                    }
+                }),
+            ))
     })
     describe("schema provided to dataSource options", () => {
         let dataSources: DataSource[]
