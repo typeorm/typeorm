@@ -1,17 +1,32 @@
 import "reflect-metadata"
 import { Category } from "./entity/Category"
 import { CategoryWithSchema } from "./entity/CategoryWithSchema"
+import { CategoryWithSchemaInClosure } from "./entity/CategoryWithSchemaInClosure"
+import { CategoryWithDifferentSchemaForClosure } from "./entity/CategoryWithDifferentSchemaForClosure"
 import type { DataSource } from "../../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
+import type { DataSourceOptions } from "../../../../../src/data-source/DataSourceOptions"
 
-type ClassConstructor<T extends Category | CategoryWithSchema> = {
-    new (...args: any[]): T
+type ClassConstructor<T extends Object> = {
+    new (...args: unknown[]): T
     name: string
 }
+type SchemaCapableOptions = Extract<DataSourceOptions, { schema?: string }>
+const driversSupportingSchema = Object.freeze({
+    cockroachdb: true,
+    mssql: true,
+    postgres: true,
+    spanner: true,
+    oracle: false,
+    sap: false,
+} satisfies Record<SchemaCapableOptions["type"], boolean>)
+const enabledDrivers = Object.entries(driversSupportingSchema)
+    .filter(([_, use]) => use)
+    .map(([type]) => type) as Array<keyof typeof driversSupportingSchema>
 
 describe("tree-tables > closure-table > schema-handling", () => {
     let dataSources: DataSource[]
@@ -69,8 +84,6 @@ describe("tree-tables > closure-table > schema-handling", () => {
                     })
                 }),
             ))
-
-        it.skip(`Should find ancestors for ${Entity.name} (with options)`, () => {})
 
         it(`Should find descendants for ${Entity.name}`, () =>
             Promise.all(
@@ -199,7 +212,7 @@ describe("tree-tables > closure-table > schema-handling", () => {
         before(async () => {
             dataSources = await createTestingConnections({
                 entities: [Category],
-                enabledDrivers: ["postgres"],
+                enabledDrivers,
                 schema: undefined,
             })
         })
@@ -211,7 +224,7 @@ describe("tree-tables > closure-table > schema-handling", () => {
         before(async () => {
             dataSources = await createTestingConnections({
                 entities: [Category, CategoryWithSchema],
-                enabledDrivers: ["postgres"],
+                enabledDrivers,
                 schema: undefined,
             })
         })
@@ -224,7 +237,7 @@ describe("tree-tables > closure-table > schema-handling", () => {
         before(async () => {
             dataSources = await createTestingConnections({
                 entities: [Category, CategoryWithSchema],
-                enabledDrivers: ["postgres"],
+                enabledDrivers,
                 schema: "my_schema",
             })
         })
@@ -233,5 +246,42 @@ describe("tree-tables > closure-table > schema-handling", () => {
         defineSuite(Category)
         defineSuite(CategoryWithSchema)
     })
-    describe("schema provided to Tree decorator", () => {})
+    describe("schema provided to Tree decorator", () => {
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [
+                    Category,
+                    CategoryWithSchema,
+                    CategoryWithSchemaInClosure,
+                ],
+                enabledDrivers,
+                schema: undefined,
+            })
+        })
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
+        defineSuite(Category)
+        defineSuite(CategoryWithSchema)
+        defineSuite(CategoryWithSchemaInClosure)
+    })
+    describe("schema provided to Entity and Tree decorator both", () => {
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [
+                    Category,
+                    CategoryWithSchema,
+                    CategoryWithSchemaInClosure,
+                    CategoryWithDifferentSchemaForClosure,
+                ],
+                enabledDrivers,
+                schema: undefined,
+            })
+        })
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
+        defineSuite(Category)
+        defineSuite(CategoryWithSchema)
+        defineSuite(CategoryWithSchemaInClosure)
+        defineSuite(CategoryWithDifferentSchemaForClosure)
+    })
 })

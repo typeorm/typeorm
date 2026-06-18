@@ -5,9 +5,11 @@ import { TreeChildren } from "../../../../../../src/decorator/tree/TreeChildren"
 import { Entity } from "../../../../../../src/decorator/entity/Entity"
 import { Tree } from "../../../../../../src/decorator/tree/Tree"
 
-@Entity()
-@Tree("closure-table")
-export class Category {
+@Entity({ schema: "my_different_entity_schema" })
+@Tree("closure-table", {
+    closureTableSchema: "my_different_closure_schema",
+})
+export class CategoryWithDifferentSchemaForClosure {
     @PrimaryGeneratedColumn()
     id: number
 
@@ -15,8 +17,8 @@ export class Category {
     name: string
 
     @TreeParent()
-    parentCategory: Category
+    parentCategory: CategoryWithDifferentSchemaForClosure
 
     @TreeChildren()
-    childCategories: Category[]
+    childCategories: CategoryWithDifferentSchemaForClosure[]
 }

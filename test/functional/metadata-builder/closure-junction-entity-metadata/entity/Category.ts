@@ -5,7 +5,7 @@ import { TreeChildren } from "../../../../../src/decorator/tree/TreeChildren"
 import { Entity } from "../../../../../src/decorator/entity/Entity"
 import { Tree } from "../../../../../src/decorator/tree/Tree"
 
-@Entity({ name: "category" })
+@Entity()
 @Tree("closure-table")
 export class Category {
     @PrimaryGeneratedColumn()
