@@ -8,7 +8,7 @@ import { TreeLevelColumn } from "../../../../../src/decorator/tree/TreeLevelColu
 
 @Entity()
 @Tree("closure-table")
-export class SpaceWithLevel {
+export class CategoryWithLevel {
     @PrimaryGeneratedColumn()
     id: number
 
@@ -16,10 +16,10 @@ export class SpaceWithLevel {
     name: string
 
     @TreeParent()
-    parent: SpaceWithLevel
+    parent: CategoryWithLevel
 
     @TreeChildren()
-    children: SpaceWithLevel[]
+    children: CategoryWithLevel[]
 
     @TreeLevelColumn()
     level: number

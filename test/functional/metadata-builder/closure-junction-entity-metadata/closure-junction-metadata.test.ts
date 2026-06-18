@@ -6,12 +6,12 @@ import {
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import type { DataSource } from "../../../../src/data-source/DataSource"
-import { Space } from "./entity/Space"
-import { SpaceWithLevel } from "./entity/SpaceWithLevel"
-import { SpaceWithSchema } from "./entity/SpaceWithSchema"
+import { Category } from "./entity/Category"
+import { CategoryWithLevel } from "./entity/CategoryWithLevel"
+import { CategoryWithSchema } from "./entity/CategoryWithSchema"
 import type { PostgresDataSourceOptions } from "../../../../src/driver/postgres/PostgresDataSourceOptions.js"
 
-describe("metadata-builder > ClosureJunctionEntityMetadataBuilder", () => {
+describe("metadata-builder > closure-junction-entity-metadata", () => {
     let dataSources: DataSource[]
 
     before(async () => {
@@ -27,14 +27,14 @@ describe("metadata-builder > ClosureJunctionEntityMetadataBuilder", () => {
     describe("entity metadata creation", () => {
         it("should create closure junction metadata", () =>
             dataSources.map((dataSource) => {
-                const spaceMetadata = dataSource.getMetadata(Space)
+                const spaceMetadata = dataSource.getMetadata(Category)
 
                 expect(spaceMetadata.closureJunctionTable).to.not.be.undefined
             }))
 
         it("should reference the parent closure entity metadata", () =>
             dataSources.map((dataSource) => {
-                const spaceMetadata = dataSource.getMetadata(Space)
+                const spaceMetadata = dataSource.getMetadata(Category)
                 const closureMetadata = spaceMetadata.closureJunctionTable!
 
                 expect(closureMetadata.parentClosureEntityMetadata).to.equal(
@@ -44,7 +44,7 @@ describe("metadata-builder > ClosureJunctionEntityMetadataBuilder", () => {
 
         it("should set the closure junction table type", () =>
             dataSources.map((dataSource) => {
-                const spaceMetadata = dataSource.getMetadata(Space)
+                const spaceMetadata = dataSource.getMetadata(Category)
                 const closureMetadata = spaceMetadata.closureJunctionTable!
 
                 expect(closureMetadata.tableType).to.equal("closure-junction")
@@ -54,7 +54,7 @@ describe("metadata-builder > ClosureJunctionEntityMetadataBuilder", () => {
         it("should create ancestor columns for all primary columns", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    const spaceMetadata = dataSource.getMetadata(Space)
+                    const spaceMetadata = dataSource.getMetadata(Category)
                     const closureMetadata = spaceMetadata.closureJunctionTable!
 
                     const ancestorColumns = closureMetadata.columns.filter(
@@ -70,7 +70,7 @@ describe("metadata-builder > ClosureJunctionEntityMetadataBuilder", () => {
         it("should create descendant columns for all primary columns", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    const spaceMetadata = dataSource.getMetadata(Space)
+                    const spaceMetadata = dataSource.getMetadata(Category)
                     const closureMetadata = spaceMetadata.closureJunctionTable!
 
                     const descendantColumns = closureMetadata.columns.filter(
@@ -87,7 +87,7 @@ describe("metadata-builder > ClosureJunctionEntityMetadataBuilder", () => {
     describe("tree level column", () => {
         it("should add a level column when the parent entity defines a tree level column", () =>
             dataSources.map((dataSource) => {
-                const metadata = dataSource.getMetadata(SpaceWithLevel)
+                const metadata = dataSource.getMetadata(CategoryWithLevel)
                 const closure = metadata.closureJunctionTable!
 
                 const levelColumn = closure.columns.find(
@@ -100,7 +100,7 @@ describe("metadata-builder > ClosureJunctionEntityMetadataBuilder", () => {
 
         it("should not add a level column when the parent entity does not define a tree level column", () =>
             dataSources.map((dataSource) => {
-                const metadata = dataSource.getMetadata(Space)
+                const metadata = dataSource.getMetadata(Category)
                 const closure = metadata.closureJunctionTable!
 
                 const levelColumn = closure.columns.find(
@@ -112,7 +112,7 @@ describe("metadata-builder > ClosureJunctionEntityMetadataBuilder", () => {
     })
 })
 
-describe("metadata-builder > ClosureJunctionEntityMetadataBuilder > schema inheritance", () => {
+describe("metadata-builder > closure-junction-entity-metadata > schema handling", () => {
     describe("schema not provided (undefined)", () => {
         let dataSources: DataSource[]
 
@@ -120,6 +120,8 @@ describe("metadata-builder > ClosureJunctionEntityMetadataBuilder > schema inher
             dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
                 enabledDrivers: ["postgres"],
+                // NOTE: This does not overwrite schema passed in configuration
+                // for that to work, setupTestingConnections should use Object.hasOwn(options, "schema") and then replace
                 schema: undefined,
                 schemaCreate: false,
                 dropSchema: false,
@@ -130,7 +132,7 @@ describe("metadata-builder > ClosureJunctionEntityMetadataBuilder > schema inher
 
         it("should inherit database from the parent closure entity", () =>
             dataSources.map((dataSource) => {
-                const spaceMetadata = dataSource.getMetadata(Space)
+                const spaceMetadata = dataSource.getMetadata(Category)
                 const closureMetadata = spaceMetadata.closureJunctionTable!
 
                 expect(closureMetadata.database).to.equal(
@@ -139,7 +141,7 @@ describe("metadata-builder > ClosureJunctionEntityMetadataBuilder > schema inher
             }))
         it("should propagate schema into closure junction metadata", () =>
             dataSources.map((dataSource) => {
-                const spaceMetadata = dataSource.getMetadata(Space)
+                const spaceMetadata = dataSource.getMetadata(Category)
                 const closureMetadata = spaceMetadata.closureJunctionTable!
                 expect(
                     (dataSource.driver.options as PostgresDataSourceOptions)
@@ -170,7 +172,7 @@ describe("metadata-builder > ClosureJunctionEntityMetadataBuilder > schema inher
 
         it("should inherit database from the parent closure entity", () =>
             dataSources.map((dataSource) => {
-                const spaceMetadata = dataSource.getMetadata(Space)
+                const spaceMetadata = dataSource.getMetadata(Category)
                 const closureMetadata = spaceMetadata.closureJunctionTable!
 
                 expect(closureMetadata.database).to.equal(
@@ -179,7 +181,7 @@ describe("metadata-builder > ClosureJunctionEntityMetadataBuilder > schema inher
             }))
         it("should propagate schema into closure junction metadata", () =>
             dataSources.map((dataSource) => {
-                const spaceMetadata = dataSource.getMetadata(SpaceWithSchema)
+                const spaceMetadata = dataSource.getMetadata(CategoryWithSchema)
                 const closureMetadata = spaceMetadata.closureJunctionTable!
 
                 expect(
@@ -210,7 +212,7 @@ describe("metadata-builder > ClosureJunctionEntityMetadataBuilder > schema inher
 
         it("should inherit database from the parent closure entity", () =>
             dataSources.map((dataSource) => {
-                const spaceMetadata = dataSource.getMetadata(Space)
+                const spaceMetadata = dataSource.getMetadata(Category)
                 const closureMetadata = spaceMetadata.closureJunctionTable!
 
                 expect(closureMetadata.database).to.equal(
@@ -219,7 +221,7 @@ describe("metadata-builder > ClosureJunctionEntityMetadataBuilder > schema inher
             }))
         it("should propagate schema into closure junction metadata", () =>
             dataSources.map((dataSource) => {
-                const spaceMetadata = dataSource.getMetadata(Space)
+                const spaceMetadata = dataSource.getMetadata(Category)
                 const closureMetadata = spaceMetadata.closureJunctionTable!
 
                 expect(

@@ -5,9 +5,9 @@ import { TreeChildren } from "../../../../../src/decorator/tree/TreeChildren"
 import { Entity } from "../../../../../src/decorator/entity/Entity"
 import { Tree } from "../../../../../src/decorator/tree/Tree"
 
-@Entity({ name: "space_with_schema", schema: "my_schema" })
+@Entity({ name: "category_with_schema", schema: "my_schema" })
 @Tree("closure-table")
-export class SpaceWithSchema {
+export class CategoryWithSchema {
     @PrimaryGeneratedColumn()
     id: number
 
@@ -15,8 +15,8 @@ export class SpaceWithSchema {
     name: string
 
     @TreeParent()
-    parent: SpaceWithSchema
+    parent: CategoryWithSchema
 
     @TreeChildren()
-    children: SpaceWithSchema[]
+    children: CategoryWithSchema[]
 }
