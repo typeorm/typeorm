@@ -12,7 +12,28 @@ This setting does **not** affect QueryBuilder's `.where()`, `.andWhere()`, or `.
 
 ## Default Behavior
 
-By default, TypeORM throws an error when `null` or `undefined` values are encountered in where conditions. This prevents unexpected results and helps catch potential bugs early:
+By default, TypeORM throws an error when `null` or `undefined` values are encountered in where conditions. This prevents unexpected results and helps catch potential bugs early.
+
+**Exception: entity class instances.** When an entity instance (rather than a plain object) is passed as criteria to `update()`, `delete()`, `softDelete()`, or `restore()`, null and undefined values are ignored by default. This is because entity instances carry all columns — including nullable foreign keys — and only non-null properties should form the WHERE clause:
+
+```typescript
+@Entity()
+class Post {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    @Column({ nullable: true })
+    authorId: number | null
+}
+
+const post = await repository.save(new Post())
+// post.authorId is null — this is not a filter condition
+
+await repository.softDelete(post)
+// WHERE id = 1 (authorId is ignored, not thrown on)
+```
+
+For plain object criteria, the default throw behavior still applies:
 
 ```typescript
 // Both queries will throw an error
