@@ -81,6 +81,7 @@ describe("query builder > joins", () => {
                         .leftJoinAndSelect("categories.images", "images")
                         .getMany()
 
+                    loadedPosts.sort((a, b) => a.id - b.id)
                     expect(loadedPosts![0].tag).to.not.be.undefined
                     expect(loadedPosts![0].tag.id).to.be.equal(1)
                     expect(loadedPosts![0].categories).to.not.be.eql([])
@@ -836,6 +837,7 @@ describe("query builder > joins", () => {
                         })
                         .getMany()
 
+                    loadedPosts.sort((a, b) => a.id - b.id)
                     expect(loadedPosts![0].removedCategories).to.not.be.eql([])
                     expect(
                         loadedPosts![0].removedCategories.length,
@@ -1322,6 +1324,7 @@ describe("query builder > joins", () => {
                         })
                         .getMany()
 
+                    loadedPosts.sort((a, b) => a.id - b.id)
                     expect(loadedPosts![0].removedCategories).to.not.be.eql([])
                     expect(
                         loadedPosts![0].removedCategories.length,
