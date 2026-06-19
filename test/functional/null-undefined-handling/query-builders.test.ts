@@ -42,7 +42,7 @@ describe("entity manager > invalidWhereValuesBehavior defaults", () => {
             try {
                 await connection.manager.update(
                     Post,
-                    { text: undefined } as any,
+                    { text: undefined },
                     { title: "Updated" },
                 )
                 expect.fail("Expected error")
@@ -58,7 +58,7 @@ describe("entity manager > invalidWhereValuesBehavior defaults", () => {
             await prepareData(connection)
 
             try {
-                await connection.manager.delete(Post, { text: null } as any)
+                await connection.manager.delete(Post, { text: null })
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
@@ -74,7 +74,7 @@ describe("entity manager > invalidWhereValuesBehavior defaults", () => {
             try {
                 await connection.manager.update(
                     Post,
-                    [{ title: "No match" }, { text: undefined }] as any,
+                    [{ title: "No match" }, { text: undefined }],
                     { title: "Updated" },
                 )
                 expect.fail("Expected error")
@@ -145,7 +145,7 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             try {
                 await connection.manager.update(
                     Post,
-                    { text: undefined } as any,
+                    { text: undefined },
                     { title: "Updated" },
                 )
                 expect.fail("Expected error")
@@ -532,7 +532,7 @@ describe("entity manager > invalidWhereValuesBehavior with ignore", () => {
                 await connection.manager.delete(Post, [
                     { title: "Test Post" },
                     { text: undefined },
-                ] as any)
+                ])
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
