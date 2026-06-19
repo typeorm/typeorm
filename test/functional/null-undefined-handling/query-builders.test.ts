@@ -238,6 +238,60 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
     })
 })
 
+describe("entity manager > invalidWhereValuesBehavior default", () => {
+    let dataSources: DataSource[]
+
+    before(async () => {
+        dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
+            entities: [Post, Category],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    async function prepareData(connection: DataSource) {
+        const post = new Post()
+        post.title = "Test Post"
+        post.text = "Some text"
+        await connection.manager.save(post)
+    }
+
+    it("should throw error for undefined values in EntityManager.update() by default", async () => {
+        for (const connection of dataSources) {
+            await prepareData(connection)
+
+            try {
+                await connection.manager.update(
+                    Post,
+                    { text: undefined } as any,
+                    { title: "Updated" },
+                )
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Undefined value encountered")
+            }
+        }
+    })
+
+    it("should throw error for null values in EntityManager.delete() by default", async () => {
+        for (const connection of dataSources) {
+            await prepareData(connection)
+
+            try {
+                await connection.manager.delete(Post, { text: null } as any)
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Null value encountered")
+            }
+        }
+    })
+})
+
 describe("entity manager > invalidWhereValuesBehavior with sql-null", () => {
     let dataSources: DataSource[]
 
