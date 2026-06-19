@@ -396,6 +396,27 @@ export class OrmUtils {
     }
 
     /**
+     * Checks whether criteria is empty or whether a top-level OR criteria array
+     * contains an empty branch.
+     *
+     * Empty OR branches are unsafe for write operations because QueryBuilder can
+     * turn them into an always-true predicate.
+     *
+     * @param criteria
+     */
+    public static isCriteriaNullOrEmptyOrContainsEmpty(
+        criteria: unknown,
+    ): boolean {
+        return (
+            OrmUtils.isCriteriaNullOrEmpty(criteria) ||
+            (Array.isArray(criteria) &&
+                criteria.some((criterion) =>
+                    OrmUtils.isCriteriaNullOrEmpty(criterion),
+                ))
+        )
+    }
+
+    /**
      * Checks if given criteria is a primitive value.
      * Primitive values are strings, numbers and dates.
      *
@@ -662,9 +683,7 @@ export class OrmUtils {
         options?: InvalidFindOptionsWhereBehavior,
         path?: string,
     ): ObjectLiteral | ObjectLiteral[] {
-        if (!options) {
-            return criteria
-        }
+        options ??= {}
 
         // multiple criteria are possible at the top level
         if (!path && Array.isArray(criteria)) {
@@ -678,7 +697,7 @@ export class OrmUtils {
             )
         }
 
-        const result: ObjectLiteral = {}
+        const result: ObjectLiteral = Object.create(null)
         for (const [key, value] of Object.entries(criteria)) {
             const propertyPath = path ? `${path}.${key}` : key
 
