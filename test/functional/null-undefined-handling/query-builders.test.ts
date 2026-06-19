@@ -9,6 +9,86 @@ import {
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 
+// Regression coverage for #12578: write criteria must use the documented
+// throw defaults even when invalidWhereValuesBehavior is not configured.
+describe("entity manager > invalidWhereValuesBehavior defaults", () => {
+    let dataSources: DataSource[]
+
+    before(async () => {
+        dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
+            entities: [Post, Category],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    it("should throw for null values in EntityManager.update()", async () => {
+        for (const dataSource of dataSources) {
+            try {
+                await dataSource.manager.update(
+                    Post,
+                    { text: null },
+                    { title: "Updated" },
+                )
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include(
+                    "Null value encountered in property 'text'",
+                )
+            }
+        }
+    })
+
+    it("should throw for undefined values in EntityManager.delete()", async () => {
+        for (const dataSource of dataSources) {
+            try {
+                await dataSource.manager.delete(Post, { text: undefined })
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include(
+                    "Undefined value encountered in property 'text'",
+                )
+            }
+        }
+    })
+
+    it("should preserve __proto__ as an own criterion", async () => {
+        for (const dataSource of dataSources) {
+            const post = new Post()
+            post.title = "Test Post"
+            post.text = "Original"
+            post.category = null
+            await dataSource.manager.save(post)
+
+            const criteria: Record<string, unknown> = JSON.parse(
+                '{"__proto__":{"admin":true},"title":"Test Post"}',
+            )
+
+            try {
+                await dataSource.manager.update(
+                    Post,
+                    criteria,
+                    { title: "Updated" },
+                )
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("__proto__")
+            }
+
+            const persisted = await dataSource.manager.findOneByOrFail(Post, {
+                id: post.id,
+            })
+            expect(persisted.title).to.equal("Test Post")
+        }
+    })
+})
+
 describe("entity manager > invalidWhereValuesBehavior with throw", () => {
     let dataSources: DataSource[]
 
