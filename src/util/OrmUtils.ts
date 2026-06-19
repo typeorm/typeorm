@@ -662,8 +662,11 @@ export class OrmUtils {
         options?: InvalidFindOptionsWhereBehavior,
         path?: string,
     ): ObjectLiteral | ObjectLiteral[] {
-        if (!options) {
-            return criteria
+        // When options is not provided, use the documented default behavior
+        // (throw on undefined/null) rather than silently passing through
+        const resolvedOptions: InvalidFindOptionsWhereBehavior = options ?? {
+            undefined: "throw",
+            null: "throw",
         }
 
         // multiple criteria are possible at the top level
@@ -672,7 +675,7 @@ export class OrmUtils {
                 (criterion, index): ObjectLiteral =>
                     OrmUtils.normalizeWhereCriteria(
                         criterion,
-                        options,
+                        resolvedOptions,
                         String(index),
                     ),
             )
@@ -683,7 +686,7 @@ export class OrmUtils {
             const propertyPath = path ? `${path}.${key}` : key
 
             if (value === undefined) {
-                const behavior = options?.undefined ?? "throw"
+                const behavior = resolvedOptions.undefined ?? "throw"
                 if (behavior === "throw") {
                     throw new TypeORMError(
                         `Undefined value encountered in property '${propertyPath}' of a where condition. ` +
@@ -692,7 +695,7 @@ export class OrmUtils {
                 }
                 // else: "ignore" — skip this key
             } else if (value === null) {
-                const behavior = options?.null ?? "throw"
+                const behavior = resolvedOptions.null ?? "throw"
                 if (behavior === "throw") {
                     throw new TypeORMError(
                         `Null value encountered in property '${propertyPath}' of a where condition. ` +
@@ -706,7 +709,7 @@ export class OrmUtils {
             } else if (OrmUtils.isPlainObject(value)) {
                 const nested = OrmUtils.normalizeWhereCriteria(
                     value,
-                    options,
+                    resolvedOptions,
                     propertyPath,
                 )
                 if (Object.keys(nested).length > 0) {
