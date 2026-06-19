@@ -131,15 +131,13 @@ describe("metadata-builder > closure-junction-entity-metadata > schema handling"
     const enabledDrivers = Object.entries(driversSupportingSchema)
         .filter(([_, use]) => use)
         .map(([type]) => type) as Array<keyof typeof driversSupportingSchema>
-    type ClassConstructor<T extends Object> = {
-        new (...args: unknown[]): T
-        name: string
-    }
     const suiteSetup = async ({
         entities,
         dataSourceSchema,
     }: {
-        entities: Array<string | ClassConstructor<any>>
+        entities: NonNullable<
+            Parameters<typeof createTestingConnections>[0]
+        >["entities"]
         dataSourceSchema: string | undefined
     }): Promise<{ dataSources: DataSource[] }> => {
         const harness = {
