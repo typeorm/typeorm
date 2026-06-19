@@ -7,6 +7,7 @@ import type {
 import type { InvalidFindOptionsWhereBehavior } from "../driver/types/InvalidFindOptionsWhereBehavior"
 import { TypeORMError } from "../error"
 import { IsNull } from "../find-options/operator/IsNull"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
 import { areUint8ArraysEqual, isUint8Array } from "./Uint8ArrayUtils"
 
 export class OrmUtils {
@@ -395,6 +396,16 @@ export class OrmUtils {
         )
     }
 
+    public static isCriteriaNullOrEmptyOrContainsEmpty(
+        criteria: unknown,
+    ): boolean {
+        return (
+            OrmUtils.isCriteriaNullOrEmpty(criteria) ||
+            (Array.isArray(criteria) &&
+                criteria.some((item) => OrmUtils.isCriteriaNullOrEmpty(item)))
+        )
+    }
+
     /**
      * Checks if given criteria is a primitive value.
      * Primitive values are strings, numbers and dates.
@@ -662,10 +673,6 @@ export class OrmUtils {
         options?: InvalidFindOptionsWhereBehavior,
         path?: string,
     ): ObjectLiteral | ObjectLiteral[] {
-        if (!options) {
-            return criteria
-        }
-
         // multiple criteria are possible at the top level
         if (!path && Array.isArray(criteria)) {
             return criteria.map(
@@ -700,7 +707,7 @@ export class OrmUtils {
                             `Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
                     )
                 } else if (behavior === "sql-null") {
-                    result[key] = IsNull()
+                    OrmUtils.setNormalizedWhereValue(result, key, IsNull())
                 }
                 // else: "ignore" — skip this key
             } else if (OrmUtils.isPlainObject(value)) {
@@ -710,13 +717,126 @@ export class OrmUtils {
                     propertyPath,
                 )
                 if (Object.keys(nested).length > 0) {
-                    result[key] = nested
+                    OrmUtils.setNormalizedWhereValue(result, key, nested)
                 }
             } else {
-                result[key] = value
+                OrmUtils.setNormalizedWhereValue(result, key, value)
             }
         }
 
         return result
+    }
+
+    static normalizeWhereCriteriaWithMetadata(
+        criteria: ObjectLiteral | ObjectLiteral[],
+        metadata: EntityMetadata,
+        options?: InvalidFindOptionsWhereBehavior,
+    ): ObjectLiteral | ObjectLiteral[] {
+        if (Array.isArray(criteria)) {
+            return criteria.map((criterion, index): ObjectLiteral =>
+                OrmUtils.normalizeWhereCriteriaObjectWithMetadata(
+                    criterion,
+                    metadata,
+                    options,
+                    String(index),
+                ),
+            )
+        }
+
+        return OrmUtils.normalizeWhereCriteriaObjectWithMetadata(
+            criteria,
+            metadata,
+            options,
+        )
+    }
+
+    private static normalizeWhereCriteriaObjectWithMetadata(
+        criteria: ObjectLiteral,
+        metadata: EntityMetadata,
+        options?: InvalidFindOptionsWhereBehavior,
+        path?: string,
+        metadataPath?: string,
+    ): ObjectLiteral {
+        const result: ObjectLiteral = {}
+
+        for (const [key, value] of Object.entries(criteria)) {
+            const propertyPath = path ? `${path}.${key}` : key
+            const metadataPropertyPath = metadataPath
+                ? `${metadataPath}.${key}`
+                : key
+
+            if (value === undefined) {
+                const behavior = options?.undefined ?? "throw"
+                if (behavior === "throw") {
+                    throw new TypeORMError(
+                        `Undefined value encountered in property '${propertyPath}' of a where condition. ` +
+                            `Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
+                    )
+                }
+            } else if (value === null) {
+                const behavior = options?.null ?? "throw"
+                if (behavior === "throw") {
+                    throw new TypeORMError(
+                        `Null value encountered in property '${propertyPath}' of a where condition. ` +
+                            `To match with SQL NULL, the IsNull() operator must be used. ` +
+                            `Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
+                    )
+                } else if (behavior === "sql-null") {
+                    OrmUtils.setNormalizedWhereValue(result, key, IsNull())
+                }
+            } else if (OrmUtils.isPlainObject(value)) {
+                if (metadata.hasEmbeddedWithPropertyPath(metadataPropertyPath)) {
+                    const nested =
+                        OrmUtils.normalizeWhereCriteriaObjectWithMetadata(
+                            value,
+                            metadata,
+                            options,
+                            propertyPath,
+                            metadataPropertyPath,
+                        )
+
+                    if (Object.keys(nested).length > 0) {
+                        OrmUtils.setNormalizedWhereValue(result, key, nested)
+                    }
+                } else if (
+                    metadata.hasRelationWithPropertyPath(metadataPropertyPath)
+                ) {
+                    const relation =
+                        metadata.findRelationWithPropertyPath(
+                            metadataPropertyPath,
+                        )!
+                    const nested =
+                        OrmUtils.normalizeWhereCriteriaObjectWithMetadata(
+                            value,
+                            relation.inverseEntityMetadata,
+                            options,
+                            propertyPath,
+                        )
+
+                    if (Object.keys(nested).length > 0) {
+                        OrmUtils.setNormalizedWhereValue(result, key, nested)
+                    }
+                } else {
+                    OrmUtils.setNormalizedWhereValue(result, key, value)
+                }
+            } else {
+                OrmUtils.setNormalizedWhereValue(result, key, value)
+            }
+        }
+
+        return result
+    }
+
+    private static setNormalizedWhereValue(
+        target: ObjectLiteral,
+        key: string,
+        value: unknown,
+    ) {
+        Object.defineProperty(target, key, {
+            configurable: true,
+            enumerable: true,
+            value,
+            writable: true,
+        })
     }
 }

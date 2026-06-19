@@ -1,6 +1,7 @@
 import { expect } from "chai"
 import type { DataSource } from "../../../src"
-import { TypeORMError } from "../../../src"
+import { Table, TypeORMError } from "../../../src"
+import { OrmUtils } from "../../../src/util/OrmUtils"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -8,6 +9,277 @@ import {
 } from "../../utils/test-utils"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
+
+describe("entity manager > invalidWhereValuesBehavior default behavior", () => {
+    let dataSources: DataSource[]
+
+    before(async () => {
+        dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
+            entities: [Post, Category],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    async function prepareData(connection: DataSource) {
+        const category = new Category()
+        category.name = "Test Category"
+        await connection.manager.save(category)
+
+        const post = new Post()
+        post.title = "Test Post"
+        post.text = "Some text"
+        post.category = category
+        await connection.manager.save(post)
+    }
+
+    async function prepareRawMutationTable(connection: DataSource) {
+        const queryRunner = connection.createQueryRunner()
+
+        await queryRunner.connect()
+        try {
+            await queryRunner.dropTable("raw_mutation_target", true)
+            await queryRunner.createTable(
+                new Table({
+                    name: "raw_mutation_target",
+                    columns: [
+                        {
+                            name: "id",
+                            type: "int",
+                            isPrimary: true,
+                        },
+                        {
+                            name: "title",
+                            type: "varchar",
+                        },
+                        {
+                            name: "text",
+                            type: "varchar",
+                            isNullable: true,
+                        },
+                    ],
+                }),
+            )
+        } finally {
+            await queryRunner.release()
+        }
+
+        await connection
+            .createQueryBuilder()
+            .insert()
+            .into("raw_mutation_target")
+            .values([
+                { id: 1, title: "Raw", text: "text" },
+                { id: 2, title: "Delete", text: "text" },
+            ])
+            .execute()
+    }
+
+    it("should throw by default for invalid EntityManager mutation criteria", async () => {
+        for (const connection of dataSources) {
+            await prepareData(connection)
+
+            const cases: Array<{
+                name: string
+                execute: () => Promise<unknown>
+                message: string
+            }> = [
+                {
+                    name: "update with undefined",
+                    execute: () =>
+                        connection.manager.update(
+                            Post,
+                            { text: undefined },
+                            { title: "Updated" },
+                        ),
+                    message: "Undefined value encountered",
+                },
+                {
+                    name: "update with null",
+                    execute: () =>
+                        connection.manager.update(Post, { text: null }, {
+                            title: "Updated",
+                        }),
+                    message: "Null value encountered",
+                },
+                {
+                    name: "delete with undefined",
+                    execute: () =>
+                        connection.manager.delete(Post, {
+                            text: undefined,
+                        }),
+                    message: "Undefined value encountered",
+                },
+                {
+                    name: "delete with null",
+                    execute: () =>
+                        connection.manager.delete(Post, { text: null }),
+                    message: "Null value encountered",
+                },
+                {
+                    name: "softDelete with undefined",
+                    execute: () =>
+                        connection.manager.softDelete(Post, {
+                            text: undefined,
+                        }),
+                    message: "Undefined value encountered",
+                },
+                {
+                    name: "softDelete with null",
+                    execute: () =>
+                        connection.manager.softDelete(Post, {
+                            text: null,
+                        }),
+                    message: "Null value encountered",
+                },
+                {
+                    name: "restore with undefined",
+                    execute: () =>
+                        connection.manager.restore(Post, {
+                            text: undefined,
+                        }),
+                    message: "Undefined value encountered",
+                },
+                {
+                    name: "restore with null",
+                    execute: () =>
+                        connection.manager.restore(Post, {
+                            text: null,
+                        }),
+                    message: "Null value encountered",
+                },
+            ]
+
+            for (const testCase of cases) {
+                try {
+                    await testCase.execute()
+                    expect.fail(`Expected ${testCase.name} to throw an error`)
+                } catch (error) {
+                    expect(error).to.be.instanceOf(TypeORMError)
+                    expect(error.message).to.include(testCase.message)
+                }
+            }
+        }
+    })
+
+    it("should support raw table-name targets without entity metadata", async () => {
+        for (const connection of dataSources) {
+            await prepareRawMutationTable(connection)
+
+            await connection.manager.update(
+                "raw_mutation_target",
+                { title: "Raw" },
+                { text: "Updated" },
+            )
+            await connection.manager.delete("raw_mutation_target", {
+                title: "Delete",
+            })
+
+            const updatedRows = await connection
+                .createQueryBuilder()
+                .select("raw.text", "text")
+                .from("raw_mutation_target", "raw")
+                .where("raw.title = :title", { title: "Raw" })
+                .getRawMany<{ text: string }>()
+            const deletedRows = await connection
+                .createQueryBuilder()
+                .select("raw.id", "id")
+                .from("raw_mutation_target", "raw")
+                .where("raw.title = :title", { title: "Delete" })
+                .getRawMany<{ id: number }>()
+
+            expect(updatedRows[0].text).to.equal("Updated")
+            expect(deletedRows.length).to.equal(0)
+        }
+    })
+
+    it("should preserve empty simple-json mutation criteria", () => {
+        for (const connection of dataSources) {
+            const normalized = OrmUtils.normalizeWhereCriteriaWithMetadata(
+                { payload: {} },
+                connection.getMetadata(Post),
+            )
+
+            expect(normalized).to.deep.equal({ payload: {} })
+        }
+    })
+
+    it("should not descend into simple-json mutation criteria values", () => {
+        for (const connection of dataSources) {
+            const normalized = OrmUtils.normalizeWhereCriteriaWithMetadata(
+                { payload: { nullable: null } },
+                connection.getMetadata(Post),
+            )
+
+            expect(normalized).to.deep.equal({
+                payload: { nullable: null },
+            })
+        }
+    })
+
+    it("should reject mutation criteria that normalize to empty", async () => {
+        for (const connection of dataSources) {
+            const cases: Array<{
+                name: string
+                execute: () => Promise<unknown>
+                message: string
+            }> = [
+                {
+                    name: "update with empty nested relation",
+                    execute: () =>
+                        connection.manager.update(
+                            Post,
+                            { category: {} },
+                            { title: "Updated" },
+                        ),
+                    message: "update method",
+                },
+                {
+                    name: "delete with empty nested relation",
+                    execute: () =>
+                        connection.manager.delete(Post, { category: {} }),
+                    message: "delete method",
+                },
+                {
+                    name: "softDelete with empty nested relation",
+                    execute: () =>
+                        connection.manager.softDelete(Post, { category: {} }),
+                    message: "softDelete method",
+                },
+                {
+                    name: "restore with empty nested relation",
+                    execute: () =>
+                        connection.manager.restore(Post, { category: {} }),
+                    message: "restore method",
+                },
+                {
+                    name: "delete with empty OR branch",
+                    execute: () =>
+                        connection.manager.delete(Post, [
+                            { category: {} },
+                            { title: "Test Post" },
+                        ]),
+                    message: "delete method",
+                },
+            ]
+
+            for (const testCase of cases) {
+                try {
+                    await testCase.execute()
+                    expect.fail(`Expected ${testCase.name} to throw an error`)
+                } catch (error) {
+                    expect(error).to.be.instanceOf(TypeORMError)
+                    expect(error.message).to.include(
+                        `Empty criteria(s) are not allowed for the ${testCase.message}.`,
+                    )
+                }
+            }
+        }
+    })
+})
 
 describe("entity manager > invalidWhereValuesBehavior with throw", () => {
     let dataSources: DataSource[]

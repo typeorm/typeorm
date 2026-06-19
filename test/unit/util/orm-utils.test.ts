@@ -1,9 +1,56 @@
 import { expect } from "chai"
 import { runInNewContext } from "node:vm"
 import type { DeepPartial } from "../../../src"
+import { TypeORMError } from "../../../src"
 import { OrmUtils } from "../../../src/util/OrmUtils"
 
 describe(`OrmUtils`, () => {
+    describe("normalizeWhereCriteria", () => {
+        it("throws for undefined where values by default", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ text: undefined }),
+            ).to.throw(
+                TypeORMError,
+                "Undefined value encountered in property 'text' of a where condition.",
+            )
+        })
+
+        it("throws for null where values by default", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ text: null }),
+            ).to.throw(
+                TypeORMError,
+                "Null value encountered in property 'text' of a where condition.",
+            )
+        })
+
+        it("throws for invalid values in array criteria by default", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria([
+                    { text: "valid" },
+                    { text: undefined },
+                ]),
+            ).to.throw(
+                TypeORMError,
+                "Undefined value encountered in property '1.text' of a where condition.",
+            )
+        })
+
+        it("does not mutate the result prototype for __proto__ criteria", () => {
+            const criteria = JSON.parse(`{"__proto__":{"polluted":true}}`)
+
+            const normalized = OrmUtils.normalizeWhereCriteria(criteria)
+
+            expect(Object.getPrototypeOf(normalized)).to.equal(Object.prototype)
+            expect(
+                Object.prototype.hasOwnProperty.call(normalized, "__proto__"),
+            ).to.equal(true)
+            expect((normalized as any).__proto__).to.deep.equal({
+                polluted: true,
+            })
+        })
+    })
+
     describe("parseSqlCheckExpression", () => {
         it("parses a simple CHECK constraint", () => {
             // Spaces between CHECK values

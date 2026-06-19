@@ -870,10 +870,29 @@ export class EntityManager {
 
             return qb.execute()
         } else {
-            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
-                criteria as ObjectLiteral | ObjectLiteral[],
-                this.dataSource.options.invalidWhereValuesBehavior,
-            )
+            const normalizedCriteria = this.dataSource.hasMetadata(target)
+                ? OrmUtils.normalizeWhereCriteriaWithMetadata(
+                      criteria as ObjectLiteral | ObjectLiteral[],
+                      this.dataSource.getMetadata(target),
+                      this.dataSource.options.invalidWhereValuesBehavior,
+                  )
+                : OrmUtils.normalizeWhereCriteria(
+                      criteria as ObjectLiteral | ObjectLiteral[],
+                      this.dataSource.options.invalidWhereValuesBehavior,
+                  )
+
+            if (
+                OrmUtils.isCriteriaNullOrEmptyOrContainsEmpty(
+                    normalizedCriteria,
+                )
+            ) {
+                return Promise.reject(
+                    new TypeORMError(
+                        `Empty criteria(s) are not allowed for the update method.`,
+                    ),
+                )
+            }
+
             const qb = this.createQueryBuilder()
                 .update(target)
                 .set(partialEntity)
@@ -951,10 +970,31 @@ export class EntityManager {
                 .whereInIds(criteria)
                 .execute()
         } else {
-            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
-                criteria as ObjectLiteral | ObjectLiteral[],
-                this.dataSource.options.invalidWhereValuesBehavior,
+            const normalizedCriteria = this.dataSource.hasMetadata(
+                targetOrEntity,
             )
+                ? OrmUtils.normalizeWhereCriteriaWithMetadata(
+                      criteria as ObjectLiteral | ObjectLiteral[],
+                      this.dataSource.getMetadata(targetOrEntity),
+                      this.dataSource.options.invalidWhereValuesBehavior,
+                  )
+                : OrmUtils.normalizeWhereCriteria(
+                      criteria as ObjectLiteral | ObjectLiteral[],
+                      this.dataSource.options.invalidWhereValuesBehavior,
+                  )
+
+            if (
+                OrmUtils.isCriteriaNullOrEmptyOrContainsEmpty(
+                    normalizedCriteria,
+                )
+            ) {
+                return Promise.reject(
+                    new TypeORMError(
+                        `Empty criteria(s) are not allowed for the delete method.`,
+                    ),
+                )
+            }
+
             return this.createQueryBuilder()
                 .delete()
                 .from(targetOrEntity)
@@ -1017,10 +1057,31 @@ export class EntityManager {
                 .whereInIds(criteria)
                 .execute()
         } else {
-            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
-                criteria as ObjectLiteral | ObjectLiteral[],
-                this.dataSource.options.invalidWhereValuesBehavior,
+            const normalizedCriteria = this.dataSource.hasMetadata(
+                targetOrEntity,
             )
+                ? OrmUtils.normalizeWhereCriteriaWithMetadata(
+                      criteria as ObjectLiteral | ObjectLiteral[],
+                      this.dataSource.getMetadata(targetOrEntity),
+                      this.dataSource.options.invalidWhereValuesBehavior,
+                  )
+                : OrmUtils.normalizeWhereCriteria(
+                      criteria as ObjectLiteral | ObjectLiteral[],
+                      this.dataSource.options.invalidWhereValuesBehavior,
+                  )
+
+            if (
+                OrmUtils.isCriteriaNullOrEmptyOrContainsEmpty(
+                    normalizedCriteria,
+                )
+            ) {
+                return Promise.reject(
+                    new TypeORMError(
+                        `Empty criteria(s) are not allowed for the softDelete method.`,
+                    ),
+                )
+            }
+
             return this.createQueryBuilder()
                 .softDelete()
                 .from(targetOrEntity)
@@ -1068,10 +1129,31 @@ export class EntityManager {
                 .whereInIds(criteria)
                 .execute()
         } else {
-            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
-                criteria as ObjectLiteral | ObjectLiteral[],
-                this.dataSource.options.invalidWhereValuesBehavior,
+            const normalizedCriteria = this.dataSource.hasMetadata(
+                targetOrEntity,
             )
+                ? OrmUtils.normalizeWhereCriteriaWithMetadata(
+                      criteria as ObjectLiteral | ObjectLiteral[],
+                      this.dataSource.getMetadata(targetOrEntity),
+                      this.dataSource.options.invalidWhereValuesBehavior,
+                  )
+                : OrmUtils.normalizeWhereCriteria(
+                      criteria as ObjectLiteral | ObjectLiteral[],
+                      this.dataSource.options.invalidWhereValuesBehavior,
+                  )
+
+            if (
+                OrmUtils.isCriteriaNullOrEmptyOrContainsEmpty(
+                    normalizedCriteria,
+                )
+            ) {
+                return Promise.reject(
+                    new TypeORMError(
+                        `Empty criteria(s) are not allowed for the restore method.`,
+                    ),
+                )
+            }
+
             return this.createQueryBuilder()
                 .restore()
                 .from(targetOrEntity)
