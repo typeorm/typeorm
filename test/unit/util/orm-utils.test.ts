@@ -317,5 +317,20 @@ describe(`OrmUtils`, () => {
                 entity,
             ])
         })
+
+        it("preserves __proto__ criteria without changing the result prototype", () => {
+            const criteria = JSON.parse(
+                '{"__proto__":{"admin":true},"id":1}',
+            )
+
+            const normalized = OrmUtils.normalizeWhereCriteria(
+                criteria,
+            ) as Record<string, any>
+
+            expect(Object.getPrototypeOf(normalized)).to.equal(null)
+            expect(Object.hasOwn(normalized, "__proto__")).to.equal(true)
+            expect(normalized.id).to.equal(1)
+            expect(normalized.__proto__.admin).to.equal(true)
+        })
     })
 })

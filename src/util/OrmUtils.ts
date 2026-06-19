@@ -683,7 +683,9 @@ export class OrmUtils {
             return criteria
         }
 
-        const result: ObjectLiteral = {}
+        // A null prototype prevents keys such as "__proto__" from invoking
+        // Object.prototype setters while preserving them as WHERE criteria.
+        const result: ObjectLiteral = Object.create(null)
         for (const [key, value] of Object.entries(criteria)) {
             const propertyPath = path ? `${path}.${key}` : key
 
