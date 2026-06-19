@@ -662,9 +662,8 @@ export class OrmUtils {
         options?: InvalidFindOptionsWhereBehavior,
         path?: string,
     ): ObjectLiteral | ObjectLiteral[] {
-        if (!options) {
-            return criteria
-        }
+        // Resolve omitted behavior once so the documented defaults below apply.
+        options ??= {}
 
         // multiple criteria are possible at the top level
         if (!path && Array.isArray(criteria)) {
@@ -676,6 +675,12 @@ export class OrmUtils {
                         String(index),
                     ),
             )
+        }
+
+        // Entity instances can contain nullable fields that are not intended
+        // to participate in the WHERE clause. Preserve their existing behavior.
+        if (!OrmUtils.isPlainObject(criteria)) {
+            return criteria
         }
 
         const result: ObjectLiteral = {}

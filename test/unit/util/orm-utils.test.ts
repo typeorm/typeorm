@@ -270,4 +270,52 @@ describe(`OrmUtils`, () => {
             ).to.equal(false)
         })
     })
+
+    describe("normalizeWhereCriteria", () => {
+        it("uses the default throw behavior when options are omitted", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ id: undefined }),
+            ).to.throw("Undefined value encountered in property 'id'")
+
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ id: null }),
+            ).to.throw("Null value encountered in property 'id'")
+        })
+
+        it("applies defaults recursively to nested and array criteria", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ user: { id: undefined } }),
+            ).to.throw("Undefined value encountered in property 'user.id'")
+
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria([
+                    { id: 1 },
+                    { user: { id: null } },
+                ]),
+            ).to.throw("Null value encountered in property '1.user.id'")
+        })
+
+        it("preserves explicitly configured behavior", () => {
+            expect(
+                OrmUtils.normalizeWhereCriteria(
+                    { id: undefined, name: "Ada" },
+                    { undefined: "ignore" },
+                ),
+            ).to.deep.equal({ name: "Ada" })
+        })
+
+        it("preserves entity instances and arrays containing them", () => {
+            class User {
+                id = 1
+                parentId: number | null = null
+            }
+
+            const entity = new User()
+
+            expect(OrmUtils.normalizeWhereCriteria(entity)).to.equal(entity)
+            expect(OrmUtils.normalizeWhereCriteria([entity])).to.deep.equal([
+                entity,
+            ])
+        })
+    })
 })
