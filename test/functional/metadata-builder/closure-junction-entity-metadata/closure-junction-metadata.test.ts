@@ -58,36 +58,32 @@ describe("metadata-builder > closure-junction-entity-metadata", () => {
     })
     describe("closure columns", () => {
         it("should create ancestor columns for all primary columns", () =>
-            Promise.all(
-                dataSources.map(async (dataSource) => {
-                    const entityMetadata = dataSource.getMetadata(Category)
-                    const closureMetadata = entityMetadata.closureJunctionTable!
+            dataSources.map((dataSource) => {
+                const entityMetadata = dataSource.getMetadata(Category)
+                const closureMetadata = entityMetadata.closureJunctionTable!
 
-                    const ancestorColumns = closureMetadata.columns.filter(
-                        (column) => column.closureType === "ancestor",
-                    )
+                const ancestorColumns = closureMetadata.columns.filter(
+                    (column) => column.closureType === "ancestor",
+                )
 
-                    expect(ancestorColumns.length).to.equal(
-                        entityMetadata.primaryColumns.length,
-                    )
-                }),
-            ))
+                expect(ancestorColumns.length).to.equal(
+                    entityMetadata.primaryColumns.length,
+                )
+            }))
 
         it("should create descendant columns for all primary columns", () =>
-            Promise.all(
-                dataSources.map(async (dataSource) => {
-                    const entityMetadata = dataSource.getMetadata(Category)
-                    const closureMetadata = entityMetadata.closureJunctionTable!
+            dataSources.map((dataSource) => {
+                const entityMetadata = dataSource.getMetadata(Category)
+                const closureMetadata = entityMetadata.closureJunctionTable!
 
-                    const descendantColumns = closureMetadata.columns.filter(
-                        (column) => column.closureType === "descendant",
-                    )
+                const descendantColumns = closureMetadata.columns.filter(
+                    (column) => column.closureType === "descendant",
+                )
 
-                    expect(descendantColumns.length).to.equal(
-                        entityMetadata.primaryColumns.length,
-                    )
-                }),
-            ))
+                expect(descendantColumns.length).to.equal(
+                    entityMetadata.primaryColumns.length,
+                )
+            }))
     })
 
     describe("tree level column", () => {
