@@ -662,8 +662,7 @@ export class OrmUtils {
         options?: InvalidFindOptionsWhereBehavior,
         path?: string,
     ): ObjectLiteral | ObjectLiteral[] {
-        // Resolve omitted behavior once so the documented defaults below apply.
-        options ??= {}
+        const optionsOmitted = options === undefined
 
         // multiple criteria are possible at the top level
         if (!path && Array.isArray(criteria)) {
@@ -678,10 +677,13 @@ export class OrmUtils {
         }
 
         // Entity instances can contain nullable fields that are not intended
-        // to participate in the WHERE clause. Preserve their existing behavior.
-        if (!OrmUtils.isPlainObject(criteria)) {
+        // to participate in the WHERE clause. Preserve their existing behavior
+        // only when no behavior was explicitly configured.
+        if (optionsOmitted && !OrmUtils.isPlainObject(criteria)) {
             return criteria
         }
+
+        options ??= {}
 
         // A null prototype prevents keys such as "__proto__" from invoking
         // Object.prototype setters while preserving them as WHERE criteria.

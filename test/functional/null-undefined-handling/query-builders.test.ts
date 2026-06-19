@@ -70,11 +70,9 @@ describe("entity manager > invalidWhereValuesBehavior defaults", () => {
             )
 
             try {
-                await dataSource.manager.update(
-                    Post,
-                    criteria,
-                    { title: "Updated" },
-                )
+                await dataSource.manager.update(Post, criteria, {
+                    title: "Updated",
+                })
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
@@ -135,6 +133,29 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
                 expect(error.message).to.include("Null value encountered")
+            }
+        }
+    })
+
+    it("should validate entity-instance criteria when behavior is explicit", async () => {
+        for (const connection of dataSources) {
+            const { post } = await prepareData(connection)
+            const criteria = new Post()
+            criteria.id = post.id
+            criteria.title = post.title
+            criteria.text = null
+            criteria.category = post.category
+
+            try {
+                await connection.manager.update(Post, criteria, {
+                    title: "Updated",
+                })
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include(
+                    "Null value encountered in property 'text'",
+                )
             }
         }
     })
