@@ -1,4 +1,5 @@
 import "reflect-metadata"
+import type { ICategory } from "./entity/Category.interface"
 import { Category } from "./entity/Category"
 import { CategoryWithSchema } from "./entity/CategoryWithSchema"
 import { CategoryWithSchemaInClosure } from "./entity/CategoryWithSchemaInClosure"
@@ -11,10 +12,6 @@ import {
 } from "../../../../utils/test-utils"
 import type { DataSourceOptions } from "../../../../../src/data-source/DataSourceOptions"
 
-type ClassConstructor<T extends Object> = {
-    new (...args: unknown[]): T
-    name: string
-}
 type SchemaCapableOptions = Extract<DataSourceOptions, { schema?: string }>
 const driversSupportingSchema = Object.freeze({
     cockroachdb: true,
@@ -30,9 +27,7 @@ const enabledDrivers = Object.entries(driversSupportingSchema)
 
 describe("tree-tables > closure-table > schema-handling", () => {
     let dataSources: DataSource[]
-    const defineSuite = (
-        Entity: ClassConstructor<Category | CategoryWithSchema>,
-    ) => {
+    const defineSuite = (Entity: { new (...args: unknown[]): ICategory }) => {
         it(`Should find ancestors for ${Entity.name}`, () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {

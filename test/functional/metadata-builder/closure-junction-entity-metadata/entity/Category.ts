@@ -1,13 +1,14 @@
-import { PrimaryGeneratedColumn } from "../../../../../src/decorator/columns/PrimaryGeneratedColumn"
 import { Column } from "../../../../../src/decorator/columns/Column"
-import { TreeParent } from "../../../../../src/decorator/tree/TreeParent"
-import { TreeChildren } from "../../../../../src/decorator/tree/TreeChildren"
+import { PrimaryGeneratedColumn } from "../../../../../src/decorator/columns/PrimaryGeneratedColumn"
 import { Entity } from "../../../../../src/decorator/entity/Entity"
 import { Tree } from "../../../../../src/decorator/tree/Tree"
+import { TreeChildren } from "../../../../../src/decorator/tree/TreeChildren"
+import { TreeParent } from "../../../../../src/decorator/tree/TreeParent"
+import { ICategory } from "./Category.interface"
 
 @Entity()
 @Tree("closure-table")
-export class Category {
+export class Category implements ICategory {
     @PrimaryGeneratedColumn()
     id: number
 
@@ -15,7 +16,7 @@ export class Category {
     name: string
 
     @TreeParent()
-    parent: Category
+    parent: Category | null
 
     @TreeChildren()
     children: Category[]
