@@ -1327,21 +1327,119 @@ export class PostgresQueryRunner
             )
 
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
                 newColumn.generatedType === "STORED")
         ) {
-            // To avoid data conversion, we just recreate column
+            // Cannot be expressed as ALTER COLUMN TYPE — must recreate column
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
         } else {
+            // Handle type, length, precision and scale changes via ALTER COLUMN TYPE
+            // instead of the destructive DROP+ADD path (fixes #3357).
+            // Array flips and STORED-generated changes still use DROP+ADD above.
+            if (
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length ||
+                newColumn.precision !== oldColumn.precision ||
+                newColumn.scale !== oldColumn.scale
+            ) {
+                // Build the SQL type name for the column in ALTER COLUMN TYPE.
+                // For enum columns createFullType() returns "enum" which is not
+                // a valid Postgres type — we must use the enum type name instead.
+                const newSqlType =
+                    newColumn.type === "enum" ||
+                    newColumn.type === "simple-enum"
+                        ? this.buildEnumName(table, newColumn)
+                        : this.driver.createFullType(newColumn)
+                const oldSqlType =
+                    oldColumn.type === "enum" ||
+                    oldColumn.type === "simple-enum"
+                        ? this.buildEnumName(table, oldColumn)
+                        : this.driver.createFullType(oldColumn)
+
+                // Drop default before ALTER TYPE to avoid cast issues
+                if (
+                    oldColumn.default !== null &&
+                    oldColumn.default !== undefined
+                ) {
+                    defaultValueChanged = true
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ALTER COLUMN "${
+                                oldColumn.name
+                            }" DROP DEFAULT`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ALTER COLUMN "${
+                                oldColumn.name
+                            }" SET DEFAULT ${oldColumn.default}`,
+                        ),
+                    )
+                }
+
+                // Build USING cast expression for type conversions.
+                // Same-type length changes (e.g. varchar(50)→varchar(100))
+                // don't need USING, but cross-type changes do.
+                const typeChanged = oldColumn.type !== newColumn.type
+                const upUsing = typeChanged
+                    ? ` USING "${oldColumn.name}"::${newSqlType}`
+                    : ""
+                const downUsing = typeChanged
+                    ? ` USING "${oldColumn.name}"::${oldSqlType}`
+                    : ""
+
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(
+                            table,
+                        )} ALTER COLUMN "${oldColumn.name}" TYPE ${newSqlType}${upUsing}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(
+                            table,
+                        )} ALTER COLUMN "${oldColumn.name}" TYPE ${oldSqlType}${downUsing}`,
+                    ),
+                )
+
+                // Restore or set new default after ALTER TYPE
+                if (
+                    newColumn.default !== null &&
+                    newColumn.default !== undefined
+                ) {
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ALTER COLUMN "${
+                                oldColumn.name
+                            }" SET DEFAULT ${newColumn.default}`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ALTER COLUMN "${
+                                oldColumn.name
+                            }" DROP DEFAULT`,
+                        ),
+                    )
+                }
+            }
             if (oldColumn.name !== newColumn.name) {
                 // rename column
                 upQueries.push(
@@ -1616,26 +1714,6 @@ export class PostgresQueryRunner
                     clonedTable.columns.indexOf(oldTableColumn!)
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
-            }
-
-            if (
-                newColumn.precision !== oldColumn.precision ||
-                newColumn.scale !== oldColumn.scale
-            ) {
-                upQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
-                        }" TYPE ${this.driver.createFullType(newColumn)}`,
-                    ),
-                )
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
-                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
-                    ),
-                )
             }
 
             if (
