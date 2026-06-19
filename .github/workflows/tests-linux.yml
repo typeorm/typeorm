@@ -208,7 +208,6 @@ jobs:
 
       - run: jq 'map(select(.type == "oracle"))' ormconfig.sample.json > ormconfig.json
       - run: docker compose up oracle --no-recreate --wait
-      - run: sleep 3 # wait for oracle to be fully ready
       - run: pnpm exec c8 pnpm run test:ci
 
       - uses: ./.github/actions/upload-coverage
