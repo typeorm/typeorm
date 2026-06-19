@@ -1,49 +1,50 @@
-import { RawSqlResultsToEntityTransformer } from "./transformer/RawSqlResultsToEntityTransformer"
+import type { QueryResultCacheOptions } from "../cache/QueryResultCacheOptions"
+import type { EntityTarget } from "../common/EntityTarget"
 import type { ObjectLiteral } from "../common/ObjectLiteral"
-import { PessimisticLockTransactionRequiredError } from "../error/PessimisticLockTransactionRequiredError"
+import type { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
+import { DriverUtils } from "../driver/DriverUtils"
+import type { MysqlDriver } from "../driver/mysql/MysqlDriver"
+import type { ReactNativeDriver } from "../driver/react-native/ReactNativeDriver"
+import type { AbstractSqliteDriver } from "../driver/sqlite-abstract/AbstractSqliteDriver"
+import type { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
+import { TypeORMError } from "../error"
+import { EntityNotFoundError } from "../error/EntityNotFoundError"
+import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
+import { LockNotSupportedOnGivenDriverError } from "../error/LockNotSupportedOnGivenDriverError"
 import { NoVersionOrUpdateDateColumnError } from "../error/NoVersionOrUpdateDateColumnError"
-import { OptimisticLockVersionMismatchError } from "../error/OptimisticLockVersionMismatchError"
+import { OffsetWithoutLimitNotSupportedError } from "../error/OffsetWithoutLimitNotSupportedError"
 import { OptimisticLockCanNotBeUsedError } from "../error/OptimisticLockCanNotBeUsedError"
+import { OptimisticLockVersionMismatchError } from "../error/OptimisticLockVersionMismatchError"
+import { PessimisticLockTransactionRequiredError } from "../error/PessimisticLockTransactionRequiredError"
+import type { FindManyOptions } from "../find-options/FindManyOptions"
+import type { FindOptionsOrder } from "../find-options/FindOptionsOrder"
+import type { FindOptionsRelations } from "../find-options/FindOptionsRelations"
+import type { FindOptionsSelect } from "../find-options/FindOptionsSelect"
+import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
+import type { FindOptionsWhere } from "../find-options/FindOptionsWhere"
+import type { OrderByCondition } from "../find-options/OrderByCondition"
+import type { ColumnMetadata } from "../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
+import type { RelationMetadata } from "../metadata/RelationMetadata"
+import type { ReadStream } from "../platform/PlatformTools"
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
+import { InstanceChecker } from "../util/InstanceChecker"
+import { ObjectUtils } from "../util/ObjectUtils"
+import { OrmUtils } from "../util/OrmUtils"
+import type { Brackets } from "./Brackets"
+import type { JoinAttributeTree } from "./JoinAttribute"
 import { JoinAttribute } from "./JoinAttribute"
+import { QueryBuilder } from "./QueryBuilder"
+import type { QueryExpressionMap } from "./QueryExpressionMap"
 import { RelationIdAttribute } from "./relation-id/RelationIdAttribute"
 import { RelationIdLoader } from "./relation-id/RelationIdLoader"
-import { RelationIdLoader as QueryStrategyRelationIdLoader } from "./RelationIdLoader"
 import { RelationIdMetadataToAttributeTransformer } from "./relation-id/RelationIdMetadataToAttributeTransformer"
-import { QueryBuilder } from "./QueryBuilder"
-import type { ReadStream } from "../platform/PlatformTools"
-import { LockNotSupportedOnGivenDriverError } from "../error/LockNotSupportedOnGivenDriverError"
-import type { MysqlDriver } from "../driver/mysql/MysqlDriver"
+import { RelationIdLoader as QueryStrategyRelationIdLoader } from "./RelationIdLoader"
 import type { SelectQuery } from "./SelectQuery"
-import type { EntityMetadata } from "../metadata/EntityMetadata"
-import type { ColumnMetadata } from "../metadata/ColumnMetadata"
-import type { OrderByCondition } from "../find-options/OrderByCondition"
-import type { QueryExpressionMap } from "./QueryExpressionMap"
-import type { EntityTarget } from "../common/EntityTarget"
-import type { QueryRunner } from "../query-runner/QueryRunner"
-import type { WhereExpressionBuilder } from "./WhereExpressionBuilder"
-import type { Brackets } from "./Brackets"
-import type { QueryResultCacheOptions } from "../cache/QueryResultCacheOptions"
-import { OffsetWithoutLimitNotSupportedError } from "../error/OffsetWithoutLimitNotSupportedError"
 import type { SelectQueryBuilderOption } from "./SelectQueryBuilderOption"
-import { ObjectUtils } from "../util/ObjectUtils"
-import { DriverUtils } from "../driver/DriverUtils"
-import type { AbstractSqliteDriver } from "../driver/sqlite-abstract/AbstractSqliteDriver"
-import { EntityNotFoundError } from "../error/EntityNotFoundError"
-import { TypeORMError } from "../error"
-import type { FindManyOptions } from "../find-options/FindManyOptions"
-import type { FindOptionsSelect } from "../find-options/FindOptionsSelect"
-import type { RelationMetadata } from "../metadata/RelationMetadata"
-import type { FindOptionsOrder } from "../find-options/FindOptionsOrder"
-import type { FindOptionsWhere } from "../find-options/FindOptionsWhere"
-import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
-import type { FindOptionsRelations } from "../find-options/FindOptionsRelations"
-import { OrmUtils } from "../util/OrmUtils"
-import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
-import type { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
-import { InstanceChecker } from "../util/InstanceChecker"
-import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
-import type { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
-import type { ReactNativeDriver } from "../driver/react-native/ReactNativeDriver"
+import { RawSqlResultsToEntityTransformer } from "./transformer/RawSqlResultsToEntityTransformer"
+import type { WhereExpressionBuilder } from "./WhereExpressionBuilder"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -162,9 +163,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     ): SelectQueryBuilder<Entity> {
         this.expressionMap.queryType = "select"
         if (Array.isArray(selection)) {
-            for (const s of selection) {
-                this.assertNoSemicolon(s, "select")
-            }
             this.expressionMap.selects = selection.map((selection) => ({
                 selection: selection,
             }))
@@ -176,7 +174,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 aliasName: selectionAliasName,
             })
         } else if (selection) {
-            this.assertNoSemicolon(selection, "select")
             this.expressionMap.selects = [
                 { selection: selection, aliasName: selectionAliasName },
             ]
@@ -219,9 +216,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         if (!selection) return this
 
         if (Array.isArray(selection)) {
-            for (const s of selection) {
-                this.assertNoSemicolon(s, "addSelect")
-            }
             this.expressionMap.selects = this.expressionMap.selects.concat(
                 selection.map((selection) => ({ selection: selection })),
             )
@@ -233,7 +227,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 aliasName: selectionAliasName,
             })
         } else if (selection) {
-            this.assertNoSemicolon(selection, "addSelect")
             this.expressionMap.selects.push({
                 selection: selection,
                 aliasName: selectionAliasName,
@@ -1369,7 +1362,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      */
     groupBy(groupBy?: string): this {
         if (groupBy) {
-            this.assertNoSemicolon(groupBy, "groupBy")
             this.expressionMap.groupBys = [groupBy]
         } else {
             this.expressionMap.groupBys = []
@@ -1383,7 +1375,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * @param groupBy
      */
     addGroupBy(groupBy: string): this {
-        this.assertNoSemicolon(groupBy, "addGroupBy")
         this.expressionMap.groupBys.push(groupBy)
         return this
     }
@@ -1446,19 +1437,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         order: "ASC" | "DESC" = "ASC",
         nulls?: "NULLS FIRST" | "NULLS LAST",
     ): this {
-        if (order !== undefined && order !== "ASC" && order !== "DESC")
-            throw new TypeORMError(
-                `SelectQueryBuilder.addOrderBy "order" can accept only "ASC" and "DESC" values.`,
-            )
-        if (
-            nulls !== undefined &&
-            nulls !== "NULLS FIRST" &&
-            nulls !== "NULLS LAST"
-        )
-            throw new TypeORMError(
-                `SelectQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`,
-            )
-
         if (!sort) {
             this.expressionMap.orderBys = {}
             return this
@@ -1470,11 +1448,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             return this
         }
 
-        this.assertNoSemicolon(sort, "orderBy sort key")
-
-        this.expressionMap.orderBys = nulls
+        const condition: OrderByCondition = nulls
             ? { [sort]: { order, nulls } }
             : { [sort]: order }
+        this.validateOrderByCondition(condition)
+        this.expressionMap.orderBys = condition
 
         return this
     }
@@ -1491,20 +1469,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         order: "ASC" | "DESC" = "ASC",
         nulls?: "NULLS FIRST" | "NULLS LAST",
     ): this {
-        if (order !== undefined && order !== "ASC" && order !== "DESC")
-            throw new TypeORMError(
-                `SelectQueryBuilder.addOrderBy "order" can accept only "ASC" and "DESC" values.`,
-            )
-        if (
-            nulls !== undefined &&
-            nulls !== "NULLS FIRST" &&
-            nulls !== "NULLS LAST"
-        )
-            throw new TypeORMError(
-                `SelectQueryBuilder.addOrderBy "nulls" can accept only "NULLS FIRST" and "NULLS LAST" values.`,
-            )
-
-        this.assertNoSemicolon(sort, "orderBy sort key")
+        const condition: OrderByCondition = nulls
+            ? { [sort]: { order, nulls } }
+            : { [sort]: order }
+        this.validateOrderByCondition(condition)
 
         if (nulls) {
             this.expressionMap.orderBys[sort] = { order, nulls }
@@ -1516,41 +1484,27 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Sets LIMIT - maximum number of rows to be selected.
-     * When joins are present, a two-query distinct-id strategy is used
-     * so that LIMIT applies to root entities rather than raw joined rows.
+     * NOTE that it may not work as you expect if you are using joins.
+     * If you want to implement pagination, and you are having join in your query,
+     * then use the take method instead.
      *
      * @param limit
      */
     limit(limit?: number): this {
-        this.expressionMap.limit = this.normalizeNumber(limit)
-        if (
-            this.expressionMap.limit !== undefined &&
-            isNaN(this.expressionMap.limit)
-        )
-            throw new TypeORMError(
-                `Provided "limit" value is not a number. Please provide a numeric value.`,
-            )
-
+        this.expressionMap.limit = this.validateNumericInput("limit", limit)
         return this
     }
 
     /**
      * Sets OFFSET - selection offset.
-     * When joins are present, a two-query distinct-id strategy is used
-     * so that OFFSET applies to root entities rather than raw joined rows.
+     * NOTE that it may not work as you expect if you are using joins.
+     * If you want to implement pagination, and you are having join in your query,
+     * then use the skip method instead.
      *
      * @param offset
      */
     offset(offset?: number): this {
-        this.expressionMap.offset = this.normalizeNumber(offset)
-        if (
-            this.expressionMap.offset !== undefined &&
-            isNaN(this.expressionMap.offset)
-        )
-            throw new TypeORMError(
-                `Provided "offset" value is not a number. Please provide a numeric value.`,
-            )
-
+        this.expressionMap.offset = this.validateNumericInput("offset", offset)
         return this
     }
 
@@ -1560,15 +1514,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * @param take
      */
     take(take?: number): this {
-        this.expressionMap.take = this.normalizeNumber(take)
-        if (
-            this.expressionMap.take !== undefined &&
-            isNaN(this.expressionMap.take)
-        )
-            throw new TypeORMError(
-                `Provided "take" value is not a number. Please provide a numeric value.`,
-            )
-
+        this.expressionMap.take = this.validateNumericInput("take", take)
         return this
     }
 
@@ -1578,25 +1524,19 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * @param skip
      */
     skip(skip?: number): this {
-        this.expressionMap.skip = this.normalizeNumber(skip)
-        if (
-            this.expressionMap.skip !== undefined &&
-            isNaN(this.expressionMap.skip)
-        )
-            throw new TypeORMError(
-                `Provided "skip" value is not a number. Please provide a numeric value.`,
-            )
-
+        this.expressionMap.skip = this.validateNumericInput("skip", skip)
         return this
     }
 
     /**
-     * Set certain index to be used by the query.
+     * Set certain index(es) to be used by the query.
      *
-     * @param index Name of index to be used.
+     * @param indexes Name(s) of index(es) to be used.
      */
-    useIndex(index: string): this {
-        this.expressionMap.useIndex = index
+    useIndex(indexes: string | string[]): this {
+        this.expressionMap.useIndex = Array.isArray(indexes)
+            ? indexes
+            : [indexes]
 
         return this
     }
@@ -2299,9 +2239,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         // Use certain index
         let useIndex: string = ""
-        if (this.expressionMap.useIndex) {
+        if (this.expressionMap.useIndex?.length) {
             if (DriverUtils.isMySQLFamily(this.dataSource.driver)) {
-                useIndex = ` USE INDEX (${this.expressionMap.useIndex})`
+                useIndex = ` USE INDEX (${this.expressionMap.useIndex
+                    .map((i) => this.escape(i))
+                    .join(", ")})`
             }
         }
 
@@ -2376,223 +2318,269 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Creates "JOIN" part of SQL query.
+     *
+     * @example
+     * // select from owning side
+     * qb.select("post")
+     *      .leftJoinAndSelect("post.category", "category")
+     *
+     * @example
+     * // select from non-owning side
+     * qb.select("category")
+     *     .leftJoinAndSelect("category.post", "post")
+     *
      */
     protected createJoinExpression(): string {
-        // examples:
-        // select from owning side
-        // qb.select("post")
-        //     .leftJoinAndSelect("post.category", "category");
-        // select from non-owning side
-        // qb.select("category")
-        //     .leftJoinAndSelect("category.post", "post");
+        // preprocess join attributes by nesting them when necessary
+        const joinAttributeTrees = this.expressionMap.joinAttributes.reduce<{
+            trees: Array<JoinAttributeTree> // recursive join attribute trees
+            mappedTrees: Record<string, JoinAttributeTree> // flattened lookup join attribute table
+        }>(
+            ({ trees, mappedTrees }, joinAttribute) => {
+                const destinationTableAlias = joinAttribute.alias.name
 
-        const joins = this.expressionMap.joinAttributes.map((joinAttr) => {
-            const relation = joinAttr.relation
-            const destinationTableName = joinAttr.tablePath
-            const destinationTableAlias = joinAttr.alias.name
-            let appendedCondition = joinAttr.condition
-                ? " AND (" + joinAttr.condition + ")"
-                : ""
-            const parentAlias = joinAttr.parentAlias
-
-            // if join was build without relation (e.g. without "post.category") then it means that we have direct
-            // table to join, without junction table involved. This means we simply join direct table.
-            if (!parentAlias || !relation) {
-                const destinationJoin =
-                    joinAttr.alias.subQuery ??
-                    this.getTableName(destinationTableName)
-                return (
-                    " " +
-                    joinAttr.direction +
-                    " JOIN " +
-                    destinationJoin +
-                    " " +
-                    this.escape(destinationTableAlias) +
-                    this.createTableLockExpression() +
-                    (joinAttr.condition ? " ON " + joinAttr.condition : "")
-                )
-            }
-
-            // if real entity relation is involved
-            if (relation.isManyToOne || relation.isOneToOneOwner) {
-                // JOIN `category` `category` ON `category`.`id` = `post`.`categoryId`
-                const condition = relation.joinColumns
-                    .map((joinColumn) => {
-                        return (
-                            destinationTableAlias +
-                            "." +
-                            joinColumn.referencedColumn!.propertyPath +
-                            "=" +
-                            parentAlias +
-                            "." +
-                            relation.propertyPath +
-                            "." +
-                            joinColumn.referencedColumn!.propertyPath
-                        )
-                    })
-                    .join(" AND ")
-
-                return (
-                    " " +
-                    joinAttr.direction +
-                    " JOIN " +
-                    this.getTableName(destinationTableName) +
-                    " " +
-                    this.escape(destinationTableAlias) +
-                    this.createTableLockExpression() +
-                    " ON " +
-                    condition +
-                    appendedCondition
-                )
-            } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
-                // JOIN `post` `post` ON `post`.`categoryId` = `category`.`id`
-                const condition = relation
-                    .inverseRelation!.joinColumns.map((joinColumn) => {
-                        if (
-                            relation.inverseEntityMetadata.tableType ===
-                                "entity-child" &&
-                            relation.inverseEntityMetadata.discriminatorColumn
-                        ) {
-                            appendedCondition +=
-                                " AND " +
-                                destinationTableAlias +
-                                "." +
-                                relation.inverseEntityMetadata
-                                    .discriminatorColumn.databaseName +
-                                "='" +
-                                relation.inverseEntityMetadata
-                                    .discriminatorValue +
-                                "'"
-                        }
-
-                        return (
-                            destinationTableAlias +
-                            "." +
-                            relation.inverseRelation!.propertyPath +
-                            "." +
-                            joinColumn.referencedColumn!.propertyPath +
-                            "=" +
-                            parentAlias +
-                            "." +
-                            joinColumn.referencedColumn!.propertyPath
-                        )
-                    })
-                    .join(" AND ")
-
-                if (!condition)
-                    throw new TypeORMError(
-                        `Relation ${relation.entityMetadata.name}.${relation.propertyName} does not have join columns.`,
-                    )
-
-                return (
-                    " " +
-                    joinAttr.direction +
-                    " JOIN " +
-                    this.getTableName(destinationTableName) +
-                    " " +
-                    this.escape(destinationTableAlias) +
-                    this.createTableLockExpression() +
-                    " ON " +
-                    condition +
-                    appendedCondition
-                )
-            } else {
-                // means many-to-many
-                const junctionTableName =
-                    relation.junctionEntityMetadata!.tablePath
-
-                const junctionAlias = joinAttr.junctionAlias
-                let junctionCondition: string, destinationCondition: string
-
-                if (relation.isOwning) {
-                    junctionCondition = relation.joinColumns
-                        .map((joinColumn) => {
-                            // `post_category`.`postId` = `post`.`id`
-                            return (
-                                junctionAlias +
-                                "." +
-                                joinColumn.propertyPath +
-                                "=" +
-                                parentAlias +
-                                "." +
-                                joinColumn.referencedColumn!.propertyPath
-                            )
-                        })
-                        .join(" AND ")
-
-                    destinationCondition = relation.inverseJoinColumns
-                        .map((joinColumn) => {
-                            // `category`.`id` = `post_category`.`categoryId`
-                            return (
-                                destinationTableAlias +
-                                "." +
-                                joinColumn.referencedColumn!.propertyPath +
-                                "=" +
-                                junctionAlias +
-                                "." +
-                                joinColumn.propertyPath
-                            )
-                        })
-                        .join(" AND ")
+                const existingTree = joinAttribute.parentAlias
+                    ? mappedTrees[joinAttribute.parentAlias]
+                    : undefined
+                const joinAttributeTree: JoinAttributeTree = {
+                    children: [],
+                    joinAttribute,
+                }
+                if (existingTree) {
+                    existingTree.children.push(joinAttributeTree)
                 } else {
-                    junctionCondition = relation
-                        .inverseRelation!.inverseJoinColumns.map(
-                            (joinColumn) => {
-                                // `post_category`.`categoryId` = `category`.`id`
-                                return (
-                                    junctionAlias +
-                                    "." +
-                                    joinColumn.propertyPath +
-                                    "=" +
-                                    parentAlias +
-                                    "." +
-                                    joinColumn.referencedColumn!.propertyPath
-                                )
-                            },
-                        )
-                        .join(" AND ")
-
-                    destinationCondition = relation
-                        .inverseRelation!.joinColumns.map((joinColumn) => {
-                            // `post`.`id` = `post_category`.`postId`
-                            return (
-                                destinationTableAlias +
-                                "." +
-                                joinColumn.referencedColumn!.propertyPath +
-                                "=" +
-                                junctionAlias +
-                                "." +
-                                joinColumn.propertyPath
-                            )
-                        })
-                        .join(" AND ")
+                    trees.push(joinAttributeTree)
                 }
 
-                return (
-                    " " +
-                    joinAttr.direction +
-                    " JOIN " +
-                    this.getTableName(junctionTableName) +
-                    " " +
-                    this.escape(junctionAlias) +
-                    this.createTableLockExpression() +
-                    " ON " +
-                    junctionCondition +
-                    " " +
-                    joinAttr.direction +
-                    " JOIN " +
-                    this.getTableName(destinationTableName) +
-                    " " +
-                    this.escape(destinationTableAlias) +
-                    this.createTableLockExpression() +
-                    " ON " +
-                    destinationCondition +
-                    appendedCondition
-                )
-            }
+                mappedTrees[destinationTableAlias] = joinAttributeTree
+
+                return { trees, mappedTrees }
+            },
+            { trees: [], mappedTrees: {} },
+        )
+
+        const joinStatements = joinAttributeTrees.trees.map((joinTree) => {
+            return this.createJoinTreeRecursively(joinTree)
         })
 
-        return joins.join(" ")
+        return joinStatements.join(" ")
+    }
+
+    protected createJoinTreeRecursively({
+        children,
+        joinAttribute: joinAttr,
+    }: JoinAttributeTree): string {
+        const relation = joinAttr.relation
+        const destinationTableName = joinAttr.tablePath
+        const destinationTableAlias = joinAttr.alias.name
+        let appendedCondition = joinAttr.condition
+            ? " AND (" + joinAttr.condition + ")"
+            : ""
+        const parentAlias = joinAttr.parentAlias
+
+        const childJoins = (children || [])
+            .map((joinTreeChild) => {
+                return this.createJoinTreeRecursively(joinTreeChild)
+            })
+            .join(" ")
+
+        // if join was build without relation (e.g. without "post.category") then it means that we have direct
+        // table to join, without junction table involved. This means we simply join direct table.
+        if (!parentAlias || !relation) {
+            const destinationJoin =
+                joinAttr.alias.subQuery ??
+                this.getTableName(destinationTableName)
+            return this.buildJoinClause(
+                joinAttr.direction,
+                destinationJoin,
+                destinationTableAlias,
+                joinAttr.condition ?? "",
+                childJoins,
+            )
+        }
+
+        // if real entity relation is involved
+        if (relation.isManyToOne || relation.isOneToOneOwner) {
+            // JOIN `category` `category` ON `category`.`id` = `post`.`categoryId`
+            const condition = relation.joinColumns
+                .map((joinColumn) => {
+                    return (
+                        destinationTableAlias +
+                        "." +
+                        joinColumn.referencedColumn!.propertyPath +
+                        "=" +
+                        parentAlias +
+                        "." +
+                        relation.propertyPath +
+                        "." +
+                        joinColumn.referencedColumn!.propertyPath
+                    )
+                })
+                .join(" AND ")
+
+            return this.buildJoinClause(
+                joinAttr.direction,
+                this.getTableName(destinationTableName),
+                destinationTableAlias,
+                condition + appendedCondition,
+                childJoins,
+            )
+        } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
+            // JOIN `post` `post` ON `post`.`categoryId` = `category`.`id`
+            const condition = relation
+                .inverseRelation!.joinColumns.map((joinColumn) => {
+                    if (
+                        relation.inverseEntityMetadata.tableType ===
+                            "entity-child" &&
+                        relation.inverseEntityMetadata.discriminatorColumn
+                    ) {
+                        appendedCondition +=
+                            " AND " +
+                            destinationTableAlias +
+                            "." +
+                            relation.inverseEntityMetadata.discriminatorColumn
+                                .databaseName +
+                            "='" +
+                            relation.inverseEntityMetadata.discriminatorValue +
+                            "'"
+                    }
+
+                    return (
+                        destinationTableAlias +
+                        "." +
+                        relation.inverseRelation!.propertyPath +
+                        "." +
+                        joinColumn.referencedColumn!.propertyPath +
+                        "=" +
+                        parentAlias +
+                        "." +
+                        joinColumn.referencedColumn!.propertyPath
+                    )
+                })
+                .join(" AND ")
+
+            if (!condition)
+                throw new TypeORMError(
+                    `Relation ${relation.entityMetadata.name}.${relation.propertyName} does not have join columns.`,
+                )
+
+            return this.buildJoinClause(
+                joinAttr.direction,
+                this.getTableName(destinationTableName),
+                destinationTableAlias,
+                condition + appendedCondition,
+                childJoins,
+            )
+        } else {
+            // means many-to-many
+            const junctionTableName = relation.junctionEntityMetadata!.tablePath
+
+            const junctionAlias = joinAttr.junctionAlias
+            let junctionCondition = "",
+                destinationCondition = ""
+
+            if (relation.isOwning) {
+                junctionCondition = relation.joinColumns
+                    .map((joinColumn) => {
+                        // `post_category`.`postId` = `post`.`id`
+                        return (
+                            junctionAlias +
+                            "." +
+                            joinColumn.propertyPath +
+                            "=" +
+                            parentAlias +
+                            "." +
+                            joinColumn.referencedColumn!.propertyPath
+                        )
+                    })
+                    .join(" AND ")
+
+                destinationCondition = relation.inverseJoinColumns
+                    .map((joinColumn) => {
+                        // `category`.`id` = `post_category`.`categoryId`
+                        return (
+                            destinationTableAlias +
+                            "." +
+                            joinColumn.referencedColumn!.propertyPath +
+                            "=" +
+                            junctionAlias +
+                            "." +
+                            joinColumn.propertyPath
+                        )
+                    })
+                    .join(" AND ")
+            } else {
+                junctionCondition = relation
+                    .inverseRelation!.inverseJoinColumns.map((joinColumn) => {
+                        // `post_category`.`categoryId` = `category`.`id`
+                        return (
+                            junctionAlias +
+                            "." +
+                            joinColumn.propertyPath +
+                            "=" +
+                            parentAlias +
+                            "." +
+                            joinColumn.referencedColumn!.propertyPath
+                        )
+                    })
+                    .join(" AND ")
+
+                destinationCondition = relation
+                    .inverseRelation!.joinColumns.map((joinColumn) => {
+                        // `post`.`id` = `post_category`.`postId`
+                        return (
+                            destinationTableAlias +
+                            "." +
+                            joinColumn.referencedColumn!.propertyPath +
+                            "=" +
+                            junctionAlias +
+                            "." +
+                            joinColumn.propertyPath
+                        )
+                    })
+                    .join(" AND ")
+            }
+
+            return (
+                this.buildJoinClause(
+                    joinAttr.direction,
+                    this.getTableName(junctionTableName),
+                    junctionAlias,
+                    junctionCondition,
+                ) +
+                this.buildJoinClause(
+                    joinAttr.direction,
+                    this.getTableName(destinationTableName),
+                    destinationTableAlias,
+                    destinationCondition + appendedCondition,
+                    childJoins,
+                )
+            )
+        }
+    }
+
+    private buildJoinClause(
+        direction: string,
+        tableName: string,
+        alias: string,
+        condition: string,
+        childJoins = "",
+    ): string {
+        const prefix = childJoins ? "(" : ""
+        const postfix = childJoins ? ")" : ""
+        return (
+            " " +
+            direction +
+            " JOIN " +
+            prefix +
+            tableName +
+            " " +
+            this.escape(alias) +
+            childJoins +
+            postfix +
+            this.createTableLockExpression() +
+            (condition ? " ON " + condition : "")
+        )
     }
 
     /**
@@ -3105,7 +3093,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             primaryColumn.databaseName,
                         )}`,
                 )
-                .join(", '|:|', ")
+                .join(", '|;|', ")
 
             if (primaryColumns.length === 1) {
                 return `COUNT(DISTINCT(${columnsExpression}))`
@@ -3131,7 +3119,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             primaryColumn.databaseName,
                         )} AS STRING)`,
                 )
-                .join(", '|:|', ")
+                .join(", '|;|', ")
             return `COUNT(DISTINCT(CONCAT(${columnsExpression})))`
         }
 
@@ -3146,7 +3134,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             `COUNT(DISTINCT(` +
             primaryColumns
                 .map((c) => `${distinctAlias}.${this.escape(c.databaseName)}`)
-                .join(" || '|:|' || ") +
+                .join(" || '|;|' || ") +
             "))"
         )
     }
@@ -3480,10 +3468,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         // first query find ids in skip and take range
         // and second query loads the actual data in given ids range
         if (
-            (this.expressionMap.skip ||
-                this.expressionMap.take ||
-                this.expressionMap.offset ||
-                this.expressionMap.limit) &&
+            (this.expressionMap.skip || this.expressionMap.take) &&
             this.expressionMap.joinAttributes.length > 0
         ) {
             // we are skipping order by here because its not working in subqueries anyway
@@ -3523,10 +3508,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
             const originalQuery = this.clone()
 
-            // clear limit/offset from the inner query since pagination is handled by the outer distinct query
-            originalQuery.expressionMap.limit = undefined
-            originalQuery.expressionMap.offset = undefined
-
             // preserve original timeTravel value since we set it to "false" in subquery
             const originalQueryTimeTravel =
                 originalQuery.expressionMap.timeTravel
@@ -3545,8 +3526,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     "distinctAlias",
                 )
                 .timeTravelQuery(originalQueryTimeTravel)
-                .offset(this.expressionMap.skip ?? this.expressionMap.offset)
-                .limit(this.expressionMap.take ?? this.expressionMap.limit)
+                .offset(this.expressionMap.skip)
+                .limit(this.expressionMap.take)
                 .orderBy(orderBys)
                 .cache(
                     this.expressionMap.cache && this.expressionMap.cacheId
@@ -3606,14 +3587,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             " IN (:...orm_distinct_ids)"
                     }
                 }
-                const secondQuery = this.clone()
+                rawResults = await this.clone()
                     .mergeExpressionMap({
                         extraAppendedAndWhereCondition: condition,
                     })
                     .setParameters(parameters)
-                secondQuery.expressionMap.limit = undefined
-                secondQuery.expressionMap.offset = undefined
-                rawResults = await secondQuery.loadRawResults(queryRunner)
+                    .loadRawResults(queryRunner)
             }
         } else {
             rawResults = await this.loadRawResults(queryRunner)
@@ -3654,83 +3633,90 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     this.findOptions.loadEagerRelations,
                 )
 
-            await Promise.all(
-                this.relationMetadatas.map(async (relation) => {
-                    // Prevent infinite recursion from circular eager
-                    // chains (e.g. A→B→C→A). Each branch maintains its
-                    // own visited set so parallel branches don't interfere.
-                    if (relation.isEager) {
-                        const targetEntity =
-                            relation.inverseEntityMetadata.tablePath
-                        if (this.eagerLoadChain.has(targetEntity)) return
-                    }
+            const loadRelation = async (
+                relation: RelationMetadata,
+            ): Promise<void> => {
+                // Prevent infinite recursion from circular eager
+                // chains (e.g. A→B→C→A). Each branch maintains its
+                // own visited set so parallel branches don't interfere.
+                if (relation.isEager) {
+                    const targetEntity =
+                        relation.inverseEntityMetadata.tablePath
+                    if (this.eagerLoadChain.has(targetEntity)) return
+                }
 
-                    const relationTarget = relation.inverseEntityMetadata.target
-                    const relationAlias =
-                        relation.inverseEntityMetadata.targetName
+                const relationTarget = relation.inverseEntityMetadata.target
+                const relationAlias = relation.inverseEntityMetadata.targetName
 
-                    const queryBuilder = this.createQueryBuilder(queryRunner)
-                        .select(relationAlias)
-                        .from(relationTarget, relationAlias)
+                const queryBuilder = this.createQueryBuilder(queryRunner)
+                    .select(relationAlias)
+                    .from(relationTarget, relationAlias)
 
-                    // Propagate eager load chain with current entity
-                    // added, so the child detects cycles in its branch
-                    if (relation.isEager) {
-                        queryBuilder.eagerLoadChain = new Set(
-                            this.eagerLoadChain,
+                // Propagate eager load chain with current entity
+                // added, so the child detects cycles in its branch
+                if (relation.isEager) {
+                    queryBuilder.eagerLoadChain = new Set(this.eagerLoadChain)
+                    queryBuilder.eagerLoadChain.add(
+                        relation.entityMetadata.tablePath,
+                    )
+                }
+
+                queryBuilder.setFindOptions({
+                    select: this.findOptions.select
+                        ? OrmUtils.deepValue(
+                              this.findOptions.select,
+                              relation.propertyPath,
+                          )
+                        : undefined,
+                    order: this.findOptions.order
+                        ? OrmUtils.deepValue(
+                              this.findOptions.order,
+                              relation.propertyPath,
+                          )
+                        : undefined,
+                    relations: this.findOptions.relations
+                        ? OrmUtils.deepValue(
+                              this.findOptions.relations,
+                              relation.propertyPath,
+                          )
+                        : undefined,
+                    withDeleted: this.findOptions.withDeleted,
+                    relationLoadStrategy: this.findOptions.relationLoadStrategy,
+                    loadEagerRelations: this.findOptions.loadEagerRelations,
+                })
+                if (entities.length > 0) {
+                    const relatedEntityGroups: any[] =
+                        await queryStrategyRelationIdLoader.loadManyToManyRelationIdsAndGroup(
+                            relation,
+                            entities,
+                            undefined,
+                            queryBuilder,
                         )
-                        queryBuilder.eagerLoadChain.add(
-                            relation.entityMetadata.tablePath,
+                    entities.forEach((entity) => {
+                        const relatedEntityGroup = relatedEntityGroups.find(
+                            (group) => group.entity === entity,
                         )
-                    }
-
-                    queryBuilder.setFindOptions({
-                        select: this.findOptions.select
-                            ? OrmUtils.deepValue(
-                                  this.findOptions.select,
-                                  relation.propertyPath,
-                              )
-                            : undefined,
-                        order: this.findOptions.order
-                            ? OrmUtils.deepValue(
-                                  this.findOptions.order,
-                                  relation.propertyPath,
-                              )
-                            : undefined,
-                        relations: this.findOptions.relations
-                            ? OrmUtils.deepValue(
-                                  this.findOptions.relations,
-                                  relation.propertyPath,
-                              )
-                            : undefined,
-                        withDeleted: this.findOptions.withDeleted,
-                        relationLoadStrategy:
-                            this.findOptions.relationLoadStrategy,
-                        loadEagerRelations: this.findOptions.loadEagerRelations,
+                        if (relatedEntityGroup) {
+                            const value =
+                                relatedEntityGroup.related === undefined
+                                    ? null
+                                    : relatedEntityGroup.related
+                            relation.setEntityValue(entity, value)
+                        }
                     })
-                    if (entities.length > 0) {
-                        const relatedEntityGroups: any[] =
-                            await queryStrategyRelationIdLoader.loadManyToManyRelationIdsAndGroup(
-                                relation,
-                                entities,
-                                undefined,
-                                queryBuilder,
-                            )
-                        entities.forEach((entity) => {
-                            const relatedEntityGroup = relatedEntityGroups.find(
-                                (group) => group.entity === entity,
-                            )
-                            if (relatedEntityGroup) {
-                                const value =
-                                    relatedEntityGroup.related === undefined
-                                        ? null
-                                        : relatedEntityGroup.related
-                                relation.setEntityValue(entity, value)
-                            }
-                        })
-                    }
-                }),
-            )
+                }
+            }
+
+            // Avoid concurrent queries on the same pg client; see #12238.
+            // CockroachDB uses the pg package over a single connection too.
+            const driverType = this.dataSource.options.type
+            if (driverType === "postgres" || driverType === "cockroachdb") {
+                for (const relation of this.relationMetadatas) {
+                    await loadRelation(relation)
+                }
+            } else {
+                await Promise.all(this.relationMetadatas.map(loadRelation))
+            }
         }
 
         return {
@@ -3928,18 +3914,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     ): this {
         ObjectUtils.assign(this.expressionMap, expressionMap)
         return this
-    }
-
-    /**
-     * Normalizes a give number - converts to int if possible.
-     *
-     * @param num
-     */
-    protected normalizeNumber(num: any) {
-        if (typeof num === "number" || num === undefined || num === null)
-            return num
-
-        return Number(num)
     }
 
     /**

@@ -826,7 +826,7 @@ export class PostgresDriver implements Driver {
                     }
                     // Convert non-null values to string since HStore only stores strings anyway.
                     // To include a double quote or a backslash in a key or value, escape it with a backslash.
-                    return `"${`${value}`.replace(/(?=["\\])/g, "\\")}"`
+                    return `"${`${value}`.replaceAll(/(?=["\\])/g, "\\")}"`
                 }
                 return Object.keys(value)
                     .map(
@@ -851,7 +851,7 @@ export class PostgresDriver implements Driver {
                 .split(".")
                 .filter(Boolean)
                 .join(".")
-                .replace(/[\s]+/g, "_")
+                .replaceAll(/[\s]+/g, "_")
         } else if (
             (columnMetadata.type === "enum" ||
                 columnMetadata.type === "simple-enum") &&
@@ -910,11 +910,11 @@ export class PostgresDriver implements Driver {
         } else if (columnMetadata.type === "hstore") {
             if (columnMetadata.hstoreType === "object") {
                 const unescapeString = (str: string) =>
-                    str.replace(/\\./g, (m) => m[1])
+                    str.replaceAll(/\\./g, (m) => m[1])
                 const regexp =
                     /"([^"\\]*(?:\\.[^"\\]*)*)"=>(?:(NULL)|"([^"\\]*(?:\\.[^"\\]*)*)")(?:,|$)/g
                 const object: ObjectLiteral = {}
-                ;`${value}`.replace(
+                ;`${value}`.replaceAll(
                     regexp,
                     (_, key, nullValue, stringValue) => {
                         object[unescapeString(key)] = nullValue
@@ -930,7 +930,7 @@ export class PostgresDriver implements Driver {
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value)
         } else if (columnMetadata.type === "cube") {
-            value = value.replace(/[()\s]+/g, "") // remove whitespace
+            value = value.replaceAll(/[()\s]+/g, "") // remove whitespace
             if (columnMetadata.isArray) {
                 /**
                  * Strips these groups from `{"1,2,3","",NULL}`:
@@ -972,7 +972,7 @@ export class PostgresDriver implements Driver {
                         if (val.startsWith(`"`) && val.endsWith(`"`))
                             val = val.slice(1, -1)
                         // replace escaped backslash and double quotes
-                        return val.replace(/\\(\\|")/g, "$1")
+                        return val.replaceAll(/\\(\\|")/g, "$1")
                     })
 
                 // convert to number if that exists in possible enum options
@@ -1019,7 +1019,7 @@ export class PostgresDriver implements Driver {
             return [sql, escapedParameters]
 
         const parameterIndexMap = new Map<string, number>()
-        sql = sql.replace(
+        sql = sql.replaceAll(
             /:(\.\.\.)?([A-Za-z0-9_.]+)/g,
             (full, isArray: string, key: string): string => {
                 if (!parameters.hasOwnProperty(key)) {
@@ -1847,41 +1847,35 @@ export class PostgresDriver implements Driver {
      * @param value
      */
     protected normalizeDatetimeFunction(value: string) {
-        // check if input is datetime function
-        const upperCaseValue = value.toUpperCase()
-        const isDatetimeFunction =
-            upperCaseValue.indexOf("CURRENT_TIMESTAMP") !== -1 ||
-            upperCaseValue.indexOf("CURRENT_DATE") !== -1 ||
-            upperCaseValue.indexOf("CURRENT_TIME") !== -1 ||
-            upperCaseValue.indexOf("LOCALTIMESTAMP") !== -1 ||
-            upperCaseValue.indexOf("LOCALTIME") !== -1
+        const match = value
+            .trim()
+            .toUpperCase()
+            .match(
+                /^(CURRENT_TIMESTAMP|CURRENT_DATE|CURRENT_TIME|LOCALTIMESTAMP|LOCALTIME)(\(\d+\))?$/,
+            )
 
-        if (isDatetimeFunction) {
-            // extract precision, e.g. "(3)"
-            const precision = value.match(/\(\d+\)/)
+        if (!match) return value
 
-            if (upperCaseValue.indexOf("CURRENT_TIMESTAMP") !== -1) {
+        const [, funcName, precision = ""] = match
+
+        const prefix = "('now'::text)"
+
+        switch (funcName) {
+            case "CURRENT_TIMESTAMP":
                 return precision
-                    ? `('now'::text)::timestamp${precision[0]} with time zone`
+                    ? `${prefix}::timestamp${precision} with time zone`
                     : "now()"
-            } else if (upperCaseValue === "CURRENT_DATE") {
-                return "('now'::text)::date"
-            } else if (upperCaseValue.indexOf("CURRENT_TIME") !== -1) {
-                return precision
-                    ? `('now'::text)::time${precision[0]} with time zone`
-                    : "('now'::text)::time with time zone"
-            } else if (upperCaseValue.indexOf("LOCALTIMESTAMP") !== -1) {
-                return precision
-                    ? `('now'::text)::timestamp${precision[0]} without time zone`
-                    : "('now'::text)::timestamp without time zone"
-            } else if (upperCaseValue.indexOf("LOCALTIME") !== -1) {
-                return precision
-                    ? `('now'::text)::time${precision[0]} without time zone`
-                    : "('now'::text)::time without time zone"
-            }
+            case "CURRENT_DATE":
+                return `${prefix}::date`
+            case "CURRENT_TIME":
+                return `${prefix}::time${precision} with time zone`
+            case "LOCALTIMESTAMP":
+                return `${prefix}::timestamp${precision} without time zone`
+            case "LOCALTIME":
+                return `${prefix}::time${precision} without time zone`
+            default:
+                return value
         }
-
-        return value
     }
 
     /**
@@ -1892,7 +1886,7 @@ export class PostgresDriver implements Driver {
     protected escapeComment(comment?: string) {
         if (!comment) return comment
 
-        comment = comment.replace(/\u0000/g, "") // Null bytes aren't allowed in comments
+        comment = comment.replaceAll("\u0000", "") // Null bytes aren't allowed in comments
 
         return comment
     }

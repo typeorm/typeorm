@@ -17,6 +17,8 @@ import { OrmUtils } from "../util/OrmUtils"
 import type { MetadataTableType } from "../driver/types/MetadataTableType"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { buildSqlTag } from "../util/SqlTagUtils"
+import type { ObjectLiteral } from "../common/ObjectLiteral"
+import type { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
 
 export abstract class BaseQueryRunner implements AsyncDisposable {
     // -------------------------------------------------------------------------
@@ -140,7 +142,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
      */
     abstract query(
         query: string,
-        parameters?: any[],
+        parameters?: any[] | ObjectLiteral,
         useStructuredResult?: boolean,
     ): Promise<any>
 
@@ -423,12 +425,12 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
     /**
      * Generates SQL query to select record from typeorm metadata table.
      *
-     * @param root0
-     * @param root0.database
-     * @param root0.schema
-     * @param root0.table
-     * @param root0.type
-     * @param root0.name
+     * @param param0
+     * @param param0.database
+     * @param param0.schema
+     * @param param0.table
+     * @param param0.type
+     * @param param0.name
      */
     protected selectTypeormMetadataSql({
         database,
@@ -441,14 +443,17 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
         schema?: string
         table?: string
         type: MetadataTableType
-        name: string
+        name?: string
     }): Query {
         const qb = this.dataSource.createQueryBuilder()
         const selectQb = qb
             .select()
             .from(this.getTypeormMetadataTableName(), "t")
             .where(`${qb.escape("type")} = :type`, { type })
-            .andWhere(`${qb.escape("name")} = :name`, { name })
+
+        if (name) {
+            selectQb.andWhere(`${qb.escape("name")} = :name`, { name })
+        }
 
         if (database) {
             selectQb.andWhere(`${qb.escape("database")} = :database`, {
@@ -471,13 +476,13 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
     /**
      * Generates SQL query to insert a record into typeorm metadata table.
      *
-     * @param root0
-     * @param root0.database
-     * @param root0.schema
-     * @param root0.table
-     * @param root0.type
-     * @param root0.name
-     * @param root0.value
+     * @param param0
+     * @param param0.database
+     * @param param0.schema
+     * @param param0.table
+     * @param param0.type
+     * @param param0.name
+     * @param param0.value
      */
     protected insertTypeormMetadataSql({
         database,
@@ -512,14 +517,71 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
     }
 
     /**
+     * Generates SQL query to update a record in typeorm metadata table.
+     *
+     * @param param0
+     * @param param0.database
+     * @param param0.schema
+     * @param param0.table
+     * @param param0.name
+     * @param param0.value
+     * @param param0.valueToSet
+     * @param param0.type
+     */
+    protected updateTypeormMetadataSql({
+        database,
+        schema,
+        table,
+        type,
+        name,
+        value,
+        valueToSet,
+    }: {
+        database?: string
+        schema?: string
+        table?: string
+        name?: string
+        value?: string
+        valueToSet: QueryDeepPartialEntity<unknown>
+        type: MetadataTableType
+    }): Query {
+        const qb = this.dataSource.createQueryBuilder()
+        const updateQb = qb
+            .update(this.getTypeormMetadataTableName())
+            .set(valueToSet)
+            .where(`${qb.escape("type")} = :type`, { type })
+
+        if (value) {
+            updateQb.andWhere(`${qb.escape("value")} = :value`, { value })
+        }
+        if (name) {
+            updateQb.andWhere(`${qb.escape("name")} = :name`, { name })
+        }
+        if (database) {
+            updateQb.andWhere(`${qb.escape("database")} = :database`, {
+                database,
+            })
+        }
+        if (schema) {
+            updateQb.andWhere(`${qb.escape("schema")} = :schema`, { schema })
+        }
+        if (table) {
+            updateQb.andWhere(`${qb.escape("table")} = :table`, { table })
+        }
+
+        const [query, parameters] = updateQb.getQueryAndParameters()
+        return new Query(query, parameters)
+    }
+
+    /**
      * Generates SQL query to delete a record from typeorm metadata table.
      *
-     * @param root0
-     * @param root0.database
-     * @param root0.schema
-     * @param root0.table
-     * @param root0.type
-     * @param root0.name
+     * @param param0
+     * @param param0.database
+     * @param param0.schema
+     * @param param0.table
+     * @param param0.type
+     * @param param0.name
      */
     protected deleteTypeormMetadataSql({
         database,

@@ -14,6 +14,7 @@ describe("github issues > #8018 Non-unique relation property names causes entity
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [Parent, Child, Grandchild],
             schemaCreate: true,
             dropSchema: true,

@@ -1570,7 +1570,7 @@ export abstract class AbstractSqliteQueryRunner
                     .toUpperCase()
                     .indexOf("AUTOINCREMENT")
                 if (autoIncrementIndex !== -1) {
-                    autoIncrementColumnName = tableSql.substring(
+                    autoIncrementColumnName = tableSql.slice(
                         0,
                         autoIncrementIndex,
                     )
@@ -1578,28 +1578,24 @@ export abstract class AbstractSqliteQueryRunner
                     const bracket = autoIncrementColumnName.lastIndexOf("(")
                     if (comma !== -1) {
                         autoIncrementColumnName =
-                            autoIncrementColumnName.substring(comma)
-                        autoIncrementColumnName =
-                            autoIncrementColumnName.substring(
-                                0,
-                                autoIncrementColumnName.lastIndexOf('"'),
-                            )
-                        autoIncrementColumnName =
-                            autoIncrementColumnName.substring(
-                                autoIncrementColumnName.indexOf('"') + 1,
-                            )
+                            autoIncrementColumnName.slice(comma)
+                        autoIncrementColumnName = autoIncrementColumnName.slice(
+                            0,
+                            autoIncrementColumnName.lastIndexOf('"'),
+                        )
+                        autoIncrementColumnName = autoIncrementColumnName.slice(
+                            autoIncrementColumnName.indexOf('"') + 1,
+                        )
                     } else if (bracket !== -1) {
                         autoIncrementColumnName =
-                            autoIncrementColumnName.substring(bracket)
-                        autoIncrementColumnName =
-                            autoIncrementColumnName.substring(
-                                0,
-                                autoIncrementColumnName.lastIndexOf('"'),
-                            )
-                        autoIncrementColumnName =
-                            autoIncrementColumnName.substring(
-                                autoIncrementColumnName.indexOf('"') + 1,
-                            )
+                            autoIncrementColumnName.slice(bracket)
+                        autoIncrementColumnName = autoIncrementColumnName.slice(
+                            0,
+                            autoIncrementColumnName.lastIndexOf('"'),
+                        )
+                        autoIncrementColumnName = autoIncrementColumnName.slice(
+                            autoIncrementColumnName.indexOf('"') + 1,
+                        )
                     }
                 }
 
@@ -1657,17 +1653,14 @@ export abstract class AbstractSqliteQueryRunner
                         const pos = tableColumn.type.indexOf("(")
                         if (pos !== -1) {
                             const fullType = tableColumn.type
-                            const dataType = fullType.substring(0, pos)
+                            const dataType = fullType.slice(0, pos)
                             if (
                                 this.driver.withLengthColumnTypes.find(
                                     (col) => col === dataType,
                                 )
                             ) {
                                 const len = parseInt(
-                                    fullType.substring(
-                                        pos + 1,
-                                        fullType.length - 1,
-                                    ),
+                                    fullType.slice(pos + 1, -1),
                                 )
                                 if (len) {
                                     tableColumn.length = len.toString()
@@ -2465,7 +2458,7 @@ export abstract class AbstractSqliteQueryRunner
                 ? target.name
                 : target
         return tableName
-            .replace(/^\.+|\.+$/g, "")
+            .replaceAll(/^\.+|\.+$/g, "")
             .split(".")
             .map((i) => (disableEscape ? i : this.driver.escape(i)))
             .join(".")

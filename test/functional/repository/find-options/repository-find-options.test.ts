@@ -19,6 +19,7 @@ describe("repository > find options", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
@@ -246,6 +247,7 @@ describe("repository > find options > comment", () => {
         // test logger that buffers messages.
         const logger = new FileLogger(["query"], { logPath })
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             createLogger: () => logger,
         })
@@ -279,6 +281,7 @@ describe("repository > find options > cache", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             cache: true,
         })

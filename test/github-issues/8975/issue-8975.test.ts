@@ -1,10 +1,11 @@
 import { expect } from "chai"
-import { exec } from "child_process"
-import { readFile, rm, unlink, writeFile } from "fs/promises"
+import { exec } from "node:child_process"
+import { readFile, rm, unlink, writeFile } from "node:fs/promises"
+import { getTypeOrmConfig } from "../../utils/test-utils"
 
 describe("cli init command", () => {
     const cliPath = `${__dirname}/../../../src/cli.js`
-    const databaseOptions = [
+    const databasesToTest = [
         "mysql",
         "mariadb",
         "postgres",
@@ -13,7 +14,19 @@ describe("cli init command", () => {
         // "oracle", // as always oracle have issues: dependency installation doesn't work on mac m1 due to missing oracle binaries for m1
         "mssql",
         "mongodb",
-    ]
+    ] as const
+
+    const databaseOptions = (() => {
+        const typeOrmConfig = getTypeOrmConfig()
+        return databasesToTest.filter((databaseType) =>
+            typeOrmConfig.some(
+                (connectionOptions) =>
+                    !connectionOptions.skip &&
+                    connectionOptions.type === databaseType,
+            ),
+        )
+    })()
+
     const testProjectPath = `temp/${Date.now()}TestProject`
     const builtSrcDirectory = "build/compiled/src"
 

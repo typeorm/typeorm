@@ -1,12 +1,12 @@
-import type { EntityMetadata } from "../metadata/EntityMetadata"
 import type { DataSource } from "../data-source/DataSource"
+import { DriverUtils } from "../driver/DriverUtils"
+import { TypeORMError } from "../error"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
 import type { RelationMetadata } from "../metadata/RelationMetadata"
+import { ObjectUtils } from "../util/ObjectUtils"
+import type { Alias } from "./Alias"
 import { QueryBuilderUtils } from "./QueryBuilderUtils"
 import type { QueryExpressionMap } from "./QueryExpressionMap"
-import type { Alias } from "./Alias"
-import { ObjectUtils } from "../util/ObjectUtils"
-import { TypeORMError } from "../error"
-import { DriverUtils } from "../driver/DriverUtils"
 
 /**
  * Stores all join attributes which will be used to build a JOIN query.
@@ -127,7 +127,7 @@ export class JoinAttribute {
         if (!QueryBuilderUtils.isAliasProperty(this.entityOrProperty))
             return undefined
 
-        return this.entityOrProperty.substring(
+        return this.entityOrProperty.slice(
             0,
             this.entityOrProperty.indexOf("."),
         )
@@ -144,7 +144,7 @@ export class JoinAttribute {
         if (!QueryBuilderUtils.isAliasProperty(this.entityOrProperty))
             return undefined
 
-        return this.entityOrProperty.substring(
+        return this.entityOrProperty.slice(
             this.entityOrProperty.indexOf(".") + 1,
         )
     }
@@ -227,7 +227,7 @@ export class JoinAttribute {
             throw new TypeORMError(`Junction property is not defined.`)
         }
 
-        const aliasProperty = this.entityOrProperty.substring(
+        const aliasProperty = this.entityOrProperty.slice(
             0,
             this.entityOrProperty.indexOf("."),
         )
@@ -260,4 +260,9 @@ export class JoinAttribute {
 
         return this.mapToProperty!.split(".")[1]
     }
+}
+
+export interface JoinAttributeTree {
+    children: Array<JoinAttributeTree>
+    joinAttribute: JoinAttribute
 }

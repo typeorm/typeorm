@@ -261,6 +261,18 @@ The following document will be saved in the database:
 }
 ```
 
+## Selecting specific fields with `select`
+
+You can project only the fields you need using the `select` option on `find*` methods. The object is translated into a MongoDB [projection](https://www.mongodb.com/docs/manual/tutorial/project-fields-from-query-results/); nested embedded documents use object syntax and are flattened to dot-path projections.
+
+```typescript
+const products = await myDataSource.getMongoRepository(Product).find({
+    select: { name: true, specs: { weight: true } },
+})
+```
+
+The example above returns each product with only `name` and `specs.weight` populated (plus the entity id). Unknown property names, whether at the top level or inside an embedded document, throw `EntityPropertyNotFoundError` — matching the behavior of SQL drivers.
+
 ## Using `MongoEntityManager` and `MongoRepository`
 
 You can use the majority of methods inside the `EntityManager` (except for RDBMS-specific, like `query` and `transaction`).

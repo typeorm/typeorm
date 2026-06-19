@@ -181,7 +181,10 @@ export class EntityManager {
      * @param parameters
      * @see [Official docs](https://typeorm.io/docs/Working%20with%20Entity%20Manager/entity-manager-api/) for examples.
      */
-    async query<T = any>(query: string, parameters?: any[]): Promise<T> {
+    async query<T = any>(
+        query: string,
+        parameters?: any[] | ObjectLiteral,
+    ): Promise<T> {
         return this.dataSource.query(query, parameters, this.queryRunner)
     }
 
@@ -935,7 +938,7 @@ export class EntityManager {
             return qb.execute()
         } else {
             const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
-                criteria as ObjectLiteral,
+                criteria as ObjectLiteral | ObjectLiteral[],
                 this.dataSource.options.invalidWhereValuesBehavior,
             )
             const qb = this.createQueryBuilder()
@@ -1016,7 +1019,7 @@ export class EntityManager {
                 .execute()
         } else {
             const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
-                criteria as ObjectLiteral,
+                criteria as ObjectLiteral | ObjectLiteral[],
                 this.dataSource.options.invalidWhereValuesBehavior,
             )
             return this.createQueryBuilder()
@@ -1082,7 +1085,7 @@ export class EntityManager {
                 .execute()
         } else {
             const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
-                criteria as ObjectLiteral,
+                criteria as ObjectLiteral | ObjectLiteral[],
                 this.dataSource.options.invalidWhereValuesBehavior,
             )
             return this.createQueryBuilder()
@@ -1133,7 +1136,7 @@ export class EntityManager {
                 .execute()
         } else {
             const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
-                criteria as ObjectLiteral,
+                criteria as ObjectLiteral | ObjectLiteral[],
                 this.dataSource.options.invalidWhereValuesBehavior,
             )
             return this.createQueryBuilder()

@@ -21,6 +21,7 @@ import {
 
 import { databases } from "@site/src/constants/databases"
 
+import maintainers from "./maintainers.json"
 import styles from "./index.module.css"
 
 // Feature section data
@@ -324,20 +325,6 @@ function PlatformsSection() {
     )
 }
 
-const teamHighlights = [
-    { name: "Michael Bromley", github: "michaelbromley" },
-    { name: "David Höck", github: "dlhck" },
-    { name: "Lucian Mocanu", github: "alumni" },
-    { name: "Naor Peled", github: "naorpeled" },
-    { name: "Giorgio Boa", github: "gioboa" },
-    { name: "Piotr Kuczynski", github: "pkuczynski" },
-    { name: "Mohammed Gomaa", github: "G0maa" },
-    { name: "Julian Pufler", github: "pujux" },
-    { name: "Simon Garner", github: "sgarner" },
-    { name: "Pieter Wigboldus", github: "w3nl" },
-    { name: "Mike Guida", github: "mguida22" },
-]
-
 function MaintainersSection() {
     return (
         <section className={styles.maintainersSection}>
@@ -346,7 +333,7 @@ function MaintainersSection() {
                     Maintained By
                 </Heading>
                 <div className={styles.maintainersAvatars}>
-                    {teamHighlights.map((m) => (
+                    {maintainers.map((m) => (
                         <img
                             key={m.github}
                             src={`https://avatars.githubusercontent.com/${m.github}?s=100`}

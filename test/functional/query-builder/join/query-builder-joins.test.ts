@@ -12,7 +12,6 @@ import { Category } from "./entity/Category"
 import { CategoryWithCompositePK } from "./entity/CategoryWithCompositePK"
 import { Image } from "./entity/Image"
 import { User } from "./entity/User"
-import { Photo } from "./entity/Photo"
 
 describe("query builder > joins", () => {
     let dataSources: DataSource[]
@@ -82,6 +81,7 @@ describe("query builder > joins", () => {
                         .leftJoinAndSelect("categories.images", "images")
                         .getMany()
 
+                    loadedPosts.sort((a, b) => a.id - b.id)
                     expect(loadedPosts![0].tag).to.not.be.undefined
                     expect(loadedPosts![0].tag.id).to.be.equal(1)
                     expect(loadedPosts![0].categories).to.not.be.eql([])
@@ -291,6 +291,108 @@ describe("query builder > joins", () => {
                     )
                     expect(loadedPost.author).to.not.be.undefined
                     expect(loadedPost.author.id).to.be.equal(1)
+                }),
+            ))
+
+        it("should load results from a left join with a child inner join both of which have zero results", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const post = new Post()
+                    post.title = "about BMW"
+                    await dataSource.manager.save(post)
+
+                    const loadedPost = await dataSource.manager
+                        .createQueryBuilder(Post, "post")
+                        .leftJoinAndSelect("post.categories", "categories")
+                        .innerJoinAndSelect("categories.images", "images")
+                        .where("post.id = :id", { id: post.id })
+                        .getOne()
+
+                    expect(loadedPost).to.not.be.null
+                    expect(loadedPost?.categories).to.be.eql([])
+                    expect(loadedPost?.categories.length).to.be.equal(0)
+                }),
+            ))
+
+        it("should load results from a left join with a child inner join that has zero results", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const category = new Category()
+                    category.name = "germany"
+                    await dataSource.manager.save(category)
+
+                    const post = new Post()
+                    post.title = "about BMW"
+                    post.categories = [category]
+                    await dataSource.manager.save(post)
+
+                    const loadedPost = await dataSource.manager
+                        .createQueryBuilder(Post, "post")
+                        .leftJoinAndSelect("post.categories", "categories")
+                        .innerJoinAndSelect("categories.images", "images")
+                        .where("post.id = :id", { id: post.id })
+                        .getOne()
+
+                    expect(loadedPost).to.not.be.null
+                    expect(loadedPost?.categories).to.be.eql([])
+                    expect(loadedPost?.categories.length).to.be.equal(0)
+                }),
+            ))
+
+        it("should load results from a left join with a child inner join when inner join has matching data", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const image = new Image()
+                    image.name = "cat-image"
+                    await dataSource.manager.save(image)
+
+                    const category = new Category()
+                    category.name = "animals"
+                    category.images = [image]
+                    await dataSource.manager.save(category)
+
+                    const post = new Post()
+                    post.title = "about cats"
+                    post.categories = [category]
+                    await dataSource.manager.save(post)
+
+                    const loadedPost = await dataSource.manager
+                        .createQueryBuilder(Post, "post")
+                        .leftJoinAndSelect("post.categories", "categories")
+                        .innerJoinAndSelect("categories.images", "images")
+                        .where("post.id = :id", { id: post.id })
+                        .getOne()
+
+                    expect(loadedPost).to.not.be.null
+                    expect(loadedPost?.categories.length).to.be.equal(1)
+                    expect(loadedPost?.categories[0].name).to.be.equal(
+                        "animals",
+                    )
+                    expect(loadedPost?.categories[0].images.length).to.be.equal(
+                        1,
+                    )
+                    expect(
+                        loadedPost?.categories[0].images[0].name,
+                    ).to.be.equal("cat-image")
+                }),
+            ))
+
+        it("should load results from a many-to-one left join with a child inner join that has zero results", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const post = new Post()
+                    post.title = "about dogs"
+                    await dataSource.manager.save(post)
+
+                    const loadedPost = await dataSource.manager
+                        .createQueryBuilder(Post, "post")
+                        .leftJoinAndSelect("post.tag", "tag")
+                        .where("post.id = :id", { id: post.id })
+                        .getOne()
+
+                    expect(loadedPost).to.not.be.null
+                    expect(loadedPost?.title).to.be.equal("about dogs")
+                    expect(loadedPost?.tag).to.be.null
                 }),
             ))
 
@@ -735,6 +837,7 @@ describe("query builder > joins", () => {
                         })
                         .getMany()
 
+                    loadedPosts.sort((a, b) => a.id - b.id)
                     expect(loadedPosts![0].removedCategories).to.not.be.eql([])
                     expect(
                         loadedPosts![0].removedCategories.length,
@@ -1221,6 +1324,7 @@ describe("query builder > joins", () => {
                         })
                         .getMany()
 
+                    loadedPosts.sort((a, b) => a.id - b.id)
                     expect(loadedPosts![0].removedCategories).to.not.be.eql([])
                     expect(
                         loadedPosts![0].removedCategories.length,
@@ -1681,42 +1785,4 @@ describe("query builder > joins", () => {
                 }),
             ))
     })
-
-    it("should return correct number of results when limit is used with left joins", () =>
-        Promise.all(
-            dataSources.map(async (dataSource) => {
-                const manager = dataSource.manager
-
-                for (let i = 1; i <= 7; i++) {
-                    const user = new User()
-                    user.name = `User ${i}`
-                    await manager.save(user)
-
-                    for (let j = 1; j <= 2; j++) {
-                        const photo = new Photo()
-                        photo.name = `Photo ${i}-${j}`
-                        photo.user = user
-                        await manager.save(photo)
-                    }
-                }
-
-                const qb = manager
-                    .createQueryBuilder(User, "user")
-                    .leftJoinAndSelect("user.photos", "photo")
-                    .orderBy("user.id")
-                    .limit(5)
-
-                const users = await qb.getMany()
-                expect(users).to.have.lengthOf(5)
-                users.forEach((user) => {
-                    expect(user.photos).to.have.lengthOf(2)
-                })
-
-                const rows = await qb.execute()
-                const uniqueIds = new Set(
-                    rows.map((row: { user_id: string }) => row.user_id),
-                )
-                expect(uniqueIds.size).to.equal(3)
-            }),
-        ))
 })

@@ -11,6 +11,7 @@ describe("github issues > #752 postgres - count query fails for empty table", ()
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

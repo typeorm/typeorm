@@ -11,6 +11,7 @@ describe("github issues > #2984 Discriminator conflict reported even for non-inh
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/**/*{.js,.ts}"],
         })
     })
