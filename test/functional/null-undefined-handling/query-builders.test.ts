@@ -9,7 +9,7 @@ import {
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 
-describe("entity manager > invalidWhereValuesBehavior with throw", () => {
+describe("entity manager > invalidWhereValuesBehavior with default throw", () => {
     let dataSources: DataSource[]
 
     before(async () => {
@@ -18,12 +18,6 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             entities: [Post, Category],
             schemaCreate: true,
             dropSchema: true,
-            driverSpecific: {
-                invalidWhereValuesBehavior: {
-                    null: "throw",
-                    undefined: "throw",
-                },
-            },
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
