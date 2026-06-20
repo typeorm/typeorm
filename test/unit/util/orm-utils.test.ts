@@ -270,4 +270,36 @@ describe(`OrmUtils`, () => {
             ).to.equal(false)
         })
     })
+
+    describe("normalizeWhereCriteria", () => {
+        it("should throw by default when options/DataSource config is not set", () => {
+            // Regression test for #12578
+            // When DataSource has no invalidWhereValuesBehavior configured,
+            // normalizeWhereCriteria should default to 'throw' behavior
+            expect(() => {
+                OrmUtils.normalizeWhereCriteria({ name: undefined })
+            }).to.throw("Undefined value encountered")
+
+            expect(() => {
+                OrmUtils.normalizeWhereCriteria({ name: null })
+            }).to.throw("Null value encountered")
+        })
+
+        it("should not throw when options.undefined is 'ignore'", () => {
+            const result = OrmUtils.normalizeWhereCriteria(
+                { name: undefined, title: "hello" },
+                { undefined: "ignore" },
+            )
+            expect(result).to.deep.equal({ title: "hello" })
+        })
+
+        it("should throw when options.undefined is 'throw'", () => {
+            expect(() => {
+                OrmUtils.normalizeWhereCriteria(
+                    { name: undefined },
+                    { undefined: "throw" },
+                )
+            }).to.throw("Undefined value encountered")
+        })
+    })
 })
