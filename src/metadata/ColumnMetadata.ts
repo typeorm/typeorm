@@ -788,8 +788,11 @@ export class ColumnMetadata {
                         !InstanceChecker.isFindOperator(
                             embeddedObject[this.propertyName],
                         ) &&
-                        !isUint8Array(embeddedObject[this.propertyName]) &&
-                        !(embeddedObject[this.propertyName] instanceof Date)
+                        !Buffer.isBuffer(embeddedObject[this.propertyName]) &&
+                        !(embeddedObject[this.propertyName] instanceof Date) &&
+                        (!this.transformer ||
+                            embeddedObject[this.propertyName].constructor ===
+                                Object)
                     ) {
                         value = this.referencedColumn.getEntityValue(
                             embeddedObject[this.propertyName],
@@ -827,8 +830,10 @@ export class ColumnMetadata {
                         entity[this.propertyName],
                     ) &&
                     !(typeof entity[this.propertyName] === "function") &&
-                    !isUint8Array(entity[this.propertyName]) &&
-                    !(entity[this.propertyName] instanceof Date)
+                    !Buffer.isBuffer(entity[this.propertyName]) &&
+                    !(entity[this.propertyName] instanceof Date) &&
+                    (!this.transformer ||
+                        entity[this.propertyName].constructor === Object)
                 ) {
                     value = this.referencedColumn.getEntityValue(
                         entity[this.propertyName],
