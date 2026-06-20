@@ -1,3 +1,4 @@
+// See #12578
 import "reflect-metadata"
 import "../../utils/test-setup"
 import type { DataSource } from "../../../src"
@@ -206,7 +207,9 @@ describe("entity manager > null and undefined handling with default behavior", (
                     // Should not throw — undefined values are ignored
                     await dataSource.manager.update(
                         Post,
-                        { title: "Post #1", text: undefined as any },
+                        { title: "Post #1",
+                        // @ts-expect-error - undefined should be marked as unsafe by default
+                        text: undefined },
                         { text: "Updated" },
                     )
 

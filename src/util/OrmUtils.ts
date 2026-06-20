@@ -673,8 +673,12 @@ export class OrmUtils {
                     ),
             )
         }
-        const result: ObjectLiteral = {}
+        const result: ObjectLiteral = Object.create(null)
         for (const [key, value] of Object.entries(criteria)) {
+            // Skip dangerous prototype-polluting keys
+            if (key === "__proto__" || key === "constructor" || key === "prototype") {
+                continue
+            }
             const propertyPath = path ? `${path}.${key}` : key
 
             if (value === undefined) {
