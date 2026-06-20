@@ -25,31 +25,57 @@ describe("entity manager > invalidWhereValuesBehavior defaults to throw", () => 
 
     it("should throw error for undefined values in EntityManager.update()", async () => {
         for (const connection of dataSources) {
-            try {
-                await connection.manager.update(
-                    Post,
-                    { text: undefined } as any,
-                    { title: "Updated" },
-                )
-                expect.fail("Expected error")
-            } catch (error) {
-                expect(error).to.be.instanceOf(TypeORMError)
-                expect(error.message).to.include("Undefined value encountered")
-            }
+            await connection.manager
+                .update(Post, { text: undefined }, { title: "Updated" })
+                .then(() => expect.fail("Expected error"))
+                .catch((error) => {
+                    expect(error).to.be.instanceOf(TypeORMError)
+                    expect(error.message).to.include(
+                        "Undefined value encountered",
+                    )
+                })
         }
     })
 
     it("should throw error for null values in EntityManager.update()", async () => {
         for (const connection of dataSources) {
-            try {
-                await connection.manager.update(Post, { text: null } as any, {
-                    title: "Updated",
+            await connection.manager
+                .update(Post, { text: null }, { title: "Updated" })
+                .then(() => expect.fail("Expected error"))
+                .catch((error) => {
+                    expect(error).to.be.instanceOf(TypeORMError)
+                    expect(error.message).to.include("Null value encountered")
                 })
-                expect.fail("Expected error")
-            } catch (error) {
-                expect(error).to.be.instanceOf(TypeORMError)
-                expect(error.message).to.include("Null value encountered")
-            }
+        }
+    })
+
+    it("should return rejected promises for default invalid where values", async () => {
+        for (const connection of dataSources) {
+            await connection.manager
+                .delete(Post, { text: undefined })
+                .then(() => expect.fail("Expected error"))
+                .catch((error) => {
+                    expect(error).to.be.instanceOf(TypeORMError)
+                    expect(error.message).to.include(
+                        "Undefined value encountered",
+                    )
+                })
+
+            await connection.manager
+                .softDelete(Post, { text: null })
+                .then(() => expect.fail("Expected error"))
+                .catch((error) => {
+                    expect(error).to.be.instanceOf(TypeORMError)
+                    expect(error.message).to.include("Null value encountered")
+                })
+
+            await connection.manager
+                .restore(Post, { text: null })
+                .then(() => expect.fail("Expected error"))
+                .catch((error) => {
+                    expect(error).to.be.instanceOf(TypeORMError)
+                    expect(error.message).to.include("Null value encountered")
+                })
         }
     })
 })
