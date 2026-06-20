@@ -37,9 +37,13 @@ describe("entity manager > invalidWhereValuesBehavior with default behavior", ()
             await prepareData(connection)
 
             try {
-                await connection.manager.update(Post, { text: null } as any, {
-                    title: "Updated",
-                })
+                await connection.manager.update(
+                    Post,
+                    { text: null },
+                    {
+                        title: "Updated",
+                    },
+                )
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
@@ -55,13 +59,33 @@ describe("entity manager > invalidWhereValuesBehavior with default behavior", ()
             try {
                 await connection.manager.update(
                     Post,
-                    { text: undefined } as any,
+                    { text: undefined },
                     { title: "Updated" },
                 )
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
                 expect(error.message).to.include("Undefined value encountered")
+            }
+        }
+    })
+
+    it("should throw error for __proto__ criteria in EntityManager.update()", async () => {
+        for (const connection of dataSources) {
+            await prepareData(connection)
+
+            try {
+                await connection.manager.update(
+                    Post,
+                    JSON.parse('{"__proto__":{"text":"Some text"}}'),
+                    { title: "Updated" },
+                )
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include(
+                    "Property '__proto__' is not allowed",
+                )
             }
         }
     })

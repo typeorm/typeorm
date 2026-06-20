@@ -678,6 +678,12 @@ export class OrmUtils {
         for (const [key, value] of Object.entries(criteria)) {
             const propertyPath = path ? `${path}.${key}` : key
 
+            if (key === "__proto__") {
+                throw new TypeORMError(
+                    `Property '${propertyPath}' is not allowed in a where condition.`,
+                )
+            }
+
             if (value === undefined) {
                 const behavior = options?.undefined ?? "throw"
                 if (behavior === "throw") {
