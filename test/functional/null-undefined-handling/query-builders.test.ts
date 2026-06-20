@@ -89,6 +89,36 @@ describe("entity manager > invalidWhereValuesBehavior with default behavior", ()
             }
         }
     })
+
+    it("should preserve function criteria in EntityManager.update() by default", async () => {
+        for (const connection of dataSources) {
+            const post = await prepareData(connection)
+
+            const otherPost = new Post()
+            otherPost.title = "Other Post"
+            otherPost.text = "Other text"
+            await connection.manager.save(otherPost)
+
+            await connection.manager.update(
+                Post,
+                () => `id = ${post.id}`,
+                { title: "Updated" },
+            )
+
+            const updatedPost = await connection.manager.findOneByOrFail(Post, {
+                id: post.id,
+            })
+            const untouchedPost = await connection.manager.findOneByOrFail(
+                Post,
+                {
+                    id: otherPost.id,
+                },
+            )
+
+            expect(updatedPost.title).to.equal("Updated")
+            expect(untouchedPost.title).to.equal("Other Post")
+        }
+    })
 })
 
 describe("entity manager > invalidWhereValuesBehavior with throw", () => {

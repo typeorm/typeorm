@@ -674,6 +674,10 @@ export class OrmUtils {
             )
         }
 
+        if (!OrmUtils.isPlainObject(criteria)) {
+            return criteria
+        }
+
         const result: ObjectLiteral = {}
         for (const [key, value] of Object.entries(criteria)) {
             const propertyPath = path ? `${path}.${key}` : key
