@@ -671,7 +671,7 @@ export class OrmUtils {
                         criterion,
                         options,
                         String(index),
-                    ),
+                    ) as ObjectLiteral,
             )
         }
 
