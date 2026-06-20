@@ -1,9 +1,33 @@
 import { expect } from "chai"
 import { runInNewContext } from "node:vm"
-import type { DeepPartial } from "../../../src"
+import { TypeORMError, type DeepPartial } from "../../../src"
 import { OrmUtils } from "../../../src/util/OrmUtils"
 
 describe(`OrmUtils`, () => {
+    describe("normalizeWhereCriteria", () => {
+        it("throws for undefined where values by default", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({
+                    text: undefined,
+                }),
+            ).to.throw(
+                TypeORMError,
+                "Undefined value encountered in property 'text' of a where condition. Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.",
+            )
+        })
+
+        it("throws for null where values by default", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({
+                    text: null,
+                }),
+            ).to.throw(
+                TypeORMError,
+                "Null value encountered in property 'text' of a where condition. To match with SQL NULL, the IsNull() operator must be used. Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.",
+            )
+        })
+    })
+
     describe("parseSqlCheckExpression", () => {
         it("parses a simple CHECK constraint", () => {
             // Spaces between CHECK values
