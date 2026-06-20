@@ -1,6 +1,7 @@
 import { getMetadataArgsStorage } from "../globals"
 import type { IndexMetadataArgs } from "../metadata-args/IndexMetadataArgs"
 import type { IndexOptions } from "./options/IndexOptions"
+import type { IndexColumnOptions } from "./options/IndexColumnOptions"
 import { ObjectUtils } from "../util/ObjectUtils"
 
 /**
@@ -59,6 +60,21 @@ export function Index(
 /**
  * Creates a database index.
  * Can be used on entity property or on entity.
+ * Can create indices with composite columns, optionally specifying per-column sort order.
+ *
+ * @param name
+ * @param fields
+ * @param options
+ */
+export function Index(
+    name: string,
+    fields: (string | IndexColumnOptions)[],
+    options?: IndexOptions,
+): ClassDecorator & PropertyDecorator
+
+/**
+ * Creates a database index.
+ * Can be used on entity property or on entity.
  * Can create indices with composite columns when used on entity.
  *
  * @param fields
@@ -66,6 +82,19 @@ export function Index(
  */
 export function Index(
     fields: string[],
+    options?: IndexOptions,
+): ClassDecorator & PropertyDecorator
+
+/**
+ * Creates a database index.
+ * Can be used on entity property or on entity.
+ * Can create indices with composite columns, optionally specifying per-column sort order.
+ *
+ * @param fields
+ * @param options
+ */
+export function Index(
+    fields: (string | IndexColumnOptions)[],
     options?: IndexOptions,
 ): ClassDecorator & PropertyDecorator
 
@@ -109,13 +138,13 @@ export function Index(
 export function Index(
     nameOrFieldsOrOptions?:
         | string
-        | string[]
+        | (string | IndexColumnOptions)[]
         | ((object: any) => any[] | { [key: string]: number })
         | IndexOptions,
     maybeFieldsOrOptions?:
         | ((object?: any) => any[] | { [key: string]: number })
         | IndexOptions
-        | string[]
+        | (string | IndexColumnOptions)[]
         | { synchronize: false },
     maybeOptions?: IndexOptions,
 ): ClassDecorator & PropertyDecorator {
@@ -128,9 +157,9 @@ export function Index(
         typeof nameOrFieldsOrOptions === "string"
             ? <
                   | ((object?: any) => any[] | { [key: string]: number })
-                  | string[]
+                  | (string | IndexColumnOptions)[]
               >maybeFieldsOrOptions
-            : (nameOrFieldsOrOptions as string[])
+            : (nameOrFieldsOrOptions as (string | IndexColumnOptions)[])
     let options =
         ObjectUtils.isObject(nameOrFieldsOrOptions) &&
         !Array.isArray(nameOrFieldsOrOptions)
@@ -146,12 +175,18 @@ export function Index(
         clsOrObject: Function | Object,
         propertyName?: string | symbol,
     ) {
+        const columnEntry =
+            propertyName && options?.order
+                ? [{ field: String(propertyName), order: options.order }]
+                : propertyName
+                  ? [propertyName]
+                  : fields
         getMetadataArgsStorage().indices.push({
             target: propertyName
                 ? clsOrObject.constructor
                 : (clsOrObject as Function),
             name: name,
-            columns: propertyName ? [propertyName] : fields,
+            columns: columnEntry,
             synchronize:
                 options &&
                 (options as { synchronize: false }).synchronize === false

@@ -785,6 +785,10 @@ export class SpannerDriver implements Driver {
         return false
     }
 
+    isDescIndexOrderingSupported(): boolean {
+        return true
+    }
+
     /**
      * Creates an escaped parameter.
      *

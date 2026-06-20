@@ -915,6 +915,10 @@ export class SapDriver implements Driver {
         return !DriverUtils.isReleaseVersionOrGreater(this, "4.0")
     }
 
+    isDescIndexOrderingSupported(): boolean {
+        return true
+    }
+
     /**
      * Creates an escaped parameter.
      *

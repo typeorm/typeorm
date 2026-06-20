@@ -517,6 +517,10 @@ export class MongoDriver implements Driver {
         return false
     }
 
+    isDescIndexOrderingSupported(): boolean {
+        return false
+    }
+
     /**
      * Creates an escaped parameter.
      *

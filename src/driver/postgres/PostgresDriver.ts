@@ -1656,6 +1656,10 @@ export class PostgresDriver implements Driver {
         return false
     }
 
+    isDescIndexOrderingSupported(): boolean {
+        return true
+    }
+
     get uuidGenerator(): string {
         return this.options.uuidExtension === "pgcrypto"
             ? "gen_random_uuid()"

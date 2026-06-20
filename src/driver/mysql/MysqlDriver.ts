@@ -1125,6 +1125,13 @@ export class MysqlDriver implements Driver {
         return true
     }
 
+    isDescIndexOrderingSupported(): boolean {
+        if (!this.version) return false
+        if (this.options.type === "mariadb")
+            return VersionUtils.isGreaterOrEqual(this.version, "10.8.0")
+        return VersionUtils.isGreaterOrEqual(this.version, "8.0.0")
+    }
+
     /**
      * Creates an escaped parameter.
      *

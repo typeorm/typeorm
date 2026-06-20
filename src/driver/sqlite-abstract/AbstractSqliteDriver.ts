@@ -993,6 +993,10 @@ export abstract class AbstractSqliteDriver implements Driver {
         return false
     }
 
+    isDescIndexOrderingSupported(): boolean {
+        return true
+    }
+
     /**
      * Creates an escaped parameter.
      *

@@ -5,6 +5,7 @@ import type { ColumnMetadata } from "./ColumnMetadata"
 import type { EmbeddedMetadata } from "./EmbeddedMetadata"
 import { TypeORMError } from "../error"
 import type { TableIndexTypes } from "../schema-builder/options/TableIndexTypes"
+import type { IndexColumnOptions } from "../decorator/options/IndexColumnOptions"
 
 /**
  * Index metadata contains all information about table's index.
@@ -106,7 +107,12 @@ export class IndexMetadata {
      */
     givenColumnNames?:
         | ((object?: any) => any[] | { [key: string]: number })
-        | string[]
+        | (string | IndexColumnOptions)[]
+
+    /**
+     * Map of database column names to their sort order in the index.
+     */
+    columnOrderMap: { [columnDbName: string]: "ASC" | "DESC" } = {}
 
     /**
      * Final index name.
@@ -203,20 +209,50 @@ export class IndexMetadata {
         if (this.givenColumnNames) {
             let columnPropertyPaths: string[]
             if (Array.isArray(this.givenColumnNames)) {
-                columnPropertyPaths = this.givenColumnNames.map(
-                    (columnName) => {
-                        if (this.embeddedMetadata)
-                            return (
-                                this.embeddedMetadata.propertyPath +
-                                "." +
-                                columnName
-                            )
-
-                        return columnName.trim()
-                    },
-                )
+                const givenOrderMap: {
+                    [propertyPath: string]: "ASC" | "DESC"
+                } = {}
+                columnPropertyPaths = this.givenColumnNames.map((entry) => {
+                    const columnName =
+                        typeof entry === "string" ? entry : entry.field
+                    const order =
+                        typeof entry === "string" ? undefined : entry.order
+                    let propertyPath: string
+                    if (this.embeddedMetadata) {
+                        propertyPath =
+                            this.embeddedMetadata.propertyPath +
+                            "." +
+                            columnName
+                    } else {
+                        propertyPath = columnName.trim()
+                    }
+                    if (order) givenOrderMap[propertyPath] = order
+                    return propertyPath
+                })
                 columnPropertyPaths.forEach((propertyPath) => {
                     map[propertyPath] = 1
+                })
+                // resolve property paths to db column names for the order map
+                Object.keys(givenOrderMap).forEach((propertyPath) => {
+                    const column = this.entityMetadata.columns.find(
+                        (col) => col.propertyPath === propertyPath,
+                    )
+                    if (column) {
+                        this.columnOrderMap[column.databaseName] =
+                            givenOrderMap[propertyPath]
+                        return
+                    }
+                    const relation = this.entityMetadata.relations.find(
+                        (rel) =>
+                            rel.isWithJoinColumn &&
+                            rel.propertyName === propertyPath,
+                    )
+                    if (relation) {
+                        relation.joinColumns.forEach((joinColumn) => {
+                            this.columnOrderMap[joinColumn.databaseName] =
+                                givenOrderMap[propertyPath]
+                        })
+                    }
                 })
             } else {
                 // todo: indices in embeds are not implemented in this syntax. deprecate this syntax?
@@ -288,6 +324,9 @@ export class IndexMetadata {
                 this.entityMetadata.tableName,
                 this.columns.map((column) => column.databaseName),
                 this.where,
+                Object.keys(this.columnOrderMap).length > 0
+                    ? this.columnOrderMap
+                    : undefined,
             )
         return this
     }

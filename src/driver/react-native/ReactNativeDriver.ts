@@ -954,6 +954,10 @@ export class ReactNativeDriver implements Driver {
         return false
     }
 
+    isDescIndexOrderingSupported(): boolean {
+        return true
+    }
+
     /**
      * Creates an escaped parameter.
      *

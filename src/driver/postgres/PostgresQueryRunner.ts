@@ -646,11 +646,7 @@ export class PostgresQueryRunner
         if (createIndices) {
             table.indices.forEach((index) => {
                 // new index may be passed without name. In this case we generate index name manually.
-                index.name ??= this.dataSource.namingStrategy.indexName(
-                    table,
-                    index.columnNames,
-                    index.where,
-                )
+                index.name ??= this.generateIndexName(table, index)
                 upQueries.push(this.createIndexSql(table, index))
                 downQueries.push(this.dropIndexSql(table, index))
             })
@@ -950,6 +946,7 @@ export class PostgresQueryRunner
                 oldTable,
                 index.columnNames,
                 index.where,
+                index.columnOrders,
             )
 
             // Skip renaming if Index has user defined constraint name
@@ -961,6 +958,7 @@ export class PostgresQueryRunner
                 newTable,
                 index.columnNames,
                 index.where,
+                index.columnOrders,
             )
 
             // build queries
@@ -1521,6 +1519,7 @@ export class PostgresQueryRunner
                             clonedTable,
                             index.columnNames,
                             index.where,
+                            index.columnOrders,
                         )
 
                     // Skip renaming if Index has user defined constraint name
@@ -1538,6 +1537,7 @@ export class PostgresQueryRunner
                             clonedTable,
                             index.columnNames,
                             index.where,
+                            index.columnOrders,
                         )
 
                     // build queries
@@ -3538,7 +3538,8 @@ export class PostgresQueryRunner
         const indicesSql =
             `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
             `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition", ` +
-            `"types"."typname" AS "type_name", "am"."amname" AS "index_type" ` +
+            `"types"."typname" AS "type_name", "am"."amname" AS "index_type", ` +
+            `CASE WHEN (SELECT opt & 1 FROM unnest("ix"."indkey"::int2[], "ix"."indoption"::int2[]) AS t(key, opt) WHERE t.key = "a"."attnum" LIMIT 1) = 1 THEN 'DESC' ELSE 'ASC' END AS "column_order" ` +
             `FROM "pg_class" "t" ` +
             `INNER JOIN "pg_index" "ix" ON "ix"."indrelid" = "t"."oid" ` +
             `INNER JOIN "pg_attribute" "a" ON "a"."attrelid" = "t"."oid"  AND "a"."attnum" = ANY ("ix"."indkey") ` +
@@ -3598,6 +3599,14 @@ export class PostgresQueryRunner
                     view: view,
                     name: constraint["constraint_name"],
                     columnNames: indices.map((i) => i["column_name"]),
+                    columnOrders: indices.reduce(
+                        (map, i) => {
+                            if (i["column_order"] === "DESC")
+                                map[i["column_name"]] = "DESC"
+                            return map
+                        },
+                        {} as { [col: string]: "ASC" | "DESC" },
+                    ),
                     isUnique: constraint["is_unique"] === "TRUE",
                     where: constraint["condition"],
                     isSpatial: constraint["index_type"] === "gist",
@@ -3697,7 +3706,8 @@ export class PostgresQueryRunner
         const indicesSql =
             `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
             `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition", ` +
-            `"types"."typname" AS "type_name", "am"."amname" AS "index_type" ` +
+            `"types"."typname" AS "type_name", "am"."amname" AS "index_type", ` +
+            `CASE WHEN (SELECT opt & 1 FROM unnest("ix"."indkey"::int2[], "ix"."indoption"::int2[]) AS t(key, opt) WHERE t.key = "a"."attnum" LIMIT 1) = 1 THEN 'DESC' ELSE 'ASC' END AS "column_order" ` +
             `FROM "pg_class" "t" ` +
             `INNER JOIN "pg_index" "ix" ON "ix"."indrelid" = "t"."oid" ` +
             `INNER JOIN "pg_attribute" "a" ON "a"."attrelid" = "t"."oid"  AND "a"."attnum" = ANY ("ix"."indkey") ` +
@@ -4330,6 +4340,14 @@ export class PostgresQueryRunner
                         table: table,
                         name: constraint["constraint_name"],
                         columnNames: indices.map((i) => i["column_name"]),
+                        columnOrders: indices.reduce(
+                            (map, i) => {
+                                if (i["column_order"] === "DESC")
+                                    map[i["column_name"]] = "DESC"
+                                return map
+                            },
+                            {} as { [col: string]: "ASC" | "DESC" },
+                        ),
                         isUnique: constraint["is_unique"] === "TRUE",
                         where: constraint["condition"],
                         isSpatial: constraint["index_type"] === "gist",
@@ -4692,7 +4710,10 @@ export class PostgresQueryRunner
         const indexTypeClause = this.buildIndexTypeClause(index)
 
         const columns = index.columnNames
-            .map((columnName) => `"${columnName}"`)
+            .map((columnName) => {
+                const order = index.columnOrders[columnName]
+                return `"${columnName}"${order ? ` ${order}` : ""}`
+            })
             .join(", ")
         return new Query(
             `CREATE ${index.isUnique ? "UNIQUE " : ""}INDEX${
