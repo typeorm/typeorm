@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import type { DataSource } from "../../../src"
-import { TypeORMError } from "../../../src"
+import { ObjectLiteral, TypeORMError } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -47,15 +47,12 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
         for (const connection of dataSources) {
             await prepareData(connection)
 
-            try {
-                await connection.manager.update(Post, { text: null } as any, {
+            const criteria: ObjectLiteral = { text: null }
+            await expect(
+                connection.manager.update(Post, criteria, {
                     title: "Updated",
-                })
-                expect.fail("Expected error")
-            } catch (error) {
-                expect(error).to.be.instanceOf(TypeORMError)
-                expect(error.message).to.include("Null value encountered")
-            }
+                }),
+            ).to.be.rejectedWith(TypeORMError, "Null value encountered")
         }
     })
 
@@ -63,17 +60,10 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
         for (const connection of dataSources) {
             await prepareData(connection)
 
-            try {
-                await connection.manager.update(
-                    Post,
-                    { text: undefined } as any,
-                    { title: "Updated" },
-                )
-                expect.fail("Expected error")
-            } catch (error) {
-                expect(error).to.be.instanceOf(TypeORMError)
-                expect(error.message).to.include("Undefined value encountered")
-            }
+            const criteria: ObjectLiteral = { text: undefined }
+            await expect(
+                connection.manager.update(Post, criteria, { title: "Updated" }),
+            ).to.be.rejectedWith(TypeORMError, "Undefined value encountered")
         }
     })
 
@@ -81,13 +71,10 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
         for (const connection of dataSources) {
             await prepareData(connection)
 
-            try {
-                await connection.manager.delete(Post, { text: null } as any)
-                expect.fail("Expected error")
-            } catch (error) {
-                expect(error).to.be.instanceOf(TypeORMError)
-                expect(error.message).to.include("Null value encountered")
-            }
+            const criteria: ObjectLiteral = { text: null }
+            await expect(
+                connection.manager.delete(Post, criteria),
+            ).to.be.rejectedWith(TypeORMError, "Null value encountered")
         }
     })
 
@@ -95,15 +82,10 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
         for (const connection of dataSources) {
             await prepareData(connection)
 
-            try {
-                await connection.manager.delete(Post, {
-                    text: undefined,
-                } as any)
-                expect.fail("Expected error")
-            } catch (error) {
-                expect(error).to.be.instanceOf(TypeORMError)
-                expect(error.message).to.include("Undefined value encountered")
-            }
+            const criteria: ObjectLiteral = { text: undefined }
+            await expect(
+                connection.manager.delete(Post, criteria),
+            ).to.be.rejectedWith(TypeORMError, "Undefined value encountered")
         }
     })
 
@@ -111,15 +93,10 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
         for (const connection of dataSources) {
             await prepareData(connection)
 
-            try {
-                await connection.manager.softDelete(Post, {
-                    text: null,
-                } as any)
-                expect.fail("Expected error")
-            } catch (error) {
-                expect(error).to.be.instanceOf(TypeORMError)
-                expect(error.message).to.include("Null value encountered")
-            }
+            const criteria: ObjectLiteral = { text: null }
+            await expect(
+                connection.manager.softDelete(Post, criteria),
+            ).to.be.rejectedWith(TypeORMError, "Null value encountered")
         }
     })
 
@@ -127,15 +104,10 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
         for (const connection of dataSources) {
             await prepareData(connection)
 
-            try {
-                await connection.manager.softDelete(Post, {
-                    text: undefined,
-                } as any)
-                expect.fail("Expected error")
-            } catch (error) {
-                expect(error).to.be.instanceOf(TypeORMError)
-                expect(error.message).to.include("Undefined value encountered")
-            }
+            const criteria: ObjectLiteral = { text: undefined }
+            await expect(
+                connection.manager.softDelete(Post, criteria),
+            ).to.be.rejectedWith(TypeORMError, "Undefined value encountered")
         }
     })
 
@@ -143,15 +115,10 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
         for (const connection of dataSources) {
             await prepareData(connection)
 
-            try {
-                await connection.manager.restore(Post, {
-                    text: null,
-                } as any)
-                expect.fail("Expected error")
-            } catch (error) {
-                expect(error).to.be.instanceOf(TypeORMError)
-                expect(error.message).to.include("Null value encountered")
-            }
+            const criteria: ObjectLiteral = { text: null }
+            await expect(
+                connection.manager.restore(Post, criteria),
+            ).to.be.rejectedWith(TypeORMError, "Null value encountered")
         }
     })
 
@@ -159,15 +126,10 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
         for (const connection of dataSources) {
             await prepareData(connection)
 
-            try {
-                await connection.manager.restore(Post, {
-                    text: undefined,
-                } as any)
-                expect.fail("Expected error")
-            } catch (error) {
-                expect(error).to.be.instanceOf(TypeORMError)
-                expect(error.message).to.include("Undefined value encountered")
-            }
+            const criteria: ObjectLiteral = { text: undefined }
+            await expect(
+                connection.manager.restore(Post, criteria),
+            ).to.be.rejectedWith(TypeORMError, "Undefined value encountered")
         }
     })
 
@@ -175,15 +137,12 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
         for (const connection of dataSources) {
             await prepareData(connection)
 
-            try {
-                await connection
+            const criteria: ObjectLiteral = { text: null }
+            await expect(
+                connection
                     .getRepository(Post)
-                    .update({ text: null } as any, { title: "Updated" })
-                expect.fail("Expected error")
-            } catch (error) {
-                expect(error).to.be.instanceOf(TypeORMError)
-                expect(error.message).to.include("Null value encountered")
-            }
+                    .update(criteria, { title: "Updated" }),
+            ).to.be.rejectedWith(TypeORMError, "Null value encountered")
         }
     })
 
@@ -191,15 +150,10 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
         for (const connection of dataSources) {
             await prepareData(connection)
 
-            try {
-                await connection
-                    .getRepository(Post)
-                    .delete({ text: null } as any)
-                expect.fail("Expected error")
-            } catch (error) {
-                expect(error).to.be.instanceOf(TypeORMError)
-                expect(error.message).to.include("Null value encountered")
-            }
+            const criteria: ObjectLiteral = { text: null }
+            await expect(
+                connection.getRepository(Post).delete(criteria),
+            ).to.be.rejectedWith(TypeORMError, "Null value encountered")
         }
     })
 
@@ -207,17 +161,10 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
         for (const connection of dataSources) {
             await prepareData(connection)
 
-            try {
-                await connection.manager.update(
-                    Post,
-                    { category: { name: null } } as any,
-                    { title: "Updated" },
-                )
-                expect.fail("Expected error")
-            } catch (error) {
-                expect(error).to.be.instanceOf(TypeORMError)
-                expect(error.message).to.include("Null value encountered")
-            }
+            const criteria: ObjectLiteral = { category: { name: null } }
+            await expect(
+                connection.manager.update(Post, criteria, { title: "Updated" }),
+            ).to.be.rejectedWith(TypeORMError, "Null value encountered")
         }
     })
 
@@ -225,15 +172,10 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
         for (const connection of dataSources) {
             await prepareData(connection)
 
-            try {
-                await connection.manager.delete(Post, {
-                    category: { name: undefined },
-                } as any)
-                expect.fail("Expected error")
-            } catch (error) {
-                expect(error).to.be.instanceOf(TypeORMError)
-                expect(error.message).to.include("Undefined value encountered")
-            }
+            const criteria: ObjectLiteral = { category: { name: undefined } }
+            await expect(
+                connection.manager.delete(Post, criteria),
+            ).to.be.rejectedWith(TypeORMError, "Undefined value encountered")
         }
     })
 })
@@ -261,7 +203,7 @@ describe("entity manager > invalidWhereValuesBehavior with sql-null", () => {
         for (const connection of dataSources) {
             const post = new Post()
             post.title = "Test Post"
-            post.text = null as any
+            post.text = null
             await connection.manager.save(post)
 
             const post2 = new Post()
@@ -270,7 +212,8 @@ describe("entity manager > invalidWhereValuesBehavior with sql-null", () => {
             await connection.manager.save(post2)
 
             // With sql-null, { text: null } should match rows where text IS NULL
-            await connection.manager.update(Post, { text: null } as any, {
+            const criteria: ObjectLiteral = { text: null }
+            await connection.manager.update(Post, criteria, {
                 title: "Updated",
             })
 
@@ -289,7 +232,7 @@ describe("entity manager > invalidWhereValuesBehavior with sql-null", () => {
         for (const connection of dataSources) {
             const post = new Post()
             post.title = "Test Post"
-            post.text = null as any
+            post.text = null
             await connection.manager.save(post)
 
             const post2 = new Post()
@@ -298,7 +241,8 @@ describe("entity manager > invalidWhereValuesBehavior with sql-null", () => {
             await connection.manager.save(post2)
 
             // With sql-null, { text: null } should delete rows where text IS NULL
-            await connection.manager.delete(Post, { text: null } as any)
+            const criteria: ObjectLiteral = { text: null }
+            await connection.manager.delete(Post, criteria)
 
             const remaining = await connection.manager.find(Post)
             expect(remaining.length).to.equal(1)
@@ -336,10 +280,11 @@ describe("entity manager > invalidWhereValuesBehavior with ignore", () => {
 
             // With ignore, { title: "Test Post", text: null } should strip text
             // and delete by title only
-            await connection.manager.delete(Post, {
+            const criteria: ObjectLiteral = {
                 title: "Test Post",
                 text: null,
-            } as any)
+            }
+            await connection.manager.delete(Post, criteria)
 
             const remaining = await connection.manager.find(Post)
             expect(remaining.length).to.equal(0)
@@ -355,10 +300,11 @@ describe("entity manager > invalidWhereValuesBehavior with ignore", () => {
 
             // With ignore, { title: "Test Post", text: undefined } should strip text
             // and delete by title only
-            await connection.manager.delete(Post, {
+            const criteria: ObjectLiteral = {
                 title: "Test Post",
                 text: undefined,
-            } as any)
+            }
+            await connection.manager.delete(Post, criteria)
 
             const remaining = await connection.manager.find(Post)
             expect(remaining.length).to.equal(0)
@@ -378,9 +324,13 @@ describe("entity manager > invalidWhereValuesBehavior with ignore", () => {
             await connection.manager.save(post)
 
             // With ignore, nested null should be stripped, leaving only title
+            const criteria: ObjectLiteral = {
+                title: "Test Post",
+                category: { name: null },
+            }
             await connection.manager.update(
                 Post,
-                { title: "Test Post", category: { name: null } } as any,
+                criteria,
                 { text: "Updated" },
             )
 
@@ -404,13 +354,48 @@ describe("entity manager > invalidWhereValuesBehavior with ignore", () => {
             await connection.manager.save(post)
 
             // With ignore, nested undefined should be stripped, leaving only title
-            await connection.manager.delete(Post, {
+            const criteria: ObjectLiteral = {
                 title: "Test Post",
                 category: { name: undefined },
-            } as any)
+            }
+            await connection.manager.delete(Post, criteria)
 
             const remaining = await connection.manager.find(Post)
             expect(remaining.length).to.equal(0)
+        }
+    })
+
+    it("should throw error when all criteria are stripped/ignored in EntityManager.delete()", async () => {
+        for (const connection of dataSources) {
+            const post = new Post()
+            post.title = "Test Post"
+            post.text = "text"
+            await connection.manager.save(post)
+
+            const criteria: ObjectLiteral = { text: null }
+            await expect(
+                connection.manager.delete(Post, criteria),
+            ).to.be.rejectedWith(TypeORMError, "Empty criteria(s) are not allowed")
+
+            const remaining = await connection.manager.find(Post)
+            expect(remaining.length).to.equal(1)
+        }
+    })
+
+    it("should throw error when all criteria are stripped/ignored in EntityManager.update()", async () => {
+        for (const connection of dataSources) {
+            const post = new Post()
+            post.title = "Test Post"
+            post.text = "text"
+            await connection.manager.save(post)
+
+            const criteria: ObjectLiteral = { text: undefined }
+            await expect(
+                connection.manager.update(Post, criteria, { title: "Updated" }),
+            ).to.be.rejectedWith(TypeORMError, "Empty criteria(s) are not allowed")
+
+            const check = await connection.manager.findOneByOrFail(Post, { id: post.id })
+            expect(check.title).to.equal("Test Post")
         }
     })
 })
@@ -517,15 +502,12 @@ describe("entity manager > default invalidWhereValuesBehavior behavior (throw)",
         for (const connection of dataSources) {
             await prepareData(connection)
 
-            try {
-                await connection.manager.update(Post, { text: null } as any, {
+            const criteria: ObjectLiteral = { text: null }
+            await expect(
+                connection.manager.update(Post, criteria, {
                     title: "Updated",
-                })
-                expect.fail("Expected error")
-            } catch (error) {
-                expect(error).to.be.instanceOf(TypeORMError)
-                expect(error.message).to.include("Null value encountered")
-            }
+                }),
+            ).to.be.rejectedWith(TypeORMError, "Null value encountered")
         }
     })
 
@@ -533,17 +515,10 @@ describe("entity manager > default invalidWhereValuesBehavior behavior (throw)",
         for (const connection of dataSources) {
             await prepareData(connection)
 
-            try {
-                await connection.manager.update(
-                    Post,
-                    { text: undefined } as any,
-                    { title: "Updated" },
-                )
-                expect.fail("Expected error")
-            } catch (error) {
-                expect(error).to.be.instanceOf(TypeORMError)
-                expect(error.message).to.include("Undefined value encountered")
-            }
+            const criteria: ObjectLiteral = { text: undefined }
+            await expect(
+                connection.manager.update(Post, criteria, { title: "Updated" }),
+            ).to.be.rejectedWith(TypeORMError, "Undefined value encountered")
         }
     })
 
@@ -551,13 +526,10 @@ describe("entity manager > default invalidWhereValuesBehavior behavior (throw)",
         for (const connection of dataSources) {
             await prepareData(connection)
 
-            try {
-                await connection.manager.delete(Post, { text: null } as any)
-                expect.fail("Expected error")
-            } catch (error) {
-                expect(error).to.be.instanceOf(TypeORMError)
-                expect(error.message).to.include("Null value encountered")
-            }
+            const criteria: ObjectLiteral = { text: null }
+            await expect(
+                connection.manager.delete(Post, criteria),
+            ).to.be.rejectedWith(TypeORMError, "Null value encountered")
         }
     })
 
@@ -565,15 +537,10 @@ describe("entity manager > default invalidWhereValuesBehavior behavior (throw)",
         for (const connection of dataSources) {
             await prepareData(connection)
 
-            try {
-                await connection.manager.delete(Post, {
-                    text: undefined,
-                } as any)
-                expect.fail("Expected error")
-            } catch (error) {
-                expect(error).to.be.instanceOf(TypeORMError)
-                expect(error.message).to.include("Undefined value encountered")
-            }
+            const criteria: ObjectLiteral = { text: undefined }
+            await expect(
+                connection.manager.delete(Post, criteria),
+            ).to.be.rejectedWith(TypeORMError, "Undefined value encountered")
         }
     })
 })
