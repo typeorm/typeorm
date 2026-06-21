@@ -677,11 +677,18 @@ export class OrmUtils {
      * @param criteria
      * @param options
      * @param path
+     * @param shouldNormalizeObject
+     *
+     * @returns normalized criteria
      */
     static normalizeWhereCriteria(
         criteria: ObjectLiteral | ObjectLiteral[],
         options?: InvalidFindOptionsWhereBehavior,
         path?: string,
+        shouldNormalizeObject?: (
+            propertyPath: string,
+            value: ObjectLiteral,
+        ) => boolean,
     ): ObjectLiteral | ObjectLiteral[] {
         options ??= {}
 
@@ -693,6 +700,7 @@ export class OrmUtils {
                         criterion,
                         options,
                         String(index),
+                        shouldNormalizeObject,
                     ),
             )
         }
@@ -723,10 +731,19 @@ export class OrmUtils {
                 }
                 // else: "ignore" — skip this key
             } else if (OrmUtils.isPlainObject(value)) {
+                if (
+                    shouldNormalizeObject &&
+                    !shouldNormalizeObject(propertyPath, value)
+                ) {
+                    result[key] = value
+                    continue
+                }
+
                 const nested = OrmUtils.normalizeWhereCriteria(
                     value,
                     options,
                     propertyPath,
+                    shouldNormalizeObject,
                 )
                 if (Object.keys(nested).length > 0) {
                     result[key] = nested

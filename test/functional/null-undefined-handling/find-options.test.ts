@@ -227,7 +227,7 @@ describe("find options > null and undefined handling", () => {
                 dataSources.map(async (dataSource) => {
                     await prepareData(dataSource)
 
-                    // Empty object {} should be skipped Ã¢â‚¬â€ no join, no filter
+                    // Empty object {} should be skipped: no join, no filter
                     const posts = await dataSource.getRepository(Post).find({
                         where: {
                             category: unsafeWhere<Category>({}),
@@ -243,7 +243,7 @@ describe("find options > null and undefined handling", () => {
                 dataSources.map(async (dataSource) => {
                     await prepareData(dataSource)
 
-                    // { category: { name: null } } Ã¢â‚¬â€ null should throw by default
+                    // { category: { name: null } } should throw by default
                     try {
                         await dataSource.getRepository(Post).find({
                             where: unsafeWhere<Post>({

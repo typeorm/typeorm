@@ -870,10 +870,15 @@ export class EntityManager {
 
             return qb.execute()
         } else {
-            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
-                criteria as ObjectLiteral | ObjectLiteral[],
-                this.dataSource.options.invalidWhereValuesBehavior,
-            )
+            let normalizedCriteria: ObjectLiteral | ObjectLiteral[]
+            try {
+                normalizedCriteria = this.normalizeMutationCriteria(
+                    target,
+                    criteria as ObjectLiteral | ObjectLiteral[],
+                )
+            } catch (error) {
+                return Promise.reject(error)
+            }
             if (
                 OrmUtils.isCriteriaNullOrEmptyOrContainsEmpty(
                     normalizedCriteria,
@@ -962,10 +967,15 @@ export class EntityManager {
                 .whereInIds(criteria)
                 .execute()
         } else {
-            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
-                criteria as ObjectLiteral | ObjectLiteral[],
-                this.dataSource.options.invalidWhereValuesBehavior,
-            )
+            let normalizedCriteria: ObjectLiteral | ObjectLiteral[]
+            try {
+                normalizedCriteria = this.normalizeMutationCriteria(
+                    targetOrEntity,
+                    criteria as ObjectLiteral | ObjectLiteral[],
+                )
+            } catch (error) {
+                return Promise.reject(error)
+            }
             if (
                 OrmUtils.isCriteriaNullOrEmptyOrContainsEmpty(
                     normalizedCriteria,
@@ -1039,10 +1049,15 @@ export class EntityManager {
                 .whereInIds(criteria)
                 .execute()
         } else {
-            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
-                criteria as ObjectLiteral | ObjectLiteral[],
-                this.dataSource.options.invalidWhereValuesBehavior,
-            )
+            let normalizedCriteria: ObjectLiteral | ObjectLiteral[]
+            try {
+                normalizedCriteria = this.normalizeMutationCriteria(
+                    targetOrEntity,
+                    criteria as ObjectLiteral | ObjectLiteral[],
+                )
+            } catch (error) {
+                return Promise.reject(error)
+            }
             if (
                 OrmUtils.isCriteriaNullOrEmptyOrContainsEmpty(
                     normalizedCriteria,
@@ -1101,10 +1116,15 @@ export class EntityManager {
                 .whereInIds(criteria)
                 .execute()
         } else {
-            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
-                criteria as ObjectLiteral | ObjectLiteral[],
-                this.dataSource.options.invalidWhereValuesBehavior,
-            )
+            let normalizedCriteria: ObjectLiteral | ObjectLiteral[]
+            try {
+                normalizedCriteria = this.normalizeMutationCriteria(
+                    targetOrEntity,
+                    criteria as ObjectLiteral | ObjectLiteral[],
+                )
+            } catch (error) {
+                return Promise.reject(error)
+            }
             if (
                 OrmUtils.isCriteriaNullOrEmptyOrContainsEmpty(
                     normalizedCriteria,
@@ -1122,6 +1142,75 @@ export class EntityManager {
                 .where(normalizedCriteria)
                 .execute()
         }
+    }
+
+    /**
+     * Normalizes mutation criteria with metadata when available so relation and
+     * embedded criteria are validated while object-valued columns are preserved.
+     *
+     * @param target Entity target or raw table name.
+     * @param criteria Mutation criteria.
+     * @returns Normalized mutation criteria.
+     */
+    private normalizeMutationCriteria<Entity extends ObjectLiteral>(
+        target: EntityTarget<Entity>,
+        criteria: ObjectLiteral | ObjectLiteral[],
+    ): ObjectLiteral | ObjectLiteral[] {
+        const behavior = this.dataSource.options.invalidWhereValuesBehavior
+
+        if (!this.dataSource.hasMetadata(target)) {
+            return OrmUtils.normalizeWhereCriteria(
+                criteria,
+                behavior,
+                undefined,
+                () => false,
+            )
+        }
+
+        const metadata = this.dataSource.getMetadata(target)
+
+        return OrmUtils.normalizeWhereCriteria(
+            criteria,
+            behavior,
+            undefined,
+            (propertyPath) => {
+                const parts = propertyPath.split(".")
+                let currentMetadata = metadata
+                let currentPath = ""
+
+                for (const part of parts) {
+                    currentPath = currentPath ? `${currentPath}.${part}` : part
+
+                    if (
+                        currentMetadata.findColumnWithPropertyPathStrict(
+                            currentPath,
+                        )
+                    ) {
+                        return false
+                    }
+
+                    const relation =
+                        currentMetadata.findRelationWithPropertyPath(
+                            currentPath,
+                        )
+                    if (relation) {
+                        currentMetadata = relation.inverseEntityMetadata
+                        currentPath = ""
+                        continue
+                    }
+
+                    if (
+                        currentMetadata.hasEmbeddedWithPropertyPath(currentPath)
+                    ) {
+                        continue
+                    }
+
+                    return false
+                }
+
+                return true
+            },
+        )
     }
 
     /**
