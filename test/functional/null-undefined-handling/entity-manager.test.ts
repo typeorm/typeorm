@@ -12,6 +12,8 @@ import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { expect } from "chai"
 
+// #12578 — EntityManager.update/delete/softDelete/restore should not throw
+// when invalidWhereValuesBehavior is unset and null/undefined are encountered
 describe("entity manager > null and undefined handling with default behavior", () => {
     let dataSources: DataSource[]
 
