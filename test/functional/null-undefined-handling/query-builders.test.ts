@@ -133,6 +133,50 @@ describe("entity manager > invalidWhereValuesBehavior default", () => {
             expect(updated.text).to.equal("Updated text")
         }
     })
+
+    it("should reject criteria that normalize to empty", async () => {
+        for (const connection of dataSources) {
+            const post = await prepareData(connection)
+            const dangerousCriteria = () =>
+                JSON.parse(`{"__proto__":{"polluted":true}}`)
+
+            await expectInvalidCriteriaError(
+                () =>
+                    connection.manager.update(Post, dangerousCriteria(), {
+                        text: "Updated text",
+                    }),
+                "Empty criteria(s)",
+            )
+
+            await expectInvalidCriteriaError(
+                () =>
+                    connection.manager.delete(Post, [
+                        dangerousCriteria(),
+                    ] as any),
+                "Empty criteria(s)",
+            )
+
+            await expectInvalidCriteriaError(
+                () => connection.manager.softDelete(Post, dangerousCriteria()),
+                "Empty criteria(s)",
+            )
+
+            await expectInvalidCriteriaError(
+                () =>
+                    connection.manager.restore(Post, [
+                        dangerousCriteria(),
+                    ] as any),
+                "Empty criteria(s)",
+            )
+
+            const unchanged = await connection.manager.findOneByOrFail(Post, {
+                id: post.id,
+            })
+            expect(unchanged.text).to.equal("Some text")
+            expect(await connection.manager.count(Post)).to.equal(1)
+            expect(({} as any).polluted).to.be.undefined
+        }
+    })
 })
 
 describe("entity manager > invalidWhereValuesBehavior with throw", () => {

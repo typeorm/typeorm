@@ -98,6 +98,40 @@ export class EntityManager {
         }
     }
 
+    private createEmptyCriteriaError(methodName: string): TypeORMError {
+        return new TypeORMError(
+            `Empty criteria(s) are not allowed for the ${methodName} method.`,
+        )
+    }
+
+    private normalizeWhereCriteria(
+        criteria: ObjectLiteral | ObjectLiteral[],
+        methodName: string,
+    ): ObjectLiteral | ObjectLiteral[] {
+        const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+            criteria,
+            this.dataSource.options.invalidWhereValuesBehavior,
+        )
+
+        if (Array.isArray(normalizedCriteria)) {
+            const nonEmptyCriteria = normalizedCriteria.filter(
+                (criterion) => !OrmUtils.isCriteriaNullOrEmpty(criterion),
+            )
+
+            if (nonEmptyCriteria.length === 0) {
+                throw this.createEmptyCriteriaError(methodName)
+            }
+
+            return nonEmptyCriteria
+        }
+
+        if (OrmUtils.isCriteriaNullOrEmpty(normalizedCriteria)) {
+            throw this.createEmptyCriteriaError(methodName)
+        }
+
+        return normalizedCriteria
+    }
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
@@ -851,11 +885,7 @@ export class EntityManager {
     ): Promise<UpdateResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
         if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
-            return Promise.reject(
-                new TypeORMError(
-                    `Empty criteria(s) are not allowed for the update method.`,
-                ),
-            )
+            return Promise.reject(this.createEmptyCriteriaError("update"))
         }
 
         if (OrmUtils.isPrimitiveCriteria(criteria)) {
@@ -870,9 +900,9 @@ export class EntityManager {
 
             return qb.execute()
         } else {
-            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+            const normalizedCriteria = this.normalizeWhereCriteria(
                 criteria as ObjectLiteral | ObjectLiteral[],
-                this.dataSource.options.invalidWhereValuesBehavior,
+                "update",
             )
             const qb = this.createQueryBuilder()
                 .update(target)
@@ -937,11 +967,7 @@ export class EntityManager {
     ): Promise<DeleteResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
         if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
-            return Promise.reject(
-                new TypeORMError(
-                    `Empty criteria(s) are not allowed for the delete method.`,
-                ),
-            )
+            return Promise.reject(this.createEmptyCriteriaError("delete"))
         }
 
         if (OrmUtils.isPrimitiveCriteria(criteria)) {
@@ -951,9 +977,9 @@ export class EntityManager {
                 .whereInIds(criteria)
                 .execute()
         } else {
-            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+            const normalizedCriteria = this.normalizeWhereCriteria(
                 criteria as ObjectLiteral | ObjectLiteral[],
-                this.dataSource.options.invalidWhereValuesBehavior,
+                "delete",
             )
             return this.createQueryBuilder()
                 .delete()
@@ -1003,11 +1029,7 @@ export class EntityManager {
     ): Promise<UpdateResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
         if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
-            return Promise.reject(
-                new TypeORMError(
-                    `Empty criteria(s) are not allowed for the softDelete method.`,
-                ),
-            )
+            return Promise.reject(this.createEmptyCriteriaError("softDelete"))
         }
 
         if (OrmUtils.isPrimitiveCriteria(criteria)) {
@@ -1017,9 +1039,9 @@ export class EntityManager {
                 .whereInIds(criteria)
                 .execute()
         } else {
-            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+            const normalizedCriteria = this.normalizeWhereCriteria(
                 criteria as ObjectLiteral | ObjectLiteral[],
-                this.dataSource.options.invalidWhereValuesBehavior,
+                "softDelete",
             )
             return this.createQueryBuilder()
                 .softDelete()
@@ -1054,11 +1076,7 @@ export class EntityManager {
     ): Promise<UpdateResult> {
         // if user passed empty criteria or empty list of criterias, then throw an error
         if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
-            return Promise.reject(
-                new TypeORMError(
-                    `Empty criteria(s) are not allowed for the restore method.`,
-                ),
-            )
+            return Promise.reject(this.createEmptyCriteriaError("restore"))
         }
 
         if (OrmUtils.isPrimitiveCriteria(criteria)) {
@@ -1068,9 +1086,9 @@ export class EntityManager {
                 .whereInIds(criteria)
                 .execute()
         } else {
-            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+            const normalizedCriteria = this.normalizeWhereCriteria(
                 criteria as ObjectLiteral | ObjectLiteral[],
-                this.dataSource.options.invalidWhereValuesBehavior,
+                "restore",
             )
             return this.createQueryBuilder()
                 .restore()
