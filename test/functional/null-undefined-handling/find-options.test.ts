@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import type { DataSource } from "../../../src"
+import type { DataSource, FindOptionsWhere } from "../../../src"
 import { TypeORMError } from "../../../src"
 import {
     closeTestingConnections,
@@ -8,6 +8,10 @@ import {
 } from "../../utils/test-utils"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
+
+function unsafeWhere<T>(where: unknown): FindOptionsWhere<T> {
+    return where as FindOptionsWhere<T>
+}
 
 describe("find options > null and undefined handling", () => {
     let dataSources: DataSource[]
@@ -223,10 +227,10 @@ describe("find options > null and undefined handling", () => {
                 dataSources.map(async (dataSource) => {
                     await prepareData(dataSource)
 
-                    // Empty object {} should be skipped — no join, no filter
+                    // Empty object {} should be skipped Ã¢â‚¬â€ no join, no filter
                     const posts = await dataSource.getRepository(Post).find({
                         where: {
-                            category: {} as any,
+                            category: unsafeWhere<Category>({}),
                         },
                     })
 
@@ -239,12 +243,12 @@ describe("find options > null and undefined handling", () => {
                 dataSources.map(async (dataSource) => {
                     await prepareData(dataSource)
 
-                    // { category: { name: null } } — null should throw by default
+                    // { category: { name: null } } Ã¢â‚¬â€ null should throw by default
                     try {
                         await dataSource.getRepository(Post).find({
-                            where: {
+                            where: unsafeWhere<Post>({
                                 category: { name: null },
-                            } as any,
+                            }),
                         })
                         expect.fail("Expected query to throw an error")
                     } catch (error) {
@@ -897,7 +901,7 @@ describe("find options > null and undefined handling", () => {
 
                     const posts = await dataSource.getRepository(Post).find({
                         where: {
-                            category: {} as any,
+                            category: unsafeWhere<Category>({}),
                         },
                     })
 
@@ -911,9 +915,7 @@ describe("find options > null and undefined handling", () => {
                     await prepareData(dataSource)
 
                     const posts = await dataSource.getRepository(Post).find({
-                        where: {
-                            category: { name: null },
-                        } as any,
+                        where: unsafeWhere<Post>({ category: { name: null } }),
                     })
 
                     // All 3 posts have a category, so all match when name filter is skipped

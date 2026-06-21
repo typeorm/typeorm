@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import type { DataSource } from "../../../src"
+import type { DataSource, FindOptionsWhere } from "../../../src"
 import { TypeORMError } from "../../../src"
 import {
     closeTestingConnections,
@@ -8,6 +8,10 @@ import {
 } from "../../utils/test-utils"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
+
+function unsafeWhere<T>(where: unknown): FindOptionsWhere<T> {
+    return where as FindOptionsWhere<T>
+}
 
 describe("entity manager > invalidWhereValuesBehavior defaults", () => {
     let dataSources: DataSource[]
@@ -127,9 +131,13 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             await prepareData(connection)
 
             try {
-                await connection.manager.update(Post, { text: null } as any, {
-                    title: "Updated",
-                })
+                await connection.manager.update(
+                    Post,
+                    unsafeWhere<Post>({ text: null }),
+                    {
+                        title: "Updated",
+                    },
+                )
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
@@ -161,7 +169,10 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             await prepareData(connection)
 
             try {
-                await connection.manager.delete(Post, { text: null } as any)
+                await connection.manager.delete(
+                    Post,
+                    unsafeWhere<Post>({ text: null }),
+                )
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
@@ -175,9 +186,10 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             await prepareData(connection)
 
             try {
-                await connection.manager.delete(Post, {
-                    text: undefined,
-                } as any)
+                await connection.manager.delete(
+                    Post,
+                    unsafeWhere<Post>({ text: undefined }),
+                )
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
@@ -191,9 +203,10 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             await prepareData(connection)
 
             try {
-                await connection.manager.softDelete(Post, {
-                    text: null,
-                } as any)
+                await connection.manager.softDelete(
+                    Post,
+                    unsafeWhere<Post>({ text: null }),
+                )
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
@@ -207,9 +220,10 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             await prepareData(connection)
 
             try {
-                await connection.manager.softDelete(Post, {
-                    text: undefined,
-                } as any)
+                await connection.manager.softDelete(
+                    Post,
+                    unsafeWhere<Post>({ text: undefined }),
+                )
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
@@ -223,9 +237,10 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             await prepareData(connection)
 
             try {
-                await connection.manager.restore(Post, {
-                    text: null,
-                } as any)
+                await connection.manager.restore(
+                    Post,
+                    unsafeWhere<Post>({ text: null }),
+                )
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
@@ -239,9 +254,10 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             await prepareData(connection)
 
             try {
-                await connection.manager.restore(Post, {
-                    text: undefined,
-                } as any)
+                await connection.manager.restore(
+                    Post,
+                    unsafeWhere<Post>({ text: undefined }),
+                )
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
@@ -257,7 +273,9 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             try {
                 await connection
                     .getRepository(Post)
-                    .update({ text: null } as any, { title: "Updated" })
+                    .update(unsafeWhere<Post>({ text: null }), {
+                        title: "Updated",
+                    })
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
@@ -273,7 +291,7 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             try {
                 await connection
                     .getRepository(Post)
-                    .delete({ text: null } as any)
+                    .delete(unsafeWhere<Post>({ text: null }))
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
@@ -289,7 +307,7 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             try {
                 await connection.manager.update(
                     Post,
-                    { category: { name: null } } as any,
+                    unsafeWhere<Post>({ category: { name: null } }),
                     { title: "Updated" },
                 )
                 expect.fail("Expected error")
@@ -305,9 +323,10 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             await prepareData(connection)
 
             try {
-                await connection.manager.delete(Post, {
-                    category: { name: undefined },
-                } as any)
+                await connection.manager.delete(
+                    Post,
+                    unsafeWhere<Post>({ category: { name: undefined } }),
+                )
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
@@ -340,7 +359,7 @@ describe("entity manager > invalidWhereValuesBehavior with sql-null", () => {
         for (const connection of dataSources) {
             const post = new Post()
             post.title = "Test Post"
-            post.text = null as any
+            post.text = null
             await connection.manager.save(post)
 
             const post2 = new Post()
@@ -349,9 +368,13 @@ describe("entity manager > invalidWhereValuesBehavior with sql-null", () => {
             await connection.manager.save(post2)
 
             // With sql-null, { text: null } should match rows where text IS NULL
-            await connection.manager.update(Post, { text: null } as any, {
-                title: "Updated",
-            })
+            await connection.manager.update(
+                Post,
+                unsafeWhere<Post>({ text: null }),
+                {
+                    title: "Updated",
+                },
+            )
 
             const updated = await connection.manager.findOneByOrFail(Post, {
                 id: post.id,
@@ -368,7 +391,7 @@ describe("entity manager > invalidWhereValuesBehavior with sql-null", () => {
         for (const connection of dataSources) {
             const post = new Post()
             post.title = "Test Post"
-            post.text = null as any
+            post.text = null
             await connection.manager.save(post)
 
             const post2 = new Post()
@@ -377,7 +400,10 @@ describe("entity manager > invalidWhereValuesBehavior with sql-null", () => {
             await connection.manager.save(post2)
 
             // With sql-null, { text: null } should delete rows where text IS NULL
-            await connection.manager.delete(Post, { text: null } as any)
+            await connection.manager.delete(
+                Post,
+                unsafeWhere<Post>({ text: null }),
+            )
 
             const remaining = await connection.manager.find(Post)
             expect(remaining.length).to.equal(1)
@@ -415,10 +441,10 @@ describe("entity manager > invalidWhereValuesBehavior with ignore", () => {
 
             // With ignore, { title: "Test Post", text: null } should strip text
             // and delete by title only
-            await connection.manager.delete(Post, {
-                title: "Test Post",
-                text: null,
-            } as any)
+            await connection.manager.delete(
+                Post,
+                unsafeWhere<Post>({ title: "Test Post", text: null }),
+            )
 
             const remaining = await connection.manager.find(Post)
             expect(remaining.length).to.equal(0)
@@ -434,10 +460,10 @@ describe("entity manager > invalidWhereValuesBehavior with ignore", () => {
 
             // With ignore, { title: "Test Post", text: undefined } should strip text
             // and delete by title only
-            await connection.manager.delete(Post, {
-                title: "Test Post",
-                text: undefined,
-            } as any)
+            await connection.manager.delete(
+                Post,
+                unsafeWhere<Post>({ title: "Test Post", text: undefined }),
+            )
 
             const remaining = await connection.manager.find(Post)
             expect(remaining.length).to.equal(0)
@@ -459,7 +485,10 @@ describe("entity manager > invalidWhereValuesBehavior with ignore", () => {
             // With ignore, nested null should be stripped, leaving only title
             await connection.manager.update(
                 Post,
-                { title: "Test Post", category: { name: null } } as any,
+                unsafeWhere<Post>({
+                    title: "Test Post",
+                    category: { name: null },
+                }),
                 { text: "Updated" },
             )
 
@@ -483,10 +512,13 @@ describe("entity manager > invalidWhereValuesBehavior with ignore", () => {
             await connection.manager.save(post)
 
             // With ignore, nested undefined should be stripped, leaving only title
-            await connection.manager.delete(Post, {
-                title: "Test Post",
-                category: { name: undefined },
-            } as any)
+            await connection.manager.delete(
+                Post,
+                unsafeWhere<Post>({
+                    title: "Test Post",
+                    category: { name: undefined },
+                }),
+            )
 
             const remaining = await connection.manager.find(Post)
             expect(remaining.length).to.equal(0)
@@ -503,7 +535,7 @@ describe("entity manager > invalidWhereValuesBehavior with ignore", () => {
             try {
                 await connection.manager.update(
                     Post,
-                    { text: undefined } as any,
+                    unsafeWhere<Post>({ text: undefined }),
                     { title: "Updated" },
                 )
                 expect.fail("Expected error")
@@ -603,7 +635,8 @@ describe("entity manager > invalidWhereValuesBehavior does NOT affect QB .where(
 
             // QB .where() with undefined should NOT throw even when invalidWhereValuesBehavior is set to "throw".
             // It passes undefined through as-is (pre-feature behavior), which means
-            // it creates WHERE text = NULL (always false). This is expected — QB is low-level.
+            // it creates WHERE text = NULL (always false). This is expected:
+            // QB is low-level.
             const posts = await connection
                 .createQueryBuilder(Post, "post")
                 .where({
