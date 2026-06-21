@@ -662,9 +662,14 @@ export class OrmUtils {
         options?: InvalidFindOptionsWhereBehavior,
         path?: string,
     ): ObjectLiteral | ObjectLiteral[] {
-        if (!options) {
-            return criteria
-        }
+        // NOTE: there is intentionally no `if (!options) return criteria` guard
+        // here. When `options` is not configured at all, every behavior below
+        // still needs to fall through to its documented default ("throw" for
+        // both `undefined` and `null`). Short-circuiting here used to silently
+        // treat an unconfigured DataSource the same as `{ undefined: "ignore" }`,
+        // which let queries like `UPDATE ... WHERE "col" = $1` run unscoped
+        // whenever a caller accidentally passed `undefined` in the criteria.
+        // See: https://github.com/typeorm/typeorm/issues/12578
 
         // multiple criteria are possible at the top level
         if (!path && Array.isArray(criteria)) {
@@ -680,6 +685,11 @@ export class OrmUtils {
 
         const result: ObjectLiteral = {}
         for (const [key, value] of Object.entries(criteria)) {
+            // Guard against prototype pollution: assigning to `result["__proto__"]`
+            // would otherwise mutate the prototype instead of adding an own
+            // property, mirroring the same guard already used in `merge()`.
+            if (key === "__proto__") continue
+
             const propertyPath = path ? `${path}.${key}` : key
 
             if (value === undefined) {
