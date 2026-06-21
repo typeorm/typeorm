@@ -9,6 +9,132 @@ import {
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 
+describe("entity manager > invalidWhereValuesBehavior default", () => {
+    let dataSources: DataSource[]
+
+    before(async () => {
+        dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
+            entities: [Post, Category],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    async function prepareData(connection: DataSource) {
+        const post = new Post()
+        post.title = "Test Post"
+        post.text = "Some text"
+        await connection.manager.save(post)
+
+        return post
+    }
+
+    async function expectInvalidCriteriaError(
+        action: () => Promise<unknown>,
+        message: string,
+    ) {
+        try {
+            await action()
+            expect.fail("Expected error")
+        } catch (error) {
+            expect(error).to.be.instanceOf(TypeORMError)
+            expect(error.message).to.include(message)
+        }
+    }
+
+    it("should throw for null and undefined criteria by default", async () => {
+        for (const connection of dataSources) {
+            await prepareData(connection)
+
+            await expectInvalidCriteriaError(
+                () =>
+                    connection.manager.update(
+                        Post,
+                        { text: undefined } as any,
+                        { title: "Updated" },
+                    ),
+                "Undefined value encountered",
+            )
+
+            await expectInvalidCriteriaError(
+                () =>
+                    connection.manager.update(Post, { text: null } as any, {
+                        title: "Updated",
+                    }),
+                "Null value encountered",
+            )
+
+            await expectInvalidCriteriaError(
+                () =>
+                    connection.manager.delete(Post, {
+                        text: undefined,
+                    } as any),
+                "Undefined value encountered",
+            )
+
+            await expectInvalidCriteriaError(
+                () => connection.manager.delete(Post, { text: null } as any),
+                "Null value encountered",
+            )
+
+            await expectInvalidCriteriaError(
+                () =>
+                    connection.manager.softDelete(Post, {
+                        text: undefined,
+                    } as any),
+                "Undefined value encountered",
+            )
+
+            await expectInvalidCriteriaError(
+                () =>
+                    connection.manager.softDelete(Post, {
+                        text: null,
+                    } as any),
+                "Null value encountered",
+            )
+
+            await expectInvalidCriteriaError(
+                () =>
+                    connection.manager.restore(Post, {
+                        text: undefined,
+                    } as any),
+                "Undefined value encountered",
+            )
+
+            await expectInvalidCriteriaError(
+                () =>
+                    connection.manager.restore(Post, {
+                        text: null,
+                    } as any),
+                "Null value encountered",
+            )
+        }
+    })
+
+    it("should not treat prototype pollution keys as criteria", async () => {
+        for (const connection of dataSources) {
+            const post = await prepareData(connection)
+            const criteria = JSON.parse(
+                `{"__proto__":{"polluted":true},"title":"Test Post"}`,
+            )
+
+            await connection.manager.update(Post, criteria, {
+                text: "Updated text",
+            })
+
+            expect(({} as any).polluted).to.be.undefined
+
+            const updated = await connection.manager.findOneByOrFail(Post, {
+                id: post.id,
+            })
+            expect(updated.text).to.equal("Updated text")
+        }
+    })
+})
+
 describe("entity manager > invalidWhereValuesBehavior with throw", () => {
     let dataSources: DataSource[]
 
