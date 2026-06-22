@@ -877,9 +877,9 @@ export class EntityManager {
             if (OrmUtils.isNormalizedCriteriaUnfiltered(normalizedCriteria)) {
                 return Promise.reject(
                     new TypeORMError(
-                        `All where conditions for the update method were removed because their values were ` +
-                            `null/undefined and 'invalidWhereValuesBehavior' is set to 'ignore'. ` +
-                            `Refusing to run an unfiltered query that would affect every row.`,
+                        `The where criteria for the update method resolved to an empty filter that would match every row. ` +
+                            `This happens when every value is null and/or undefined and skipped via 'invalidWhereValuesBehavior', ` +
+                            `or when an empty criteria object is passed. Refusing to run an unfiltered query.`,
                     ),
                 )
             }
@@ -967,9 +967,9 @@ export class EntityManager {
             if (OrmUtils.isNormalizedCriteriaUnfiltered(normalizedCriteria)) {
                 return Promise.reject(
                     new TypeORMError(
-                        `All where conditions for the delete method were removed because their values were ` +
-                            `null/undefined and 'invalidWhereValuesBehavior' is set to 'ignore'. ` +
-                            `Refusing to run an unfiltered query that would affect every row.`,
+                        `The where criteria for the delete method resolved to an empty filter that would match every row. ` +
+                            `This happens when every value is null and/or undefined and skipped via 'invalidWhereValuesBehavior', ` +
+                            `or when an empty criteria object is passed. Refusing to run an unfiltered query.`,
                     ),
                 )
             }
@@ -1042,9 +1042,9 @@ export class EntityManager {
             if (OrmUtils.isNormalizedCriteriaUnfiltered(normalizedCriteria)) {
                 return Promise.reject(
                     new TypeORMError(
-                        `All where conditions for the softDelete method were removed because their values were ` +
-                            `null/undefined and 'invalidWhereValuesBehavior' is set to 'ignore'. ` +
-                            `Refusing to run an unfiltered query that would affect every row.`,
+                        `The where criteria for the softDelete method resolved to an empty filter that would match every row. ` +
+                            `This happens when every value is null and/or undefined and skipped via 'invalidWhereValuesBehavior', ` +
+                            `or when an empty criteria object is passed. Refusing to run an unfiltered query.`,
                     ),
                 )
             }
@@ -1102,9 +1102,9 @@ export class EntityManager {
             if (OrmUtils.isNormalizedCriteriaUnfiltered(normalizedCriteria)) {
                 return Promise.reject(
                     new TypeORMError(
-                        `All where conditions for the restore method were removed because their values were ` +
-                            `null/undefined and 'invalidWhereValuesBehavior' is set to 'ignore'. ` +
-                            `Refusing to run an unfiltered query that would affect every row.`,
+                        `The where criteria for the restore method resolved to an empty filter that would match every row. ` +
+                            `This happens when every value is null and/or undefined and skipped via 'invalidWhereValuesBehavior', ` +
+                            `or when an empty criteria object is passed. Refusing to run an unfiltered query.`,
                     ),
                 )
             }

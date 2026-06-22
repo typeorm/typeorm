@@ -598,6 +598,31 @@ describe("entity manager > invalidWhereValuesBehavior default (unconfigured)", (
             await expect(connection.manager.delete(Post, post)).to.be.fulfilled
         }
     })
+
+    it("should refuse an explicitly empty OR branch even without 'ignore' configured", async () => {
+        for (const connection of dataSources) {
+            await prepareData(connection)
+
+            // no invalidWhereValuesBehavior is configured here, so the guard is
+            // not about ignored null/undefined — an empty criteria object passed
+            // directly must still be refused.
+            try {
+                await connection.manager.delete(Post, [
+                    { title: "Test Post" },
+                    {},
+                ] as any)
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include(
+                    "Refusing to run an unfiltered",
+                )
+            }
+
+            const remaining = await connection.manager.find(Post)
+            expect(remaining.length).to.equal(1)
+        }
+    })
 })
 
 describe("entity manager > invalidWhereValuesBehavior unfiltered-write guard", () => {
