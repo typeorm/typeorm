@@ -236,6 +236,26 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             }
         }
     })
+
+    it("should NOT throw for an entity class instance with a null column (passthrough)", async () => {
+        for (const connection of dataSources) {
+            // a plain object { text: null } throws under this config, but an
+            // entity class instance is not validated — its set columns, including
+            // a null nullable column, are passed through to the WHERE as-is.
+            const post = new Post()
+            post.title = "Test Post"
+            post.text = null
+            await connection.manager.save(post)
+
+            let threw = false
+            try {
+                await connection.manager.delete(Post, post)
+            } catch (error) {
+                threw = true
+            }
+            expect(threw).to.equal(false)
+        }
+    })
 })
 
 describe("entity manager > invalidWhereValuesBehavior with sql-null", () => {

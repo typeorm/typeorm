@@ -202,4 +202,59 @@ describe(`OrmUtils`, () => {
             expect(objCopy2).to.equal(undefined)
         })
     })
+
+    describe("normalizeWhereCriteria", () => {
+        it("returns criteria unchanged when no options are provided", () => {
+            const criteria = { name: null, email: undefined }
+            expect(OrmUtils.normalizeWhereCriteria(criteria)).to.equal(criteria)
+        })
+
+        it("defaults to ignoring null and undefined on plain objects", () => {
+            const result = OrmUtils.normalizeWhereCriteria(
+                { name: "Alice", email: null, phone: undefined },
+                {},
+            )
+            expect(result).to.deep.equal({ name: "Alice" })
+        })
+
+        it("throws on null/undefined when configured to throw", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria(
+                    { name: undefined },
+                    { undefined: "throw" },
+                ),
+            ).to.throw(/Undefined value.*'name'/)
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria(
+                    { email: null },
+                    { null: "throw" },
+                ),
+            ).to.throw(/Null value.*'email'/)
+        })
+
+        it("passes entity class instances through unchanged (not validated)", () => {
+            class User {
+                id = 1
+                name = "Alice"
+                parentId: number | null = null
+                deletedAt: Date | undefined = undefined
+            }
+            const entity = new User()
+            // even with throw configured, an entity instance is not validated
+            const result = OrmUtils.normalizeWhereCriteria(entity, {
+                null: "throw",
+                undefined: "throw",
+            })
+            expect(result).to.equal(entity)
+        })
+
+        it("ignores the __proto__ key when iterating", () => {
+            const result = OrmUtils.normalizeWhereCriteria(
+                JSON.parse('{ "__proto__": { "polluted": true }, "id": 1 }'),
+                {},
+            )
+            expect(result).to.deep.equal({ id: 1 })
+            expect(({} as any).polluted).to.equal(undefined)
+        })
+    })
 })

@@ -4,7 +4,6 @@ import {
     PrimitiveCriteria,
     SinglePrimitiveCriteria,
 } from "../common/PrimitiveCriteria"
-import { InstanceChecker } from "./InstanceChecker"
 import { TypeORMError } from "../error"
 import { IsNull } from "../find-options/operator/IsNull"
 
@@ -608,14 +607,26 @@ export class OrmUtils {
     ): ObjectLiteral {
         if (!options) return criteria
 
+        // Entity class instances (and other non-plain objects) are passed through
+        // unchanged: their set columns — including nullable foreign keys — are
+        // intentionally part of the where condition and must not be validated or
+        // stripped. Only plain objects (FindOptionsWhere) are normalized.
+        if (!OrmUtils.isPlainObject(criteria)) {
+            return criteria
+        }
+
+        // Resolve the behavior once. The default remains "ignore".
+        const undefinedBehavior = options.undefined || "ignore"
+        const nullBehavior = options.null || "ignore"
+
         const result: ObjectLiteral = {}
 
         for (const [key, value] of Object.entries(criteria)) {
+            if (key === "__proto__") continue
             const propertyPath = path ? `${path}.${key}` : key
 
             if (value === undefined) {
-                const behavior = options.undefined || "ignore"
-                if (behavior === "throw") {
+                if (undefinedBehavior === "throw") {
                     throw new TypeORMError(
                         `Undefined value encountered in property '${propertyPath}' of a where condition. ` +
                             `Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
@@ -623,23 +634,17 @@ export class OrmUtils {
                 }
                 // "ignore" — skip this key
             } else if (value === null) {
-                const behavior = options.null || "ignore"
-                if (behavior === "throw") {
+                if (nullBehavior === "throw") {
                     throw new TypeORMError(
                         `Null value encountered in property '${propertyPath}' of a where condition. ` +
                             `To match with SQL NULL, the IsNull() operator must be used. ` +
                             `Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
                     )
-                } else if (behavior === "sql-null") {
+                } else if (nullBehavior === "sql-null") {
                     result[key] = IsNull()
                 }
                 // "ignore" — skip this key
-            } else if (
-                typeof value === "object" &&
-                !Array.isArray(value) &&
-                !(value instanceof Date) &&
-                !InstanceChecker.isFindOperator(value)
-            ) {
+            } else if (OrmUtils.isPlainObject(value)) {
                 const nested = OrmUtils.normalizeWhereCriteria(
                     value,
                     options,
