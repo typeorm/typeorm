@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import { runInNewContext } from "node:vm"
-import type { DeepPartial, IsNull } from "../../../src"
+import type { DeepPartial } from "../../../src"
 import { InstanceChecker } from "../../../src/util/InstanceChecker"
 import { OrmUtils } from "../../../src/util/OrmUtils"
 
@@ -305,9 +305,7 @@ describe(`OrmUtils`, () => {
                 { null: "sql-null" },
             ) as { status: unknown }
             expect(InstanceChecker.isFindOperator(result.status)).to.equal(true)
-            expect((result.status as ReturnType<typeof IsNull>).type).to.equal(
-                "isNull",
-            )
+            expect((result.status as { type: string }).type).to.equal("isNull")
         })
 
         it("passes entity class instances through unchanged (no validation)", () => {
@@ -390,12 +388,35 @@ describe(`OrmUtils`, () => {
             ).to.equal(true)
         })
 
+        it("reports an entity instance with no set columns as unfiltered", () => {
+            class User {}
+            expect(
+                OrmUtils.isNormalizedCriteriaUnfiltered(new User()),
+            ).to.equal(true)
+            // also when it appears as a branch of an OR array
+            expect(
+                OrmUtils.isNormalizedCriteriaUnfiltered([
+                    { id: 1 },
+                    new User(),
+                ]),
+            ).to.equal(true)
+        })
+
         it("reports populated criteria as filtered", () => {
             expect(OrmUtils.isNormalizedCriteriaUnfiltered({ id: 1 })).to.equal(
                 false,
             )
             expect(
                 OrmUtils.isNormalizedCriteriaUnfiltered([{ id: 1 }]),
+            ).to.equal(false)
+        })
+
+        it("reports an entity instance with set columns as filtered", () => {
+            class User {
+                id = 1
+            }
+            expect(
+                OrmUtils.isNormalizedCriteriaUnfiltered(new User()),
             ).to.equal(false)
         })
     })

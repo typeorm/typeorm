@@ -399,8 +399,9 @@ export class OrmUtils {
      * Checks whether an already-normalized where criteria would produce an
      * unfiltered query (an empty object, an empty array, or an OR array in which
      * any branch is empty). This can happen when 'invalidWhereValuesBehavior' is
-     * set to 'ignore' and every where value is null/undefined, in which case
-     * running the query would affect every row.
+     * set to 'ignore' and every where value is null/undefined, or when an entity
+     * instance with no set columns is passed, in which case running the query
+     * would affect every row.
      *
      * @param criteria
      */
@@ -408,11 +409,24 @@ export class OrmUtils {
         if (Array.isArray(criteria)) {
             return (
                 criteria.length === 0 ||
-                criteria.some(OrmUtils.isCriteriaNullOrEmpty)
+                criteria.some((branch) =>
+                    OrmUtils.isNormalizedCriteriaUnfiltered(branch),
+                )
             )
         }
 
-        return OrmUtils.isCriteriaNullOrEmpty(criteria)
+        if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
+            return true
+        }
+
+        // isCriteriaNullOrEmpty only treats *plain* objects as empty; an entity
+        // instance (or any other non-plain object) with no own enumerable keys
+        // would still normalize to an empty WHERE, so detect that here as well.
+        return (
+            typeof criteria === "object" &&
+            criteria !== null &&
+            Object.keys(criteria).length === 0
+        )
     }
 
     /**
