@@ -388,20 +388,6 @@ describe(`OrmUtils`, () => {
             ).to.equal(true)
         })
 
-        it("reports an entity instance with no set columns as unfiltered", () => {
-            class User {}
-            expect(
-                OrmUtils.isNormalizedCriteriaUnfiltered(new User()),
-            ).to.equal(true)
-            // also when it appears as a branch of an OR array
-            expect(
-                OrmUtils.isNormalizedCriteriaUnfiltered([
-                    { id: 1 },
-                    new User(),
-                ]),
-            ).to.equal(true)
-        })
-
         it("reports populated criteria as filtered", () => {
             expect(OrmUtils.isNormalizedCriteriaUnfiltered({ id: 1 })).to.equal(
                 false,
@@ -411,12 +397,21 @@ describe(`OrmUtils`, () => {
             ).to.equal(false)
         })
 
-        it("reports an entity instance with set columns as filtered", () => {
-            class User {
-                id = 1
+        it("does not flag non-plain criteria such as entity instances or value objects", () => {
+            // the guard only polices empty plain objects/arrays; non-plain
+            // criteria (entity instances, ObjectId, etc.) are not its concern,
+            // even when they expose no enumerable keys
+            class User {}
+            class ObjectIdLike {
+                toHexString() {
+                    return "507f1f77bcf86cd799439011"
+                }
             }
             expect(
                 OrmUtils.isNormalizedCriteriaUnfiltered(new User()),
+            ).to.equal(false)
+            expect(
+                OrmUtils.isNormalizedCriteriaUnfiltered(new ObjectIdLike()),
             ).to.equal(false)
         })
     })
