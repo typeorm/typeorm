@@ -41,6 +41,12 @@ const posts = await repository.find({
 })
 ```
 
+:::note
+This default throw behavior applies to **plain object** criteria (the `where` option, and plain objects passed to `update`, `delete`, `softDelete`, and `restore`). When an **entity class instance** is passed as criteria, it is passed through unchanged — all of its set columns, including nullable foreign keys that happen to be `null`, become part of the `WHERE` clause. If you don't want a `null` column to act as a filter, omit it from the criteria or use a plain object instead.
+
+When `null` or `undefined` values are configured to be ignored (see below) and that leaves a write operation (`update`, `delete`, `softDelete`, `restore`) with no remaining conditions, TypeORM throws instead of running an unfiltered query that would affect every row.
+:::
+
 ## Configuration
 
 You can customize how null and undefined values are handled using the `invalidWhereValuesBehavior` option in your data source configuration:

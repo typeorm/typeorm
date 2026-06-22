@@ -484,3 +484,212 @@ describe("entity manager > invalidWhereValuesBehavior does NOT affect QB .where(
         }
     })
 })
+
+describe("entity manager > invalidWhereValuesBehavior default (unconfigured)", () => {
+    let dataSources: DataSource[]
+
+    before(async () => {
+        dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
+            entities: [Post, Category],
+            schemaCreate: true,
+            dropSchema: true,
+            // intentionally no driverSpecific.invalidWhereValuesBehavior:
+            // the documented default behavior ("throw") must still apply.
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    async function prepareData(connection: DataSource) {
+        const post = new Post()
+        post.title = "Test Post"
+        post.text = "Some text"
+        await connection.manager.save(post)
+        return post
+    }
+
+    const writeMethods = ["update", "delete", "softDelete", "restore"] as const
+
+    for (const method of writeMethods) {
+        it(`should throw by default for null values in EntityManager.${method}()`, async () => {
+            for (const connection of dataSources) {
+                await prepareData(connection)
+
+                const args: any[] = [Post, { text: null }]
+                if (method === "update") args.push({ title: "Updated" })
+
+                try {
+                    await (connection.manager as any)[method](...args)
+                    expect.fail("Expected error")
+                } catch (error) {
+                    expect(error).to.be.instanceOf(TypeORMError)
+                    expect(error.message).to.include("Null value encountered")
+                }
+            }
+        })
+
+        it(`should throw by default for undefined values in EntityManager.${method}()`, async () => {
+            for (const connection of dataSources) {
+                await prepareData(connection)
+
+                const args: any[] = [Post, { text: undefined }]
+                if (method === "update") args.push({ title: "Updated" })
+
+                try {
+                    await (connection.manager as any)[method](...args)
+                    expect.fail("Expected error")
+                } catch (error) {
+                    expect(error).to.be.instanceOf(TypeORMError)
+                    expect(error.message).to.include(
+                        "Undefined value encountered",
+                    )
+                }
+            }
+        })
+    }
+
+    it("should throw by default for nested null values in EntityManager.update()", async () => {
+        for (const connection of dataSources) {
+            await prepareData(connection)
+
+            try {
+                await connection.manager.update(
+                    Post,
+                    { category: { name: null } } as any,
+                    { title: "Updated" },
+                )
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Null value encountered")
+            }
+        }
+    })
+
+    it("should throw by default for null values in an array (OR) criteria", async () => {
+        for (const connection of dataSources) {
+            await prepareData(connection)
+
+            try {
+                await connection.manager.delete(Post, [
+                    { title: "Test Post" },
+                    { text: null },
+                ] as any)
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Null value encountered")
+            }
+        }
+    })
+
+    it("should NOT throw when an entity class instance with a null column is passed (passthrough)", async () => {
+        for (const connection of dataSources) {
+            // a plain object { text: null } would throw by default, but an entity
+            // class instance is not validated — its set columns (including a null
+            // nullable column) are passed through to the WHERE as-is, so this
+            // resolves instead of throwing.
+            const post = new Post()
+            post.title = "Test Post"
+            post.text = null
+            await connection.manager.save(post)
+
+            await expect(connection.manager.delete(Post, post)).to.be.fulfilled
+        }
+    })
+})
+
+describe("entity manager > invalidWhereValuesBehavior unfiltered-write guard", () => {
+    let dataSources: DataSource[]
+
+    before(async () => {
+        dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
+            entities: [Post, Category],
+            schemaCreate: true,
+            dropSchema: true,
+            driverSpecific: {
+                invalidWhereValuesBehavior: {
+                    null: "ignore",
+                    undefined: "ignore",
+                },
+            },
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    async function prepareData(connection: DataSource) {
+        const post = new Post()
+        post.title = "Test Post"
+        post.text = "text"
+        await connection.manager.save(post)
+        return post
+    }
+
+    it("should refuse EntityManager.delete() when all criteria are stripped", async () => {
+        for (const connection of dataSources) {
+            await prepareData(connection)
+
+            try {
+                await connection.manager.delete(Post, { text: null } as any)
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include(
+                    "Refusing to run an unfiltered",
+                )
+            }
+
+            // the row must still be there — nothing was deleted
+            const remaining = await connection.manager.find(Post)
+            expect(remaining.length).to.equal(1)
+        }
+    })
+
+    it("should refuse EntityManager.update() when all criteria are stripped", async () => {
+        for (const connection of dataSources) {
+            await prepareData(connection)
+
+            try {
+                await connection.manager.update(
+                    Post,
+                    { text: undefined } as any,
+                    { title: "Updated" },
+                )
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include(
+                    "Refusing to run an unfiltered",
+                )
+            }
+
+            const reloaded = await connection.manager.find(Post)
+            expect(reloaded[0].title).to.equal("Test Post")
+        }
+    })
+
+    it("should refuse an OR array criteria when any branch is stripped to empty", async () => {
+        for (const connection of dataSources) {
+            await prepareData(connection)
+
+            try {
+                await connection.manager.delete(Post, [
+                    { title: "Test Post" },
+                    { text: null },
+                ] as any)
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include(
+                    "Refusing to run an unfiltered",
+                )
+            }
+
+            const remaining = await connection.manager.find(Post)
+            expect(remaining.length).to.equal(1)
+        }
+    })
+})

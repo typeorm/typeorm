@@ -1,6 +1,7 @@
 import { expect } from "chai"
 import { runInNewContext } from "node:vm"
-import type { DeepPartial } from "../../../src"
+import type { DeepPartial, IsNull } from "../../../src"
+import { InstanceChecker } from "../../../src/util/InstanceChecker"
 import { OrmUtils } from "../../../src/util/OrmUtils"
 
 describe(`OrmUtils`, () => {
@@ -267,6 +268,134 @@ describe(`OrmUtils`, () => {
                     crossRealmArray,
                     new Uint8Array([1, 2, 4]),
                 ),
+            ).to.equal(false)
+        })
+    })
+
+    describe("normalizeWhereCriteria", () => {
+        it("throws on undefined values by default (no options)", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ name: undefined }),
+            ).to.throw(/Undefined value.*'name'/)
+        })
+
+        it("throws on null values by default (no options)", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ email: null }),
+            ).to.throw(/Null value.*'email'/)
+        })
+
+        it("throws on undefined in nested objects with the full path", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ user: { id: undefined } }),
+            ).to.throw(/Undefined value.*'user\.id'/)
+        })
+
+        it("ignores undefined when options.undefined is 'ignore'", () => {
+            const result = OrmUtils.normalizeWhereCriteria(
+                { name: "Alice", email: undefined },
+                { undefined: "ignore" },
+            )
+            expect(result).to.deep.equal({ name: "Alice" })
+        })
+
+        it("transforms null to IsNull() when options.null is 'sql-null'", () => {
+            const result = OrmUtils.normalizeWhereCriteria(
+                { status: null },
+                { null: "sql-null" },
+            ) as { status: unknown }
+            expect(InstanceChecker.isFindOperator(result.status)).to.equal(true)
+            expect((result.status as ReturnType<typeof IsNull>).type).to.equal(
+                "isNull",
+            )
+        })
+
+        it("passes entity class instances through unchanged (no validation)", () => {
+            class User {
+                id = 1
+                name = "Alice"
+                parentId: number | null = null
+                deletedAt: Date | undefined = undefined
+            }
+            const entity = new User()
+            // default behavior is "throw", but entity instances are not validated
+            const result = OrmUtils.normalizeWhereCriteria(entity)
+            expect(result).to.equal(entity)
+            expect(result).to.deep.equal({
+                id: 1,
+                name: "Alice",
+                parentId: null,
+                deletedAt: undefined,
+            })
+        })
+
+        it("does not validate entity instances even when options request throw", () => {
+            class User {
+                id = 1
+                parentId: number | null = null
+            }
+            const entity = new User()
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria(entity, { null: "throw" }),
+            ).to.not.throw()
+        })
+
+        it("throws on null/undefined in array criteria (OR semantics)", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria([
+                    { id: 1 },
+                    { name: undefined },
+                ]),
+            ).to.throw(/Undefined value.*'1\.name'/)
+
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria([{ email: null }]),
+            ).to.throw(/Null value.*'0\.email'/)
+        })
+
+        it("normalizes valid array criteria without throwing", () => {
+            const result = OrmUtils.normalizeWhereCriteria([
+                { id: 1 },
+                { name: "Bob" },
+            ])
+            expect(result).to.deep.equal([{ id: 1 }, { name: "Bob" }])
+        })
+
+        it("returns null/undefined/primitive criteria without throwing", () => {
+            expect(OrmUtils.normalizeWhereCriteria(null as any)).to.equal(null)
+            expect(OrmUtils.normalizeWhereCriteria(undefined as any)).to.equal(
+                undefined,
+            )
+            expect(OrmUtils.normalizeWhereCriteria(1 as any)).to.equal(1)
+        })
+
+        it("ignores the __proto__ key when iterating", () => {
+            const result = OrmUtils.normalizeWhereCriteria(
+                JSON.parse('{ "__proto__": { "polluted": true }, "id": 1 }'),
+            )
+            expect(result).to.deep.equal({ id: 1 })
+            expect(({} as any).polluted).to.equal(undefined)
+        })
+    })
+
+    describe("isNormalizedCriteriaUnfiltered", () => {
+        it("reports empty objects and arrays as unfiltered", () => {
+            expect(OrmUtils.isNormalizedCriteriaUnfiltered({})).to.equal(true)
+            expect(OrmUtils.isNormalizedCriteriaUnfiltered([])).to.equal(true)
+        })
+
+        it("reports an OR array with an empty branch as unfiltered", () => {
+            expect(
+                OrmUtils.isNormalizedCriteriaUnfiltered([{ id: 1 }, {}]),
+            ).to.equal(true)
+        })
+
+        it("reports populated criteria as filtered", () => {
+            expect(OrmUtils.isNormalizedCriteriaUnfiltered({ id: 1 })).to.equal(
+                false,
+            )
+            expect(
+                OrmUtils.isNormalizedCriteriaUnfiltered([{ id: 1 }]),
             ).to.equal(false)
         })
     })

@@ -396,6 +396,26 @@ export class OrmUtils {
     }
 
     /**
+     * Checks whether an already-normalized where criteria would produce an
+     * unfiltered query (an empty object, an empty array, or an OR array in which
+     * any branch is empty). This can happen when 'invalidWhereValuesBehavior' is
+     * set to 'ignore' and every where value is null/undefined, in which case
+     * running the query would affect every row.
+     *
+     * @param criteria
+     */
+    public static isNormalizedCriteriaUnfiltered(criteria: unknown): boolean {
+        if (Array.isArray(criteria)) {
+            return (
+                criteria.length === 0 ||
+                criteria.some(OrmUtils.isCriteriaNullOrEmpty)
+            )
+        }
+
+        return OrmUtils.isCriteriaNullOrEmpty(criteria)
+    }
+
+    /**
      * Checks if given criteria is a primitive value.
      * Primitive values are strings, numbers and dates.
      *
@@ -662,29 +682,36 @@ export class OrmUtils {
         options?: InvalidFindOptionsWhereBehavior,
         path?: string,
     ): ObjectLiteral | ObjectLiteral[] {
-        if (!options) {
-            return criteria
-        }
-
-        // multiple criteria are possible at the top level
+        // multiple criteria are possible at the top level (OR semantics)
         if (!path && Array.isArray(criteria)) {
-            return criteria.map(
-                (criterion, index): ObjectLiteral =>
-                    OrmUtils.normalizeWhereCriteria(
-                        criterion,
-                        options,
-                        String(index),
-                    ),
+            return criteria.map((criterion, index) =>
+                OrmUtils.normalizeWhereCriteria(
+                    criterion,
+                    options,
+                    String(index),
+                ),
             )
         }
 
+        // Non-plain-objects (entity instances, primitives, null/undefined,
+        // FindOperators, nested arrays) are not filter maps and are passed through
+        // unchanged. Entity instances may carry nullable columns (e.g. foreign keys)
+        // that are intentionally part of the where condition, so we don't validate them.
+        if (!OrmUtils.isPlainObject(criteria)) {
+            return criteria
+        }
+
+        // Resolve the behavior once. The documented default is "throw".
+        const undefinedBehavior = options?.undefined ?? "throw"
+        const nullBehavior = options?.null ?? "throw"
+
         const result: ObjectLiteral = {}
         for (const [key, value] of Object.entries(criteria)) {
+            if (key === "__proto__") continue
             const propertyPath = path ? `${path}.${key}` : key
 
             if (value === undefined) {
-                const behavior = options?.undefined ?? "throw"
-                if (behavior === "throw") {
+                if (undefinedBehavior === "throw") {
                     throw new TypeORMError(
                         `Undefined value encountered in property '${propertyPath}' of a where condition. ` +
                             `Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
@@ -692,14 +719,13 @@ export class OrmUtils {
                 }
                 // else: "ignore" — skip this key
             } else if (value === null) {
-                const behavior = options?.null ?? "throw"
-                if (behavior === "throw") {
+                if (nullBehavior === "throw") {
                     throw new TypeORMError(
                         `Null value encountered in property '${propertyPath}' of a where condition. ` +
                             `To match with SQL NULL, the IsNull() operator must be used. ` +
                             `Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
                     )
-                } else if (behavior === "sql-null") {
+                } else if (nullBehavior === "sql-null") {
                     result[key] = IsNull()
                 }
                 // else: "ignore" — skip this key
