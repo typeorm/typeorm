@@ -659,12 +659,9 @@ export class OrmUtils {
      */
     static normalizeWhereCriteria(
         criteria: ObjectLiteral | ObjectLiteral[],
-        options?: InvalidFindOptionsWhereBehavior,
+        options: InvalidFindOptionsWhereBehavior = {},
         path?: string,
     ): ObjectLiteral | ObjectLiteral[] {
-        if (!options) {
-            return criteria
-        }
 
         // multiple criteria are possible at the top level
         if (!path && Array.isArray(criteria)) {
