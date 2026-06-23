@@ -1,6 +1,7 @@
 import { expect } from "chai"
 import { runInNewContext } from "node:vm"
 import type { DeepPartial } from "../../../src"
+import { TypeORMError } from "../../../src"
 import { OrmUtils } from "../../../src/util/OrmUtils"
 
 describe(`OrmUtils`, () => {
@@ -268,6 +269,139 @@ describe(`OrmUtils`, () => {
                     new Uint8Array([1, 2, 4]),
                 ),
             ).to.equal(false)
+        })
+    })
+
+    describe("normalizeWhereCriteria", () => {
+        describe("default behavior when options is not provided", () => {
+            it("should throw TypeORMError for undefined values when no options are provided", () => {
+                expect(() => {
+                    OrmUtils.normalizeWhereCriteria(
+                        { col1: "value", col2: undefined },
+                        undefined,
+                    )
+                }).to.throw(TypeORMError, /Undefined value encountered/)
+            })
+
+            it("should throw TypeORMError for null values when no options are provided", () => {
+                expect(() => {
+                    OrmUtils.normalizeWhereCriteria(
+                        { col1: "value", col2: null },
+                        undefined,
+                    )
+                }).to.throw(TypeORMError, /Null value encountered/)
+            })
+
+            it("should include property path in error message", () => {
+                expect(() => {
+                    OrmUtils.normalizeWhereCriteria(
+                        { myColumn: undefined },
+                        undefined,
+                    )
+                }).to.throw(TypeORMError, /myColumn/)
+            })
+
+            it("should handle nested objects with undefined values", () => {
+                expect(() => {
+                    OrmUtils.normalizeWhereCriteria(
+                        { nested: { deepProp: undefined } },
+                        undefined,
+                    )
+                }).to.throw(
+                    TypeORMError,
+                    /Undefined value encountered in property 'nested.deepProp'/,
+                )
+            })
+
+            it("should handle nested objects with null values", () => {
+                expect(() => {
+                    OrmUtils.normalizeWhereCriteria(
+                        { nested: { deepProp: null } },
+                        undefined,
+                    )
+                }).to.throw(
+                    TypeORMError,
+                    /Null value encountered in property 'nested.deepProp'/,
+                )
+            })
+
+            it("should handle array criteria with undefined values", () => {
+                expect(() => {
+                    OrmUtils.normalizeWhereCriteria(
+                        [{ col1: "value" }, { col2: undefined }],
+                        undefined,
+                    )
+                }).to.throw(TypeORMError, /Undefined value encountered/)
+            })
+
+            it("should handle array criteria with null values", () => {
+                expect(() => {
+                    OrmUtils.normalizeWhereCriteria(
+                        [{ col1: "value" }, { col2: null }],
+                        undefined,
+                    )
+                }).to.throw(TypeORMError, /Null value encountered/)
+            })
+
+            it("should pass through valid values without throwing", () => {
+                const criteria = {
+                    col1: "value",
+                    col2: 42,
+                    col3: true,
+                }
+                const result = OrmUtils.normalizeWhereCriteria(
+                    criteria,
+                    undefined,
+                )
+                expect(result).to.deep.equal(criteria)
+            })
+        })
+
+        describe("with explicit options", () => {
+            it("should ignore undefined values when configured to ignore", () => {
+                const result = OrmUtils.normalizeWhereCriteria(
+                    { col1: "value", col2: undefined },
+                    { undefined: "ignore" },
+                )
+                expect(result).to.deep.equal({ col1: "value" })
+            })
+
+            it("should ignore null values when configured to ignore", () => {
+                const result = OrmUtils.normalizeWhereCriteria(
+                    { col1: "value", col2: null },
+                    { null: "ignore" },
+                )
+                expect(result).to.deep.equal({ col1: "value" })
+            })
+
+            it("should throw for undefined when explicitly configured to throw", () => {
+                expect(() => {
+                    OrmUtils.normalizeWhereCriteria(
+                        { col1: undefined },
+                        { undefined: "throw" },
+                    )
+                }).to.throw(TypeORMError, /Undefined value encountered/)
+            })
+
+            it("should throw for null when explicitly configured to throw", () => {
+                expect(() => {
+                    OrmUtils.normalizeWhereCriteria(
+                        { col1: null },
+                        { null: "throw" },
+                    )
+                }).to.throw(TypeORMError, /Null value encountered/)
+            })
+
+            it("should convert null to IsNull() when configured to sql-null", () => {
+                const result = OrmUtils.normalizeWhereCriteria(
+                    { col1: "value", col2: null },
+                    { null: "sql-null" },
+                ) as Record<string, unknown>
+                expect(result).to.have.property("col1", "value")
+                expect(result).to.have.property("col2")
+                // IsNull() returns a FindOperator instance
+                expect(result.col2).to.not.equal(null)
+            })
         })
     })
 })
