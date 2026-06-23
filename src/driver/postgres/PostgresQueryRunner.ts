@@ -1326,16 +1326,69 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
-        if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
-            newColumn.isArray !== oldColumn.isArray ||
-            (!oldColumn.generatedType &&
-                newColumn.generatedType === "STORED") ||
-            (oldColumn.asExpression !== newColumn.asExpression &&
-                newColumn.generatedType === "STORED")
+        const typeChanged = oldColumn.type !== newColumn.type
+        const lengthChanged = oldColumn.length !== newColumn.length
+        const arrayChanged = newColumn.isArray !== oldColumn.isArray
+        const storedGeneratedChanged =
+            !oldColumn.generatedType &&
+            newColumn.generatedType === "STORED"
+        const asExpressionChanged =
+            oldColumn.asExpression !== newColumn.asExpression &&
+            newColumn.generatedType === "STORED"
+
+        // For safe type/length changes, use ALTER COLUMN instead of drop+create
+        // to preserve data and dependent objects (indices, FKs, etc.)
+        const canAlterInPlace =
+            (typeChanged || lengthChanged) &&
+            !arrayChanged &&
+            !storedGeneratedChanged &&
+            !asExpressionChanged
+
+        if (canAlterInPlace) {
+            const newType = this.normalizeType(newColumn)
+            const columnType = newColumn.length
+                ? `${newType}(${newColumn.length})`
+                : newType
+
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(
+                        table,
+                    )} ALTER COLUMN "${oldColumn.name}" TYPE ${columnType}`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(
+                        table,
+                    )} ALTER COLUMN "${newColumn.name}" TYPE ${
+                        oldColumn.length
+                            ? `${this.normalizeType(oldColumn)}(${oldColumn.length})`
+                            : this.normalizeType(oldColumn)
+                    }`,
+                ),
+            )
+
+            if (upQueries.length > 0) {
+                await this.startTransaction()
+                try {
+                    for (const query of upQueries)
+                        await this.query(query.query)
+                    await this.commitTransaction()
+                } catch (error) {
+                    await this.rollbackTransaction()
+                    throw error
+                }
+            }
+
+            // update cloned table
+            clonedTable = table.clone()
+        } else if (
+            arrayChanged ||
+            storedGeneratedChanged ||
+            asExpressionChanged
         ) {
-            // To avoid data conversion, we just recreate column
+            // These changes require drop+create
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
