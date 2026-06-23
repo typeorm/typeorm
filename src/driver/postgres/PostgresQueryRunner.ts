@@ -1336,54 +1336,7 @@ export class PostgresQueryRunner
             oldColumn.asExpression !== newColumn.asExpression &&
             newColumn.generatedType === "STORED"
 
-        // For safe type/length changes, use ALTER COLUMN instead of drop+create
-        // to preserve data and dependent objects (indices, FKs, etc.)
-        const canAlterInPlace =
-            (typeChanged || lengthChanged) &&
-            !arrayChanged &&
-            !storedGeneratedChanged &&
-            !asExpressionChanged
-
-        if (canAlterInPlace) {
-            const newType = this.normalizeType(newColumn)
-            const columnType = newColumn.length
-                ? `${newType}(${newColumn.length})`
-                : newType
-
-            upQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(
-                        table,
-                    )} ALTER COLUMN "${oldColumn.name}" TYPE ${columnType}`,
-                ),
-            )
-            downQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(
-                        table,
-                    )} ALTER COLUMN "${newColumn.name}" TYPE ${
-                        oldColumn.length
-                            ? `${this.normalizeType(oldColumn)}(${oldColumn.length})`
-                            : this.normalizeType(oldColumn)
-                    }`,
-                ),
-            )
-
-            if (upQueries.length > 0) {
-                await this.startTransaction()
-                try {
-                    for (const query of upQueries)
-                        await this.query(query.query)
-                    await this.commitTransaction()
-                } catch (error) {
-                    await this.rollbackTransaction()
-                    throw error
-                }
-            }
-
-            // update cloned table
-            clonedTable = table.clone()
-        } else if (
+        if (
             arrayChanged ||
             storedGeneratedChanged ||
             asExpressionChanged
@@ -1671,24 +1624,51 @@ export class PostgresQueryRunner
                 oldColumn.name = newColumn.name
             }
 
+            // For safe type/length changes, use ALTER COLUMN instead of drop+create
+            // to preserve data and dependent objects (indices, FKs, etc.)
             if (
-                newColumn.precision !== oldColumn.precision ||
-                newColumn.scale !== oldColumn.scale
+                (typeChanged || lengthChanged) &&
+                !arrayChanged &&
+                !storedGeneratedChanged &&
+                !asExpressionChanged
             ) {
                 upQueries.push(
                     new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
-                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                        `ALTER TABLE ${this.escapePath(
+                            table,
+                        )} ALTER COLUMN "${oldColumn.name}" TYPE ${this.driver.createFullType(newColumn)}`,
                     ),
                 )
                 downQueries.push(
                     new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
-                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                        `ALTER TABLE ${this.escapePath(
+                            table,
+                        )} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(oldColumn)}`,
                     ),
                 )
+            }
+
+            if (
+                newColumn.precision !== oldColumn.precision ||
+                newColumn.scale !== oldColumn.scale
+            ) {
+                // Skip if type/length already changed — createFullType() already includes precision/scale
+                if (!(typeChanged || lengthChanged)) {
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                                newColumn.name
+                            }" TYPE ${this.driver.createFullType(newColumn)}`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                                newColumn.name
+                            }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                        ),
+                    )
+                }
             }
 
             if (
@@ -2513,6 +2493,20 @@ export class PostgresQueryRunner
                     //     }),
                     // )
                 }
+            }
+        }
+
+        // Update cloned table to reflect new column definition for type/length changes
+        if (typeChanged || lengthChanged) {
+            const clonedColumn = clonedTable.columns.find(
+                (column) => column.name === oldColumn.name,
+            )
+            if (clonedColumn) {
+                clonedColumn.type = newColumn.type
+                clonedColumn.length = newColumn.length
+                clonedColumn.precision = newColumn.precision
+                clonedColumn.scale = newColumn.scale
+                clonedColumn.isArray = newColumn.isArray
             }
         }
 
