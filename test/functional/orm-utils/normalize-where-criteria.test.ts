@@ -1,4 +1,4 @@
-﻿import { expect } from "chai";
+import { expect } from "chai";
 import { TypeORMError } from "../../../../src/error";
 import { OrmUtils } from "../../../../src/util/OrmUtils";
 
