@@ -653,6 +653,11 @@ export class OrmUtils {
      * Recursively validates an object where clause, throwing for null/undefined
      * based on the provided invalidWhereValuesBehavior config.
      *
+     * When `options` is not provided (i.e. `invalidWhereValuesBehavior` is not
+     * configured in the DataSource), the documented defaults apply:
+     *   - undefined values → throw
+     *   - null values      → throw
+     *
      * @param criteria
      * @param options
      * @param path
@@ -662,8 +667,12 @@ export class OrmUtils {
         options?: InvalidFindOptionsWhereBehavior,
         path?: string,
     ): ObjectLiteral | ObjectLiteral[] {
-        if (!options) {
-            return criteria
+        // Apply documented defaults when invalidWhereValuesBehavior is not configured.
+        // Any explicitly supplied options override these defaults via spread.
+        const effectiveOptions: InvalidFindOptionsWhereBehavior = {
+            null: "throw",
+            undefined: "throw",
+            ...options,
         }
 
         // multiple criteria are possible at the top level
@@ -672,7 +681,7 @@ export class OrmUtils {
                 (criterion, index): ObjectLiteral =>
                     OrmUtils.normalizeWhereCriteria(
                         criterion,
-                        options,
+                        effectiveOptions,
                         String(index),
                     ),
             )
@@ -683,7 +692,7 @@ export class OrmUtils {
             const propertyPath = path ? `${path}.${key}` : key
 
             if (value === undefined) {
-                const behavior = options?.undefined ?? "throw"
+                const behavior = effectiveOptions.undefined ?? "throw"
                 if (behavior === "throw") {
                     throw new TypeORMError(
                         `Undefined value encountered in property '${propertyPath}' of a where condition. ` +
@@ -692,7 +701,7 @@ export class OrmUtils {
                 }
                 // else: "ignore" — skip this key
             } else if (value === null) {
-                const behavior = options?.null ?? "throw"
+                const behavior = effectiveOptions.null ?? "throw"
                 if (behavior === "throw") {
                     throw new TypeORMError(
                         `Null value encountered in property '${propertyPath}' of a where condition. ` +
@@ -706,7 +715,7 @@ export class OrmUtils {
             } else if (OrmUtils.isPlainObject(value)) {
                 const nested = OrmUtils.normalizeWhereCriteria(
                     value,
-                    options,
+                    effectiveOptions,
                     propertyPath,
                 )
                 if (Object.keys(nested).length > 0) {
