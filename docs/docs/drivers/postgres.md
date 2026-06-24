@@ -61,7 +61,7 @@ Additional options can be added to the `extra` object and will be passed directl
 When using `replication`, each endpoint can also carry its own `extra` that is merged **over** the top-level `extra`, allowing different pool configuration per connection. This is useful for setting options like `maxLifetimeSeconds` only on read replicas:
 
 ```typescript
-DataSource({
+new DataSource({
     type: "postgres",
     extra: { idleTimeoutMillis: 10_000 }, // applied to both pools
     replication: {
