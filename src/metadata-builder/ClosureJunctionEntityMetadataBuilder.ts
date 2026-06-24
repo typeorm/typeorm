@@ -3,6 +3,7 @@ import { ColumnMetadata } from "../metadata/ColumnMetadata"
 import { ForeignKeyMetadata } from "../metadata/ForeignKeyMetadata"
 import { DataSource } from "../data-source/DataSource"
 import { IndexMetadata } from "../metadata/IndexMetadata"
+import type { DataSourceOptions } from "../data-source/DataSourceOptions"
 
 /**
  * Creates EntityMetadata for junction tables of the closure entities.
@@ -24,6 +25,13 @@ export class ClosureJunctionEntityMetadataBuilder {
      */
     build(parentClosureEntityMetadata: EntityMetadata) {
         // create entity metadata itself
+        type SchemaCapableOptions = Extract<
+            DataSourceOptions,
+            { schema?: string }
+        >
+        const { schema: dataSourceSchema } = this.connection.driver
+            .options as SchemaCapableOptions
+
         const entityMetadata = new EntityMetadata({
             parentClosureEntityMetadata: parentClosureEntityMetadata,
             connection: this.connection,
@@ -36,7 +44,11 @@ export class ClosureJunctionEntityMetadataBuilder {
                               .closureTableName
                         : parentClosureEntityMetadata.tableNameWithoutPrefix,
                 type: "closure-junction",
-                schema: parentClosureEntityMetadata.schema,
+                schema:
+                    parentClosureEntityMetadata.treeOptions
+                        ?.closureTableSchema ??
+                    parentClosureEntityMetadata.schema ??
+                    dataSourceSchema,
                 database: parentClosureEntityMetadata.database,
             },
         })
