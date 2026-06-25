@@ -46,7 +46,7 @@ export function PrimaryColumn(
     typeOrOptions?: ColumnType | PrimaryColumnOptions,
     options?: PrimaryColumnOptions,
 ): PropertyDecorator {
-    return function (object: Object, propertyName: string) {
+    return function (object: object, propertyName: string) {
         // normalize parameters
         let type: ColumnType | undefined
         if (

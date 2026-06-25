@@ -5,7 +5,7 @@ import { TypeORMError } from "./TypeORMError"
  * Basically, when reflect-metadata is not available or tsconfig is not properly setup.
  */
 export class ColumnTypeUndefinedError extends TypeORMError {
-    constructor(object: Object, propertyName: string) {
+    constructor(object: object, propertyName: string) {
         super(
             `Column type for ${object.constructor.name}#${propertyName} is not defined and cannot be guessed. ` +
                 `Make sure you have turned on an "emitDecoratorMetadata": true option in tsconfig.json. ` +

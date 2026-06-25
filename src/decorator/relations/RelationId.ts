@@ -17,7 +17,7 @@ export function RelationId<T>(
         qb: SelectQueryBuilder<any>,
     ) => SelectQueryBuilder<any>,
 ): PropertyDecorator {
-    return function (object: Object, propertyName: string) {
+    return function (object: object, propertyName: string) {
         getMetadataArgsStorage().relationIds.push({
             target: object.constructor,
             propertyName: propertyName,
