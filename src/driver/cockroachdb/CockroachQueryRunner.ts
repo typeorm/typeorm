@@ -1402,19 +1402,37 @@ export class CockroachQueryRunner
             )
 
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
         ) {
-            // To avoid data conversion, we just recreate column
+            // Recreate column only for incompatible changes (array, generated type, expression)
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
-
-            // update cloned table
             clonedTable = table.clone()
         } else {
+            if (
+                oldColumn.type !== newColumn.type ||
+                (newColumn.length !== undefined &&
+                    oldColumn.length !== newColumn.length)
+            ) {
+                // Use ALTER COLUMN TYPE for type/length changes to preserve data
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            oldColumn.name
+                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            oldColumn.name
+                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                    ),
+                )
+            }
+
             if (oldColumn.name !== newColumn.name) {
                 // rename column
                 upQueries.push(
