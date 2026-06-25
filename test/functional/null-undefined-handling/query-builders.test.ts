@@ -236,6 +236,24 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             }
         }
     })
+
+    it("should throw error for unsafe keys like __proto__ in EntityManager.update()", async () => {
+        for (const connection of dataSources) {
+            await prepareData(connection)
+
+            try {
+                await connection.manager.update(
+                    Post,
+                    { __proto__: { isAdmin: true } } as any,
+                    { title: "Updated" },
+                )
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Unsafe property '__proto__'")
+            }
+        }
+    })
 })
 
 describe("entity manager > invalidWhereValuesBehavior with sql-null", () => {
@@ -411,6 +429,47 @@ describe("entity manager > invalidWhereValuesBehavior with ignore", () => {
 
             const remaining = await connection.manager.find(Post)
             expect(remaining.length).to.equal(0)
+        }
+    })
+
+    it("should throw error when all criteria are stripped (empty object) in EntityManager.delete() with ignore", async () => {
+        for (const connection of dataSources) {
+            const post = new Post()
+            post.title = "Test Post"
+            post.text = "text"
+            await connection.manager.save(post)
+
+            try {
+                await connection.manager.delete(Post, {
+                    text: undefined,
+                    title: null,
+                } as any)
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Empty criteria(s) are not allowed for the delete method")
+            }
+        }
+    })
+
+    it("should throw error when array criteria collapses to empty in EntityManager.update() with ignore", async () => {
+        for (const connection of dataSources) {
+            const post = new Post()
+            post.title = "Test Post"
+            post.text = "text"
+            await connection.manager.save(post)
+
+            try {
+                await connection.manager.update(Post, [
+                    { text: undefined },
+                    { title: null },
+                    {} // also test explicit empty object in array
+                ] as any, { text: "Updated" })
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Empty criteria(s) are not allowed for the update method")
+            }
         }
     })
 })

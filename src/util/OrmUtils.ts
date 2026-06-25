@@ -385,14 +385,21 @@ export class OrmUtils {
      * @param criteria
      */
     public static isCriteriaNullOrEmpty(criteria: unknown): boolean {
-        return (
+        if (
             criteria === undefined ||
             criteria === null ||
-            criteria === "" ||
-            (Array.isArray(criteria) && criteria.length === 0) ||
-            (OrmUtils.isPlainObject(criteria) &&
-                Object.keys(criteria).length === 0)
-        )
+            criteria === ""
+        ) return true
+        
+        if (Array.isArray(criteria)) {
+            return criteria.length === 0 || criteria.every(c => OrmUtils.isCriteriaNullOrEmpty(c))
+        }
+
+        if (OrmUtils.isPlainObject(criteria)) {
+            return Object.keys(criteria).length === 0
+        }
+        
+        return false
     }
 
     /**
