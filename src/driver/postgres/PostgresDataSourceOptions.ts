@@ -106,4 +106,22 @@ export interface PostgresDataSourceOptions
      * List of additional Postgres extensions to be installed in the database.
      */
     readonly extensions?: string[]
+
+    /**
+     * Opt-in: allow schema migrations to issue ALTER COLUMN TYPE (with USING
+     * cast) when a column's length is decreased. The default is `false`, in
+     * which case the legacy DROP+ADD path is used and a warning is logged via
+     * the configured logger's `logSchemaBuild` channel.
+     *
+     * Set this to `true` if you accept that an ALTER COLUMN TYPE with a
+     * shorter length will truncate (or fail, depending on USING cast and the
+     * data) existing rows that exceed the new size.
+     *
+     * Length increases, precision/scale changes, and pure type changes are
+     * always issued via ALTER COLUMN TYPE; this option only affects the
+     * lossy length-decrease case.
+     *
+     * Default: `false`. Postgres only.
+     */
+    readonly migrationsAllowLossyAlter?: boolean
 }
