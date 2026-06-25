@@ -225,13 +225,7 @@
   "engines": {
     "node": "^20.19.0 || ^22.13.0 || >=24.11.0"
   },
-  "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": "^10.33.4",
-      "onFail": "error"
-    }
-  },
+
   "pnpm": {
     "onlyBuiltDependencies": [
       "better-sqlite3"

@@ -662,9 +662,7 @@ export class OrmUtils {
         options?: InvalidFindOptionsWhereBehavior,
         path?: string,
     ): ObjectLiteral | ObjectLiteral[] {
-        if (!options) {
-            return criteria
-        }
+        const actualOptions = options ?? { null: "throw", undefined: "throw" }
 
         // multiple criteria are possible at the top level
         if (!path && Array.isArray(criteria)) {
@@ -672,18 +670,22 @@ export class OrmUtils {
                 (criterion, index): ObjectLiteral =>
                     OrmUtils.normalizeWhereCriteria(
                         criterion,
-                        options,
+                        actualOptions,
                         String(index),
                     ),
             )
         }
 
-        const result: ObjectLiteral = {}
+        const result: ObjectLiteral = Object.create(null)
         for (const [key, value] of Object.entries(criteria)) {
+            if (key === "__proto__" || key === "constructor" || key === "prototype") {
+                throw new TypeORMError(`Unsafe property '${key}' encountered in where criteria.`)
+            }
+
             const propertyPath = path ? `${path}.${key}` : key
 
             if (value === undefined) {
-                const behavior = options?.undefined ?? "throw"
+                const behavior = actualOptions.undefined ?? "throw"
                 if (behavior === "throw") {
                     throw new TypeORMError(
                         `Undefined value encountered in property '${propertyPath}' of a where condition. ` +
@@ -692,7 +694,7 @@ export class OrmUtils {
                 }
                 // else: "ignore" — skip this key
             } else if (value === null) {
-                const behavior = options?.null ?? "throw"
+                const behavior = actualOptions.null ?? "throw"
                 if (behavior === "throw") {
                     throw new TypeORMError(
                         `Null value encountered in property '${propertyPath}' of a where condition. ` +
@@ -706,7 +708,7 @@ export class OrmUtils {
             } else if (OrmUtils.isPlainObject(value)) {
                 const nested = OrmUtils.normalizeWhereCriteria(
                     value,
-                    options,
+                    actualOptions,
                     propertyPath,
                 )
                 if (Object.keys(nested).length > 0) {
