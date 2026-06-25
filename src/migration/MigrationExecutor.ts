@@ -453,9 +453,21 @@ export class MigrationExecutor {
         )
         this.dataSource.logger.logSchemaBuild(`Now reverting it...`)
 
-        // start transaction if its not started yet
+        // defaults for single migration
+        const txModeDefault = {
+            each: true,
+            none: false,
+            all: true, // safe to set this to true for a single migration
+        }[this.transaction]
+
+        let migrationTransactionMode = txModeDefault
+        if (migrationToRevert.instance?.transaction !== undefined) {
+            migrationTransactionMode = migrationToRevert.instance.transaction
+        }
+
+        // start transaction if its not started yet and the migration requires it
         let transactionStartedByUs = false
-        if (this.transaction !== "none" && !queryRunner.isTransactionActive) {
+        if (migrationTransactionMode && !queryRunner.isTransactionActive) {
             await queryRunner.startTransaction()
             transactionStartedByUs = true
         }
