@@ -1,9 +1,9 @@
-import type { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import type { AbstractSqliteDataSourceOptions } from "../sqlite-abstract/AbstractSqliteDataSourceOptions"
 
 /**
  * NativeScript-specific connection options.
  */
-export interface NativescriptDataSourceOptions extends BaseDataSourceOptions {
+export interface NativescriptDataSourceOptions extends AbstractSqliteDataSourceOptions {
     /**
      * Database type.
      */
