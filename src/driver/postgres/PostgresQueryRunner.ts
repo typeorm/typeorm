@@ -1326,22 +1326,105 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
-        if (
+        // ALTER COLUMN ... TYPE with a USING cast preserves data, but only for
+        // ordinary scalar/length changes. Two cases must fall back to drop+add:
+        //
+        //   1. Enum / simple-enum involvement. These columns reference a
+        //      user-defined PG type (CREATE TYPE ... AS ENUM) and createFullType()
+        //      produces the literal "enum", which is not a real type, so the
+        //      generated ALTER and USING cast are invalid SQL. Enum-to-enum value
+        //      changes are handled later in this method via a dedicated flow.
+        //
+        //   2. isArray toggling. Casting between scalar and array forms (or
+        //      between different array element types) is not generally safe with
+        //      a simple ::type expression — drop+add gives a clean re-creation.
+        const involvesEnum =
+            oldColumn.type === "enum" ||
+            oldColumn.type === "simple-enum" ||
+            newColumn.type === "enum" ||
+            newColumn.type === "simple-enum"
+        const isArrayToggled = newColumn.isArray !== oldColumn.isArray
+        const typeChanged =
             oldColumn.type !== newColumn.type ||
             oldColumn.length !== newColumn.length ||
-            newColumn.isArray !== oldColumn.isArray ||
+            isArrayToggled
+
+        if (
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
-                newColumn.generatedType === "STORED")
+                newColumn.generatedType === "STORED") ||
+            (typeChanged && (involvesEnum || isArrayToggled))
         ) {
-            // To avoid data conversion, we just recreate column
+            // STORED generated columns cannot be altered; recreate the column.
+            // Same path for enum involvement and array toggling (see above).
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
         } else {
+            if (typeChanged) {
+                const newType = this.driver.createFullType(newColumn)
+                const oldType = this.driver.createFullType(oldColumn)
+                const columnName = oldColumn.name
+
+                // drop default before type cast to avoid cast errors, matching enum handling
+                if (
+                    oldColumn.default !== null &&
+                    oldColumn.default !== undefined
+                ) {
+                    defaultValueChanged = true
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${columnName}" DROP DEFAULT`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${columnName}" SET DEFAULT ${oldColumn.default}`,
+                        ),
+                    )
+                }
+
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${columnName}" TYPE ${newType} USING "${columnName}"::${newType}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${columnName}" TYPE ${oldType} USING "${columnName}"::${oldType}`,
+                    ),
+                )
+
+                // restore default after type change
+                if (
+                    newColumn.default !== null &&
+                    newColumn.default !== undefined
+                ) {
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${columnName}" SET DEFAULT ${newColumn.default}`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${columnName}" DROP DEFAULT`,
+                        ),
+                    )
+                }
+
+                // update cloned table column type/length/isArray
+                const clonedColumn = clonedTable.columns.find(
+                    (col) => col.name === oldColumn.name,
+                )
+                if (clonedColumn) {
+                    clonedColumn.type = newColumn.type
+                    clonedColumn.length = newColumn.length
+                    clonedColumn.isArray = newColumn.isArray
+                }
+            }
             if (oldColumn.name !== newColumn.name) {
                 // rename column
                 upQueries.push(
@@ -2344,11 +2427,14 @@ export class PostgresQueryRunner
 
             // update column collation
             if (newColumn.collation !== oldColumn.collation) {
+                const newFullType = this.driver.createFullType(newColumn)
+                const oldFullType = this.driver.createFullType(oldColumn)
+
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE "${
+                        }" TYPE ${newFullType} COLLATE "${
                             newColumn.collation
                         }"`,
                     ),
@@ -2356,13 +2442,13 @@ export class PostgresQueryRunner
 
                 const oldCollation = oldColumn.collation
                     ? `"${oldColumn.collation}"`
-                    : `pg_catalog."default"` // if there's no old collation, use default
+                    : `pg_catalog."default"`
 
                 downQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE ${oldCollation}`,
+                        }" TYPE ${oldFullType} COLLATE ${oldCollation}`,
                     ),
                 )
             }
