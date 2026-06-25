@@ -39,7 +39,7 @@ export type WithPrecisionColumnType =
     | "fixed" // mysql
     | "numeric" // postgres, mssql, sqlite, mysql
     | "real" // mysql, postgres, mssql, oracle, sqlite, cockroachdb, sap
-    | "double precision" // postgres, oracle, sqlite, mysql, cockroachdb
+    | "double precision" // postgres, sqlite, mysql, cockroachdb
     | "number" // oracle
     | "datetime" // mssql, mysql, sqlite
     | "datetime2" // mssql
@@ -214,7 +214,8 @@ export type SimpleColumnType =
     | "array" // cockroachdb, sap, spanner
     | "cube" // postgres
     | "ltree" // postgres
-
+    | "binary_double" // oracle 64-bit IEEE 754 double-precision floating-point number
+    | "binary_float" // oracle 32-bit IEEE 754 floating-point number
 /**
  * Any column type column can be.
  */
