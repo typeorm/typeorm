@@ -228,6 +228,28 @@ await manager.delete(Post, { text: null }) // Respects invalidWhereValuesBehavio
 await manager.softDelete(Post, { text: null }) // Respects invalidWhereValuesBehavior
 ```
 
+:::warning Empty criteria are rejected
+With `'ignore'`, every invalid property is skipped. If that leaves the where
+condition empty, the write methods (`update`, `delete`, `softDelete`, `restore`)
+throw `Empty criteria(s) are not allowed` instead of running an **unscoped**
+query against every row. This also applies to `OR` arrays — a branch that is
+stripped down to `{}` is dropped so it cannot widen the condition to `1=1`:
+
+```typescript
+// invalidWhereValuesBehavior: { undefined: "ignore" }
+
+// Throws — nothing is left to filter on, so the whole table is NOT touched
+await manager.delete(Post, { text: undefined })
+
+// Only deletes rows matching `id = 1`; the empty `{ text: undefined }` branch
+// is dropped instead of matching every row
+await manager.delete(Post, [{ text: undefined }, { id: 1 }])
+```
+
+To intentionally affect every row, use the dedicated `updateAll` / `deleteAll`
+methods.
+:::
+
 ### QueryBuilder with setFindOptions
 
 ```typescript

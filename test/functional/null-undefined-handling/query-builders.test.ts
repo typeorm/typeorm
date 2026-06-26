@@ -539,6 +539,103 @@ describe("entity manager > invalidWhereValuesBehavior with ignore", () => {
             expect(remaining.length).to.equal(0)
         }
     })
+
+    it("should reject EntityManager.delete() when ignore strips all criteria", async () => {
+        for (const connection of dataSources) {
+            const post = new Post()
+            post.title = "Test Post"
+            post.text = "text"
+            await connection.manager.save(post)
+
+            // With ignore, { text: undefined } strips to {} which would otherwise
+            // become an unscoped DELETE affecting every row — it must be rejected.
+            try {
+                await connection.manager.delete(Post, {
+                    text: undefined,
+                } as any)
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Empty criteria")
+            }
+
+            const remaining = await connection.manager.find(Post)
+            expect(remaining.length).to.equal(1)
+        }
+    })
+
+    it("should reject EntityManager.update() when ignore strips all criteria", async () => {
+        for (const connection of dataSources) {
+            const post = new Post()
+            post.title = "Test Post"
+            post.text = "text"
+            await connection.manager.save(post)
+
+            try {
+                await connection.manager.update(Post, { text: null } as any, {
+                    title: "Updated",
+                })
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Empty criteria")
+            }
+
+            const notUpdated = await connection.manager.findOneByOrFail(Post, {
+                id: post.id,
+            })
+            expect(notUpdated.title).to.equal("Test Post")
+        }
+    })
+
+    it("should drop the empty branch of an OR-array instead of matching all rows", async () => {
+        for (const connection of dataSources) {
+            const target = new Post()
+            target.title = "Target"
+            target.text = "text"
+            await connection.manager.save(target)
+
+            const bystander = new Post()
+            bystander.title = "Bystander"
+            bystander.text = "text"
+            await connection.manager.save(bystander)
+
+            // With ignore, [{ text: undefined }, { id: target.id }] normalizes to
+            // [{}, { id: target.id }]. The empty branch must be dropped, otherwise
+            // it becomes `1=1 OR id = ?` and deletes every row.
+            await connection.manager.delete(Post, [
+                { text: undefined },
+                { id: target.id },
+            ] as any)
+
+            const remaining = await connection.manager.find(Post)
+            expect(remaining.length).to.equal(1)
+            expect(remaining[0].title).to.equal("Bystander")
+        }
+    })
+
+    it("should reject an OR-array whose every branch is stripped to empty", async () => {
+        for (const connection of dataSources) {
+            const post = new Post()
+            post.title = "Test Post"
+            post.text = "text"
+            await connection.manager.save(post)
+
+            try {
+                await connection.manager.delete(Post, [
+                    { text: undefined },
+                    { text: null },
+                ] as any)
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Empty criteria")
+            }
+
+            const remaining = await connection.manager.find(Post)
+            expect(remaining.length).to.equal(1)
+        }
+    })
 })
 
 describe("entity manager > invalidWhereValuesBehavior does NOT affect QB .where()", () => {

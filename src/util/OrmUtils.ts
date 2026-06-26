@@ -396,6 +396,32 @@ export class OrmUtils {
     }
 
     /**
+     * Checks whether a where criteria carries no effective conditions and would
+     * therefore translate into an unscoped (affecting every row) query.
+     *
+     * Unlike {@link isCriteriaNullOrEmpty} this also treats an array whose every
+     * element is itself empty (e.g. `[{}]`) as empty. It is meant to be used on
+     * criteria produced by {@link normalizeWhereCriteria}, where the
+     * `invalidWhereValuesBehavior.ignore` setting can strip every property and
+     * leave an empty object/array behind.
+     *
+     * @param criteria
+     */
+    public static isWhereCriteriaEmpty(criteria: unknown): boolean {
+        if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
+            return true
+        }
+
+        if (Array.isArray(criteria)) {
+            return criteria.every((criterion) =>
+                OrmUtils.isWhereCriteriaEmpty(criterion),
+            )
+        }
+
+        return false
+    }
+
+    /**
      * Checks if given criteria is a primitive value.
      * Primitive values are strings, numbers and dates.
      *
@@ -667,15 +693,28 @@ export class OrmUtils {
         // below via `options?.null ?? "throw"` / `options?.undefined ?? "throw"`,
         // so we must not short-circuit when `options` is undefined.
 
-        // multiple criteria are possible at the top level
+        // multiple criteria are possible at the top level (OR conditions)
         if (!path && Array.isArray(criteria)) {
-            return criteria.map(
-                (criterion, index): ObjectLiteral =>
-                    OrmUtils.normalizeWhereCriteria(
-                        criterion,
-                        options,
-                        String(index),
-                    ),
+            return (
+                criteria
+                    .map(
+                        (criterion, index): ObjectLiteral =>
+                            OrmUtils.normalizeWhereCriteria(
+                                criterion,
+                                options,
+                                String(index),
+                            ) as ObjectLiteral,
+                    )
+                    // A branch that normalized to {} (e.g. all of its properties
+                    // were stripped by the "ignore" behavior) would be rendered
+                    // as `1=1` and make the whole OR-condition unscoped, so it is
+                    // dropped here. If every branch is dropped the resulting empty
+                    // array is rejected by the callers' empty-criteria guards.
+                    .filter(
+                        (criterion) =>
+                            !OrmUtils.isPlainObject(criterion) ||
+                            Object.keys(criterion).length > 0,
+                    )
             )
         }
 
