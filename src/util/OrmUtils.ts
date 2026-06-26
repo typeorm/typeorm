@@ -662,9 +662,7 @@ export class OrmUtils {
         options?: InvalidFindOptionsWhereBehavior,
         path?: string,
     ): ObjectLiteral | ObjectLiteral[] {
-        if (!options) {
-            return criteria
-        }
+        const effectiveOptions = options || {}
 
         // multiple criteria are possible at the top level
         if (!path && Array.isArray(criteria)) {
@@ -683,7 +681,7 @@ export class OrmUtils {
             const propertyPath = path ? `${path}.${key}` : key
 
             if (value === undefined) {
-                const behavior = options?.undefined ?? "throw"
+                const behavior = effectiveOptions.undefined ?? "throw"
                 if (behavior === "throw") {
                     throw new TypeORMError(
                         `Undefined value encountered in property '${propertyPath}' of a where condition. ` +
@@ -692,7 +690,7 @@ export class OrmUtils {
                 }
                 // else: "ignore" — skip this key
             } else if (value === null) {
-                const behavior = options?.null ?? "throw"
+                const behavior = effectiveOptions.null ?? "throw"
                 if (behavior === "throw") {
                     throw new TypeORMError(
                         `Null value encountered in property '${propertyPath}' of a where condition. ` +
