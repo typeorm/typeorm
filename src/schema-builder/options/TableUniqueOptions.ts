@@ -21,4 +21,10 @@ export interface TableUniqueOptions {
      * or at the end of a transaction
      */
     deferrable?: string
+
+    /**
+     * UNIQUE NULLS NOT DISTINCT constraint allows only a single NULL value to appear in a UNIQUE index.
+     * This option is only applicable in PostgreSQL.
+     */
+    isNullsNotDistinct?: boolean
 }
