@@ -518,7 +518,7 @@ describe("entity manager > default behavior (throw) without explicit invalidWher
             await prepareData(connection)
 
             try {
-                await connection.manager.update(Post, { text: null } as any, {
+                await connection.manager.update(Post, { text: null }, {
                     title: "Updated",
                 })
                 expect.fail("Expected error")
@@ -536,7 +536,7 @@ describe("entity manager > default behavior (throw) without explicit invalidWher
             try {
                 await connection.manager.update(
                     Post,
-                    { text: undefined } as any,
+                    { text: undefined },
                     { title: "Updated" },
                 )
                 expect.fail("Expected error")
@@ -552,7 +552,7 @@ describe("entity manager > default behavior (throw) without explicit invalidWher
             await prepareData(connection)
 
             try {
-                await connection.manager.delete(Post, { text: null } as any)
+                await connection.manager.delete(Post, { text: null })
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
@@ -568,7 +568,7 @@ describe("entity manager > default behavior (throw) without explicit invalidWher
             try {
                 await connection.manager.delete(Post, {
                     text: undefined,
-                } as any)
+                })
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
@@ -594,7 +594,7 @@ describe("entity manager > default behavior (throw) without explicit invalidWher
             for (const connection of ignoreSources) {
                 await prepareData(connection)
                 try {
-                    await connection.manager.update(Post, { text: undefined } as any, { title: "Updated" })
+                    await connection.manager.update(Post, { text: undefined }, { title: "Updated" })
                     expect.fail("Expected error due to empty criteria after normalization")
                 } catch (error) {
                     expect(error).to.be.instanceOf(TypeORMError)

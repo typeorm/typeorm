@@ -834,7 +834,7 @@ export class EntityManager {
      * @param partialEntity
      * @param options
      */
-    update<Entity extends ObjectLiteral>(
+    async update<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
         criteria:
             | string
@@ -935,7 +935,7 @@ export class EntityManager {
      * @param targetOrEntity
      * @param criteria
      */
-    delete<Entity extends ObjectLiteral>(
+    async delete<Entity extends ObjectLiteral>(
         targetOrEntity: EntityTarget<Entity>,
         criteria:
             | string
@@ -1014,7 +1014,7 @@ export class EntityManager {
      * @param targetOrEntity
      * @param criteria
      */
-    softDelete<Entity extends ObjectLiteral>(
+    async softDelete<Entity extends ObjectLiteral>(
         targetOrEntity: EntityTarget<Entity>,
         criteria:
             | string
@@ -1078,7 +1078,7 @@ export class EntityManager {
      * @param targetOrEntity
      * @param criteria
      */
-    restore<Entity extends ObjectLiteral>(
+    async restore<Entity extends ObjectLiteral>(
         targetOrEntity: EntityTarget<Entity>,
         criteria:
             | string

@@ -79,6 +79,10 @@ const posts = await repository.find({
 })
 ```
 
+:::warning
+For mutation methods (`update`, `delete`, `softDelete`, `restore`), if ignoring `null` values results in an empty criteria object or array (i.e., all criteria properties are ignored), TypeORM will throw a `TypeORMError` to prevent executing an accidental query that affects all rows in the database.
+:::
+
 #### `'sql-null'`
 
 JavaScript `null` values are transformed into SQL `NULL` conditions:
@@ -145,6 +149,10 @@ const posts = await repository.find({
     },
 })
 ```
+
+:::warning
+For mutation methods (`update`, `delete`, `softDelete`, `restore`), if ignoring `undefined` values results in an empty criteria object or array (i.e., all criteria properties are ignored), TypeORM will throw a `TypeORMError` to prevent executing an accidental query that affects all rows in the database.
+:::
 
 #### `'throw'` (default)
 
