@@ -9,6 +9,132 @@ import {
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 
+describe("entity manager > invalidWhereValuesBehavior default behavior (no config)", () => {
+    // Regression test for https://github.com/typeorm/typeorm/issues/12578
+    // When `invalidWhereValuesBehavior` is not configured, the documented
+    // default ("throw") must apply to the update/delete/softDelete/restore paths.
+    let dataSources: DataSource[]
+
+    before(async () => {
+        dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
+            entities: [Post, Category],
+            schemaCreate: true,
+            dropSchema: true,
+            // intentionally no `invalidWhereValuesBehavior` configured
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    async function prepareData(connection: DataSource) {
+        const category = new Category()
+        category.name = "Test Category"
+        await connection.manager.save(category)
+
+        const post = new Post()
+        post.title = "Test Post"
+        post.text = "Some text"
+        post.category = category
+        await connection.manager.save(post)
+
+        return { category, post }
+    }
+
+    const cases: Array<{
+        method: "update" | "delete" | "softDelete" | "restore"
+        run: (connection: DataSource, criteria: any) => Promise<unknown>
+    }> = [
+        {
+            method: "update",
+            run: (connection, criteria) =>
+                connection.manager.update(Post, criteria, { title: "Updated" }),
+        },
+        {
+            method: "delete",
+            run: (connection, criteria) =>
+                connection.manager.delete(Post, criteria),
+        },
+        {
+            method: "softDelete",
+            run: (connection, criteria) =>
+                connection.manager.softDelete(Post, criteria),
+        },
+        {
+            method: "restore",
+            run: (connection, criteria) =>
+                connection.manager.restore(Post, criteria),
+        },
+    ]
+
+    for (const { method, run } of cases) {
+        it(`should throw by default for null values in EntityManager.${method}()`, async () => {
+            for (const connection of dataSources) {
+                await prepareData(connection)
+
+                try {
+                    await run(connection, { text: null } as any)
+                    expect.fail("Expected error")
+                } catch (error) {
+                    expect(error).to.be.instanceOf(TypeORMError)
+                    expect(error.message).to.include("Null value encountered")
+                }
+            }
+        })
+
+        it(`should throw by default for undefined values in EntityManager.${method}()`, async () => {
+            for (const connection of dataSources) {
+                await prepareData(connection)
+
+                try {
+                    await run(connection, { text: undefined } as any)
+                    expect.fail("Expected error")
+                } catch (error) {
+                    expect(error).to.be.instanceOf(TypeORMError)
+                    expect(error.message).to.include(
+                        "Undefined value encountered",
+                    )
+                }
+            }
+        })
+
+        it(`should throw by default for nested undefined values in EntityManager.${method}()`, async () => {
+            for (const connection of dataSources) {
+                await prepareData(connection)
+
+                try {
+                    await run(connection, {
+                        category: { name: undefined },
+                    } as any)
+                    expect.fail("Expected error")
+                } catch (error) {
+                    expect(error).to.be.instanceOf(TypeORMError)
+                    expect(error.message).to.include(
+                        "Undefined value encountered",
+                    )
+                }
+            }
+        })
+    }
+
+    it("should still execute with valid criteria when no config is set", async () => {
+        for (const connection of dataSources) {
+            const { post } = await prepareData(connection)
+
+            await connection.manager.update(
+                Post,
+                { title: "Test Post" },
+                { title: "Renamed" },
+            )
+
+            const updated = await connection.manager.findOneByOrFail(Post, {
+                id: post.id,
+            })
+            expect(updated.title).to.equal("Renamed")
+        }
+    })
+})
+
 describe("entity manager > invalidWhereValuesBehavior with throw", () => {
     let dataSources: DataSource[]
 

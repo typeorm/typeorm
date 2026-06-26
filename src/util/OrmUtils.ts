@@ -662,9 +662,10 @@ export class OrmUtils {
         options?: InvalidFindOptionsWhereBehavior,
         path?: string,
     ): ObjectLiteral | ObjectLiteral[] {
-        if (!options) {
-            return criteria
-        }
+        // When `invalidWhereValuesBehavior` is not configured the documented
+        // default behaviour applies (throw on null/undefined). This is handled
+        // below via `options?.null ?? "throw"` / `options?.undefined ?? "throw"`,
+        // so we must not short-circuit when `options` is undefined.
 
         // multiple criteria are possible at the top level
         if (!path && Array.isArray(criteria)) {
