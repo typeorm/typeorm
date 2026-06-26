@@ -315,8 +315,13 @@ describe(`OrmUtils`, () => {
             const result = OrmUtils.normalizeWhereCriteria(
                 JSON.parse('{ "__proto__": { "polluted": true }, "id": 1 }'),
                 {},
-            )
+            ) as Record<string, unknown>
             expect(result).to.deep.equal({ id: 1 })
+            // the guard must prevent a `result["__proto__"] = ...` assignment from
+            // re-pointing the returned object's prototype (per-object pollution),
+            // not just global Object.prototype pollution.
+            expect(Object.getPrototypeOf(result)).to.equal(Object.prototype)
+            expect(result.polluted).to.equal(undefined)
             expect(({} as any).polluted).to.equal(undefined)
         })
     })
