@@ -270,4 +270,54 @@ describe(`OrmUtils`, () => {
             ).to.equal(false)
         })
     })
+
+    describe("normalizeWhereCriteria", () => {
+        it("returns criteria unchanged when no options are provided", () => {
+            const criteria = { name: null, email: undefined }
+            expect(OrmUtils.normalizeWhereCriteria(criteria)).to.equal(criteria)
+        })
+
+        it("throws on null/undefined by default when options are provided", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ name: undefined }, {}),
+            ).to.throw(/Undefined value.*'name'/)
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ email: null }, {}),
+            ).to.throw(/Null value.*'email'/)
+        })
+
+        it("honors 'ignore' by stripping null/undefined keys", () => {
+            const result = OrmUtils.normalizeWhereCriteria(
+                { name: "Alice", email: null, phone: undefined },
+                { null: "ignore", undefined: "ignore" },
+            )
+            expect(result).to.deep.equal({ name: "Alice" })
+        })
+
+        it("passes entity class instances through unchanged (not validated)", () => {
+            class User {
+                id = 1
+                name = "Alice"
+                parentId: number | null = null
+                deletedAt: Date | undefined = undefined
+            }
+            const entity = new User()
+            // even with throw configured, an entity instance is not validated:
+            // its set columns (including a null FK) are part of the where clause.
+            const result = OrmUtils.normalizeWhereCriteria(entity, {
+                null: "throw",
+                undefined: "throw",
+            })
+            expect(result).to.equal(entity)
+        })
+
+        it("ignores the __proto__ key when iterating", () => {
+            const result = OrmUtils.normalizeWhereCriteria(
+                JSON.parse('{ "__proto__": { "polluted": true }, "id": 1 }'),
+                {},
+            )
+            expect(result).to.deep.equal({ id: 1 })
+            expect(({} as any).polluted).to.equal(undefined)
+        })
+    })
 })

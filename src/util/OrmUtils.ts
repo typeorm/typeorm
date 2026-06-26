@@ -678,8 +678,17 @@ export class OrmUtils {
             )
         }
 
+        // Entity class instances (and other non-plain objects) are passed through
+        // unchanged: their set columns — including nullable foreign keys that happen
+        // to be null — are intentionally part of the where condition and must not be
+        // validated or stripped. Only plain objects (FindOptionsWhere) are normalized.
+        if (!OrmUtils.isPlainObject(criteria)) {
+            return criteria
+        }
+
         const result: ObjectLiteral = {}
         for (const [key, value] of Object.entries(criteria)) {
+            if (key === "__proto__") continue
             const propertyPath = path ? `${path}.${key}` : key
 
             if (value === undefined) {
