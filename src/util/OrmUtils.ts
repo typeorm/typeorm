@@ -678,6 +678,16 @@ export class OrmUtils {
         for (const [key, value] of Object.entries(criteria)) {
             const propertyPath = path ? `${path}.${key}` : key
 
+            if (
+                key === "__proto__" ||
+                key === "constructor" ||
+                key === "prototype"
+            ) {
+                throw new TypeORMError(
+                    `Special key encountered in property '${propertyPath}' of a where condition.`,
+                )
+            }
+
             if (value === undefined) {
                 const behavior = options?.undefined ?? "throw"
                 if (behavior === "throw") {

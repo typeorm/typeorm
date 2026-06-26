@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import type { DataSource } from "../../../src"
+import type { DataSource, FindOptionsWhere } from "../../../src"
 import { TypeORMError } from "../../../src"
 import {
     closeTestingConnections,
@@ -26,9 +26,13 @@ describe("entity manager > invalidWhereValuesBehavior with default behavior", ()
     it("should throw error for null values in EntityManager.update() by default", async () => {
         for (const connection of dataSources) {
             try {
-                await connection.manager.update(Post, { text: null } as any, {
-                    title: "Updated",
-                })
+                await connection.manager.update(
+                    Post,
+                    { text: null } as unknown as FindOptionsWhere<Post>,
+                    {
+                        title: "Updated",
+                    },
+                )
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
@@ -42,11 +46,33 @@ describe("entity manager > invalidWhereValuesBehavior with default behavior", ()
             try {
                 await connection.manager.delete(Post, {
                     text: undefined,
-                } as any)
+                } as unknown as FindOptionsWhere<Post>)
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
                 expect(error.message).to.include("Undefined value encountered")
+            }
+        }
+    })
+
+    it("should throw error for special keys in EntityManager.update() by default", async () => {
+        for (const connection of dataSources) {
+            try {
+                await connection.manager.update(
+                    Post,
+                    {
+                        constructor: { x: 1 },
+                    } as unknown as FindOptionsWhere<Post>,
+                    {
+                        title: "Updated",
+                    },
+                )
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include(
+                    "Special key encountered in property 'constructor'",
+                )
             }
         }
     })
