@@ -83,7 +83,7 @@ export declare abstract class AbstractCursor<TSchema = any, CursorEvents extends
     /* Excluded from this release type: cursorNamespace */
     /* Excluded from this release type: documents */
     /* Excluded from this release type: cursorClient */
-    /* Excluded from this release type: transform */
+    transform: ((doc: TSchema) => Promise<TSchema | null>) | ((doc: TSchema) => TSchema | null) | null;
     /* Excluded from this release type: initialized */
     /* Excluded from this release type: isClosed */
     /* Excluded from this release type: isKilled */

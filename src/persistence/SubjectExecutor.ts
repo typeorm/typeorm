@@ -1047,19 +1047,6 @@ export class SubjectExecutor {
                         column.setEntityValue(subject.entity!, null)
                 }
 
-                if (!column.isSelect) {
-                    const target = column.embeddedMetadata
-                        ? OrmUtils.deepValue(
-                              subject.entity!,
-                              column.embeddedMetadata.propertyPath,
-                          )
-                        : subject.entity
-
-                    if (target) {
-                        delete target[column.propertyName]
-                    }
-                }
-
                 // update relational columns
                 if (subject.updatedRelationMaps.length > 0) {
                     subject.updatedRelationMaps.forEach(
