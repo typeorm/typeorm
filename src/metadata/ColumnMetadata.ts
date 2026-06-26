@@ -12,6 +12,7 @@ import { ObjectUtils } from "../util/ObjectUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { areUint8ArraysEqual, isUint8Array } from "../util/Uint8ArrayUtils"
 import type { VirtualColumnOptions } from "../decorator/options/VirtualColumnOptions"
+import type { TemporalColumnOption } from "../decorator/options/ColumnOptions"
 
 /**
  * This metadata contains all information about entity's column.
@@ -309,6 +310,13 @@ export class ColumnMetadata {
     transformer?: ValueTransformer | ValueTransformer[]
 
     /**
+     * Temporal opt-in option
+     *
+     * @see ColumnOptions.temporal
+     */
+    temporal?: TemporalColumnOption
+
+    /**
      * Column type in the case if this column is in the closure table.
      * Column can be ancestor or descendant in the closure tables.
      */
@@ -470,6 +478,8 @@ export class ColumnMetadata {
         }
         if (options.args.options.transformer)
             this.transformer = options.args.options.transformer
+        if (options.args.options.temporal !== undefined)
+            this.temporal = options.args.options.temporal
         if (options.args.options.spatialFeatureType)
             this.spatialFeatureType = options.args.options.spatialFeatureType
         if (options.args.options.srid !== undefined)
