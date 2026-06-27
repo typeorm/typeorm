@@ -676,6 +676,14 @@ export class OrmUtils {
 
         const result: ObjectLiteral = {}
         for (const [key, value] of Object.entries(criteria)) {
+            if (
+                key === "__proto__" ||
+                key === "constructor" ||
+                key === "prototype"
+            ) {
+                continue
+            }
+
             const propertyPath = path ? `${path}.${key}` : key
 
             if (value === undefined) {

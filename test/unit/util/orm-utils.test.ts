@@ -265,6 +265,20 @@ describe(`OrmUtils`, () => {
             ).to.deep.equal({ json: {} })
         })
 
+        it("should skip dangerous keys when normalizing criteria", () => {
+            const normalized = OrmUtils.normalizeWhereCriteria(
+                JSON.parse(`{
+                    "__proto__": { "polluted": true },
+                    "constructor": { "polluted": true },
+                    "prototype": { "polluted": true },
+                    "safe": { "id": 1 }
+                }`),
+            )
+
+            expect(normalized).to.deep.equal({ safe: { id: 1 } })
+            expect(Object.prototype).not.to.have.property("polluted")
+        })
+
         it("should preserve ignore behavior when configured", () => {
             expect(
                 OrmUtils.normalizeWhereCriteria(
