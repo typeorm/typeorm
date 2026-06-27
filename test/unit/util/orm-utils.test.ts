@@ -221,6 +221,7 @@ describe(`OrmUtils`, () => {
         })
     })
 
+    // Complements the #12578 functional coverage with helper-level edge cases.
     describe("normalizeWhereCriteria", () => {
         it("should throw for null values by default when options are omitted", () => {
             expect(() =>

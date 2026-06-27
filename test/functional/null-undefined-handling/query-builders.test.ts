@@ -44,9 +44,13 @@ describe("entity manager > invalidWhereValuesBehavior with default behavior", ()
             // Regression test for #12578: omitted options should still
             // use the documented default invalidWhereValuesBehavior.
             try {
-                await connection.manager.update(Post, { text: null } as any, {
-                    title: "Updated",
-                })
+                await connection.manager.update(
+                    Post,
+                    { text: null },
+                    {
+                        title: "Updated",
+                    },
+                )
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
@@ -62,7 +66,7 @@ describe("entity manager > invalidWhereValuesBehavior with default behavior", ()
             try {
                 await connection.manager.delete(Post, {
                     text: undefined,
-                } as any)
+                })
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
