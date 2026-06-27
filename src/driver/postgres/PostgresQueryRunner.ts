@@ -1326,10 +1326,17 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
-        if (
+        const isVarcharLengthOnlyChange = this.isVarcharLengthOnlyChange(
+            oldColumn,
+            newColumn,
+        )
+        const hasTypeChange =
             oldColumn.type !== newColumn.type ||
             oldColumn.length !== newColumn.length ||
-            newColumn.isArray !== oldColumn.isArray ||
+            newColumn.isArray !== oldColumn.isArray
+
+        if (
+            (hasTypeChange && !isVarcharLengthOnlyChange) ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
@@ -1616,6 +1623,23 @@ export class PostgresQueryRunner
                     clonedTable.columns.indexOf(oldTableColumn!)
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
+            }
+
+            if (isVarcharLengthOnlyChange) {
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                    ),
+                )
             }
 
             if (
@@ -2465,6 +2489,27 @@ export class PostgresQueryRunner
 
         await this.executeQueries(upQueries, downQueries)
         this.replaceCachedTable(table, clonedTable)
+    }
+
+    private isVarcharLengthOnlyChange(
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+    ): boolean {
+        return (
+            this.isVarcharColumn(oldColumn) &&
+            this.isVarcharColumn(newColumn) &&
+            oldColumn.length !== newColumn.length &&
+            !oldColumn.isArray &&
+            !newColumn.isArray &&
+            !oldColumn.generatedType &&
+            !newColumn.generatedType &&
+            !oldColumn.asExpression &&
+            !newColumn.asExpression
+        )
+    }
+
+    private isVarcharColumn(column: TableColumn): boolean {
+        return column.type === "character varying" || column.type === "varchar"
     }
 
     /**

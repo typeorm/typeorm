@@ -88,6 +88,47 @@ describe("schema builder > change column", () => {
             }),
         ))
 
+    it("should change postgres varchar length without dropping the column", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (dataSource.driver.options.type !== "postgres") return
+
+                const postMetadata = dataSource.getMetadata(Post)
+                const nameColumn =
+                    postMetadata.findColumnWithPropertyName("name")!
+                nameColumn.length = "500"
+
+                try {
+                    const sqlInMemory = await dataSource.driver
+                        .createSchemaBuilder()
+                        .log()
+                    const upQueries = sqlInMemory.upQueries.map((query) =>
+                        query.query.replaceAll(/\s+/g, " ").trim(),
+                    )
+                    const downQueries = sqlInMemory.downQueries.map((query) =>
+                        query.query.replaceAll(/\s+/g, " ").trim(),
+                    )
+
+                    expect(upQueries).to.include(
+                        `ALTER TABLE "post" ALTER COLUMN "name" TYPE character varying(500)`,
+                    )
+                    expect(downQueries).to.include(
+                        `ALTER TABLE "post" ALTER COLUMN "name" TYPE character varying(255)`,
+                    )
+                    expect(
+                        upQueries.some((query) =>
+                            query.includes(`DROP COLUMN "name"`),
+                        ),
+                    ).to.be.false
+                    expect(
+                        upQueries.some((query) => query.includes(`ADD "name"`)),
+                    ).to.be.false
+                } finally {
+                    nameColumn.length = "255"
+                }
+            }),
+        ))
+
     it("should correctly change column type", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
