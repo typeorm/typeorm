@@ -45,6 +45,12 @@ describe("entity manager > invalidWhereValuesBehavior with default behavior", ()
         }`)
     }
 
+    function createMixedDangerousCriteria(
+        post: Post,
+    ): Record<string, unknown>[] {
+        return [{ id: post.id }, createDangerousOnlyCriteria()]
+    }
+
     async function expectEmptyCriteriaError(
         methodName: string,
         run: () => Promise<unknown>,
@@ -118,6 +124,45 @@ describe("entity manager > invalidWhereValuesBehavior with default behavior", ()
             )
             await expectEmptyCriteriaError("restore", () =>
                 connection.manager.restore(Post, createDangerousOnlyCriteria()),
+            )
+
+            const reloaded = await connection.manager.findOneByOrFail(Post, {
+                id: post.id,
+            })
+            expect(reloaded.title).to.equal("Test Post")
+        }
+    })
+
+    it("should reject OR criteria with an empty normalized branch by default", async () => {
+        for (const connection of dataSources) {
+            const { post } = await prepareData(connection)
+
+            await expectEmptyCriteriaError("update", () =>
+                connection.manager.update(
+                    Post,
+                    createMixedDangerousCriteria(post),
+                    {
+                        title: "Updated",
+                    },
+                ),
+            )
+            await expectEmptyCriteriaError("delete", () =>
+                connection.manager.delete(
+                    Post,
+                    createMixedDangerousCriteria(post),
+                ),
+            )
+            await expectEmptyCriteriaError("softDelete", () =>
+                connection.manager.softDelete(
+                    Post,
+                    createMixedDangerousCriteria(post),
+                ),
+            )
+            await expectEmptyCriteriaError("restore", () =>
+                connection.manager.restore(
+                    Post,
+                    createMixedDangerousCriteria(post),
+                ),
             )
 
             const reloaded = await connection.manager.findOneByOrFail(Post, {

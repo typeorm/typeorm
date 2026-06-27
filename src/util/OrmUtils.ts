@@ -404,7 +404,7 @@ export class OrmUtils {
         if (Array.isArray(criteria)) {
             return (
                 criteria.length === 0 ||
-                criteria.every((criterion) =>
+                criteria.some((criterion) =>
                     OrmUtils.isCriteriaNullOrEmpty(criterion),
                 )
             )
