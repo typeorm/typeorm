@@ -37,6 +37,29 @@ describe("entity manager > invalidWhereValuesBehavior with default behavior", ()
         return { category, post }
     }
 
+    function createDangerousOnlyCriteria(): Record<string, unknown> {
+        return JSON.parse(`{
+            "__proto__": { "polluted": true },
+            "constructor": { "polluted": true },
+            "prototype": { "polluted": true }
+        }`)
+    }
+
+    async function expectEmptyCriteriaError(
+        methodName: string,
+        run: () => Promise<unknown>,
+    ) {
+        try {
+            await run()
+            expect.fail("Expected error")
+        } catch (error) {
+            expect(error).to.be.instanceOf(TypeORMError)
+            expect(error.message).to.include(
+                `Empty criteria(s) are not allowed for the ${methodName} method.`,
+            )
+        }
+    }
+
     it("should throw error for null values in EntityManager.update() by default", async () => {
         for (const connection of dataSources) {
             await prepareData(connection)
@@ -72,6 +95,35 @@ describe("entity manager > invalidWhereValuesBehavior with default behavior", ()
                 expect(error).to.be.instanceOf(TypeORMError)
                 expect(error.message).to.include("Undefined value encountered")
             }
+        }
+    })
+
+    it("should reject criteria that normalize to empty by default", async () => {
+        for (const connection of dataSources) {
+            const { post } = await prepareData(connection)
+
+            await expectEmptyCriteriaError("update", () =>
+                connection.manager.update(Post, createDangerousOnlyCriteria(), {
+                    title: "Updated",
+                }),
+            )
+            await expectEmptyCriteriaError("delete", () =>
+                connection.manager.delete(Post, createDangerousOnlyCriteria()),
+            )
+            await expectEmptyCriteriaError("softDelete", () =>
+                connection.manager.softDelete(
+                    Post,
+                    createDangerousOnlyCriteria(),
+                ),
+            )
+            await expectEmptyCriteriaError("restore", () =>
+                connection.manager.restore(Post, createDangerousOnlyCriteria()),
+            )
+
+            const reloaded = await connection.manager.findOneByOrFail(Post, {
+                id: post.id,
+            })
+            expect(reloaded.title).to.equal("Test Post")
         }
     })
 })

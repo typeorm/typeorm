@@ -276,6 +276,8 @@ describe(`OrmUtils`, () => {
             )
 
             expect(normalized).to.deep.equal({ safe: { id: 1 } })
+            expect(Object.getPrototypeOf(normalized)).to.equal(Object.prototype)
+            expect("polluted" in normalized).to.equal(false)
             expect(Object.prototype).not.to.have.property("polluted")
         })
 

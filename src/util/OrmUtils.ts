@@ -396,6 +396,24 @@ export class OrmUtils {
     }
 
     /**
+     * Checks if normalized object criteria no longer contain usable conditions.
+     *
+     * @param criteria
+     */
+    public static isNormalizedCriteriaEmpty(criteria: unknown): boolean {
+        if (Array.isArray(criteria)) {
+            return (
+                criteria.length === 0 ||
+                criteria.every((criterion) =>
+                    OrmUtils.isCriteriaNullOrEmpty(criterion),
+                )
+            )
+        }
+
+        return OrmUtils.isCriteriaNullOrEmpty(criteria)
+    }
+
+    /**
      * Checks if given criteria is a primitive value.
      * Primitive values are strings, numbers and dates.
      *
