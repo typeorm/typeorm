@@ -47,6 +47,44 @@ describe("github issues > #3357 migration generation drops columns", () => {
         expect(cachedColumn?.type).to.equal("character varying")
         expect(cachedColumn?.length).to.equal("51")
     })
+
+    it("keeps varchar length when changing postgres varchar length and collation", async () => {
+        const driver = createPostgresDriverStub()
+        const queryRunner = new TestPostgresQueryRunner(driver, "master")
+        const table = new Table({
+            name: "bug",
+            columns: [
+                {
+                    name: "example",
+                    type: "character varying",
+                    length: "50",
+                },
+            ],
+        })
+        queryRunner.seedCachedTable(table)
+        const oldColumn = table.findColumnByName("example")!
+        const newColumn = oldColumn.clone()
+        newColumn.length = "51"
+        newColumn.collation = "C"
+
+        queryRunner.enableSqlMemory()
+
+        await queryRunner.changeColumn(table, oldColumn, newColumn)
+
+        const upQueries = normalizeQueries(queryRunner.getMemorySql().upQueries)
+        const downQueries = normalizeQueries(
+            queryRunner.getMemorySql().downQueries,
+        )
+
+        expect(upQueries).to.deep.equal([
+            `ALTER TABLE "bug" ALTER COLUMN "example" TYPE character varying(51)`,
+            `ALTER TABLE "bug" ALTER COLUMN "example" TYPE character varying(51) COLLATE "C"`,
+        ])
+        expect(downQueries).to.deep.equal([
+            `ALTER TABLE "bug" ALTER COLUMN "example" TYPE character varying(50)`,
+            `ALTER TABLE "bug" ALTER COLUMN "example" TYPE character varying(50) COLLATE pg_catalog."default"`,
+        ])
+    })
 })
 
 class TestPostgresQueryRunner extends PostgresQueryRunner {
