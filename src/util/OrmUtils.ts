@@ -651,7 +651,7 @@ export class OrmUtils {
 
     /**
      * Recursively validates an object where clause, throwing for null/undefined
-     * based on the provided invalidWhereValuesBehavior config.
+     * based on the provided invalidWhereValuesBehavior config or its defaults.
      *
      * @param criteria
      * @param options
@@ -662,10 +662,6 @@ export class OrmUtils {
         options?: InvalidFindOptionsWhereBehavior,
         path?: string,
     ): ObjectLiteral | ObjectLiteral[] {
-        if (!options) {
-            return criteria
-        }
-
         // multiple criteria are possible at the top level
         if (!path && Array.isArray(criteria)) {
             return criteria.map(
@@ -704,6 +700,11 @@ export class OrmUtils {
                 }
                 // else: "ignore" — skip this key
             } else if (OrmUtils.isPlainObject(value)) {
+                if (Object.keys(value).length === 0) {
+                    result[key] = value
+                    continue
+                }
+
                 const nested = OrmUtils.normalizeWhereCriteria(
                     value,
                     options,
