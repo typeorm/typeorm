@@ -2370,13 +2370,17 @@ export class PostgresQueryRunner
 
             // update column collation
             if (newColumn.collation !== oldColumn.collation) {
+                const newCollation = newColumn.collation
+                    ? `"${newColumn.collation}"`
+                    : `pg_catalog."default"` // if there's no new collation, use default
+
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
                         }" TYPE ${this.driver.createFullType(
                             newColumn,
-                        )} COLLATE "${newColumn.collation}"`,
+                        )} COLLATE ${newCollation}`,
                     ),
                 )
 

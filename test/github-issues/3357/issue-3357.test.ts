@@ -85,6 +85,42 @@ describe("github issues > #3357 migration generation drops columns", () => {
             `ALTER TABLE "bug" ALTER COLUMN "example" TYPE character varying(50) COLLATE pg_catalog."default"`,
         ])
     })
+
+    it("uses postgres default when clearing a varchar collation", async () => {
+        const driver = createPostgresDriverStub()
+        const queryRunner = new TestPostgresQueryRunner(driver, "master")
+        const table = new Table({
+            name: "bug",
+            columns: [
+                {
+                    name: "example",
+                    type: "character varying",
+                    length: "50",
+                    collation: "C",
+                },
+            ],
+        })
+        queryRunner.seedCachedTable(table)
+        const oldColumn = table.findColumnByName("example")!
+        const newColumn = oldColumn.clone()
+        newColumn.collation = undefined
+
+        queryRunner.enableSqlMemory()
+
+        await queryRunner.changeColumn(table, oldColumn, newColumn)
+
+        const upQueries = normalizeQueries(queryRunner.getMemorySql().upQueries)
+        const downQueries = normalizeQueries(
+            queryRunner.getMemorySql().downQueries,
+        )
+
+        expect(upQueries).to.deep.equal([
+            `ALTER TABLE "bug" ALTER COLUMN "example" TYPE character varying(50) COLLATE pg_catalog."default"`,
+        ])
+        expect(downQueries).to.deep.equal([
+            `ALTER TABLE "bug" ALTER COLUMN "example" TYPE character varying(50) COLLATE "C"`,
+        ])
+    })
 })
 
 class TestPostgresQueryRunner extends PostgresQueryRunner {
