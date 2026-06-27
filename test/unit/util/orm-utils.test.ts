@@ -2,6 +2,7 @@ import { expect } from "chai"
 import { runInNewContext } from "node:vm"
 import type { DeepPartial } from "../../../src"
 import { OrmUtils } from "../../../src/util/OrmUtils"
+import { IsNull } from "../../../src"
 
 describe(`OrmUtils`, () => {
     describe("parseSqlCheckExpression", () => {
@@ -268,6 +269,97 @@ describe(`OrmUtils`, () => {
                     new Uint8Array([1, 2, 4]),
                 ),
             ).to.equal(false)
+        })
+    })
+
+    describe("normalizeWhereCriteria", () => {
+        it("should pass through valid criteria when options is undefined", () => {
+            const criteria = { name: "test", age: 25 }
+            const result = OrmUtils.normalizeWhereCriteria(criteria, undefined)
+            expect(result).to.deep.equal({ name: "test", age: 25 })
+        })
+
+        it("should throw on undefined value when options is undefined (default throw behavior)", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria(
+                    { name: undefined },
+                    undefined,
+                ),
+            ).to.throw(
+                /Undefined value encountered in property 'name'/,
+            )
+        })
+
+        it("should throw on null value when options is undefined (default throw behavior)", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ name: null }, undefined),
+            ).to.throw(
+                /Null value encountered in property 'name'/,
+            )
+        })
+
+        it("should throw on undefined value when options is empty object (explicit defaults)", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ name: undefined }, {}),
+            ).to.throw(
+                /Undefined value encountered in property 'name'/,
+            )
+        })
+
+        it("should ignore undefined value when options.undefined is 'ignore'", () => {
+            const result = OrmUtils.normalizeWhereCriteria(
+                { name: undefined, age: 25 },
+                { undefined: "ignore" },
+            )
+            expect(result).to.deep.equal({ age: 25 })
+        })
+
+        it("should ignore null value when options.null is 'ignore'", () => {
+            const result = OrmUtils.normalizeWhereCriteria(
+                { name: null, age: 25 },
+                { null: "ignore" },
+            )
+            expect(result).to.deep.equal({ age: 25 })
+        })
+
+        it("should convert null to IsNull() when options.null is 'sql-null'", () => {
+            const result = OrmUtils.normalizeWhereCriteria(
+                { name: null, age: 25 },
+                { null: "sql-null" },
+            ) as Record<string, unknown>
+            expect(result["age"]).to.equal(25)
+            // IsNull() returns a FindOperator — verify it replaces null
+            expect(result["name"]).to.not.be.null
+            expect(result["name"]).to.not.be.undefined
+        })
+
+        it("should apply default throw behavior for arrays when options is undefined", () => {
+            const criteria = [{ name: "valid" }, { name: null }]
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria(criteria, undefined),
+            ).to.throw(
+                /Null value encountered in property '1.name'/,
+            )
+        })
+
+        it("should process arrays of criteria when all values are valid", () => {
+            const criteria = [{ name: "Alice" }, { name: "Bob" }]
+            const result = OrmUtils.normalizeWhereCriteria(
+                criteria,
+                undefined,
+            )
+            expect(result).to.deep.equal([{ name: "Alice" }, { name: "Bob" }])
+        })
+
+        it("should handle nested objects and throw on deep undefined when options is undefined", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria(
+                    { user: { email: undefined } },
+                    undefined,
+                ),
+            ).to.throw(
+                /Undefined value encountered in property 'user.email'/,
+            )
         })
     })
 })
