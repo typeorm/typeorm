@@ -6,6 +6,8 @@ import { DefaultNamingStrategy } from "../../../src/naming-strategy/DefaultNamin
 import { Table } from "../../../src/schema-builder/table/Table"
 import type { TableColumn } from "../../../src/schema-builder/table/TableColumn"
 
+// This regression stays in test/github-issues because it verifies generated SQL
+// and QueryRunner table-cache state without requiring a live Postgres database.
 describe("github issues > #3357 migration generation drops columns", () => {
     it("uses ALTER COLUMN TYPE when changing postgres varchar length", async () => {
         const driver = createPostgresDriverStub()
