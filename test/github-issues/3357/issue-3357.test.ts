@@ -1,5 +1,6 @@
 import { expect } from "chai"
 import { PostgresQueryRunner } from "../../../src/driver/postgres/PostgresQueryRunner"
+import type { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
 import type { Query } from "../../../src/driver/Query"
 import { DefaultNamingStrategy } from "../../../src/naming-strategy/DefaultNamingStrategy"
 import { Table } from "../../../src/schema-builder/table/Table"
@@ -8,7 +9,7 @@ import type { TableColumn } from "../../../src/schema-builder/table/TableColumn"
 describe("github issues > #3357 migration generation drops columns", () => {
     it("uses ALTER COLUMN TYPE when changing postgres varchar length", async () => {
         const driver = createPostgresDriverStub()
-        const queryRunner = new PostgresQueryRunner(driver, "master")
+        const queryRunner = new TestPostgresQueryRunner(driver, "master")
         const table = new Table({
             name: "bug",
             columns: [
@@ -19,6 +20,7 @@ describe("github issues > #3357 migration generation drops columns", () => {
                 },
             ],
         })
+        queryRunner.seedCachedTable(table)
         const oldColumn = table.findColumnByName("example")!
         const newColumn = oldColumn.clone()
         newColumn.length = "51"
@@ -38,11 +40,25 @@ describe("github issues > #3357 migration generation drops columns", () => {
         expect(downQueries).to.deep.equal([
             `ALTER TABLE "bug" ALTER COLUMN "example" TYPE character varying(50)`,
         ])
+
+        const cachedColumn = queryRunner.getCachedColumn("example")
+        expect(cachedColumn?.type).to.equal("character varying")
+        expect(cachedColumn?.length).to.equal("51")
     })
 })
 
-function createPostgresDriverStub(): any {
-    const driver: any = {
+class TestPostgresQueryRunner extends PostgresQueryRunner {
+    seedCachedTable(table: Table): void {
+        this.loadedTables = [table]
+    }
+
+    getCachedColumn(columnName: string): TableColumn | undefined {
+        return this.loadedTables[0]?.findColumnByName(columnName)
+    }
+}
+
+function createPostgresDriverStub(): PostgresDriver {
+    const driver = {
         connectedQueryRunners: [],
         database: undefined,
         options: { type: "postgres" },
@@ -76,13 +92,13 @@ function createPostgresDriverStub(): any {
                 tableName: parts[parts.length - 1],
             }
         },
-    }
+    } as unknown as PostgresDriver
 
     driver.dataSource = {
         driver,
         hasMetadata: () => false,
         namingStrategy: new DefaultNamingStrategy(),
-    }
+    } as unknown as PostgresDriver["dataSource"]
 
     return driver
 }

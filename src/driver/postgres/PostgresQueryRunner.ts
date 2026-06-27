@@ -1640,6 +1640,7 @@ export class PostgresQueryRunner
                         }" TYPE ${this.driver.createFullType(oldColumn)}`,
                     ),
                 )
+                this.updateColumnTypeInClonedTable(clonedTable, newColumn)
             }
 
             if (
@@ -1660,6 +1661,7 @@ export class PostgresQueryRunner
                         }" TYPE ${this.driver.createFullType(oldColumn)}`,
                     ),
                 )
+                this.updateColumnTypeInClonedTable(clonedTable, newColumn)
             }
 
             if (
@@ -2510,6 +2512,27 @@ export class PostgresQueryRunner
 
     private isVarcharColumn(column: TableColumn): boolean {
         return column.type === "character varying" || column.type === "varchar"
+    }
+
+    private updateColumnTypeInClonedTable(
+        clonedTable: Table,
+        newColumn: TableColumn,
+    ): void {
+        const clonedColumn = clonedTable.columns.find(
+            (column) => column.name === newColumn.name,
+        )
+
+        if (!clonedColumn) {
+            return
+        }
+
+        clonedColumn.type = newColumn.type
+        clonedColumn.length = newColumn.length
+        clonedColumn.precision = newColumn.precision
+        clonedColumn.scale = newColumn.scale
+        clonedColumn.isArray = newColumn.isArray
+        clonedColumn.spatialFeatureType = newColumn.spatialFeatureType
+        clonedColumn.srid = newColumn.srid
     }
 
     /**
