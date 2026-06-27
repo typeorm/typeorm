@@ -9,6 +9,64 @@ import {
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 
+describe("entity manager > invalidWhereValuesBehavior defaults (#12578)", () => {
+    let dataSources: DataSource[]
+
+    before(async () => {
+        dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
+            entities: [Post, Category],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    async function prepareData(connection: DataSource) {
+        const post = new Post()
+        post.title = "Test Post"
+        post.text = "Some text"
+        await connection.manager.save(post)
+
+        return post
+    }
+
+    it("should throw for null values in EntityManager.update() by default", async () => {
+        for (const connection of dataSources) {
+            await prepareData(connection)
+
+            try {
+                await connection.manager.update(
+                    Post,
+                    { text: null },
+                    {
+                        title: "Updated",
+                    },
+                )
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Null value encountered")
+            }
+        }
+    })
+
+    it("should throw for undefined values in EntityManager.delete() by default", async () => {
+        for (const connection of dataSources) {
+            await prepareData(connection)
+
+            try {
+                await connection.manager.delete(Post, { text: undefined })
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Undefined value encountered")
+            }
+        }
+    })
+})
+
 describe("entity manager > invalidWhereValuesBehavior with throw", () => {
     let dataSources: DataSource[]
 
@@ -411,6 +469,38 @@ describe("entity manager > invalidWhereValuesBehavior with ignore", () => {
 
             const remaining = await connection.manager.find(Post)
             expect(remaining.length).to.equal(0)
+        }
+    })
+
+    it("should reject EntityManager operations when ignore leaves empty criteria", async () => {
+        for (const connection of dataSources) {
+            const post = new Post()
+            post.title = "Test Post"
+            post.text = "text"
+            await connection.manager.save(post)
+
+            await expect(
+                connection.manager.update(
+                    Post,
+                    { text: undefined },
+                    {
+                        title: "Updated",
+                    },
+                ),
+            ).to.be.rejectedWith(
+                TypeORMError,
+                "Empty criteria(s) are not allowed for the update method.",
+            )
+
+            await expect(
+                connection.manager.delete(Post, [
+                    { title: "Test Post" },
+                    { text: undefined },
+                ]),
+            ).to.be.rejectedWith(
+                TypeORMError,
+                "Empty criteria(s) are not allowed for the delete method.",
+            )
         }
     })
 })

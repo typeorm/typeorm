@@ -1,6 +1,7 @@
 import { expect } from "chai"
 import { runInNewContext } from "node:vm"
 import type { DeepPartial } from "../../../src"
+import { TypeORMError } from "../../../src/error"
 import { OrmUtils } from "../../../src/util/OrmUtils"
 
 describe(`OrmUtils`, () => {
@@ -217,6 +218,84 @@ describe(`OrmUtils`, () => {
                 extraItems: [4],
                 missingItems: [1],
             })
+        })
+    })
+
+    describe("normalizeWhereCriteria", () => {
+        it("should throw for undefined criteria when options are omitted", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ text: undefined }),
+            ).to.throw(
+                TypeORMError,
+                "Undefined value encountered in property 'text' of a where condition.",
+            )
+        })
+
+        it("should throw for null criteria when options are omitted", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ text: null }),
+            ).to.throw(
+                TypeORMError,
+                "Null value encountered in property 'text' of a where condition.",
+            )
+        })
+
+        it("should identify criteria emptied by ignored invalid values", () => {
+            const normalizedObject = OrmUtils.normalizeWhereCriteria(
+                { text: undefined },
+                { undefined: "ignore" },
+            )
+            const normalizedArray = OrmUtils.normalizeWhereCriteria(
+                [{ title: "safe" }, { text: undefined }],
+                { undefined: "ignore" },
+            )
+
+            expect(normalizedObject).to.deep.equal({})
+            expect(
+                OrmUtils.isNormalizedCriteriaNullOrEmpty(normalizedObject),
+            ).to.equal(true)
+            expect(normalizedArray).to.deep.equal([{ title: "safe" }, {}])
+            expect(
+                OrmUtils.isNormalizedCriteriaNullOrEmpty(normalizedArray),
+            ).to.equal(true)
+        })
+
+        it("should not treat __proto__ keys as object prototypes", () => {
+            const criteria = JSON.parse(
+                `{"__proto__":{"polluted":true},"title":"safe"}`,
+            )
+
+            const normalized = OrmUtils.normalizeWhereCriteria(criteria)
+
+            expect(Object.getPrototypeOf(normalized)).to.equal(Object.prototype)
+            expect(
+                Object.prototype.hasOwnProperty.call(normalized, "__proto__"),
+            ).to.equal(true)
+            expect(
+                (normalized as { __proto__: { polluted: boolean } }).__proto__,
+            ).to.deep.equal({
+                polluted: true,
+            })
+            expect(({} as { polluted?: boolean }).polluted).to.equal(undefined)
+        })
+
+        it("should keep nested safe criteria when ignored values are stripped", () => {
+            const normalized = OrmUtils.normalizeWhereCriteria(
+                {
+                    title: "safe",
+                    category: { name: undefined },
+                    owner: { name: "alice" },
+                },
+                { undefined: "ignore" },
+            )
+
+            expect(normalized).to.deep.equal({
+                title: "safe",
+                owner: { name: "alice" },
+            })
+            expect(
+                OrmUtils.isNormalizedCriteriaNullOrEmpty(normalized),
+            ).to.equal(false)
         })
     })
 

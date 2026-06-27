@@ -396,6 +396,25 @@ export class OrmUtils {
     }
 
     /**
+     * Checks if normalized criteria would leave a query without a scoped branch.
+     *
+     * @param criteria Normalized criteria.
+     * @returns true when the criteria is empty or contains an empty array branch.
+     */
+    public static isNormalizedCriteriaNullOrEmpty(criteria: unknown): boolean {
+        if (Array.isArray(criteria)) {
+            return (
+                criteria.length === 0 ||
+                criteria.some((criterion) =>
+                    OrmUtils.isCriteriaNullOrEmpty(criterion),
+                )
+            )
+        }
+
+        return OrmUtils.isCriteriaNullOrEmpty(criteria)
+    }
+
+    /**
      * Checks if given criteria is a primitive value.
      * Primitive values are strings, numbers and dates.
      *
@@ -662,8 +681,9 @@ export class OrmUtils {
         options?: InvalidFindOptionsWhereBehavior,
         path?: string,
     ): ObjectLiteral | ObjectLiteral[] {
-        if (!options) {
-            return criteria
+        const invalidWhereValuesBehavior = options ?? {
+            null: "throw",
+            undefined: "throw",
         }
 
         // multiple criteria are possible at the top level
@@ -672,18 +692,27 @@ export class OrmUtils {
                 (criterion, index): ObjectLiteral =>
                     OrmUtils.normalizeWhereCriteria(
                         criterion,
-                        options,
+                        invalidWhereValuesBehavior,
                         String(index),
                     ),
             )
         }
 
         const result: ObjectLiteral = {}
+        const setResultKey = (key: string, value: unknown) => {
+            Object.defineProperty(result, key, {
+                value,
+                enumerable: true,
+                configurable: true,
+                writable: true,
+            })
+        }
+
         for (const [key, value] of Object.entries(criteria)) {
             const propertyPath = path ? `${path}.${key}` : key
 
             if (value === undefined) {
-                const behavior = options?.undefined ?? "throw"
+                const behavior = invalidWhereValuesBehavior.undefined ?? "throw"
                 if (behavior === "throw") {
                     throw new TypeORMError(
                         `Undefined value encountered in property '${propertyPath}' of a where condition. ` +
@@ -692,7 +721,7 @@ export class OrmUtils {
                 }
                 // else: "ignore" — skip this key
             } else if (value === null) {
-                const behavior = options?.null ?? "throw"
+                const behavior = invalidWhereValuesBehavior.null ?? "throw"
                 if (behavior === "throw") {
                     throw new TypeORMError(
                         `Null value encountered in property '${propertyPath}' of a where condition. ` +
@@ -700,20 +729,20 @@ export class OrmUtils {
                             `Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
                     )
                 } else if (behavior === "sql-null") {
-                    result[key] = IsNull()
+                    setResultKey(key, IsNull())
                 }
                 // else: "ignore" — skip this key
             } else if (OrmUtils.isPlainObject(value)) {
                 const nested = OrmUtils.normalizeWhereCriteria(
                     value,
-                    options,
+                    invalidWhereValuesBehavior,
                     propertyPath,
                 )
                 if (Object.keys(nested).length > 0) {
-                    result[key] = nested
+                    setResultKey(key, nested)
                 }
             } else {
-                result[key] = value
+                setResultKey(key, value)
             }
         }
 
