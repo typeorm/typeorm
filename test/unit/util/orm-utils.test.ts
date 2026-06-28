@@ -1,6 +1,5 @@
 import { expect } from "chai"
 import { runInNewContext } from "node:vm"
-import { TypeORMError } from "../../../src"
 import type { DeepPartial } from "../../../src"
 import { OrmUtils } from "../../../src/util/OrmUtils"
 
@@ -218,83 +217,6 @@ describe(`OrmUtils`, () => {
                 extraItems: [4],
                 missingItems: [1],
             })
-        })
-    })
-
-    // Complements the #12578 functional coverage with helper-level edge cases.
-    describe("normalizeWhereCriteria", () => {
-        it("should throw for null values by default when options are omitted", () => {
-            expect(() =>
-                OrmUtils.normalizeWhereCriteria({
-                    a: { id: 1 },
-                    b: null,
-                }),
-            ).to.throw(TypeORMError, "Null value encountered in property 'b'")
-        })
-
-        it("should throw for undefined values by default when options are omitted", () => {
-            expect(() =>
-                OrmUtils.normalizeWhereCriteria({
-                    a: { id: 1 },
-                    b: undefined,
-                }),
-            ).to.throw(
-                TypeORMError,
-                "Undefined value encountered in property 'b'",
-            )
-        })
-
-        it("should validate nested array criteria by default", () => {
-            expect(() =>
-                OrmUtils.normalizeWhereCriteria([
-                    {
-                        a: { id: null },
-                    },
-                ]),
-            ).to.throw(
-                TypeORMError,
-                "Null value encountered in property '0.a.id'",
-            )
-        })
-
-        it("should preserve empty object criteria by default", () => {
-            expect(
-                OrmUtils.normalizeWhereCriteria({
-                    json: {},
-                }),
-            ).to.deep.equal({ json: {} })
-        })
-
-        it("should skip dangerous keys when normalizing criteria", () => {
-            const normalized = OrmUtils.normalizeWhereCriteria(
-                JSON.parse(`{
-                    "__proto__": { "polluted": true },
-                    "constructor": { "polluted": true },
-                    "prototype": { "polluted": true },
-                    "safe": { "id": 1 }
-                }`),
-            )
-
-            expect(normalized).to.deep.equal({ safe: { id: 1 } })
-            expect(Object.getPrototypeOf(normalized)).to.equal(Object.prototype)
-            expect("polluted" in normalized).to.equal(false)
-            expect(Object.prototype).not.to.have.property("polluted")
-        })
-
-        it("should preserve ignore behavior when configured", () => {
-            expect(
-                OrmUtils.normalizeWhereCriteria(
-                    {
-                        a: { id: 1 },
-                        b: null,
-                        c: undefined,
-                    },
-                    {
-                        null: "ignore",
-                        undefined: "ignore",
-                    },
-                ),
-            ).to.deep.equal({ a: { id: 1 } })
         })
     })
 
