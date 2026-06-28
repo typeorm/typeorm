@@ -270,4 +270,39 @@ describe(`OrmUtils`, () => {
             ).to.equal(false)
         })
     })
+
+    describe("normalizeWhereCriteria", () => {
+        it("throws for undefined values by default", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ name: undefined }),
+            ).to.throw(
+                "Undefined value encountered in property 'name' of a where condition.",
+            )
+        })
+
+        it("does not validate class instances as where criteria objects", () => {
+            class User {
+                id = 1
+                profileId = null
+            }
+
+            const user = new User()
+
+            expect(
+                OrmUtils.normalizeWhereCriteria(user, {
+                    null: "throw",
+                    undefined: "throw",
+                }),
+            ).to.equal(user)
+        })
+
+        it("ignores __proto__ criteria keys", () => {
+            const result = OrmUtils.normalizeWhereCriteria(
+                JSON.parse('{ "__proto__": { "polluted": true }, "id": 1 }'),
+            ) as Record<string, unknown>
+
+            expect(result).to.deep.equal({ id: 1 })
+            expect(Object.getPrototypeOf(result)).to.equal(Object.prototype)
+        })
+    })
 })

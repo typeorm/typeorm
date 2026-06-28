@@ -662,10 +662,6 @@ export class OrmUtils {
         options?: InvalidFindOptionsWhereBehavior,
         path?: string,
     ): ObjectLiteral | ObjectLiteral[] {
-        if (!options) {
-            return criteria
-        }
-
         // multiple criteria are possible at the top level
         if (!path && Array.isArray(criteria)) {
             return criteria.map(
@@ -678,8 +674,14 @@ export class OrmUtils {
             )
         }
 
+        if (!OrmUtils.isPlainObject(criteria)) {
+            return criteria
+        }
+
         const result: ObjectLiteral = {}
         for (const [key, value] of Object.entries(criteria)) {
+            if (key === "__proto__") continue
+
             const propertyPath = path ? `${path}.${key}` : key
 
             if (value === undefined) {
