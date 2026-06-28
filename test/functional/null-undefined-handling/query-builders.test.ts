@@ -1,6 +1,8 @@
 import { expect } from "chai"
 import type { DataSource } from "../../../src"
-import { TypeORMError } from "../../../src"
+import { EntitySchema } from "../../../src/entity-schema/EntitySchema"
+import type { EntitySchemaColumnOptions } from "../../../src/entity-schema/EntitySchemaColumnOptions"
+import { TypeORMError } from "../../../src/error/TypeORMError"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -9,13 +11,34 @@ import {
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 
+const specialColumnColumns: Record<string, EntitySchemaColumnOptions> =
+    Object.create(null)
+specialColumnColumns["id"] = {
+    type: Number,
+    primary: true,
+}
+specialColumnColumns["constructor"] = {
+    type: String,
+}
+specialColumnColumns["prototype"] = {
+    type: String,
+}
+specialColumnColumns["value"] = {
+    type: String,
+}
+
+const SpecialColumnSchema = new EntitySchema({
+    name: "SpecialColumn",
+    columns: specialColumnColumns,
+})
+
 describe("entity manager > invalidWhereValuesBehavior with default behavior", () => {
     let dataSources: DataSource[]
 
     before(async () => {
         dataSources = await createTestingConnections({
             disabledDrivers: ["spanner"],
-            entities: [Post, Category],
+            entities: [Post, Category, SpecialColumnSchema],
             schemaCreate: true,
             dropSchema: true,
         })
@@ -39,9 +62,7 @@ describe("entity manager > invalidWhereValuesBehavior with default behavior", ()
 
     function createDangerousOnlyCriteria(): Record<string, unknown> {
         return JSON.parse(`{
-            "__proto__": { "polluted": true },
-            "constructor": { "polluted": true },
-            "prototype": { "polluted": true }
+            "__proto__": { "polluted": true }
         }`)
     }
 
@@ -169,6 +190,48 @@ describe("entity manager > invalidWhereValuesBehavior with default behavior", ()
                 id: post.id,
             })
             expect(reloaded.title).to.equal("Test Post")
+        }
+    })
+
+    it("should preserve constructor and prototype as valid criteria property names", async () => {
+        for (const connection of dataSources) {
+            const repository = connection.getRepository("SpecialColumn")
+
+            await repository.insert({
+                id: 1,
+                constructor: "ctor-match",
+                prototype: "proto-one",
+                value: "first",
+            })
+            await repository.insert({
+                id: 2,
+                constructor: "ctor-other",
+                prototype: "proto-two",
+                value: "second",
+            })
+
+            await connection.manager.update(
+                "SpecialColumn",
+                { constructor: "ctor-match" },
+                { value: "updated-by-constructor" },
+            )
+            await connection.manager.update(
+                "SpecialColumn",
+                { prototype: "proto-one" },
+                { value: "updated-by-prototype" },
+            )
+
+            const updated = await repository.findOneByOrFail({ id: 1 })
+            expect(updated.value).to.equal("updated-by-prototype")
+
+            await connection.manager.delete("SpecialColumn", {
+                constructor: "ctor-other",
+            })
+
+            const remaining = await repository.find()
+            expect(remaining.map((row) => row.value)).to.deep.equal([
+                "updated-by-prototype",
+            ])
         }
     })
 })
