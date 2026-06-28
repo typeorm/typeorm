@@ -6,6 +6,8 @@ Passing a known `null` value is disallowed by TypeScript (when you've enabled `s
 
 The way in which `null` and `undefined` values are handled can be customised through the `invalidWhereValuesBehavior` configuration option in your data source options. This applies to high-level operations such as find operations, repository methods, and EntityManager methods (update, delete, softDelete, restore).
 
+Write operations that require criteria (`update`, `delete`, `softDelete`, and `restore`) reject empty criteria before executing. They also reject object criteria that become empty after TypeORM applies `invalidWhereValuesBehavior` and other where-condition normalization. If criteria are provided as an OR array, every element in that array must still contain usable conditions after normalization.
+
 :::warning
 This setting does **not** affect QueryBuilder's `.where()`, `.andWhere()`, or `.orWhere()` methods. QueryBuilder is a low-level API where null/undefined values pass through as-is. Use the `IsNull()` operator or parameterized conditions in QueryBuilder for explicit null handling.
 :::
