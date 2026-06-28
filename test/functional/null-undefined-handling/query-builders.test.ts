@@ -233,6 +233,33 @@ describe("entity manager > invalidWhereValuesBehavior with default behavior", ()
         }
     })
 
+    it("should validate nested plain objects with constructor properties by default", async () => {
+        for (const connection of dataSources) {
+            await prepareData(connection)
+
+            try {
+                await connection.manager.update(
+                    Post,
+                    {
+                        category: {
+                            constructor: "plain-object-property",
+                            id: undefined,
+                        },
+                    },
+                    {
+                        title: "Updated",
+                    },
+                )
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include(
+                    "Undefined value encountered in property 'category.id'",
+                )
+            }
+        }
+    })
+
     it("should reject OR criteria with an empty relation branch by default", async () => {
         for (const connection of dataSources) {
             const { post } = await prepareData(connection)

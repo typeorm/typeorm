@@ -573,11 +573,12 @@ export class OrmUtils {
 
     // Checks if it's an object made by Object.create(null), {} or new Object()
     private static isPlainObject(item: any) {
-        if (item === null || item === undefined) {
+        if (typeof item !== "object" || item === null) {
             return false
         }
 
-        return !item.constructor || item.constructor === Object
+        const prototype = Object.getPrototypeOf(item)
+        return prototype === null || prototype === Object.prototype
     }
 
     private static mergeArrayKey(
