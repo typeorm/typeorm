@@ -1,7 +1,13 @@
 import { expect } from "chai"
 import { runInNewContext } from "node:vm"
+import { TypeORMError } from "../../../src"
 import type { DeepPartial } from "../../../src"
 import { OrmUtils } from "../../../src/util/OrmUtils"
+
+const whereCriteria = (
+    criteria: unknown,
+): Parameters<typeof OrmUtils.normalizeWhereCriteria>[0] =>
+    criteria as Parameters<typeof OrmUtils.normalizeWhereCriteria>[0]
 
 describe(`OrmUtils`, () => {
     describe("parseSqlCheckExpression", () => {
@@ -163,6 +169,143 @@ describe(`OrmUtils`, () => {
             const result = OrmUtils.mergeDeep({}, { foo })
             expect(result).to.have.property("foo")
             expect(result.foo).to.equal(foo)
+        })
+    })
+
+    describe("normalizeWhereCriteria", () => {
+        it("throws for undefined properties when behavior options are omitted", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({
+                    text: undefined,
+                }),
+            )
+                .to.throw(TypeORMError)
+                .with.property(
+                    "message",
+                    "Undefined value encountered in property 'text' of a where condition. Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.",
+                )
+        })
+
+        it("throws for null properties when behavior options are omitted", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({
+                    text: null,
+                }),
+            )
+                .to.throw(TypeORMError)
+                .with.property(
+                    "message",
+                    "Null value encountered in property 'text' of a where condition. To match with SQL NULL, the IsNull() operator must be used. Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.",
+                )
+        })
+
+        it("uses default throw behavior for option keys that are omitted", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria(
+                    {
+                        title: "Post",
+                        text: null,
+                    },
+                    { undefined: "ignore" },
+                ),
+            ).to.throw(TypeORMError, "Null value encountered")
+
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria(
+                    {
+                        title: "Post",
+                        text: undefined,
+                    },
+                    { null: "ignore" },
+                ),
+            ).to.throw(TypeORMError, "Undefined value encountered")
+        })
+
+        it("detects empty normalized criteria and empty OR branches", () => {
+            expect(OrmUtils.isNormalizedCriteriaNullOrEmpty({})).to.equal(true)
+            expect(
+                OrmUtils.isNormalizedCriteriaNullOrEmpty([{ title: "Post" }]),
+            ).to.equal(false)
+            expect(
+                OrmUtils.isNormalizedCriteriaNullOrEmpty([
+                    { title: "Post" },
+                    {},
+                ]),
+            ).to.equal(true)
+        })
+
+        it("preserves empty nested objects as criteria values", () => {
+            const normalized = OrmUtils.normalizeWhereCriteria({
+                payload: {},
+            })
+
+            expect(normalized).to.deep.equal({ payload: {} })
+            expect(
+                OrmUtils.isNormalizedCriteriaNullOrEmpty(normalized),
+            ).to.equal(false)
+        })
+
+        it("throws TypeORMError for malformed OR-array elements", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria(whereCriteria([null])),
+            ).to.throw(
+                TypeORMError,
+                "Invalid where criteria at '0'. Expected an object, but received null.",
+            )
+
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria(whereCriteria([undefined])),
+            ).to.throw(
+                TypeORMError,
+                "Invalid where criteria at '0'. Expected an object, but received undefined.",
+            )
+        })
+
+        it("preserves __proto__ as an own property without changing the result prototype", () => {
+            const criteria = JSON.parse(
+                `{"__proto__":{"polluted":true},"title":"Post"}`,
+            )
+
+            const normalized = OrmUtils.normalizeWhereCriteria(
+                criteria,
+            ) as Record<string, unknown>
+
+            expect(
+                Object.prototype.hasOwnProperty.call(normalized, "__proto__"),
+            ).to.equal(true)
+            expect(normalized["__proto__"]).to.deep.equal({ polluted: true })
+            expect(Object.getPrototypeOf(normalized)).to.equal(Object.prototype)
+            expect(Object.prototype).not.to.have.property("polluted")
+        })
+
+        it("validates nested plain objects that define constructor properties", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({
+                    category: {
+                        constructor: "plain-object-property",
+                        id: undefined,
+                    },
+                }),
+            ).to.throw(
+                TypeORMError,
+                "Undefined value encountered in property 'category.id'",
+            )
+        })
+
+        it("keeps constructor and prototype as criteria property names", () => {
+            const normalized = OrmUtils.normalizeWhereCriteria({
+                constructor: "ctor",
+                prototype: "proto",
+            }) as Record<string, unknown>
+
+            expect(
+                Object.prototype.hasOwnProperty.call(normalized, "constructor"),
+            ).to.equal(true)
+            expect(
+                Object.prototype.hasOwnProperty.call(normalized, "prototype"),
+            ).to.equal(true)
+            expect(normalized["constructor"]).to.equal("ctor")
+            expect(normalized["prototype"]).to.equal("proto")
         })
     })
 

@@ -1,6 +1,10 @@
 import { expect } from "chai"
-import type { DataSource } from "../../../src"
-import { TypeORMError } from "../../../src"
+import type {
+    DataSource,
+    EntitySchemaColumnOptions,
+    FindOptionsWhere,
+} from "../../../src"
+import { EntitySchema, Table, TypeORMError } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -8,6 +12,346 @@ import {
 } from "../../utils/test-utils"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
+
+const specialColumnColumns: Record<string, EntitySchemaColumnOptions> =
+    Object.create(null)
+specialColumnColumns["id"] = {
+    type: Number,
+    primary: true,
+}
+specialColumnColumns["constructor"] = {
+    type: String,
+}
+specialColumnColumns["prototype"] = {
+    type: String,
+}
+specialColumnColumns["value"] = {
+    type: String,
+}
+
+const SpecialColumnSchema = new EntitySchema({
+    name: "SpecialColumn",
+    columns: specialColumnColumns,
+})
+
+const postWhere = (criteria: unknown): FindOptionsWhere<Post> =>
+    criteria as FindOptionsWhere<Post>
+
+const postWhereArray = (criteria: unknown): FindOptionsWhere<Post>[] =>
+    criteria as FindOptionsWhere<Post>[]
+
+describe("entity manager > invalidWhereValuesBehavior defaults", () => {
+    let dataSources: DataSource[]
+
+    before(async () => {
+        dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
+            entities: [Post, Category, SpecialColumnSchema],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    async function prepareData(connection: DataSource) {
+        const category = new Category()
+        category.name = "Test Category"
+        await connection.manager.save(category)
+
+        const post = new Post()
+        post.title = "Test Post"
+        post.text = "Some text"
+        post.category = category
+        await connection.manager.save(post)
+
+        return { category, post }
+    }
+
+    async function expectEmptyCriteriaError(
+        methodName: string,
+        run: () => Promise<unknown>,
+    ) {
+        try {
+            await run()
+            expect.fail("Expected error")
+        } catch (error) {
+            expect(error).to.be.instanceOf(TypeORMError)
+            expect(error.message).to.include(
+                `Empty criteria(s) are not allowed for the ${methodName} method.`,
+            )
+        }
+    }
+
+    async function expectInvalidWhereCriteriaError(
+        run: () => Promise<unknown>,
+    ) {
+        try {
+            await run()
+            expect.fail("Expected error")
+        } catch (error) {
+            expect(error).to.be.instanceOf(TypeORMError)
+            expect(error.message).to.include("Invalid where criteria at")
+        }
+    }
+
+    it("should throw error for null values in EntityManager.update() by default", async () => {
+        for (const connection of dataSources) {
+            const { post } = await prepareData(connection)
+
+            try {
+                await connection.manager.update(
+                    Post,
+                    postWhere({ text: null }),
+                    {
+                        title: "Updated",
+                    },
+                )
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Null value encountered")
+            }
+
+            const reloaded = await connection.manager.findOneByOrFail(Post, {
+                id: post.id,
+            })
+            expect(reloaded.title).to.equal("Test Post")
+        }
+    })
+
+    it("should throw error for undefined values in EntityManager.delete() by default", async () => {
+        for (const connection of dataSources) {
+            await prepareData(connection)
+
+            try {
+                await connection.manager.delete(
+                    Post,
+                    postWhere({
+                        text: undefined,
+                    }),
+                )
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Undefined value encountered")
+            }
+
+            const remaining = await connection.manager.find(Post)
+            expect(remaining.length).to.equal(1)
+        }
+    })
+
+    it("should validate nested plain objects with constructor properties by default", async () => {
+        for (const connection of dataSources) {
+            const { post } = await prepareData(connection)
+
+            try {
+                await connection.manager.update(
+                    Post,
+                    postWhere({
+                        category: {
+                            constructor: "plain-object-property",
+                            id: undefined,
+                        },
+                    }),
+                    { title: "Updated" },
+                )
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include(
+                    "Undefined value encountered in property 'category.id'",
+                )
+            }
+
+            const reloaded = await connection.manager.findOneByOrFail(Post, {
+                id: post.id,
+            })
+            expect(reloaded.title).to.equal("Test Post")
+        }
+    })
+
+    it("should reject empty relation criteria and OR branches by default", async () => {
+        for (const connection of dataSources) {
+            const { post } = await prepareData(connection)
+            const emptyRelationCriteria = postWhere({ category: {} })
+            const mixedEmptyRelationCriteria = postWhereArray([
+                { id: post.id },
+                emptyRelationCriteria,
+            ])
+
+            await expectEmptyCriteriaError("update", () =>
+                connection.manager.update(Post, emptyRelationCriteria, {
+                    title: "Updated",
+                }),
+            )
+            await expectEmptyCriteriaError("delete", () =>
+                connection.manager.delete(Post, emptyRelationCriteria),
+            )
+            await expectEmptyCriteriaError("softDelete", () =>
+                connection.manager.softDelete(Post, emptyRelationCriteria),
+            )
+            await expectEmptyCriteriaError("restore", () =>
+                connection.manager.restore(Post, emptyRelationCriteria),
+            )
+
+            await expectEmptyCriteriaError("update", () =>
+                connection.manager.update(Post, mixedEmptyRelationCriteria, {
+                    title: "Updated",
+                }),
+            )
+            await expectEmptyCriteriaError("delete", () =>
+                connection.manager.delete(Post, mixedEmptyRelationCriteria),
+            )
+            await expectEmptyCriteriaError("softDelete", () =>
+                connection.manager.softDelete(Post, mixedEmptyRelationCriteria),
+            )
+            await expectEmptyCriteriaError("restore", () =>
+                connection.manager.restore(Post, mixedEmptyRelationCriteria),
+            )
+
+            const reloaded = await connection.manager.findOneByOrFail(Post, {
+                id: post.id,
+            })
+            expect(reloaded.title).to.equal("Test Post")
+        }
+    })
+
+    it("should reject malformed OR branches by default", async () => {
+        for (const connection of dataSources) {
+            const { post } = await prepareData(connection)
+            const criteriaWithNullBranch = postWhereArray([
+                { id: post.id },
+                null,
+            ])
+            const criteriaWithUndefinedBranch = postWhereArray([
+                { id: post.id },
+                undefined,
+            ])
+
+            await expectInvalidWhereCriteriaError(() =>
+                connection.manager.update(Post, criteriaWithNullBranch, {
+                    title: "Updated",
+                }),
+            )
+            await expectInvalidWhereCriteriaError(() =>
+                connection.manager.delete(Post, criteriaWithUndefinedBranch),
+            )
+            await expectInvalidWhereCriteriaError(() =>
+                connection.manager.softDelete(Post, criteriaWithNullBranch),
+            )
+            await expectInvalidWhereCriteriaError(() =>
+                connection.manager.restore(Post, criteriaWithUndefinedBranch),
+            )
+
+            const reloaded = await connection.manager.findOneByOrFail(Post, {
+                id: post.id,
+            })
+            expect(reloaded.title).to.equal("Test Post")
+        }
+    })
+
+    it("should preserve constructor and prototype as valid criteria property names", async () => {
+        for (const connection of dataSources) {
+            const repository = connection.getRepository("SpecialColumn")
+
+            await repository.insert({
+                id: 1,
+                constructor: "ctor-match",
+                prototype: "proto-one",
+                value: "first",
+            })
+            await repository.insert({
+                id: 2,
+                constructor: "ctor-other",
+                prototype: "proto-two",
+                value: "second",
+            })
+
+            await connection.manager.update(
+                "SpecialColumn",
+                { constructor: "ctor-match" },
+                { value: "updated-by-constructor" },
+            )
+            await connection.manager.update(
+                "SpecialColumn",
+                { prototype: "proto-one" },
+                { value: "updated-by-prototype" },
+            )
+
+            const updated = await repository.findOneByOrFail({ id: 1 })
+            expect(updated.value).to.equal("updated-by-prototype")
+
+            await connection.manager.delete("SpecialColumn", {
+                constructor: "ctor-other",
+            })
+
+            const remaining = await repository.find()
+            expect(remaining.length).to.equal(1)
+            expect(remaining[0].value).to.equal("updated-by-prototype")
+        }
+    })
+
+    it("should support string table targets without entity metadata", async () => {
+        for (const connection of dataSources) {
+            const tableName = "raw_string_target"
+            const queryRunner = connection.createQueryRunner()
+            let tableCreated = false
+
+            try {
+                await queryRunner.createTable(
+                    new Table({
+                        name: tableName,
+                        columns: [
+                            {
+                                name: "id",
+                                type: "int",
+                                isPrimary: true,
+                            },
+                            {
+                                name: "value",
+                                type: "varchar",
+                            },
+                        ],
+                    }),
+                    true,
+                )
+                tableCreated = true
+
+                await connection.manager.insert(tableName, [
+                    { id: 1, value: "first" },
+                    { id: 2, value: "second" },
+                ])
+
+                await connection.manager.update(
+                    tableName,
+                    { value: "first" },
+                    { value: "updated" },
+                )
+                await connection.manager.delete(tableName, {
+                    value: "second",
+                })
+
+                const remaining = await connection
+                    .createQueryBuilder()
+                    .select("target.value", "value")
+                    .from(tableName, "target")
+                    .orderBy("target.id")
+                    .getRawMany()
+
+                expect(remaining.map((row) => row.value)).to.deep.equal([
+                    "updated",
+                ])
+            } finally {
+                if (tableCreated) {
+                    await queryRunner.dropTable(tableName, true)
+                }
+                await queryRunner.release()
+            }
+        }
+    })
+})
 
 describe("entity manager > invalidWhereValuesBehavior with throw", () => {
     let dataSources: DataSource[]
@@ -48,9 +392,13 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             await prepareData(connection)
 
             try {
-                await connection.manager.update(Post, { text: null } as any, {
-                    title: "Updated",
-                })
+                await connection.manager.update(
+                    Post,
+                    postWhere({ text: null }),
+                    {
+                        title: "Updated",
+                    },
+                )
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
@@ -66,7 +414,7 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             try {
                 await connection.manager.update(
                     Post,
-                    { text: undefined } as any,
+                    postWhere({ text: undefined }),
                     { title: "Updated" },
                 )
                 expect.fail("Expected error")
@@ -82,7 +430,7 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             await prepareData(connection)
 
             try {
-                await connection.manager.delete(Post, { text: null } as any)
+                await connection.manager.delete(Post, postWhere({ text: null }))
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
@@ -96,9 +444,12 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             await prepareData(connection)
 
             try {
-                await connection.manager.delete(Post, {
-                    text: undefined,
-                } as any)
+                await connection.manager.delete(
+                    Post,
+                    postWhere({
+                        text: undefined,
+                    }),
+                )
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
@@ -112,9 +463,12 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             await prepareData(connection)
 
             try {
-                await connection.manager.softDelete(Post, {
-                    text: null,
-                } as any)
+                await connection.manager.softDelete(
+                    Post,
+                    postWhere({
+                        text: null,
+                    }),
+                )
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
@@ -128,9 +482,12 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             await prepareData(connection)
 
             try {
-                await connection.manager.softDelete(Post, {
-                    text: undefined,
-                } as any)
+                await connection.manager.softDelete(
+                    Post,
+                    postWhere({
+                        text: undefined,
+                    }),
+                )
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
@@ -144,9 +501,12 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             await prepareData(connection)
 
             try {
-                await connection.manager.restore(Post, {
-                    text: null,
-                } as any)
+                await connection.manager.restore(
+                    Post,
+                    postWhere({
+                        text: null,
+                    }),
+                )
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
@@ -160,9 +520,12 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             await prepareData(connection)
 
             try {
-                await connection.manager.restore(Post, {
-                    text: undefined,
-                } as any)
+                await connection.manager.restore(
+                    Post,
+                    postWhere({
+                        text: undefined,
+                    }),
+                )
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
@@ -178,7 +541,7 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             try {
                 await connection
                     .getRepository(Post)
-                    .update({ text: null } as any, { title: "Updated" })
+                    .update(postWhere({ text: null }), { title: "Updated" })
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
@@ -194,7 +557,7 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             try {
                 await connection
                     .getRepository(Post)
-                    .delete({ text: null } as any)
+                    .delete(postWhere({ text: null }))
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
@@ -210,7 +573,7 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             try {
                 await connection.manager.update(
                     Post,
-                    { category: { name: null } } as any,
+                    postWhere({ category: { name: null } }),
                     { title: "Updated" },
                 )
                 expect.fail("Expected error")
@@ -226,9 +589,12 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             await prepareData(connection)
 
             try {
-                await connection.manager.delete(Post, {
-                    category: { name: undefined },
-                } as any)
+                await connection.manager.delete(
+                    Post,
+                    postWhere({
+                        category: { name: undefined },
+                    }),
+                )
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
@@ -326,6 +692,114 @@ describe("entity manager > invalidWhereValuesBehavior with ignore", () => {
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
+
+    async function expectEmptyCriteriaError(
+        methodName: string,
+        run: () => Promise<unknown>,
+    ) {
+        try {
+            await run()
+            expect.fail("Expected error")
+        } catch (error) {
+            expect(error).to.be.instanceOf(TypeORMError)
+            expect(error.message).to.include(
+                `Empty criteria(s) are not allowed for the ${methodName} method.`,
+            )
+        }
+    }
+
+    it("should reject update when ignored criteria become empty", async () => {
+        for (const connection of dataSources) {
+            const post = new Post()
+            post.title = "Test Post"
+            post.text = "text"
+            await connection.manager.save(post)
+
+            const post2 = new Post()
+            post2.title = "Other Post"
+            post2.text = "text"
+            await connection.manager.save(post2)
+
+            try {
+                await connection.manager.update(
+                    Post,
+                    postWhere({ text: undefined }),
+                    { title: "Updated" },
+                )
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include(
+                    "Empty criteria(s) are not allowed for the update method.",
+                )
+            }
+
+            const remaining = await connection.manager.find(Post)
+            expect(remaining.map(({ title }) => title).sort()).to.deep.equal([
+                "Other Post",
+                "Test Post",
+            ])
+        }
+    })
+
+    it("should reject delete when an ignored OR branch becomes empty", async () => {
+        for (const connection of dataSources) {
+            const post = new Post()
+            post.title = "Test Post"
+            post.text = "text"
+            await connection.manager.save(post)
+
+            try {
+                await connection.manager.delete(
+                    Post,
+                    postWhereArray([
+                        { title: "Missing Post" },
+                        { text: undefined },
+                    ]),
+                )
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include(
+                    "Empty criteria(s) are not allowed for the delete method.",
+                )
+            }
+
+            const remaining = await connection.manager.find(Post)
+            expect(remaining.length).to.equal(1)
+            expect(remaining[0].title).to.equal("Test Post")
+        }
+    })
+
+    it("should reject softDelete and restore when ignored criteria become empty", async () => {
+        for (const connection of dataSources) {
+            const post = new Post()
+            post.title = "Test Post"
+            post.text = "text"
+            await connection.manager.save(post)
+
+            await expectEmptyCriteriaError("softDelete", () =>
+                connection.manager.softDelete(
+                    Post,
+                    postWhere({
+                        text: undefined,
+                    }),
+                ),
+            )
+            await expectEmptyCriteriaError("restore", () =>
+                connection.manager.restore(
+                    Post,
+                    postWhere({
+                        text: null,
+                    }),
+                ),
+            )
+
+            const remaining = await connection.manager.find(Post)
+            expect(remaining.length).to.equal(1)
+            expect(remaining[0].title).to.equal("Test Post")
+        }
+    })
 
     it("should strip null criteria in EntityManager.delete() with ignore", async () => {
         for (const connection of dataSources) {

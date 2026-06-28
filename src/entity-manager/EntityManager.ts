@@ -22,6 +22,10 @@ import type { ObjectId } from "../driver/mongodb/typings"
 import type { InsertResult } from "../query-builder/result/InsertResult"
 import type { UpdateResult } from "../query-builder/result/UpdateResult"
 import type { DeleteResult } from "../query-builder/result/DeleteResult"
+import type {
+    WhereClause,
+    WhereClauseCondition,
+} from "../query-builder/WhereClause"
 import type { FindOptionsWhere } from "../find-options/FindOptionsWhere"
 import type { IsolationLevel } from "../driver/types/IsolationLevel"
 import { ObjectUtils } from "../util/ObjectUtils"
@@ -874,10 +878,25 @@ export class EntityManager {
                 criteria as ObjectLiteral | ObjectLiteral[],
                 this.dataSource.options.invalidWhereValuesBehavior,
             )
+            if (OrmUtils.isNormalizedCriteriaNullOrEmpty(normalizedCriteria)) {
+                return Promise.reject(
+                    new TypeORMError(
+                        `Empty criteria(s) are not allowed for the update method.`,
+                    ),
+                )
+            }
+
             const qb = this.createQueryBuilder()
                 .update(target)
                 .set(partialEntity)
                 .where(normalizedCriteria)
+            if (this.hasEmptyWhereCondition(qb.expressionMap.wheres)) {
+                return Promise.reject(
+                    new TypeORMError(
+                        `Empty criteria(s) are not allowed for the update method.`,
+                    ),
+                )
+            }
 
             if (options?.returning !== undefined) {
                 qb.returning(options.returning)
@@ -955,11 +974,27 @@ export class EntityManager {
                 criteria as ObjectLiteral | ObjectLiteral[],
                 this.dataSource.options.invalidWhereValuesBehavior,
             )
-            return this.createQueryBuilder()
+            if (OrmUtils.isNormalizedCriteriaNullOrEmpty(normalizedCriteria)) {
+                return Promise.reject(
+                    new TypeORMError(
+                        `Empty criteria(s) are not allowed for the delete method.`,
+                    ),
+                )
+            }
+
+            const qb = this.createQueryBuilder()
                 .delete()
                 .from(targetOrEntity)
                 .where(normalizedCriteria)
-                .execute()
+            if (this.hasEmptyWhereCondition(qb.expressionMap.wheres)) {
+                return Promise.reject(
+                    new TypeORMError(
+                        `Empty criteria(s) are not allowed for the delete method.`,
+                    ),
+                )
+            }
+
+            return qb.execute()
         }
     }
 
@@ -1021,11 +1056,27 @@ export class EntityManager {
                 criteria as ObjectLiteral | ObjectLiteral[],
                 this.dataSource.options.invalidWhereValuesBehavior,
             )
-            return this.createQueryBuilder()
+            if (OrmUtils.isNormalizedCriteriaNullOrEmpty(normalizedCriteria)) {
+                return Promise.reject(
+                    new TypeORMError(
+                        `Empty criteria(s) are not allowed for the softDelete method.`,
+                    ),
+                )
+            }
+
+            const qb = this.createQueryBuilder()
                 .softDelete()
                 .from(targetOrEntity)
                 .where(normalizedCriteria)
-                .execute()
+            if (this.hasEmptyWhereCondition(qb.expressionMap.wheres)) {
+                return Promise.reject(
+                    new TypeORMError(
+                        `Empty criteria(s) are not allowed for the softDelete method.`,
+                    ),
+                )
+            }
+
+            return qb.execute()
         }
     }
 
@@ -1072,11 +1123,27 @@ export class EntityManager {
                 criteria as ObjectLiteral | ObjectLiteral[],
                 this.dataSource.options.invalidWhereValuesBehavior,
             )
-            return this.createQueryBuilder()
+            if (OrmUtils.isNormalizedCriteriaNullOrEmpty(normalizedCriteria)) {
+                return Promise.reject(
+                    new TypeORMError(
+                        `Empty criteria(s) are not allowed for the restore method.`,
+                    ),
+                )
+            }
+
+            const qb = this.createQueryBuilder()
                 .restore()
                 .from(targetOrEntity)
                 .where(normalizedCriteria)
-                .execute()
+            if (this.hasEmptyWhereCondition(qb.expressionMap.wheres)) {
+                return Promise.reject(
+                    new TypeORMError(
+                        `Empty criteria(s) are not allowed for the restore method.`,
+                    ),
+                )
+            }
+
+            return qb.execute()
         }
     }
 
@@ -1204,6 +1271,31 @@ export class EntityManager {
         where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<number | null> {
         return this.callAggregateFun(entityClass, "MAX", columnName, where)
+    }
+
+    private hasEmptyWhereCondition(wheres: WhereClause[]): boolean {
+        return wheres.some((where) =>
+            this.isWhereClauseConditionEmpty(where.condition),
+        )
+    }
+
+    private isWhereClauseConditionEmpty(
+        condition: WhereClauseCondition,
+    ): boolean {
+        if (Array.isArray(condition)) {
+            return (
+                condition.length === 0 ||
+                condition.some((where) =>
+                    this.isWhereClauseConditionEmpty(where.condition),
+                )
+            )
+        }
+
+        if (typeof condition === "object" && "condition" in condition) {
+            return this.isWhereClauseConditionEmpty(condition.condition)
+        }
+
+        return false
     }
 
     private async callAggregateFun<Entity extends ObjectLiteral>(

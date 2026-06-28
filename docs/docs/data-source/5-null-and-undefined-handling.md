@@ -228,6 +228,12 @@ await manager.delete(Post, { text: null }) // Respects invalidWhereValuesBehavio
 await manager.softDelete(Post, { text: null }) // Respects invalidWhereValuesBehavior
 ```
 
+Write operations that require criteria (`update`, `delete`, `softDelete`, and
+`restore`) also reject empty criteria before executing. If
+`invalidWhereValuesBehavior` removes every usable condition, or removes every
+usable condition from one branch of an OR array, TypeORM treats the criteria as
+empty and throws instead of running a broad write.
+
 ### QueryBuilder with setFindOptions
 
 ```typescript

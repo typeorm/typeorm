@@ -396,6 +396,24 @@ export class OrmUtils {
     }
 
     /**
+     * Checks if normalized criteria are empty or contain an empty OR branch.
+     *
+     * @param criteria
+     */
+    public static isNormalizedCriteriaNullOrEmpty(criteria: unknown): boolean {
+        if (Array.isArray(criteria)) {
+            return (
+                criteria.length === 0 ||
+                criteria.some((criterion) =>
+                    OrmUtils.isNormalizedCriteriaNullOrEmpty(criterion),
+                )
+            )
+        }
+
+        return OrmUtils.isCriteriaNullOrEmpty(criteria)
+    }
+
+    /**
      * Checks if given criteria is a primitive value.
      * Primitive values are strings, numbers and dates.
      *
@@ -555,11 +573,12 @@ export class OrmUtils {
 
     // Checks if it's an object made by Object.create(null), {} or new Object()
     private static isPlainObject(item: any) {
-        if (item === null || item === undefined) {
+        if (typeof item !== "object" || item === null) {
             return false
         }
 
-        return !item.constructor || item.constructor === Object
+        const prototype = Object.getPrototypeOf(item)
+        return prototype === null || prototype === Object.prototype
     }
 
     private static mergeArrayKey(
@@ -651,7 +670,7 @@ export class OrmUtils {
 
     /**
      * Recursively validates an object where clause, throwing for null/undefined
-     * based on the provided invalidWhereValuesBehavior config.
+     * based on the provided invalidWhereValuesBehavior config or defaults.
      *
      * @param criteria
      * @param options
@@ -662,8 +681,13 @@ export class OrmUtils {
         options?: InvalidFindOptionsWhereBehavior,
         path?: string,
     ): ObjectLiteral | ObjectLiteral[] {
-        if (!options) {
-            return criteria
+        if (criteria === null || criteria === undefined) {
+            const propertyPath = path ? ` at '${path}'` : ""
+            const received = criteria === null ? "null" : "undefined"
+
+            throw new TypeORMError(
+                `Invalid where criteria${propertyPath}. Expected an object, but received ${received}.`,
+            )
         }
 
         // multiple criteria are possible at the top level
@@ -679,6 +703,15 @@ export class OrmUtils {
         }
 
         const result: ObjectLiteral = {}
+        const setResultKey = (key: string, value: unknown) => {
+            Object.defineProperty(result, key, {
+                value,
+                enumerable: true,
+                configurable: true,
+                writable: true,
+            })
+        }
+
         for (const [key, value] of Object.entries(criteria)) {
             const propertyPath = path ? `${path}.${key}` : key
 
@@ -700,20 +733,25 @@ export class OrmUtils {
                             `Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
                     )
                 } else if (behavior === "sql-null") {
-                    result[key] = IsNull()
+                    setResultKey(key, IsNull())
                 }
                 // else: "ignore" — skip this key
             } else if (OrmUtils.isPlainObject(value)) {
+                if (Object.keys(value).length === 0) {
+                    setResultKey(key, value)
+                    continue
+                }
+
                 const nested = OrmUtils.normalizeWhereCriteria(
                     value,
                     options,
                     propertyPath,
                 )
                 if (Object.keys(nested).length > 0) {
-                    result[key] = nested
+                    setResultKey(key, nested)
                 }
             } else {
-                result[key] = value
+                setResultKey(key, value)
             }
         }
 
