@@ -3,6 +3,7 @@ import type { DataSource } from "../../../src"
 import { EntitySchema } from "../../../src/entity-schema/EntitySchema"
 import type { EntitySchemaColumnOptions } from "../../../src/entity-schema/EntitySchemaColumnOptions"
 import { TypeORMError } from "../../../src/error/TypeORMError"
+import { Table } from "../../../src/schema-builder/table/Table"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -310,6 +311,61 @@ describe("entity manager > invalidWhereValuesBehavior with default behavior", ()
             expect(remaining.map((row) => row.value)).to.deep.equal([
                 "updated-by-prototype",
             ])
+        }
+    })
+
+    it("should support string table targets without entity metadata", async () => {
+        for (const connection of dataSources) {
+            const tableName = "raw_string_target"
+            const queryRunner = connection.createQueryRunner()
+
+            await queryRunner.createTable(
+                new Table({
+                    name: tableName,
+                    columns: [
+                        {
+                            name: "id",
+                            type: "int",
+                            isPrimary: true,
+                        },
+                        {
+                            name: "value",
+                            type: "varchar",
+                        },
+                    ],
+                }),
+                true,
+            )
+
+            try {
+                await connection.manager.insert(tableName, [
+                    { id: 1, value: "first" },
+                    { id: 2, value: "second" },
+                ])
+
+                await connection.manager.update(
+                    tableName,
+                    { value: "first" },
+                    { value: "updated" },
+                )
+                await connection.manager.delete(tableName, {
+                    value: "second",
+                })
+
+                const remaining = await connection
+                    .createQueryBuilder()
+                    .select("target.value", "value")
+                    .from(tableName, "target")
+                    .orderBy("target.id")
+                    .getRawMany()
+
+                expect(remaining.map((row) => row.value)).to.deep.equal([
+                    "updated",
+                ])
+            } finally {
+                await queryRunner.dropTable(tableName, true)
+                await queryRunner.release()
+            }
         }
     })
 })
