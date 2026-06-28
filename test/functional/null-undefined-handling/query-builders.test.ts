@@ -401,6 +401,59 @@ describe("entity manager > invalidWhereValuesBehavior with ignore", () => {
         }
     })
 
+    it("should reject EntityManager.delete() when ignore strips all criteria", async () => {
+        for (const connection of dataSources) {
+            const post = new Post()
+            post.title = "Test Post"
+            post.text = "text"
+            await connection.manager.save(post)
+
+            try {
+                await connection.manager.delete(Post, {
+                    text: null,
+                } as any)
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include(
+                    "Empty criteria(s) are not allowed for the delete method.",
+                )
+            }
+
+            const remaining = await connection.manager.find(Post)
+            expect(remaining.length).to.equal(1)
+        }
+    })
+
+    it("should reject EntityManager.delete() when ignore strips an OR branch to empty criteria", async () => {
+        for (const connection of dataSources) {
+            const post = new Post()
+            post.title = "Test Post"
+            post.text = "text"
+            await connection.manager.save(post)
+
+            try {
+                await connection.manager.delete(Post, [
+                    {
+                        text: null,
+                    },
+                    {
+                        title: "Test Post",
+                    },
+                ] as any)
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include(
+                    "Empty criteria(s) are not allowed for the delete method.",
+                )
+            }
+
+            const remaining = await connection.manager.find(Post)
+            expect(remaining.length).to.equal(1)
+        }
+    })
+
     it("should strip nested null criteria in EntityManager.update() with ignore", async () => {
         for (const connection of dataSources) {
             const category = new Category()

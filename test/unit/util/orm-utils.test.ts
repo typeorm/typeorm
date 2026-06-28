@@ -272,9 +272,24 @@ describe(`OrmUtils`, () => {
     })
 
     describe("normalizeWhereCriteria", () => {
-        it("returns criteria unchanged when no options are provided", () => {
-            const criteria = { name: null, email: undefined }
-            expect(OrmUtils.normalizeWhereCriteria(criteria)).to.equal(criteria)
+        it("throws on undefined by default when no options are provided", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ name: undefined }),
+            ).to.throw(/Undefined value.*'name'/)
+        })
+
+        it("throws on null by default when no options are provided", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ email: null }),
+            ).to.throw(/Null value.*'email'/)
+        })
+
+        it("treats cross-realm plain objects as plain criteria", () => {
+            const criteria = runInNewContext("({ name: undefined })")
+
+            expect(() => OrmUtils.normalizeWhereCriteria(criteria)).to.throw(
+                /Undefined value.*'name'/,
+            )
         })
 
         it("throws on null/undefined by default when options are provided", () => {

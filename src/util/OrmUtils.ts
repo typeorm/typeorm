@@ -559,7 +559,24 @@ export class OrmUtils {
             return false
         }
 
-        return !item.constructor || item.constructor === Object
+        if (Object.prototype.toString.call(item) !== "[object Object]") {
+            return false
+        }
+
+        const prototype = Object.getPrototypeOf(item)
+        if (prototype === null) {
+            return true
+        }
+
+        const constructor =
+            Object.prototype.hasOwnProperty.call(prototype, "constructor") &&
+            prototype.constructor
+
+        return (
+            typeof constructor === "function" &&
+            Function.prototype.toString.call(constructor) ===
+                Function.prototype.toString.call(Object)
+        )
     }
 
     private static mergeArrayKey(
@@ -662,10 +679,6 @@ export class OrmUtils {
         options?: InvalidFindOptionsWhereBehavior,
         path?: string,
     ): ObjectLiteral | ObjectLiteral[] {
-        if (!options) {
-            return criteria
-        }
-
         // multiple criteria are possible at the top level
         if (!path && Array.isArray(criteria)) {
             return criteria.map(
