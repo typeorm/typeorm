@@ -415,6 +415,69 @@ describe("entity manager > invalidWhereValuesBehavior with ignore", () => {
     })
 })
 
+describe("entity manager > default invalidWhereValuesBehavior when unset", () => {
+    let dataSources: DataSource[]
+
+    before(async () => {
+        dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
+            entities: [Post, Category],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    async function prepareData(connection: DataSource) {
+        const category = new Category()
+        category.name = "Test Category"
+        await connection.manager.save(category)
+
+        const post = new Post()
+        post.title = "Test Post"
+        post.text = "Some text"
+        post.category = category
+        await connection.manager.save(post)
+
+        return { category, post }
+    }
+
+    it("should throw for null values in EntityManager.update() by default", async () => {
+        for (const connection of dataSources) {
+            await prepareData(connection)
+
+            try {
+                await connection.manager.update(Post, { text: null } as any, {
+                    title: "Updated",
+                })
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Null value encountered")
+            }
+        }
+    })
+
+    it("should throw for undefined values in EntityManager.update() by default", async () => {
+        for (const connection of dataSources) {
+            await prepareData(connection)
+
+            try {
+                await connection.manager.update(
+                    Post,
+                    { text: undefined } as any,
+                    { title: "Updated" },
+                )
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Undefined value encountered")
+            }
+        }
+    })
+})
+
 describe("entity manager > invalidWhereValuesBehavior does NOT affect QB .where()", () => {
     let dataSources: DataSource[]
 
