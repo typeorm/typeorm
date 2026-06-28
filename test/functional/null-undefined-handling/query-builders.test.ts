@@ -72,6 +72,16 @@ describe("entity manager > invalidWhereValuesBehavior with default behavior", ()
         return [{ id: post.id }, createDangerousOnlyCriteria()]
     }
 
+    function createEmptyRelationCriteria(): Record<string, unknown> {
+        return { category: {} }
+    }
+
+    function createMixedEmptyRelationCriteria(
+        post: Post,
+    ): Record<string, unknown>[] {
+        return [{ id: post.id }, createEmptyRelationCriteria()]
+    }
+
     async function expectEmptyCriteriaError(
         methodName: string,
         run: () => Promise<unknown>,
@@ -183,6 +193,74 @@ describe("entity manager > invalidWhereValuesBehavior with default behavior", ()
                 connection.manager.restore(
                     Post,
                     createMixedDangerousCriteria(post),
+                ),
+            )
+
+            const reloaded = await connection.manager.findOneByOrFail(Post, {
+                id: post.id,
+            })
+            expect(reloaded.title).to.equal("Test Post")
+        }
+    })
+
+    it("should reject criteria with an empty relation object by default", async () => {
+        for (const connection of dataSources) {
+            const { post } = await prepareData(connection)
+
+            await expectEmptyCriteriaError("update", () =>
+                connection.manager.update(Post, createEmptyRelationCriteria(), {
+                    title: "Updated",
+                }),
+            )
+            await expectEmptyCriteriaError("delete", () =>
+                connection.manager.delete(Post, createEmptyRelationCriteria()),
+            )
+            await expectEmptyCriteriaError("softDelete", () =>
+                connection.manager.softDelete(
+                    Post,
+                    createEmptyRelationCriteria(),
+                ),
+            )
+            await expectEmptyCriteriaError("restore", () =>
+                connection.manager.restore(Post, createEmptyRelationCriteria()),
+            )
+
+            const reloaded = await connection.manager.findOneByOrFail(Post, {
+                id: post.id,
+            })
+            expect(reloaded.title).to.equal("Test Post")
+        }
+    })
+
+    it("should reject OR criteria with an empty relation branch by default", async () => {
+        for (const connection of dataSources) {
+            const { post } = await prepareData(connection)
+
+            await expectEmptyCriteriaError("update", () =>
+                connection.manager.update(
+                    Post,
+                    createMixedEmptyRelationCriteria(post),
+                    {
+                        title: "Updated",
+                    },
+                ),
+            )
+            await expectEmptyCriteriaError("delete", () =>
+                connection.manager.delete(
+                    Post,
+                    createMixedEmptyRelationCriteria(post),
+                ),
+            )
+            await expectEmptyCriteriaError("softDelete", () =>
+                connection.manager.softDelete(
+                    Post,
+                    createMixedEmptyRelationCriteria(post),
+                ),
+            )
+            await expectEmptyCriteriaError("restore", () =>
+                connection.manager.restore(
+                    Post,
+                    createMixedEmptyRelationCriteria(post),
                 ),
             )
 

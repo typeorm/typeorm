@@ -22,6 +22,7 @@ import type { ObjectId } from "../driver/mongodb/typings"
 import type { InsertResult } from "../query-builder/result/InsertResult"
 import type { UpdateResult } from "../query-builder/result/UpdateResult"
 import type { DeleteResult } from "../query-builder/result/DeleteResult"
+import type { WhereClauseCondition } from "../query-builder/WhereClause"
 import type { FindOptionsWhere } from "../find-options/FindOptionsWhere"
 import type { IsolationLevel } from "../driver/types/IsolationLevel"
 import { ObjectUtils } from "../util/ObjectUtils"
@@ -874,7 +875,10 @@ export class EntityManager {
                 criteria as ObjectLiteral | ObjectLiteral[],
                 this.dataSource.options.invalidWhereValuesBehavior,
             )
-            if (OrmUtils.isNormalizedCriteriaEmpty(normalizedCriteria)) {
+            if (
+                OrmUtils.isNormalizedCriteriaEmpty(normalizedCriteria) ||
+                this.hasEmptyWhereCondition(target, normalizedCriteria)
+            ) {
                 return Promise.reject(
                     new TypeORMError(
                         `Empty criteria(s) are not allowed for the update method.`,
@@ -963,7 +967,10 @@ export class EntityManager {
                 criteria as ObjectLiteral | ObjectLiteral[],
                 this.dataSource.options.invalidWhereValuesBehavior,
             )
-            if (OrmUtils.isNormalizedCriteriaEmpty(normalizedCriteria)) {
+            if (
+                OrmUtils.isNormalizedCriteriaEmpty(normalizedCriteria) ||
+                this.hasEmptyWhereCondition(targetOrEntity, normalizedCriteria)
+            ) {
                 return Promise.reject(
                     new TypeORMError(
                         `Empty criteria(s) are not allowed for the delete method.`,
@@ -1037,7 +1044,10 @@ export class EntityManager {
                 criteria as ObjectLiteral | ObjectLiteral[],
                 this.dataSource.options.invalidWhereValuesBehavior,
             )
-            if (OrmUtils.isNormalizedCriteriaEmpty(normalizedCriteria)) {
+            if (
+                OrmUtils.isNormalizedCriteriaEmpty(normalizedCriteria) ||
+                this.hasEmptyWhereCondition(targetOrEntity, normalizedCriteria)
+            ) {
                 return Promise.reject(
                     new TypeORMError(
                         `Empty criteria(s) are not allowed for the softDelete method.`,
@@ -1096,7 +1106,10 @@ export class EntityManager {
                 criteria as ObjectLiteral | ObjectLiteral[],
                 this.dataSource.options.invalidWhereValuesBehavior,
             )
-            if (OrmUtils.isNormalizedCriteriaEmpty(normalizedCriteria)) {
+            if (
+                OrmUtils.isNormalizedCriteriaEmpty(normalizedCriteria) ||
+                this.hasEmptyWhereCondition(targetOrEntity, normalizedCriteria)
+            ) {
                 return Promise.reject(
                     new TypeORMError(
                         `Empty criteria(s) are not allowed for the restore method.`,
@@ -1236,6 +1249,39 @@ export class EntityManager {
         where?: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
     ): Promise<number | null> {
         return this.callAggregateFun(entityClass, "MAX", columnName, where)
+    }
+
+    private hasEmptyWhereCondition<Entity extends ObjectLiteral>(
+        target: EntityTarget<Entity>,
+        criteria: ObjectLiteral | ObjectLiteral[],
+    ): boolean {
+        const metadata = this.dataSource.getMetadata(target)
+        const qb = this.createQueryBuilder(target, metadata.name).where(
+            criteria,
+        )
+
+        return qb.expressionMap.wheres.some((where) =>
+            this.isWhereClauseConditionEmpty(where.condition),
+        )
+    }
+
+    private isWhereClauseConditionEmpty(
+        condition: WhereClauseCondition,
+    ): boolean {
+        if (Array.isArray(condition)) {
+            return (
+                condition.length === 0 ||
+                condition.some((where) =>
+                    this.isWhereClauseConditionEmpty(where.condition),
+                )
+            )
+        }
+
+        if (typeof condition === "object" && "condition" in condition) {
+            return this.isWhereClauseConditionEmpty(condition.condition)
+        }
+
+        return false
     }
 
     private async callAggregateFun<Entity extends ObjectLiteral>(
