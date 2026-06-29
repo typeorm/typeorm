@@ -1,5 +1,10 @@
 import { expect } from "chai"
-import { camelCase, snakeCase, hash } from "../../../src/util/StringUtils"
+import {
+    camelCase,
+    snakeCase,
+    hash,
+    abbreviate,
+} from "../../../src/util/StringUtils"
 import { RandomGenerator } from "../../../src/util/RandomGenerator"
 
 describe("StringUtils", () => {
@@ -211,6 +216,42 @@ describe("StringUtils", () => {
             const over = hash("hello", { length: 999 })
             expect(over).to.equal(full)
             expect(over).to.have.lengthOf(40)
+        })
+    })
+
+    describe("abbreviate", () => {
+        it("should abbreviate a single camelCase word", () => {
+            expect(abbreviate("UserShoppingCart")).to.equal("USC")
+        })
+
+        it("should abbreviate with a custom letter count", () => {
+            expect(abbreviate("UserShoppingCart", 2)).to.equal("UsShCa")
+        })
+
+        it("should treat uppercase Latin Extended-A characters (\\xC1-\\xDE) as word-boundary markers", () => {
+            // 'Á' = \xC1, 'Ä' = \xC4, 'Ñ' = \xD1 — uppercase accented Latin chars
+            // in the \xC1-\xDE range must be recognised as word-boundary markers
+            // (lowercase letter → accented uppercase = new word), just like A-Z and
+            // 'À' (\xC0) already are.
+            // "myÁbcDef": yÁ split → ["my","Ábc"], then cD split → ["my","Ábc","Def"]
+            expect(abbreviate("myÁbcDef")).to.equal("mÁD")
+            // "userÄbc": rÄ split → ["user","Äbc"]
+            expect(abbreviate("userÄbc")).to.equal("uÄ")
+            // "testÑhello": tÑ split → ["test","Ñhello"]
+            expect(abbreviate("testÑhello")).to.equal("tÑ")
+        })
+
+        it("should already handle \\xC0 (À) and \\xDF (ß) correctly before the fix", () => {
+            // These were already in the old character class as individual escapes,
+            // so their behaviour must be preserved by the fix.
+            expect(abbreviate("myÀbc")).to.equal("mÀ")
+            expect(abbreviate("myßabc")).to.equal("mß")
+        })
+
+        it("should leave ASCII abbreviation behaviour unchanged", () => {
+            expect(abbreviate("camelCase")).to.equal("cC")
+            expect(abbreviate("PascalCase")).to.equal("PC")
+            expect(abbreviate("hello_world")).to.equal("h")
         })
     })
 })
