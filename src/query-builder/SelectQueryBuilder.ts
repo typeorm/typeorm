@@ -2933,49 +2933,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         const allColumns = [...columns, ...nonSelectedPrimaryColumns]
         const finalSelects: SelectQuery[] = []
 
-        const escapedAliasName = this.escape(aliasName)
         allColumns.forEach((column) => {
-            let selectionPath =
-                escapedAliasName + "." + this.escape(column.databaseName)
-
-            if (column.isVirtualProperty && column.query) {
-                selectionPath = `(${column.query(escapedAliasName)})`
-            }
-
-            if (DriverUtils.isSQLiteFamily(this.dataSource.driver)) {
-                selectionPath = (
-                    this.dataSource.driver as
-                        | AbstractSqliteDriver
-                        | ReactNativeDriver
-                ).wrapWithJsonFunction(selectionPath, column, false)
-            }
-
-            if (
-                this.dataSource.driver.spatialTypes.indexOf(column.type) !== -1
-            ) {
-                if (
-                    DriverUtils.isMySQLFamily(this.dataSource.driver) ||
-                    this.dataSource.driver.options.type === "aurora-mysql"
-                ) {
-                    const useLegacy = (
-                        this.dataSource.driver as
-                            | MysqlDriver
-                            | AuroraMysqlDriver
-                    ).options.legacySpatialSupport
-                    const asText = useLegacy ? "AsText" : "ST_AsText"
-                    selectionPath = `${asText}(${selectionPath})`
-                }
-
-                if (DriverUtils.isPostgresFamily(this.dataSource.driver))
-                    if (column.precision) {
-                        // cast to JSON to trigger parsing in the driver
-                        selectionPath = `ST_AsGeoJSON(${selectionPath}, ${column.precision})::json`
-                    } else {
-                        selectionPath = `ST_AsGeoJSON(${selectionPath})::json`
-                    }
-                if (this.dataSource.driver.options.type === "mssql")
-                    selectionPath = `${selectionPath}.ToString()`
-            }
+            const selectionPath = this.buildColumnSelectionExpression(
+                aliasName,
+                column,
+            )
 
             const selections = this.expressionMap.selects.filter(
                 (select) =>
@@ -3014,6 +2976,60 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         return finalSelects
     }
 
+    private buildColumnSelectionExpression(
+        aliasName: string,
+        column: ColumnMetadata,
+        includeHydrationTransform: boolean = true,
+    ): string {
+        const escapedAliasName = this.escape(aliasName)
+        let selectionPath =
+            escapedAliasName + "." + this.escape(column.databaseName)
+
+        if (column.isVirtualProperty && column.query) {
+            selectionPath = `(${column.query(escapedAliasName)})`
+        }
+
+        if (
+            DriverUtils.isSQLiteFamily(this.dataSource.driver) &&
+            includeHydrationTransform
+        ) {
+            selectionPath = (
+                this.dataSource.driver as
+                    | AbstractSqliteDriver
+                    | ReactNativeDriver
+            ).wrapWithJsonFunction(selectionPath, column, false)
+        }
+
+        if (this.dataSource.driver.spatialTypes.indexOf(column.type) !== -1) {
+            if (
+                (DriverUtils.isMySQLFamily(this.dataSource.driver) ||
+                    this.dataSource.driver.options.type === "aurora-mysql") &&
+                includeHydrationTransform
+            ) {
+                const useLegacy = (
+                    this.dataSource.driver as MysqlDriver | AuroraMysqlDriver
+                ).options.legacySpatialSupport
+                const asText = useLegacy ? "AsText" : "ST_AsText"
+                selectionPath = `${asText}(${selectionPath})`
+            }
+
+            if (
+                DriverUtils.isPostgresFamily(this.dataSource.driver) &&
+                includeHydrationTransform
+            )
+                if (column.precision) {
+                    // cast to JSON to trigger parsing in the driver
+                    selectionPath = `ST_AsGeoJSON(${selectionPath}, ${column.precision})::json`
+                } else {
+                    selectionPath = `ST_AsGeoJSON(${selectionPath})::json`
+                }
+            if (this.dataSource.driver.options.type === "mssql")
+                selectionPath = `${selectionPath}.ToString()`
+        }
+
+        return selectionPath
+    }
+
     protected findEntityColumnSelects(
         aliasName: string,
         metadata: EntityMetadata,
@@ -3034,7 +3050,15 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         const metadata = this.expressionMap.mainAlias!.metadata
 
         const primaryColumns = metadata.primaryColumns
-        const distinctAlias = this.escape(mainAlias)
+        const selectedColumns: string[] = []
+
+        if (this.findOptions.select) {
+            selectedColumns.push(...this.computeSelectedColumnExpressions())
+        }
+
+        if (selectedColumns.length > 0) {
+            return this.computeDistinctCountExpression(selectedColumns)
+        }
 
         // If we aren't doing anything that will create a join, we can use a simpler `COUNT` instead
         // so we prevent poor query patterns in the most likely cases
@@ -3046,38 +3070,56 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         }
 
         // For everything else, we'll need to do some hackery to get the correct count values.
+        return this.computeDistinctCountExpression(
+            primaryColumns.map(
+                (column) =>
+                    `${this.escape(mainAlias)}.${this.escape(column.databaseName)}`,
+            ),
+        )
+    }
 
+    private computeSelectedColumnExpressions(): string[] {
+        const selectedColumns = new Set<string>()
+
+        this.expressionMap.selects.forEach((select) => {
+            const criteriaParts = select.selection.split(".")
+            if (criteriaParts.length < 2) return
+
+            const aliasName = criteriaParts[0]
+            const propertyPath = criteriaParts.slice(1).join(".")
+            const alias = this.expressionMap.aliases.find(
+                (queryAlias) =>
+                    queryAlias.name === aliasName && queryAlias.hasMetadata,
+            )
+
+            if (!alias) return
+
+            const column =
+                alias.metadata.findColumnWithPropertyPath(propertyPath)
+            if (!column) return
+
+            selectedColumns.add(
+                this.buildColumnSelectionExpression(aliasName, column, false),
+            )
+        })
+
+        return Array.from(selectedColumns)
+    }
+
+    private computeDistinctCountExpression(columns: string[]): string {
         if (
             this.dataSource.driver.options.type === "cockroachdb" ||
             DriverUtils.isPostgresFamily(this.dataSource.driver)
         ) {
             // Postgres and CockroachDB can pass multiple parameters to the `DISTINCT` function
             // https://www.postgresql.org/docs/9.5/sql-select.html#SQL-DISTINCT
-            return (
-                "COUNT(DISTINCT(" +
-                primaryColumns
-                    .map(
-                        (c) =>
-                            `${distinctAlias}.${this.escape(c.databaseName)}`,
-                    )
-                    .join(", ") +
-                "))"
-            )
+            return "COUNT(DISTINCT(" + columns.join(", ") + "))"
         }
 
         if (DriverUtils.isMySQLFamily(this.dataSource.driver)) {
             // MySQL & MariaDB can pass multiple parameters to the `DISTINCT` language construct
             // https://mariadb.com/kb/en/count-distinct/
-            return (
-                "COUNT(DISTINCT " +
-                primaryColumns
-                    .map(
-                        (c) =>
-                            `${distinctAlias}.${this.escape(c.databaseName)}`,
-                    )
-                    .join(", ") +
-                ")"
-            )
+            return "COUNT(DISTINCT " + columns.join(", ") + ")"
         }
 
         if (this.dataSource.driver.options.type === "mssql") {
@@ -3086,16 +3128,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             // characteristic for concatenating, so we gotta use the `CONCAT` function.
             // However, If it's exactly 1 column we can omit the `CONCAT` for better performance.
 
-            const columnsExpression = primaryColumns
-                .map(
-                    (primaryColumn) =>
-                        `${distinctAlias}.${this.escape(
-                            primaryColumn.databaseName,
-                        )}`,
-                )
-                .join(", '|;|', ")
+            const columnsExpression = columns.join(", '|;|', ")
 
-            if (primaryColumns.length === 1) {
+            if (columns.length === 1) {
                 return `COUNT(DISTINCT(${columnsExpression}))`
             }
 
@@ -3106,19 +3141,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             // spanner also has gotta be different from everyone else.
             // they do not support concatenation of different column types without casting them to string
 
-            if (primaryColumns.length === 1) {
-                return `COUNT(DISTINCT(${distinctAlias}.${this.escape(
-                    primaryColumns[0].databaseName,
-                )}))`
+            if (columns.length === 1) {
+                return `COUNT(DISTINCT(${columns[0]}))`
             }
 
-            const columnsExpression = primaryColumns
-                .map(
-                    (primaryColumn) =>
-                        `CAST(${distinctAlias}.${this.escape(
-                            primaryColumn.databaseName,
-                        )} AS STRING)`,
-                )
+            const columnsExpression = columns
+                .map((column) => `CAST(${column} AS STRING)`)
                 .join(", '|;|', ")
             return `COUNT(DISTINCT(CONCAT(${columnsExpression})))`
         }
@@ -3130,13 +3158,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         // Please note, if there is only one primary column that the concatenation does not occur in this
         // query and the query is a standard `COUNT DISTINCT` in that case.
 
-        return (
-            `COUNT(DISTINCT(` +
-            primaryColumns
-                .map((c) => `${distinctAlias}.${this.escape(c.databaseName)}`)
-                .join(" || '|;|' || ") +
-            "))"
-        )
+        return `COUNT(DISTINCT(` + columns.join(" || '|;|' || ") + "))"
     }
 
     protected async executeCountQuery(
