@@ -83,6 +83,12 @@ export class RelationJoinColumnBuilder {
                 columns,
                 uniqueConstraint: undefined,
             } // this case is possible for one-to-one non owning side and relations with createForeignKeyConstraints = false
+        if (!this.columnsHaveCompatibleTypes(columns, referencedColumns))
+            return {
+                foreignKey: undefined,
+                columns,
+                uniqueConstraint: undefined,
+            }
 
         const foreignKey = new ForeignKeyMetadata({
             name: joinColumns[0]?.foreignKeyConstraintName,
@@ -125,6 +131,21 @@ export class RelationJoinColumnBuilder {
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    private columnsHaveCompatibleTypes(
+        columns: ColumnMetadata[],
+        referencedColumns: ColumnMetadata[],
+    ): boolean {
+        return columns.every((column, index) => {
+            const referencedColumn = referencedColumns[index]
+            if (!referencedColumn) return false
+
+            return (
+                this.dataSource.driver.normalizeType(column) ===
+                this.dataSource.driver.normalizeType(referencedColumn)
+            )
+        })
+    }
 
     /**
      * Collects referenced columns from the given join column args.
@@ -270,7 +291,9 @@ export class RelationJoinColumnBuilder {
                 relationalColumn = OrmUtils.cloneObject(relationalColumn)
             }
             relationalColumn.referencedColumn = referencedColumn // its important to set it here because we need to set referenced column for user defined join column
-            relationalColumn.type = referencedColumn.type // also since types of relational column and join column must be equal we override user defined column type
+            if (relationalColumn.isVirtual) {
+                relationalColumn.type = referencedColumn.type
+            }
             relationalColumn.relationMetadata = relation
             relationalColumn.build(this.dataSource)
             return relationalColumn
