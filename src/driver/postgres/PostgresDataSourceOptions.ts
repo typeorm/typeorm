@@ -41,24 +41,12 @@ export interface PostgresDataSourceOptions
         /**
          * Master server used by orm to perform writes.
          */
-        readonly master: PostgresConnectionCredentialsOptions & {
-            /**
-             * Extra pg pool options applied exclusively to the master pool.
-             * Merged over the top-level `extra` in the DataSource options.
-             */
-            readonly extra?: Record<string, unknown>
-        }
+        readonly master: PostgresConnectionCredentialsOptions
 
         /**
          * List of read-from servers (slaves).
          */
-        readonly slaves: (PostgresConnectionCredentialsOptions & {
-            /**
-             * Extra pg pool options applied exclusively to this slave pool.
-             * Merged over the top-level `extra` in the DataSource options.
-             */
-            readonly extra?: Record<string, unknown>
-        })[]
+        readonly slaves: PostgresConnectionCredentialsOptions[]
 
         /**
          * Default connection pool to use for SELECT queries
