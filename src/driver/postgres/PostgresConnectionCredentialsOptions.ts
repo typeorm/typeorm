@@ -50,5 +50,5 @@ export interface PostgresConnectionCredentialsOptions {
      * Useful in replication mode to apply different pool settings per
      * master/slave endpoint (e.g. `maxLifetimeSeconds` only on slaves).
      */
-    readonly extra?: Record<string, unknown>
+    readonly extra?: any
 }
