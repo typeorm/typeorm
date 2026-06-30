@@ -204,6 +204,23 @@ describe(`OrmUtils`, () => {
         })
     })
 
+    describe("normalizeWhereCriteria", () => {
+        it("should throw for undefined values by default when options are omitted", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ text: undefined }),
+            ).to.throw(
+                "Undefined value encountered in property 'text' of a where condition.",
+            )
+        })
+
+        it("should throw for null values by default when options are omitted", () => {
+            expect(() => OrmUtils.normalizeWhereCriteria({ text: null })).to
+                .throw(
+                    "Null value encountered in property 'text' of a where condition.",
+                )
+        })
+    })
+
     describe("getArraysDiff", () => {
         it("should return array difference", () => {
             const a = [1, 2, 3]
