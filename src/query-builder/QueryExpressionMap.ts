@@ -530,6 +530,7 @@ export class QueryExpressionMap {
             ? this.insertFromSelect.clone()
             : undefined
         map.whereEntities = this.whereEntities
+        map.queryEntity = this.queryEntity
         map.updateEntity = this.updateEntity
         map.callListeners = this.callListeners
         map.useTransaction = this.useTransaction
