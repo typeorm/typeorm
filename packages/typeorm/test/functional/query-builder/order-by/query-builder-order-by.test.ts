@@ -9,6 +9,19 @@ import { expect } from "chai"
 import { Post } from "./entity/Post"
 import { Comment } from "./entity/Comment"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
+import { SelectQueryBuilder } from "../../../../src/query-builder/SelectQueryBuilder"
+
+class TestSelectQueryBuilder extends SelectQueryBuilder<Post> {
+    replaceAliasColumnsForDistinctSelectForTest(
+        orderCriteria: string,
+        parentAlias: string,
+    ) {
+        return this.replaceAliasColumnsForDistinctSelect(
+            orderCriteria,
+            parentAlias,
+        )
+    }
+}
 
 describe("query builder > order-by", () => {
     let dataSources: DataSource[]
@@ -587,9 +600,8 @@ describe("query builder > order-by", () => {
             Promise.all(
                 dataSources.map(async (dataSource) => {
                     const aliasName = aliasNameWithEscapedDelimiter(dataSource)
-                    const query = dataSource.manager.createQueryBuilder(
-                        Post,
-                        aliasName,
+                    const query = new TestSelectQueryBuilder(
+                        dataSource.manager.createQueryBuilder(Post, aliasName),
                     )
                     const parentAlias = "distinctAlias"
                     const orderCriteria =
@@ -597,12 +609,11 @@ describe("query builder > order-by", () => {
                         "." +
                         dataSource.driver.escape("title")
 
-                    const rewritten = (
-                        query as any
-                    ).replaceAliasColumnsForDistinctSelect(
-                        orderCriteria,
-                        parentAlias,
-                    )
+                    const rewritten =
+                        query.replaceAliasColumnsForDistinctSelectForTest(
+                            orderCriteria,
+                            parentAlias,
+                        )
 
                     expect(rewritten).to.be.equal(
                         dataSource.driver.escape(parentAlias) +
