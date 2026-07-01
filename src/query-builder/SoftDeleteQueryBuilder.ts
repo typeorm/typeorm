@@ -15,6 +15,7 @@ import { UpdateValuesMissingError } from "../error/UpdateValuesMissingError"
 import { TypeORMError } from "../error"
 import { DriverUtils } from "../driver/DriverUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { ObjectUtils } from "../util/ObjectUtils"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
@@ -528,7 +529,9 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
             ) // todo: fix issue with CURRENT_TIMESTAMP(6) being used, can "DEFAULT" be used?!
 
         if (updateColumnAndValues.length <= 0) {
-            throw new UpdateValuesMissingError()
+            throw new UpdateValuesMissingError(
+                `Query with missing values while soft delete: ${this.createComment()}UPDATE ${this.getTableName(this.getMainTableName())} SET (nothing)${this.createWhereExpression()} Parameters: ${ObjectUtils.stringifyParams(this.getParameters())}`,
+            )
         }
 
         // only update rows that are not already soft deleted
