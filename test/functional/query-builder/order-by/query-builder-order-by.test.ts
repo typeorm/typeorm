@@ -284,6 +284,19 @@ describe("query builder > order-by", () => {
                     return 'LENGTH("post"."title")'
             }
         }
+        const aliasNameWithEscapedDelimiter = (
+            dataSource: DataSource,
+        ): string => {
+            switch (dataSource.options.type) {
+                case "mssql":
+                    return "post]alias"
+                case "mysql":
+                case "mariadb":
+                    return "post`alias"
+                default:
+                    return 'post"alias'
+            }
+        }
 
         it("should allow expression-based orderBy keys with explicit direction", () =>
             Promise.all(
@@ -567,6 +580,42 @@ describe("query builder > order-by", () => {
 
                     expect(entities).to.have.lengthOf(1)
                     expect(entities[0].post.title).to.be.equal("target")
+                }),
+            ))
+
+        it("should rewrite quoted identifiers containing escaped delimiter characters", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const aliasName = aliasNameWithEscapedDelimiter(dataSource)
+                    const query = dataSource.manager.createQueryBuilder(
+                        Post,
+                        aliasName,
+                    )
+                    const parentAlias = "distinctAlias"
+                    const orderCriteria =
+                        dataSource.driver.escape(aliasName) +
+                        "." +
+                        dataSource.driver.escape("title")
+
+                    const rewritten = (
+                        query as any
+                    ).replaceAliasColumnsForDistinctSelect(
+                        orderCriteria,
+                        parentAlias,
+                    )
+
+                    expect(rewritten).to.be.equal(
+                        dataSource.driver.escape(parentAlias) +
+                            "." +
+                            dataSource.driver.escape(
+                                DriverUtils.buildAlias(
+                                    dataSource.driver,
+                                    undefined,
+                                    aliasName,
+                                    "title",
+                                ),
+                            ),
+                    )
                 }),
             ))
     })
