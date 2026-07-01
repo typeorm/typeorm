@@ -3852,9 +3852,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         }
 
         const qualifiedColumnReferencePattern =
-            /"([^"]+)"\."([^"]+)"|`([^`]+)`\.`([^`]+)`|\[([^\]]+)\]\.\[([^\]]+)\]|([A-Za-z0-9_$]+)\.([A-Za-z0-9_$.]+)/g
+            /"((?:[^"]|"")+)"\."((?:[^"]|"")+)"|`((?:[^`]|``)+)`\.`((?:[^`]|``)+)`|\[((?:[^\]]|\]\])+)\]\.\[((?:[^\]]|\]\])+)\]|([A-Za-z0-9_$]+)\.([A-Za-z0-9_$.]+)/g
         const singleQualifiedColumnReferencePattern =
-            /^(?:"([^"]+)"\."([^"]+)"|`([^`]+)`\.`([^`]+)`|\[([^\]]+)\]\.\[([^\]]+)\]|([A-Za-z0-9_$]+)\.([A-Za-z0-9_$.]+))$/
+            /^(?:"((?:[^"]|"")+)"\."((?:[^"]|"")+)"|`((?:[^`]|``)+)`\.`((?:[^`]|``)+)`|\[((?:[^\]]|\]\])+)\]\.\[((?:[^\]]|\]\])+)\]|([A-Za-z0-9_$]+)\.([A-Za-z0-9_$.]+))$/
+        const unescapeQuotedIdentifier = (
+            value: string | undefined,
+            escapedDelimiter: string,
+            delimiter: string,
+        ) => value?.replaceAll(escapedDelimiter, delimiter)
         const getMatchedAliasAndPropertyPath = (
             doubleQuotedAlias: string | undefined,
             doubleQuotedPropertyPath: string | undefined,
@@ -3866,14 +3871,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             plainPropertyPath: string | undefined,
         ) => ({
             aliasName:
-                doubleQuotedAlias ??
-                backtickAlias ??
-                bracketAlias ??
+                unescapeQuotedIdentifier(doubleQuotedAlias, '""', '"') ??
+                unescapeQuotedIdentifier(backtickAlias, "``", "`") ??
+                unescapeQuotedIdentifier(bracketAlias, "]]", "]") ??
                 plainAlias,
             propertyPath:
-                doubleQuotedPropertyPath ??
-                backtickPropertyPath ??
-                bracketPropertyPath ??
+                unescapeQuotedIdentifier(doubleQuotedPropertyPath, '""', '"') ??
+                unescapeQuotedIdentifier(backtickPropertyPath, "``", "`") ??
+                unescapeQuotedIdentifier(bracketPropertyPath, "]]", "]") ??
                 plainPropertyPath,
         })
 
