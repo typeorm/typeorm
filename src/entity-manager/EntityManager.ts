@@ -874,6 +874,16 @@ export class EntityManager {
                 criteria as ObjectLiteral | ObjectLiteral[],
                 this.dataSource.options.invalidWhereValuesBehavior,
             )
+            // normalization may have stripped every key (e.g. a "__proto__"-only
+            // object, or all keys removed under the "ignore" behavior); a now-empty
+            // criteria would render as "WHERE 1=1" and update the whole table.
+            if (OrmUtils.isNormalizedWhereCriteriaEmpty(normalizedCriteria)) {
+                return Promise.reject(
+                    new TypeORMError(
+                        `Empty criteria(s) are not allowed for the update method.`,
+                    ),
+                )
+            }
             const qb = this.createQueryBuilder()
                 .update(target)
                 .set(partialEntity)
@@ -955,6 +965,16 @@ export class EntityManager {
                 criteria as ObjectLiteral | ObjectLiteral[],
                 this.dataSource.options.invalidWhereValuesBehavior,
             )
+            // normalization may have stripped every key (e.g. a "__proto__"-only
+            // object, or all keys removed under the "ignore" behavior); a now-empty
+            // criteria would render as "WHERE 1=1" and delete the whole table.
+            if (OrmUtils.isNormalizedWhereCriteriaEmpty(normalizedCriteria)) {
+                return Promise.reject(
+                    new TypeORMError(
+                        `Empty criteria(s) are not allowed for the delete method.`,
+                    ),
+                )
+            }
             return this.createQueryBuilder()
                 .delete()
                 .from(targetOrEntity)
@@ -1021,6 +1041,16 @@ export class EntityManager {
                 criteria as ObjectLiteral | ObjectLiteral[],
                 this.dataSource.options.invalidWhereValuesBehavior,
             )
+            // normalization may have stripped every key (e.g. a "__proto__"-only
+            // object, or all keys removed under the "ignore" behavior); a now-empty
+            // criteria would render as "WHERE 1=1" and soft-delete the whole table.
+            if (OrmUtils.isNormalizedWhereCriteriaEmpty(normalizedCriteria)) {
+                return Promise.reject(
+                    new TypeORMError(
+                        `Empty criteria(s) are not allowed for the softDelete method.`,
+                    ),
+                )
+            }
             return this.createQueryBuilder()
                 .softDelete()
                 .from(targetOrEntity)
@@ -1072,6 +1102,16 @@ export class EntityManager {
                 criteria as ObjectLiteral | ObjectLiteral[],
                 this.dataSource.options.invalidWhereValuesBehavior,
             )
+            // normalization may have stripped every key (e.g. a "__proto__"-only
+            // object, or all keys removed under the "ignore" behavior); a now-empty
+            // criteria would render as "WHERE 1=1" and restore the whole table.
+            if (OrmUtils.isNormalizedWhereCriteriaEmpty(normalizedCriteria)) {
+                return Promise.reject(
+                    new TypeORMError(
+                        `Empty criteria(s) are not allowed for the restore method.`,
+                    ),
+                )
+            }
             return this.createQueryBuilder()
                 .restore()
                 .from(targetOrEntity)

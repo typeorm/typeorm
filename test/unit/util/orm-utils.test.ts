@@ -325,4 +325,48 @@ describe(`OrmUtils`, () => {
             expect(({} as any).polluted).to.equal(undefined)
         })
     })
+
+    describe("isNormalizedWhereCriteriaEmpty", () => {
+        it("treats null/undefined/empty-string as empty", () => {
+            expect(
+                OrmUtils.isNormalizedWhereCriteriaEmpty(null as any),
+            ).to.equal(true)
+            expect(
+                OrmUtils.isNormalizedWhereCriteriaEmpty(undefined as any),
+            ).to.equal(true)
+            expect(OrmUtils.isNormalizedWhereCriteriaEmpty("" as any)).to.equal(
+                true,
+            )
+        })
+
+        it("treats an empty plain object as empty", () => {
+            expect(OrmUtils.isNormalizedWhereCriteriaEmpty({})).to.equal(true)
+        })
+
+        it("treats a non-empty plain object as not empty", () => {
+            expect(OrmUtils.isNormalizedWhereCriteriaEmpty({ id: 1 })).to.equal(
+                false,
+            )
+        })
+
+        it("treats an empty array as empty", () => {
+            expect(OrmUtils.isNormalizedWhereCriteriaEmpty([])).to.equal(true)
+        })
+
+        it("treats an array containing any empty element as empty", () => {
+            expect(OrmUtils.isNormalizedWhereCriteriaEmpty([{}])).to.equal(true)
+            expect(
+                OrmUtils.isNormalizedWhereCriteriaEmpty([{ id: 1 }, {}]),
+            ).to.equal(true)
+        })
+
+        it("treats an array whose every element is non-empty as not empty", () => {
+            expect(
+                OrmUtils.isNormalizedWhereCriteriaEmpty([{ id: 1 }]),
+            ).to.equal(false)
+            expect(
+                OrmUtils.isNormalizedWhereCriteriaEmpty([{ id: 1 }, { id: 2 }]),
+            ).to.equal(false)
+        })
+    })
 })

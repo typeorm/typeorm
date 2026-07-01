@@ -396,6 +396,32 @@ export class OrmUtils {
     }
 
     /**
+     * Checks whether normalized where criteria is effectively empty and would
+     * therefore match every row (rendered as `WHERE 1=1`). Unlike
+     * isCriteriaNullOrEmpty, this also rejects an array that contains any empty
+     * element, since a single empty OR-branch matches all rows. Guards against a
+     * non-empty input being reduced to an empty filter by normalizeWhereCriteria
+     * (e.g. the only key was `__proto__`, or all keys were stripped under the
+     * `ignore` invalidWhereValuesBehavior).
+     *
+     * @param criteria
+     */
+    public static isNormalizedWhereCriteriaEmpty(
+        criteria: ObjectLiteral | ObjectLiteral[],
+    ): boolean {
+        if (Array.isArray(criteria)) {
+            return (
+                criteria.length === 0 ||
+                criteria.some((criterion) =>
+                    OrmUtils.isNormalizedWhereCriteriaEmpty(criterion),
+                )
+            )
+        }
+
+        return OrmUtils.isCriteriaNullOrEmpty(criteria)
+    }
+
+    /**
      * Checks if given criteria is a primitive value.
      * Primitive values are strings, numbers and dates.
      *
