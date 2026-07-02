@@ -32,12 +32,25 @@ export class PlatformTools {
      * This operation only supports on node platform
      */
     static load(name: string): any {
-        if (this.type === "browser")
-            throw new Error(
-                `This option/function is not supported in the browser environment. Failed operation: require("${name}").`,
-            )
+        const KNOWN_MODULES = [
+            // Expo
+            "expo-sqlite",
+            // React Native
+            "react-native-sqlite-storage",
+            // sql.js
+            "sql.js",
+            // redis
+            "redis",
+            "ioredis",
+        ]
 
-        return ""
+        if (!KNOWN_MODULES.includes(name)) {
+            throw new TypeError(
+                `Invalid Package for PlatformTools.load: ${name}`,
+            )
+        }
+
+        return require(name)
     }
 
     /**
