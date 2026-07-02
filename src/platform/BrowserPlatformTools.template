@@ -1,3 +1,5 @@
+import { RandomGenerator } from "../util/RandomGenerator"
+
 /**
  * Browser's implementation of the platform-specific tools.
  *
@@ -5,13 +7,11 @@
  * For node.js environment this class is not getting packaged.
  * Don't use methods of this class in the code, use PlatformTools methods instead.
  */
-
 export class PlatformTools {
-
     /**
      * Type of the currently running platform.
      */
-    static type: "browser"|"node" = "browser";
+    static type: "browser" | "node" = "browser"
 
     /**
      * Gets global variable where global stuff can be stored.
@@ -33,9 +33,19 @@ export class PlatformTools {
      */
     static load(name: string): any {
         if (this.type === "browser")
-            throw new Error(`This option/function is not supported in the browser environment. Failed operation: require("${name}").`);
+            throw new Error(
+                `This option/function is not supported in the browser environment. Failed operation: require("${name}").`,
+            )
 
-        return "";
+        return ""
+    }
+
+    /**
+     * @param input string to encode
+     * @returns the SHA-1 digest of the input string
+     */
+    static sha1(input: string): string {
+        return RandomGenerator.sha1(input)
     }
 
     /**
@@ -43,9 +53,11 @@ export class PlatformTools {
      */
     static pathNormalize(pathStr: string): string {
         if (this.type === "browser")
-            throw new Error(`This option/function is not supported in the browser environment. Failed operation: path.normalize("${pathStr}").`);
+            throw new Error(
+                `This option/function is not supported in the browser environment. Failed operation: path.normalize("${pathStr}").`,
+            )
 
-        return "";
+        return ""
     }
 
     /**
@@ -53,19 +65,23 @@ export class PlatformTools {
      */
     static pathExtname(pathStr: string): string {
         if (this.type === "browser")
-            throw new Error(`This option/function is not supported in the browser environment. Failed operation: path.extname("${pathStr}").`);
+            throw new Error(
+                `This option/function is not supported in the browser environment. Failed operation: path.extname("${pathStr}").`,
+            )
 
-        return "";
+        return ""
     }
 
     /**
      * Resolved given path. Does "path.resolve".
      */
-    static pathResolve(pathStr: string): string {
+    static pathResolve(...paths: string[]): string {
         if (this.type === "browser")
-            throw new Error(`This option/function is not supported in the browser environment. Failed operation: path.resolve("${pathStr}").`);
+            throw new Error(
+                `This option/function is not supported in the browser environment. Failed operation: path.resolve("${paths.join('", "')}").`,
+            )
 
-        return "";
+        return ""
     }
 
     /**
@@ -73,56 +89,64 @@ export class PlatformTools {
      */
     static fileExist(pathStr: string): boolean {
         if (this.type === "browser")
-            throw new Error(`This option/function is not supported in the browser environment. Failed operation: fs.existsSync("${pathStr}").`);
+            throw new Error(
+                `This option/function is not supported in the browser environment. Failed operation: fs.existsSync("${pathStr}").`,
+            )
 
-        return false;
+        return false
     }
 
     static readFileSync(filename: string): any {
         if (this.type === "browser")
-            throw new Error(`This option/function is not supported in the browser environment. Failed operation: fs.readFileSync("${filename}").`);
-        return null;
+            throw new Error(
+                `This option/function is not supported in the browser environment. Failed operation: fs.readFileSync("${filename}").`,
+            )
+        return null
     }
 
     static appendFileSync(filename: string, data: any) {
         if (this.type === "browser")
-            throw new Error(`This option/function is not supported in the browser environment. Failed operation: fs.appendFileSync("${filename}").`);
+            throw new Error(
+                `This option/function is not supported in the browser environment. Failed operation: fs.appendFileSync("${filename}").`,
+            )
     }
 
     static writeFile(path: string, data: any): Promise<void> {
         if (this.type === "browser")
-            throw new Error(`This option/function is not supported in the browser environment. Failed operation: fs.writeFile("${path}").`);
-        return Promise.reject(null);
+            throw new Error(
+                `This option/function is not supported in the browser environment. Failed operation: fs.writeFile("${path}").`,
+            )
+        return Promise.reject(null)
     }
 
     /**
      * Highlights sql string to be printed in the console.
      */
     static highlightSql(sql: string) {
-        return sql;
+        return sql
     }
 
     /**
      * Logging functions needed by AdvancedConsoleLogger (but here without ANSI colors)
      */
     static logInfo(prefix: string, info: any) {
-        console.info(prefix + " ", info);
+        console.info(prefix + " ", info)
     }
 
     static logError(prefix: string, error: any) {
-        console.error(prefix + " ", error);
+        console.error(prefix + " ", error)
     }
 
     static logWarn(prefix: string, warning: any) {
-        console.warn(prefix + " ", warning);
+        console.warn(prefix + " ", warning)
     }
 
     static log(message: string) {
-        console.log(message);
+        console.log(message)
     }
 
     static warn(message: string) {
-        return message;
+        return message
     }
 }
 
