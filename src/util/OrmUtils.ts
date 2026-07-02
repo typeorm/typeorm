@@ -396,6 +396,32 @@ export class OrmUtils {
     }
 
     /**
+     * Checks whether normalized where criteria is effectively empty and would
+     * therefore match every row (rendered as `WHERE 1=1`). Unlike
+     * isCriteriaNullOrEmpty, this also rejects an array that contains any empty
+     * element, since a single empty OR-branch matches all rows. Guards against a
+     * non-empty input being reduced to an empty filter by normalizeWhereCriteria
+     * (e.g. the only key was `__proto__`, or all keys were stripped under the
+     * `ignore` invalidWhereValuesBehavior).
+     *
+     * @param criteria
+     */
+    public static isNormalizedWhereCriteriaEmpty(
+        criteria: ObjectLiteral | ObjectLiteral[],
+    ): boolean {
+        if (Array.isArray(criteria)) {
+            return (
+                criteria.length === 0 ||
+                criteria.some((criterion) =>
+                    OrmUtils.isNormalizedWhereCriteriaEmpty(criterion),
+                )
+            )
+        }
+
+        return OrmUtils.isCriteriaNullOrEmpty(criteria)
+    }
+
+    /**
      * Checks if given criteria is a primitive value.
      * Primitive values are strings, numbers and dates.
      *
@@ -678,8 +704,17 @@ export class OrmUtils {
             )
         }
 
+        // Entity class instances (and other non-plain objects) are passed through
+        // unchanged: their set columns — including nullable foreign keys that happen
+        // to be null — are intentionally part of the where condition and must not be
+        // validated or stripped. Only plain objects (FindOptionsWhere) are normalized.
+        if (!OrmUtils.isPlainObject(criteria)) {
+            return criteria
+        }
+
         const result: ObjectLiteral = {}
         for (const [key, value] of Object.entries(criteria)) {
+            if (key === "__proto__") continue
             const propertyPath = path ? `${path}.${key}` : key
 
             if (value === undefined) {

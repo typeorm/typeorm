@@ -270,4 +270,103 @@ describe(`OrmUtils`, () => {
             ).to.equal(false)
         })
     })
+
+    describe("normalizeWhereCriteria", () => {
+        it("returns criteria unchanged when no options are provided", () => {
+            const criteria = { name: null, email: undefined }
+            expect(OrmUtils.normalizeWhereCriteria(criteria)).to.equal(criteria)
+        })
+
+        it("throws on null/undefined by default when options are provided", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ name: undefined }, {}),
+            ).to.throw(/Undefined value.*'name'/)
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ email: null }, {}),
+            ).to.throw(/Null value.*'email'/)
+        })
+
+        it("honors 'ignore' by stripping null/undefined keys", () => {
+            const result = OrmUtils.normalizeWhereCriteria(
+                { name: "Alice", email: null, phone: undefined },
+                { null: "ignore", undefined: "ignore" },
+            )
+            expect(result).to.deep.equal({ name: "Alice" })
+        })
+
+        it("passes entity class instances through unchanged (not validated)", () => {
+            class User {
+                id = 1
+                name = "Alice"
+                parentId: number | null = null
+                deletedAt: Date | undefined = undefined
+            }
+            const entity = new User()
+            // even with throw configured, an entity instance is not validated:
+            // its set columns (including a null FK) are part of the where clause.
+            const result = OrmUtils.normalizeWhereCriteria(entity, {
+                null: "throw",
+                undefined: "throw",
+            })
+            expect(result).to.equal(entity)
+        })
+
+        it("ignores the __proto__ key when iterating", () => {
+            const result = OrmUtils.normalizeWhereCriteria(
+                JSON.parse('{ "__proto__": { "polluted": true }, "id": 1 }'),
+                {},
+            ) as Record<string, unknown>
+            expect(result).to.deep.equal({ id: 1 })
+            // the guard must prevent a `result["__proto__"] = ...` assignment from
+            // re-pointing the returned object's prototype (per-object pollution),
+            // not just global Object.prototype pollution.
+            expect(Object.getPrototypeOf(result)).to.equal(Object.prototype)
+            expect(result.polluted).to.equal(undefined)
+            expect(({} as any).polluted).to.equal(undefined)
+        })
+    })
+
+    describe("isNormalizedWhereCriteriaEmpty", () => {
+        it("treats null/undefined/empty-string as empty", () => {
+            expect(
+                OrmUtils.isNormalizedWhereCriteriaEmpty(null as any),
+            ).to.equal(true)
+            expect(
+                OrmUtils.isNormalizedWhereCriteriaEmpty(undefined as any),
+            ).to.equal(true)
+            expect(OrmUtils.isNormalizedWhereCriteriaEmpty("" as any)).to.equal(
+                true,
+            )
+        })
+
+        it("treats an empty plain object as empty", () => {
+            expect(OrmUtils.isNormalizedWhereCriteriaEmpty({})).to.equal(true)
+        })
+
+        it("treats a non-empty plain object as not empty", () => {
+            expect(OrmUtils.isNormalizedWhereCriteriaEmpty({ id: 1 })).to.equal(
+                false,
+            )
+        })
+
+        it("treats an empty array as empty", () => {
+            expect(OrmUtils.isNormalizedWhereCriteriaEmpty([])).to.equal(true)
+        })
+
+        it("treats an array containing any empty element as empty", () => {
+            expect(OrmUtils.isNormalizedWhereCriteriaEmpty([{}])).to.equal(true)
+            expect(
+                OrmUtils.isNormalizedWhereCriteriaEmpty([{ id: 1 }, {}]),
+            ).to.equal(true)
+        })
+
+        it("treats an array whose every element is non-empty as not empty", () => {
+            expect(
+                OrmUtils.isNormalizedWhereCriteriaEmpty([{ id: 1 }]),
+            ).to.equal(false)
+            expect(
+                OrmUtils.isNormalizedWhereCriteriaEmpty([{ id: 1 }, { id: 2 }]),
+            ).to.equal(false)
+        })
+    })
 })
