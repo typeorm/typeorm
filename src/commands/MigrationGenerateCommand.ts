@@ -136,6 +136,12 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                             ");",
                     )
                 })
+
+                if (sqlInMemory.warnings?.length) {
+                    for (const warning of sqlInMemory.warnings) {
+                        console.log(ansi.yellow(warning))
+                    }
+                }
             } finally {
                 await dataSource.destroy()
             }
