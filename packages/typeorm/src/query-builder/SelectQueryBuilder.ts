@@ -3908,7 +3908,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 singleColumnMatch[7],
                 singleColumnMatch[8],
             )
-            if (aliasName && propertyPath && aliasNames.includes(aliasName)) {
+            if (aliasName && propertyPath) {
                 return buildReference(aliasName, propertyPath)
             }
         }
