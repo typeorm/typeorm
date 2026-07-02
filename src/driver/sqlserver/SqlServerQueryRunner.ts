@@ -719,6 +719,7 @@ export class SqlServerQueryRunner
         if (generatedColumns.length > 0) {
             const parsedTableName = this.driver.parseTableName(table)
             parsedTableName.schema ??= await this.getCurrentSchema()
+            parsedTableName.database ??= await this.getCurrentDatabase()
 
             for (const column of generatedColumns) {
                 const insertQuery = this.insertTypeormMetadataSql({
@@ -795,12 +796,13 @@ export class SqlServerQueryRunner
 
         // if table had columns with generated type, we must remove the expression from the metadata table
         const generatedColumns = table.columns.filter(
-            (column) => column.generatedType && column.asExpression,
+            (column) => column.generatedType,
         )
 
         if (generatedColumns.length > 0) {
             const parsedTableName = this.driver.parseTableName(table)
             parsedTableName.schema ??= await this.getCurrentSchema()
+            parsedTableName.database ??= await this.getCurrentDatabase()
 
             for (const column of generatedColumns) {
                 const deleteQuery = this.deleteTypeormMetadataSql({
@@ -810,18 +812,19 @@ export class SqlServerQueryRunner
                     type: MetadataTableType.GENERATED_COLUMN,
                     name: column.name,
                 })
-
-                const insertQuery = this.insertTypeormMetadataSql({
-                    database: parsedTableName.database,
-                    schema: parsedTableName.schema,
-                    table: parsedTableName.tableName,
-                    type: MetadataTableType.GENERATED_COLUMN,
-                    name: column.name,
-                    value: column.asExpression,
-                })
-
                 upQueries.push(deleteQuery)
-                downQueries.push(insertQuery)
+
+                if (column.asExpression) {
+                    const insertQuery = this.insertTypeormMetadataSql({
+                        database: parsedTableName.database,
+                        schema: parsedTableName.schema,
+                        table: parsedTableName.tableName,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        name: column.name,
+                        value: column.asExpression,
+                    })
+                    downQueries.push(insertQuery)
+                }
             }
         }
 
@@ -894,19 +897,13 @@ export class SqlServerQueryRunner
             : await this.getCachedTable(oldTableOrName)
         const newTable = oldTable.clone()
 
-        // we need database name and schema name to rename FK constraints
-        let dbName: string | undefined = undefined
-        let schemaName: string | undefined = undefined
-        let oldTableName: string = oldTable.name
-        const splittedName = oldTable.name.split(".")
-        if (splittedName.length === 3) {
-            dbName = splittedName[0]
-            oldTableName = splittedName[2]
-            if (splittedName[1] !== "") schemaName = splittedName[1]
-        } else if (splittedName.length === 2) {
-            schemaName = splittedName[0]
-            oldTableName = splittedName[1]
-        }
+        let {
+            tableName: oldTableName,
+            database: dbName,
+            schema: schemaName,
+        } = this.driver.parseTableName(oldTable.name)
+        dbName ??= await this.getCurrentDatabase()
+        schemaName ??= await this.getCurrentSchema()
 
         newTable.name = this.driver.buildTableName(
             newTableName,
@@ -937,6 +934,30 @@ export class SqlServerQueryRunner
                 )}", "${oldTableName}"`,
             ),
         )
+
+        const hasGeneratedColumns = oldTable.columns.some(
+            (col) => col.generatedType,
+        )
+        if (hasGeneratedColumns) {
+            const updateQuery = this.updateTypeormMetadataSql({
+                database: dbName,
+                schema: schemaName,
+                table: oldTableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                valueToSet: { table: newTableName },
+            })
+
+            const revertUpdateQuery = this.updateTypeormMetadataSql({
+                database: dbName,
+                schema: schemaName,
+                table: newTableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                valueToSet: { table: oldTableName },
+            })
+
+            upQueries.push(updateQuery)
+            downQueries.push(revertUpdateQuery)
+        }
 
         // rename primary key constraint
         if (
@@ -1259,8 +1280,8 @@ export class SqlServerQueryRunner
 
         if (column.generatedType && column.asExpression) {
             const parsedTableName = this.driver.parseTableName(table)
-
             parsedTableName.schema ??= await this.getCurrentSchema()
+            parsedTableName.database ??= await this.getCurrentDatabase()
 
             const insertQuery = this.insertTypeormMetadataSql({
                 database: parsedTableName.database,
@@ -1385,15 +1406,13 @@ export class SqlServerQueryRunner
         } else {
             if (newColumn.name !== oldColumn.name) {
                 // we need database name and schema name to rename FK constraints
-                let dbName: string | undefined = undefined
-                let schemaName: string | undefined = undefined
-                const splittedName = table.name.split(".")
-                if (splittedName.length === 3) {
-                    dbName = splittedName[0]
-                    if (splittedName[1] !== "") schemaName = splittedName[1]
-                } else if (splittedName.length === 2) {
-                    schemaName = splittedName[0]
-                }
+                let {
+                    database: dbName,
+                    schema: schemaName,
+                    tableName,
+                } = this.driver.parseTableName(table)
+                schemaName ??= await this.getCurrentSchema()
+                dbName ??= await this.getCurrentDatabase()
 
                 // if we have tables with database which differs from database specified in config, we must change currently used database.
                 // This need because we can not rename objects from another database.
@@ -1419,6 +1438,26 @@ export class SqlServerQueryRunner
                     ),
                 )
 
+                if (oldColumn.generatedType) {
+                    const updateQuery = this.updateTypeormMetadataSql({
+                        database: dbName,
+                        schema: schemaName,
+                        table: tableName,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        name: oldColumn.name,
+                        valueToSet: { name: newColumn.name },
+                    })
+                    const revertUpdateQuery = this.updateTypeormMetadataSql({
+                        database: dbName,
+                        schema: schemaName,
+                        table: tableName,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        name: newColumn.name,
+                        valueToSet: { name: oldColumn.name },
+                    })
+                    upQueries.push(updateQuery)
+                    downQueries.push(revertUpdateQuery)
+                }
                 // rename column primary key constraint
                 if (
                     oldColumn.isPrimary === true &&
@@ -2173,10 +2212,10 @@ export class SqlServerQueryRunner
             )
         }
 
-        if (column.generatedType && column.asExpression) {
+        if (column.generatedType) {
             const parsedTableName = this.driver.parseTableName(table)
-
             parsedTableName.schema ??= await this.getCurrentSchema()
+            parsedTableName.database ??= await this.getCurrentDatabase()
 
             const deleteQuery = this.deleteTypeormMetadataSql({
                 database: parsedTableName.database,
@@ -2185,17 +2224,19 @@ export class SqlServerQueryRunner
                 type: MetadataTableType.GENERATED_COLUMN,
                 name: column.name,
             })
-            const insertQuery = this.insertTypeormMetadataSql({
-                database: parsedTableName.database,
-                schema: parsedTableName.schema,
-                table: parsedTableName.tableName,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression,
-            })
-
             upQueries.push(deleteQuery)
-            downQueries.push(insertQuery)
+
+            if (column.asExpression) {
+                const insertQuery = this.insertTypeormMetadataSql({
+                    database: parsedTableName.database,
+                    schema: parsedTableName.schema,
+                    table: parsedTableName.tableName,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                    value: column.asExpression,
+                })
+                downQueries.push(insertQuery)
+            }
         }
 
         upQueries.push(
@@ -2967,6 +3008,18 @@ export class SqlServerQueryRunner
                     }),
                 )
             }
+            if (database) {
+                const metadataTableName = this.getTypeormMetadataTableName()
+                const hasMetadataTable = await this.hasTable(metadataTableName)
+                if (hasMetadataTable) {
+                    await this.query(
+                        `DELETE FROM ${this.escapePath(
+                            metadataTableName,
+                        )} WHERE "database" = @0`,
+                        [database],
+                    )
+                }
+            }
 
             if (!isAnotherTransactionActive) await this.commitTransaction()
         } catch (error) {
@@ -3156,9 +3209,13 @@ export class SqlServerQueryRunner
                 return (
                     `SELECT "COLUMNS".*, "cc"."is_persisted", "cc"."definition" ` +
                     `FROM "${TABLE_CATALOG}"."INFORMATION_SCHEMA"."COLUMNS" ` +
-                    `LEFT JOIN "${TABLE_CATALOG}"."sys"."computed_columns" "cc" ON COL_NAME("cc"."object_id", "cc"."column_id") = "COLUMN_NAME" ` +
-                    `AND OBJECT_NAME("cc"."object_id", DB_ID('${TABLE_CATALOG}')) = "TABLE_NAME" ` +
-                    `AND OBJECT_SCHEMA_NAME("cc"."object_id", DB_ID('${TABLE_CATALOG}')) = "TABLE_SCHEMA" ` +
+                    `LEFT JOIN "${TABLE_CATALOG}"."sys"."schemas" "ss" ON "ss"."name" = "TABLE_SCHEMA" ` +
+                    `LEFT JOIN "${TABLE_CATALOG}"."sys"."tables" "st" ON "st"."name" = "TABLE_NAME" ` +
+                    `AND "st"."schema_id" = "ss"."schema_id" ` +
+                    `LEFT JOIN "${TABLE_CATALOG}"."sys"."columns" "sc" ON "sc"."object_id" = "st"."object_id" ` +
+                    `AND "sc"."name" = "COLUMN_NAME" ` +
+                    `LEFT JOIN "${TABLE_CATALOG}"."sys"."computed_columns" "cc" ON "cc"."object_id" = "sc"."object_id" ` +
+                    `AND "cc"."column_id" = "sc"."column_id" ` +
                     `WHERE (${condition})`
                 )
             })
