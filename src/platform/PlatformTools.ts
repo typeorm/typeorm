@@ -38,105 +38,57 @@ export class PlatformTools {
      * @returns the module
      */
     static load(name: string): any {
+        const KNOWN_MODULES = [
+            // AWS Aurora Data API (PostgreSQL/MySQL)
+            "typeorm-aurora-data-api-driver",
+            // better-sqlite3
+            "better-sqlite3",
+            // Expo
+            "expo-sqlite",
+            // Google Cloud Spanner
+            "@google-cloud/spanner",
+            // Microsoft SQL Server
+            "mssql",
+            // MongoDB
+            "mongodb",
+            // MySQL / MariaDB
+            "mysql2",
+            // Oracle
+            "oracledb",
+            // PostgreSQL
+            "pg",
+            "pg-native",
+            "pg-query-stream",
+            // React Native
+            "react-native-sqlite-storage",
+            // SAP HANA
+            "@sap/hana-client",
+            "@sap/hana-client/extension/Stream",
+            // sql.js
+            "sql.js",
+            // redis
+            "redis",
+            "ioredis",
+        ]
+
+        if (!KNOWN_MODULES.includes(name)) {
+            throw new TypeError(
+                `Invalid Package for PlatformTools.load: ${name}`,
+            )
+        }
+
         // if name is not absolute or relative, then try to load package from the node_modules of the directory we are currently in
         // this is useful when we are using typeorm package globally installed and it accesses drivers
         // that are not installed globally
-
         try {
-            // switch case to explicit require statements for webpack compatibility.
-            switch (name) {
-                /**
-                 * spanner
-                 */
-                case "spanner":
-                    return require("@google-cloud/spanner")
-
-                /**
-                 * mongodb
-                 */
-                case "mongodb":
-                    return require("mongodb")
-
-                /**
-                 * hana
-                 */
-                case "@sap/hana-client":
-                    return require("@sap/hana-client")
-
-                case "@sap/hana-client/extension/Stream":
-                    return require("@sap/hana-client/extension/Stream")
-
-                /**
-                 * mysql
-                 */
-                case "mysql2":
-                    return require("mysql2")
-
-                /**
-                 * oracle
-                 */
-                case "oracledb":
-                    return require("oracledb")
-
-                /**
-                 * postgres
-                 */
-                case "pg":
-                    return require("pg")
-
-                case "pg-native":
-                    return require("pg-native")
-
-                case "pg-query-stream":
-                    return require("pg-query-stream")
-
-                case "typeorm-aurora-data-api-driver":
-                    return require("typeorm-aurora-data-api-driver")
-
-                /**
-                 * redis
-                 */
-                case "redis":
-                    return require("redis")
-
-                case "ioredis":
-                    return require("ioredis")
-
-                /**
-                 * better-sqlite3
-                 */
-                case "better-sqlite3":
-                    return require("better-sqlite3")
-
-                /**
-                 * sql.js
-                 */
-                case "sql.js":
-                    return require("sql.js")
-
-                /**
-                 * sqlserver
-                 */
-                case "mssql":
-                    return require("mssql")
-
-                /**
-                 * react-native-sqlite
-                 */
-                case "react-native-sqlite-storage":
-                    return require("react-native-sqlite-storage")
-            }
-        } catch (err) {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            return require(name)
+        } catch {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
             return require(
                 path.resolve(process.cwd() + "/node_modules/" + name),
             )
         }
-
-        // If nothing above matched and we get here, the package was not listed within PlatformTools
-        // and is an Invalid Package.  To make it explicit that this is NOT the intended use case for
-        // PlatformTools.load - it's not just a way to replace `require` all willy-nilly - let's throw
-        // an error.
-        throw new TypeError(`Invalid Package for PlatformTools.load: ${name}`)
     }
 
     /**
