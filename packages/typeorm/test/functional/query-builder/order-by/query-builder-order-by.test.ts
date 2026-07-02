@@ -513,6 +513,24 @@ describe("query builder > order-by", () => {
                 }),
             ))
 
+        it("should reject unknown aliases in single-column orderBy with pagination", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const query = new TestSelectQueryBuilder(
+                        dataSource.manager.createQueryBuilder(Post, "post"),
+                    )
+
+                    expect(() =>
+                        query.replaceAliasColumnsForDistinctSelectForTest(
+                            "missing.title",
+                            "distinctAlias",
+                        ),
+                    ).to.throw(
+                        '"missing" alias was not found. Maybe you forgot to join it?',
+                    )
+                }),
+            ))
+
         it("should not rewrite alias references inside orderBy string literals", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
