@@ -11,6 +11,9 @@ node_modules/
 .node-version
 *.lcov
 
+### Local dev helpers ###
+make-esm-index.cjs
+
 ### VisualStudioCode ###
 .vscode/*
 !.vscode/settings.json
@@ -28,3 +31,4 @@ ormlogs.log
 ### Stryker ###
 reports/
 .stryker-tmp
+bun.lock

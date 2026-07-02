@@ -31,6 +31,12 @@
   },
   {
     "skip": false,
+    "type": "bun-sqlite",
+    "database": "temp/bun-sqlite.db",
+    "logging": false
+  },
+  {
+    "skip": false,
     "type": "cockroachdb",
     "host": "localhost",
     "port": 26257,

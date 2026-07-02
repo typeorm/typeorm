@@ -121,6 +121,12 @@ export class PlatformTools {
                     return require("better-sqlite3")
 
                 /**
+                 * bun:sqlite — built-in module, only available in the Bun runtime
+                 */
+                case "bun:sqlite":
+                    return require("bun:sqlite")
+
+                /**
                  * sql.js
                  */
                 case "sql.js":
