@@ -243,4 +243,86 @@ describe("Connection replication", () => {
             expect(result[0].current_setting).to.equal("")
         })
     })
+
+    // Tests for per-endpoint extra pool configuration (#12555).
+    // application_name is set via credentials.extra and verified through
+    // current_setting() — proving extra is merged into the pool options.
+    describe("with per-endpoint extra pool configuration", function () {
+        let dataSource: DataSource
+
+        beforeEach(async () => {
+            dataSource = (
+                await createTestingConnections({
+                    entities: [Post, Category],
+                    enabledDrivers: ["postgres"],
+                    schemaCreate: true,
+                    dropSchema: true,
+                    driverSpecific: {
+                        replication: {
+                            master: {
+                                ...postgresOptions,
+                            },
+                            slaves: [
+                                {
+                                    ...postgresOptions,
+                                    extra: {
+                                        application_name: "slave-from-extra",
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                })
+            )[0]
+        })
+
+        afterEach(() => closeTestingConnections([dataSource]))
+
+        it("applies credentials.extra to the slave pool", async () => {
+            const queryRunner = dataSource.createQueryRunner("slave")
+            await expectCurrentApplicationName(queryRunner, "slave-from-extra")
+            await queryRunner.release()
+        })
+
+        it("credentials.extra takes priority over top-level extra for the same key", async () => {
+            // Recreate with a top-level extra that also sets application_name.
+            await dataSource.destroy()
+            dataSource = (
+                await createTestingConnections({
+                    entities: [Post, Category],
+                    enabledDrivers: ["postgres"],
+                    schemaCreate: true,
+                    dropSchema: true,
+                    driverSpecific: {
+                        extra: { application_name: "from-top-level-extra" },
+                        replication: {
+                            master: {
+                                ...postgresOptions,
+                            },
+                            slaves: [
+                                {
+                                    ...postgresOptions,
+                                    extra: {
+                                        application_name: "from-slave-extra",
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                })
+            )[0]
+
+            const slaveRunner = dataSource.createQueryRunner("slave")
+            const masterRunner = dataSource.createQueryRunner("master")
+
+            await expectCurrentApplicationName(slaveRunner, "from-slave-extra")
+            await expectCurrentApplicationName(
+                masterRunner,
+                "from-top-level-extra",
+            )
+
+            await slaveRunner.release()
+            await masterRunner.release()
+        })
+    })
 })
