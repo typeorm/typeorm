@@ -143,6 +143,97 @@ describe("column > virtual columns", () => {
             expect(query).to.equal(expectedQuery)
         }))
 
+    it("should expand virtual columns in string where expressions", () =>
+        dataSources.map((dataSource) => {
+            const query = dataSource
+                .createQueryBuilder(Company, "Company")
+                .select(["Company.name", "Company.totalEmployeesCount"])
+                .where("Company.totalEmployeesCount > 2")
+                .getSql()
+
+            let expectedVirtualColumn = `"Company"."totalEmployeesCount"`
+            let expectedSubQuery = `(SELECT COUNT("name") FROM "employees" WHERE "companyName" = "Company"."name") > 2`
+            if (DriverUtils.isMySQLFamily(dataSource.driver)) {
+                expectedVirtualColumn = expectedVirtualColumn.replaceAll(
+                    '"',
+                    "`",
+                )
+                expectedSubQuery = expectedSubQuery.replaceAll('"', "`")
+            }
+
+            expect(query).not.to.include(expectedVirtualColumn)
+            expect(query).to.include(expectedSubQuery)
+
+            const joinedQuery = dataSource
+                .createQueryBuilder(Company, "company")
+                .leftJoin("company.employees", "employee")
+                .leftJoin("employee.timesheets", "timesheet")
+                .where("timesheet.totalActivityHours > 0")
+                .getSql()
+
+            let expectedJoinedVirtualColumn = `"timesheet"."totalActivityHours"`
+            let expectedJoinedSubQuery = `(SELECT SUM("hours") FROM "activities" WHERE "timesheetId" = "timesheet"."id") > 0`
+            if (DriverUtils.isMySQLFamily(dataSource.driver)) {
+                expectedJoinedVirtualColumn =
+                    expectedJoinedVirtualColumn.replaceAll('"', "`")
+                expectedJoinedSubQuery = expectedJoinedSubQuery.replaceAll(
+                    '"',
+                    "`",
+                )
+            }
+
+            expect(joinedQuery).not.to.include(expectedJoinedVirtualColumn)
+            expect(joinedQuery).to.include(expectedJoinedSubQuery)
+        }))
+
+    it("should build each virtual column replacement once per alias", () =>
+        dataSources.map((dataSource) => {
+            const totalEmployeesCountMetadata = dataSource
+                .getMetadata(Company)
+                .columns.find(
+                    (columnMetadata) =>
+                        columnMetadata.propertyName === "totalEmployeesCount",
+                )!
+            const originalQuery = totalEmployeesCountMetadata.query!
+            let queryCalls = 0
+            totalEmployeesCountMetadata.query = (alias) => {
+                queryCalls += 1
+                return originalQuery(alias)
+            }
+
+            try {
+                dataSource
+                    .createQueryBuilder(Company, "Company")
+                    .select("Company.name")
+                    .where("Company.totalEmployeesCount > 2")
+                    .getSql()
+
+                expect(queryCalls).to.equal(1)
+            } finally {
+                totalEmployeesCountMetadata.query = originalQuery
+            }
+        }))
+
+    it("should expand virtual columns with dotted aliases", () =>
+        dataSources.map((dataSource) => {
+            const alias = "custom.companies"
+            const query = dataSource
+                .createQueryBuilder(Company, alias)
+                .select(`${alias}.name`)
+                .where(`${alias}.totalEmployeesCount > 2`)
+                .getSql()
+
+            let expectedSubQuery = `(SELECT COUNT("name") FROM "employees" WHERE "companyName" = "custom.companies"."name") > 2`
+            let unexpectedSplitAlias = `"custom"."companies"."name"`
+            if (DriverUtils.isMySQLFamily(dataSource.driver)) {
+                expectedSubQuery = expectedSubQuery.replaceAll('"', "`")
+                unexpectedSplitAlias = unexpectedSplitAlias.replaceAll('"', "`")
+            }
+
+            expect(query).to.include(expectedSubQuery)
+            expect(query).not.to.include(unexpectedSplitAlias)
+        }))
+
     it("should be able to save and find sub-select data in the database", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
