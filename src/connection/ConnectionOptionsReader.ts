@@ -1,5 +1,3 @@
-import path from "node:path"
-
 import type { DataSourceOptions } from "../data-source/DataSourceOptions"
 import { TypeORMError } from "../error"
 import { PlatformTools } from "../platform/PlatformTools"
@@ -64,7 +62,7 @@ export class ConnectionOptionsReader {
         const fileFormats = ["js", "mjs", "cjs", "ts", "mts", "cts", "json"]
 
         // Detect if baseFilePath contains file extension
-        const possibleExtension = path.extname(this.baseFilePath)
+        const possibleExtension = PlatformTools.pathExtname(this.baseFilePath)
         const fileExtension = fileFormats.find(
             (extension) => `.${extension}` === possibleExtension,
         )
@@ -207,7 +205,10 @@ export class ConnectionOptionsReader {
      * Gets directory where configuration file should be located and configuration file name.
      */
     protected get baseFilePath(): string {
-        return path.resolve(this.baseDirectory, this.baseConfigName)
+        return PlatformTools.pathResolve(
+            this.baseDirectory,
+            this.baseConfigName,
+        )
     }
 
     /**
