@@ -382,43 +382,32 @@ export class OrmUtils {
     /**
      * Checks if given criteria is null or empty.
      *
-     * @param criteria
-     */
-    public static isCriteriaNullOrEmpty(criteria: unknown): boolean {
-        return (
-            criteria === undefined ||
-            criteria === null ||
-            criteria === "" ||
-            (Array.isArray(criteria) && criteria.length === 0) ||
-            (OrmUtils.isPlainObject(criteria) &&
-                Object.keys(criteria).length === 0)
-        )
-    }
-
-    /**
-     * Checks whether normalized where criteria is effectively empty and would
-     * therefore match every row (rendered as `WHERE 1=1`). Unlike
-     * isCriteriaNullOrEmpty, this also rejects an array that contains any empty
-     * element, since a single empty OR-branch matches all rows. Guards against a
-     * non-empty input being reduced to an empty filter by normalizeWhereCriteria
+     * An array is considered empty when it has no elements, or when any element
+     * is itself empty: a where array is OR-ed together, so a single empty
+     * element would render as an always-true `1=1` branch and match every row.
+     * This also catches criteria reduced to empty by normalizeWhereCriteria
      * (e.g. the only key was `__proto__`, or all keys were stripped under the
      * `ignore` invalidWhereValuesBehavior).
      *
      * @param criteria
      */
-    public static isNormalizedWhereCriteriaEmpty(
-        criteria: ObjectLiteral | ObjectLiteral[],
-    ): boolean {
+    public static isCriteriaNullOrEmpty(criteria: unknown): boolean {
         if (Array.isArray(criteria)) {
             return (
                 criteria.length === 0 ||
-                criteria.some((criterion) =>
-                    OrmUtils.isNormalizedWhereCriteriaEmpty(criterion),
+                criteria.some((element) =>
+                    OrmUtils.isCriteriaNullOrEmpty(element),
                 )
             )
         }
 
-        return OrmUtils.isCriteriaNullOrEmpty(criteria)
+        return (
+            criteria === undefined ||
+            criteria === null ||
+            criteria === "" ||
+            (OrmUtils.isPlainObject(criteria) &&
+                Object.keys(criteria).length === 0)
+        )
     }
 
     /**
