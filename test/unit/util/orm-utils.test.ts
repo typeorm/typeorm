@@ -5,6 +5,14 @@ import { OrmUtils } from "../../../src/util/OrmUtils"
 
 describe(`OrmUtils`, () => {
     describe("normalizeWhereCriteria", () => {
+        it("keeps non-plain criteria objects unchanged", () => {
+            class NonPlainCriteria {}
+
+            const criteria = new NonPlainCriteria() as ObjectLiteral
+
+            expect(OrmUtils.normalizeWhereCriteria(criteria)).to.equal(criteria)
+        })
+
         it("does not create inherited keys from __proto__", () => {
             const criteria = JSON.parse(
                 `{"__proto__":{"polluted":true},"nested":{"__proto__":{"polluted":true},"safe":"value"}}`,
