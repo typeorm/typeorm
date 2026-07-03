@@ -663,7 +663,7 @@ export class OrmUtils {
         path?: string,
     ): ObjectLiteral | ObjectLiteral[] {
         if (!options) {
-            return criteria
+            options = { undefined: "throw" as const, null: "throw" as const }
         }
 
         // multiple criteria are possible at the top level
