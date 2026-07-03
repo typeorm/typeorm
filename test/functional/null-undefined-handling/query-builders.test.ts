@@ -52,6 +52,73 @@ describe("entity manager > invalidWhereValuesBehavior with default behavior", ()
             }
         }
     })
+
+    it("should throw error for criteria that become empty after normalization", async () => {
+        for (const connection of dataSources) {
+            const createPlainCriteria = () =>
+                JSON.parse(`{"__proto__":{"text":"Some text"}}`)
+            const criteriaCases: Array<
+                [
+                    string,
+                    () => FindOptionsWhere<Post> | FindOptionsWhere<Post>[],
+                ]
+            > = [
+                [
+                    "object",
+                    () =>
+                        createPlainCriteria() as unknown as FindOptionsWhere<Post>,
+                ],
+                [
+                    "array",
+                    () =>
+                        [
+                            createPlainCriteria(),
+                        ] as unknown as FindOptionsWhere<Post>[],
+                ],
+            ]
+
+            for (const [criteriaType, createCriteria] of criteriaCases) {
+                const operations: Array<[string, () => Promise<unknown>]> = [
+                    [
+                        "update",
+                        () =>
+                            connection.manager.update(Post, createCriteria(), {
+                                title: "Updated",
+                            }),
+                    ],
+                    [
+                        "delete",
+                        () => connection.manager.delete(Post, createCriteria()),
+                    ],
+                    [
+                        "softDelete",
+                        () =>
+                            connection.manager.softDelete(
+                                Post,
+                                createCriteria(),
+                            ),
+                    ],
+                    [
+                        "restore",
+                        () =>
+                            connection.manager.restore(Post, createCriteria()),
+                    ],
+                ]
+
+                for (const [method, operation] of operations) {
+                    try {
+                        await operation()
+                        expect.fail(`Expected ${method} ${criteriaType} error`)
+                    } catch (error) {
+                        expect(error).to.be.instanceOf(TypeORMError)
+                        expect(error.message).to.include(
+                            `Empty criteria(s) are not allowed for the ${method} method.`,
+                        )
+                    }
+                }
+            }
+        }
+    })
 })
 
 describe("entity manager > invalidWhereValuesBehavior with throw", () => {

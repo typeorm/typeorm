@@ -389,7 +389,13 @@ export class OrmUtils {
             criteria === undefined ||
             criteria === null ||
             criteria === "" ||
-            (Array.isArray(criteria) && criteria.length === 0) ||
+            (Array.isArray(criteria) &&
+                (criteria.length === 0 ||
+                    criteria.some(
+                        (criterion) =>
+                            OrmUtils.isPlainObject(criterion) &&
+                            Object.keys(criterion).length === 0,
+                    ))) ||
             (OrmUtils.isPlainObject(criteria) &&
                 Object.keys(criteria).length === 0)
         )
