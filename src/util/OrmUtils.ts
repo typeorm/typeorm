@@ -678,7 +678,7 @@ export class OrmUtils {
             )
         }
 
-        const result: ObjectLiteral = {}
+        const result: ObjectLiteral = Object.create(null)
         for (const [key, value] of Object.entries(criteria)) {
             const propertyPath = path ? `${path}.${key}` : key
 
