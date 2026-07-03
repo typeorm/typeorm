@@ -35,6 +35,18 @@ describe(`OrmUtils`, () => {
 
             expect(inheritedKeys).not.to.include("polluted")
         })
+
+        it("uses null-prototype objects for normalized criteria", () => {
+            const normalized = OrmUtils.normalizeWhereCriteria({
+                nested: {
+                    safe: "value",
+                },
+            }) as ObjectLiteral
+            const nested = normalized.nested as ObjectLiteral
+
+            expect(Object.getPrototypeOf(normalized)).to.equal(null)
+            expect(Object.getPrototypeOf(nested)).to.equal(null)
+        })
     })
 
     describe("parseSqlCheckExpression", () => {

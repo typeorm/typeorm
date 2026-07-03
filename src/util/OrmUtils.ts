@@ -684,7 +684,7 @@ export class OrmUtils {
             return criteria
         }
 
-        const result: ObjectLiteral = {}
+        const result: ObjectLiteral = Object.create(null)
         for (const [key, value] of Object.entries(criteria)) {
             if (key === "__proto__") continue
 
