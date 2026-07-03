@@ -1,9 +1,34 @@
 import { expect } from "chai"
 import { runInNewContext } from "node:vm"
-import type { DeepPartial } from "../../../src"
+import type { DeepPartial, ObjectLiteral } from "../../../src"
 import { OrmUtils } from "../../../src/util/OrmUtils"
 
 describe(`OrmUtils`, () => {
+    describe("normalizeWhereCriteria", () => {
+        it("does not create inherited keys from __proto__", () => {
+            const criteria = JSON.parse(
+                `{"__proto__":{"polluted":true},"nested":{"__proto__":{"polluted":true},"safe":"value"}}`,
+            ) as ObjectLiteral
+            const normalized = OrmUtils.normalizeWhereCriteria(
+                criteria,
+            ) as ObjectLiteral
+            const nested = normalized.nested as ObjectLiteral
+
+            expect(Object.keys(normalized)).to.deep.equal(["nested"])
+            expect(Object.keys(nested)).to.deep.equal(["safe"])
+
+            const inheritedKeys: string[] = []
+            for (const key in normalized) {
+                inheritedKeys.push(key)
+            }
+            for (const key in nested) {
+                inheritedKeys.push(key)
+            }
+
+            expect(inheritedKeys).not.to.include("polluted")
+        })
+    })
+
     describe("parseSqlCheckExpression", () => {
         it("parses a simple CHECK constraint", () => {
             // Spaces between CHECK values

@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import type { DataSource } from "../../../src"
+import type { DataSource, FindOptionsWhere } from "../../../src"
 import { TypeORMError } from "../../../src"
 import {
     closeTestingConnections,
@@ -25,8 +25,10 @@ describe("entity manager > invalidWhereValuesBehavior with default behavior", ()
 
     it("should throw error for null values in EntityManager.delete() by default", async () => {
         for (const connection of dataSources) {
+            const criteria = { text: null } as unknown as FindOptionsWhere<Post>
+
             try {
-                await connection.manager.delete(Post, { text: null } as any)
+                await connection.manager.delete(Post, criteria)
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
@@ -37,10 +39,12 @@ describe("entity manager > invalidWhereValuesBehavior with default behavior", ()
 
     it("should throw error for undefined values in EntityManager.delete() by default", async () => {
         for (const connection of dataSources) {
+            const criteria = {
+                text: undefined,
+            } as unknown as FindOptionsWhere<Post>
+
             try {
-                await connection.manager.delete(Post, {
-                    text: undefined,
-                } as any)
+                await connection.manager.delete(Post, criteria)
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
