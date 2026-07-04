@@ -654,8 +654,12 @@ export class OrmUtils {
     }
 
     /**
-     * Recursively validates an object where clause, throwing for null/undefined
-     * based on the provided invalidWhereValuesBehavior config.
+     * Applies invalidWhereValuesBehavior to a where criteria. For each own key,
+     * a null/undefined value is thrown on, skipped, or converted to IsNull()
+     * according to the configured behavior. Plain FindOptionsWhere objects and
+     * entity class instances are validated alike (matching the read/find path);
+     * primitives and atomic value-types (Date, Buffer/Uint8Array) are returned
+     * untouched, as is the criteria when no behavior is configured.
      *
      * @param criteria
      * @param options

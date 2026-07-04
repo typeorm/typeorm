@@ -823,28 +823,17 @@ export class EntityManager {
     }
 
     /**
-     * Validates the where criteria for update/delete/softDelete/restore and
-     * normalizes object criteria.
-     *
-     * Primitive criteria (an id or id-array executed via `whereInIds`) is only
-     * rejected when wholly empty and is returned untouched — it is never an
-     * OR-branch, so it cannot render as `WHERE 1=1`, and it must not be
-     * normalized/over-validated (a populated id list is valid even if it
-     * contains "").
-     *
-     * Object criteria — plain `FindOptionsWhere` objects AND entity class
-     * instances alike — is normalized (applying invalidWhereValuesBehavior,
-     * consistent with the read/find path) and rejected when empty after
-     * normalization, including an array containing any empty OR-branch element
-     * (an empty element renders as an always-true `WHERE 1=1`).
-     *
-     * Shared by update/delete/softDelete/restore.
+     * Shared by update/delete/softDelete/restore. Object criteria is normalized
+     * via {@link OrmUtils.normalizeWhereCriteria}, then rejected if it would
+     * produce no predicate and therefore render as an always-true `WHERE 1=1` —
+     * an empty object or array, an empty OR-branch, a bare primitive inside an
+     * OR-array, or a keyless object. Primitive id criteria is returned untouched
+     * for `whereInIds` (rejected only when wholly empty).
      *
      * @param criteria the raw criteria passed to the operation
      * @param methodName the calling method, used in the error message
-     * @returns the criteria to build the query with, and whether it is
-     *   primitive (execute via `whereInIds`) or object criteria (execute via
-     *   `where`)
+     * @returns the criteria to build with, and whether to execute it via
+     *   `whereInIds` (primitive) or `where` (object)
      */
     protected normalizeAndValidateWhereCriteria(
         criteria: ObjectLiteral | ObjectLiteral[],

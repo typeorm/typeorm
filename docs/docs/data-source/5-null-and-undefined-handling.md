@@ -247,19 +247,7 @@ Use the dedicated `updateAll()` / `deleteAll()` methods when you intentionally w
 
 ### Entity class instances are validated too
 
-`invalidWhereValuesBehavior` applies to **entity class instances** as well as plain `FindOptionsWhere` objects. An entity instance's set columns are validated key-by-key, exactly as the read/find path validates them — so the same input produces the same result whether you read or write:
-
-```typescript
-const repository = dataSource.getRepository(Post)
-
-const post = new Post()
-post.title = "Title"
-post.text = null // a null column is validated, not silently passed through
-
-// With invalidWhereValuesBehavior.null = "throw":
-await repository.findBy(post) // throws "Null value encountered..."
-await repository.delete(post) // also throws — consistent with the read path
-```
+`invalidWhereValuesBehavior` applies to **entity class instances** as well as plain `FindOptionsWhere` objects. When a loaded entity is used as criteria for `update`, `delete`, `softDelete`, or `restore`, its set columns are validated key-by-key — exactly as the read/find path validates them. So an entity whose nullable column is `null` throws under `"throw"`, matches `IS NULL` under `"sql-null"`, or is skipped under `"ignore"`, identical to passing the equivalent plain object.
 
 Primitive criteria (`id` values) and atomic value-types such as `Date` and binary `Buffer`/`Uint8Array` are treated as whole values and are **not** traversed. To match SQL `NULL`, use the `IsNull()` operator (e.g. `{ text: IsNull() }`).
 
