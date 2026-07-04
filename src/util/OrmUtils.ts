@@ -389,25 +389,24 @@ export class OrmUtils {
      * (e.g. the only key was `__proto__`, or all keys were stripped under the
      * `ignore` invalidWhereValuesBehavior).
      *
+     * Array elements are inspected only one level deep (no recursion back into
+     * nested arrays), so a self-referential/cyclic array cannot cause unbounded
+     * recursion.
+     *
      * @param criteria
      */
     public static isCriteriaNullOrEmpty(criteria: unknown): boolean {
+        const isValueEmpty = (value: unknown): boolean =>
+            value === undefined ||
+            value === null ||
+            value === "" ||
+            (OrmUtils.isPlainObject(value) && Object.keys(value).length === 0)
+
         if (Array.isArray(criteria)) {
-            return (
-                criteria.length === 0 ||
-                criteria.some((element) =>
-                    OrmUtils.isCriteriaNullOrEmpty(element),
-                )
-            )
+            return criteria.length === 0 || criteria.some(isValueEmpty)
         }
 
-        return (
-            criteria === undefined ||
-            criteria === null ||
-            criteria === "" ||
-            (OrmUtils.isPlainObject(criteria) &&
-                Object.keys(criteria).length === 0)
-        )
+        return isValueEmpty(criteria)
     }
 
     /**

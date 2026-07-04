@@ -366,5 +366,13 @@ describe(`OrmUtils`, () => {
             ).to.equal(false)
             expect(OrmUtils.isCriteriaNullOrEmpty([1, 2, 3])).to.equal(false)
         })
+
+        it("does not recurse infinitely on a self-referential array", () => {
+            const cyclic: any[] = []
+            cyclic.push(cyclic)
+            // must not throw a RangeError (Maximum call stack size exceeded);
+            // a nested array element is not treated as empty
+            expect(OrmUtils.isCriteriaNullOrEmpty(cyclic)).to.equal(false)
+        })
     })
 })
