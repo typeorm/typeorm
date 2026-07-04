@@ -284,6 +284,28 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
         }
     })
 
+    it("rejects an empty entity class instance instead of deleting the whole table", async () => {
+        for (const connection of dataSources) {
+            const { post } = await prepareData(connection)
+
+            // an entity instance with no set columns has no own keys, so it
+            // would render as "WHERE 1=1" (empty condition) — reject it. An
+            // empty class instance is not caught by the plain-object emptiness
+            // check, so this guards the non-plain path explicitly.
+            try {
+                await connection.manager.delete(Post, new Post())
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Empty criteria(s)")
+            }
+
+            expect(
+                await connection.manager.findOneBy(Post, { id: post.id }),
+            ).to.not.equal(null)
+        }
+    })
+
     // A "__proto__"-only object normalizes to {} (the key is skipped by the
     // prototype-pollution guard). Without a post-normalization emptiness check,
     // .where({}) renders as "WHERE 1=1" and turns a targeted write into a
