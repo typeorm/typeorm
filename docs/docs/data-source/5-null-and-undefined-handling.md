@@ -255,8 +255,8 @@ post.title = "Title"
 post.text = null // a null column is validated, not silently passed through
 
 // With invalidWhereValuesBehavior.null = "throw":
-await manager.findBy(post) // throws "Null value encountered..."
-await manager.delete(post) // also throws — consistent with the read path
+await manager.findBy(Post, post) // throws "Null value encountered..."
+await manager.delete(Post, post) // also throws — consistent with the read path
 ```
 
 Primitive criteria (`id` values) and atomic value-types such as `Date` and binary `Buffer`/`Uint8Array` are treated as whole values and are **not** traversed. To match SQL `NULL`, use the `IsNull()` operator (e.g. `{ text: IsNull() }`).
