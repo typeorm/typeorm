@@ -823,6 +823,35 @@ export class EntityManager {
     }
 
     /**
+     * Normalizes plain-object where criteria (applying invalidWhereValuesBehavior)
+     * and rejects criteria that is empty after normalization. Normalization can
+     * reduce a non-empty criteria to an empty one (e.g. a "__proto__"-only
+     * object, or all keys stripped under the "ignore" behavior); an empty
+     * criteria would render as "WHERE 1=1" and affect the whole table, so it is
+     * not allowed. Shared by update/delete/softDelete/restore.
+     *
+     * @param criteria
+     * @param methodName
+     */
+    protected normalizeAndValidateWhereCriteria(
+        criteria: ObjectLiteral | ObjectLiteral[],
+        methodName: string,
+    ): ObjectLiteral | ObjectLiteral[] {
+        const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+            criteria,
+            this.dataSource.options.invalidWhereValuesBehavior,
+        )
+
+        if (OrmUtils.isCriteriaNullOrEmpty(normalizedCriteria)) {
+            throw new TypeORMError(
+                `Empty criteria(s) are not allowed for the ${methodName} method.`,
+            )
+        }
+
+        return normalizedCriteria
+    }
+
+    /**
      * Updates entity partially. Entity can be found by a given condition(s).
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient UPDATE query.
@@ -834,7 +863,7 @@ export class EntityManager {
      * @param partialEntity
      * @param options
      */
-    update<Entity extends ObjectLiteral>(
+    async update<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
         criteria:
             | string
@@ -849,22 +878,10 @@ export class EntityManager {
         partialEntity: QueryDeepPartialEntity<Entity>,
         options?: UpdateOptions,
     ): Promise<UpdateResult> {
-        const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+        const normalizedCriteria = this.normalizeAndValidateWhereCriteria(
             criteria as ObjectLiteral | ObjectLiteral[],
-            this.dataSource.options.invalidWhereValuesBehavior,
+            "update",
         )
-
-        // Validate emptiness after normalization: it can reduce a non-empty
-        // criteria to an empty one (e.g. a "__proto__"-only object, or all keys
-        // stripped under the "ignore" behavior), which would render as
-        // "WHERE 1=1" and update the whole table.
-        if (OrmUtils.isCriteriaNullOrEmpty(normalizedCriteria)) {
-            return Promise.reject(
-                new TypeORMError(
-                    `Empty criteria(s) are not allowed for the update method.`,
-                ),
-            )
-        }
 
         if (OrmUtils.isPrimitiveCriteria(criteria)) {
             const qb = this.createQueryBuilder()
@@ -926,7 +943,7 @@ export class EntityManager {
      * @param targetOrEntity
      * @param criteria
      */
-    delete<Entity extends ObjectLiteral>(
+    async delete<Entity extends ObjectLiteral>(
         targetOrEntity: EntityTarget<Entity>,
         criteria:
             | string
@@ -939,22 +956,10 @@ export class EntityManager {
             | ObjectId[]
             | any,
     ): Promise<DeleteResult> {
-        const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+        const normalizedCriteria = this.normalizeAndValidateWhereCriteria(
             criteria as ObjectLiteral | ObjectLiteral[],
-            this.dataSource.options.invalidWhereValuesBehavior,
+            "delete",
         )
-
-        // Validate emptiness after normalization: it can reduce a non-empty
-        // criteria to an empty one (e.g. a "__proto__"-only object, or all keys
-        // stripped under the "ignore" behavior), which would render as
-        // "WHERE 1=1" and delete the whole table.
-        if (OrmUtils.isCriteriaNullOrEmpty(normalizedCriteria)) {
-            return Promise.reject(
-                new TypeORMError(
-                    `Empty criteria(s) are not allowed for the delete method.`,
-                ),
-            )
-        }
 
         if (OrmUtils.isPrimitiveCriteria(criteria)) {
             return this.createQueryBuilder()
@@ -996,7 +1001,7 @@ export class EntityManager {
      * @param targetOrEntity
      * @param criteria
      */
-    softDelete<Entity extends ObjectLiteral>(
+    async softDelete<Entity extends ObjectLiteral>(
         targetOrEntity: EntityTarget<Entity>,
         criteria:
             | string
@@ -1009,22 +1014,10 @@ export class EntityManager {
             | ObjectId[]
             | any,
     ): Promise<UpdateResult> {
-        const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+        const normalizedCriteria = this.normalizeAndValidateWhereCriteria(
             criteria as ObjectLiteral | ObjectLiteral[],
-            this.dataSource.options.invalidWhereValuesBehavior,
+            "softDelete",
         )
-
-        // Validate emptiness after normalization: it can reduce a non-empty
-        // criteria to an empty one (e.g. a "__proto__"-only object, or all keys
-        // stripped under the "ignore" behavior), which would render as
-        // "WHERE 1=1" and soft-delete the whole table.
-        if (OrmUtils.isCriteriaNullOrEmpty(normalizedCriteria)) {
-            return Promise.reject(
-                new TypeORMError(
-                    `Empty criteria(s) are not allowed for the softDelete method.`,
-                ),
-            )
-        }
 
         if (OrmUtils.isPrimitiveCriteria(criteria)) {
             return this.createQueryBuilder()
@@ -1051,7 +1044,7 @@ export class EntityManager {
      * @param targetOrEntity
      * @param criteria
      */
-    restore<Entity extends ObjectLiteral>(
+    async restore<Entity extends ObjectLiteral>(
         targetOrEntity: EntityTarget<Entity>,
         criteria:
             | string
@@ -1064,22 +1057,10 @@ export class EntityManager {
             | ObjectId[]
             | any,
     ): Promise<UpdateResult> {
-        const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+        const normalizedCriteria = this.normalizeAndValidateWhereCriteria(
             criteria as ObjectLiteral | ObjectLiteral[],
-            this.dataSource.options.invalidWhereValuesBehavior,
+            "restore",
         )
-
-        // Validate emptiness after normalization: it can reduce a non-empty
-        // criteria to an empty one (e.g. a "__proto__"-only object, or all keys
-        // stripped under the "ignore" behavior), which would render as
-        // "WHERE 1=1" and restore the whole table.
-        if (OrmUtils.isCriteriaNullOrEmpty(normalizedCriteria)) {
-            return Promise.reject(
-                new TypeORMError(
-                    `Empty criteria(s) are not allowed for the restore method.`,
-                ),
-            )
-        }
 
         if (OrmUtils.isPrimitiveCriteria(criteria)) {
             return this.createQueryBuilder()
