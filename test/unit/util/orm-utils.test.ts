@@ -375,6 +375,12 @@ describe(`OrmUtils`, () => {
             expect(OrmUtils.isCriteriaNullOrEmpty([{ id: 1 }, {}])).to.equal(
                 true,
             )
+            // an empty-array element is an empty OR-branch too
+            expect(OrmUtils.isCriteriaNullOrEmpty([[]])).to.equal(true)
+            expect(OrmUtils.isCriteriaNullOrEmpty([{ id: 1 }, []])).to.equal(
+                true,
+            )
+            expect(OrmUtils.isCriteriaNullOrEmpty([null])).to.equal(true)
         })
 
         it("treats an array whose every element is non-empty as not empty", () => {

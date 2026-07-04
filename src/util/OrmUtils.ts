@@ -396,10 +396,16 @@ export class OrmUtils {
      * @param criteria
      */
     public static isCriteriaNullOrEmpty(criteria: unknown): boolean {
+        // A single array element is empty when it is null/undefined/"", an
+        // empty plain object, or an empty array. The array check is a plain
+        // length test (not a recursive call), so a self-referential/cyclic
+        // element — whose length is non-zero — cannot trigger unbounded
+        // recursion.
         const isValueEmpty = (value: unknown): boolean =>
             value === undefined ||
             value === null ||
             value === "" ||
+            (Array.isArray(value) && value.length === 0) ||
             (OrmUtils.isPlainObject(value) && Object.keys(value).length === 0)
 
         if (Array.isArray(criteria)) {
