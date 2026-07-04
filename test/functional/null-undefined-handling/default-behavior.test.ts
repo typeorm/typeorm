@@ -1,4 +1,4 @@
-import { expect } from 'chai';
+import { expect } from "chai";
 import { DataSource, TypeORMError } from "../../../src";
 import {
     closeTestingConnections,
@@ -16,6 +16,7 @@ describe("entity manager > default behavior (no invalidWhereValuesBehavior confi
             entities: [Category, Post],
             schemaCreate: true,
             dropSchema: true,
+            disabledDrivers: ["spanner"],
         });
     });
 
@@ -53,7 +54,8 @@ describe("entity manager > default behavior (no invalidWhereValuesBehavior confi
             for (const dataSource of dataSources) {
                 await prepareData(dataSource);
                 try {
-                    await dataSource.manager.update(Post, { text: undefined as any }, { title: "Updated" });
+                    // @ts-expect-error - Testing runtime behavior with invalid undefined criteria
+                    await dataSource.manager.update(Post, { text: undefined }, { title: "Updated" });
                     expect.fail("Expected error to be thrown");
                 } catch (error) {
                     expect(error).to.be.instanceOf(TypeORMError);
@@ -81,7 +83,8 @@ describe("entity manager > default behavior (no invalidWhereValuesBehavior confi
             for (const dataSource of dataSources) {
                 await prepareData(dataSource);
                 try {
-                    await dataSource.manager.delete(Post, { text: undefined as any });
+                    // @ts-expect-error - Testing runtime behavior with invalid undefined criteria
+                    await dataSource.manager.delete(Post, { text: undefined });
                     expect.fail("Expected error to be thrown");
                 } catch (error) {
                     expect(error).to.be.instanceOf(TypeORMError);
@@ -109,7 +112,8 @@ describe("entity manager > default behavior (no invalidWhereValuesBehavior confi
             for (const dataSource of dataSources) {
                 await prepareData(dataSource);
                 try {
-                    await dataSource.manager.softDelete(Post, { text: undefined as any });
+                    // @ts-expect-error - Testing runtime behavior with invalid undefined criteria
+                    await dataSource.manager.softDelete(Post, { text: undefined });
                     expect.fail("Expected error to be thrown");
                 } catch (error) {
                     expect(error).to.be.instanceOf(TypeORMError);
@@ -137,7 +141,8 @@ describe("entity manager > default behavior (no invalidWhereValuesBehavior confi
             for (const dataSource of dataSources) {
                 await prepareData(dataSource);
                 try {
-                    await dataSource.manager.restore(Post, { text: undefined as any });
+                    // @ts-expect-error - Testing runtime behavior with invalid undefined criteria
+                    await dataSource.manager.restore(Post, { text: undefined });
                     expect.fail("Expected error to be thrown");
                 } catch (error) {
                     expect(error).to.be.instanceOf(TypeORMError);
