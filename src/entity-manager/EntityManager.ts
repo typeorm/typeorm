@@ -840,8 +840,11 @@ export class EntityManager {
      *
      * Shared by update/delete/softDelete/restore.
      *
-     * @param criteria
-     * @param methodName
+     * @param criteria the raw criteria passed to the operation
+     * @param methodName the calling method, used in the error message
+     * @returns the criteria to build the query with, and whether it is
+     *   primitive (execute via `whereInIds`) or object criteria (execute via
+     *   `where`)
      */
     protected normalizeAndValidateWhereCriteria(
         criteria: ObjectLiteral | ObjectLiteral[],
