@@ -662,8 +662,9 @@ export class OrmUtils {
         options?: InvalidFindOptionsWhereBehavior,
         path?: string,
     ): ObjectLiteral | ObjectLiteral[] {
-        if (!options) {
-            return criteria
+        const effectiveOptions = options ?? {
+            null: "throw",
+            undefined: "throw",
         }
 
         // multiple criteria are possible at the top level
@@ -672,18 +673,18 @@ export class OrmUtils {
                 (criterion, index): ObjectLiteral =>
                     OrmUtils.normalizeWhereCriteria(
                         criterion,
-                        options,
+                        effectiveOptions,
                         String(index),
                     ),
             )
         }
 
-        const result: ObjectLiteral = {}
+        const result: ObjectLiteral = Object.create(null)
         for (const [key, value] of Object.entries(criteria)) {
             const propertyPath = path ? `${path}.${key}` : key
 
             if (value === undefined) {
-                const behavior = options?.undefined ?? "throw"
+                const behavior = effectiveOptions.undefined ?? "throw"
                 if (behavior === "throw") {
                     throw new TypeORMError(
                         `Undefined value encountered in property '${propertyPath}' of a where condition. ` +
@@ -692,7 +693,7 @@ export class OrmUtils {
                 }
                 // else: "ignore" — skip this key
             } else if (value === null) {
-                const behavior = options?.null ?? "throw"
+                const behavior = effectiveOptions.null ?? "throw"
                 if (behavior === "throw") {
                     throw new TypeORMError(
                         `Null value encountered in property '${propertyPath}' of a where condition. ` +
@@ -706,7 +707,7 @@ export class OrmUtils {
             } else if (OrmUtils.isPlainObject(value)) {
                 const nested = OrmUtils.normalizeWhereCriteria(
                     value,
-                    options,
+                    effectiveOptions,
                     propertyPath,
                 )
                 if (Object.keys(nested).length > 0) {

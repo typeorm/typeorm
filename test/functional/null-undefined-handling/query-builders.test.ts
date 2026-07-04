@@ -238,6 +238,62 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
     })
 })
 
+describe("entity manager > invalidWhereValuesBehavior defaults", () => {
+    let dataSources: DataSource[]
+
+    before(async () => {
+        dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
+            entities: [Post, Category],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
+    after(() => closeTestingConnections(dataSources))
+
+    async function expectAllWriteMethodsToReject(
+        criteria: Record<string, unknown>,
+        message: string,
+    ) {
+        for (const connection of dataSources) {
+            const operations: Array<[string, () => Promise<unknown>]> = [
+                [
+                    "update",
+                    () =>
+                        connection.manager.update(Post, criteria, {
+                            title: "Updated",
+                        }),
+                ],
+                ["delete", () => connection.manager.delete(Post, criteria)],
+                [
+                    "softDelete",
+                    () => connection.manager.softDelete(Post, criteria),
+                ],
+                ["restore", () => connection.manager.restore(Post, criteria)],
+            ]
+
+            for (const [method, execute] of operations) {
+                try {
+                    await execute()
+                    expect.fail(`Expected ${method} to reject`)
+                } catch (error) {
+                    expect(error).to.be.instanceOf(TypeORMError)
+                    expect(error.message).to.include(message)
+                }
+            }
+        }
+    }
+
+    it("throws for undefined criteria without explicit configuration", () =>
+        expectAllWriteMethodsToReject(
+            { text: undefined },
+            "Undefined value encountered",
+        ))
+
+    it("throws for null criteria without explicit configuration", () =>
+        expectAllWriteMethodsToReject({ text: null }, "Null value encountered"))
+})
+
 describe("entity manager > invalidWhereValuesBehavior with sql-null", () => {
     let dataSources: DataSource[]
 

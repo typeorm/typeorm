@@ -270,4 +270,30 @@ describe(`OrmUtils`, () => {
             ).to.equal(false)
         })
     })
+
+    describe("normalizeWhereCriteria", () => {
+        it("uses throw behavior by default", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ value: undefined }),
+            ).to.throw("Undefined value encountered")
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ value: null }),
+            ).to.throw("Null value encountered")
+        })
+
+        it("copies __proto__ as an own property without changing the prototype", () => {
+            const criteria = JSON.parse(
+                '{"__proto__":{"polluted":true},"id":1}',
+            )
+            const result = OrmUtils.normalizeWhereCriteria(criteria)
+            const normalized = result as Record<string, unknown>
+
+            expect(Object.getPrototypeOf(result)).to.equal(null)
+            expect(Object.hasOwn(result, "__proto__")).to.equal(true)
+            expect(normalized["__proto__"]).to.deep.equal({ polluted: true })
+            expect(({} as Record<string, unknown>)["polluted"]).to.equal(
+                undefined,
+            )
+        })
+    })
 })
