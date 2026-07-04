@@ -838,7 +838,12 @@ export class EntityManager {
     protected normalizeAndValidateWhereCriteria(
         criteria: ObjectLiteral | ObjectLiteral[],
         methodName: string,
-    ): { criteria: ObjectLiteral | ObjectLiteral[]; isPrimitive: boolean } {
+    ): {
+        // `any`: for the primitive branch this is the raw id/id-array passed to
+        // `whereInIds`; for the object branch it is the normalized where object
+        criteria: any
+        isPrimitive: boolean
+    } {
         const rejectEmpty = () => {
             throw new TypeORMError(
                 `Empty criteria(s) are not allowed for the ${methodName} method.`,
