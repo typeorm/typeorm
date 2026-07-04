@@ -823,12 +823,22 @@ export class EntityManager {
     }
 
     /**
-     * Normalizes plain-object where criteria (applying invalidWhereValuesBehavior)
-     * and rejects criteria that is empty after normalization. Normalization can
-     * reduce a non-empty criteria to an empty one (e.g. a "__proto__"-only
-     * object, or all keys stripped under the "ignore" behavior); an empty
-     * criteria would render as "WHERE 1=1" and affect the whole table, so it is
-     * not allowed. Shared by update/delete/softDelete/restore.
+     * Validates the where criteria for update/delete/softDelete/restore and
+     * normalizes object criteria.
+     *
+     * Primitive criteria (an id or id-array executed via `whereInIds`) is only
+     * rejected when wholly empty and is returned untouched — it is never an
+     * OR-branch, so it cannot render as `WHERE 1=1`, and it must not be
+     * normalized/over-validated (a populated id list is valid even if it
+     * contains "").
+     *
+     * Object criteria — plain `FindOptionsWhere` objects AND entity class
+     * instances alike — is normalized (applying invalidWhereValuesBehavior,
+     * consistent with the read/find path) and rejected when empty after
+     * normalization, including an array containing any empty OR-branch element
+     * (an empty element renders as an always-true `WHERE 1=1`).
+     *
+     * Shared by update/delete/softDelete/restore.
      *
      * @param criteria
      * @param methodName
@@ -836,19 +846,32 @@ export class EntityManager {
     protected normalizeAndValidateWhereCriteria(
         criteria: ObjectLiteral | ObjectLiteral[],
         methodName: string,
-    ): ObjectLiteral | ObjectLiteral[] {
-        const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
-            criteria,
-            this.dataSource.options.invalidWhereValuesBehavior,
-        )
-
-        if (OrmUtils.isCriteriaNullOrEmpty(normalizedCriteria)) {
+    ): { criteria: ObjectLiteral | ObjectLiteral[]; isPrimitive: boolean } {
+        const rejectEmpty = () => {
             throw new TypeORMError(
                 `Empty criteria(s) are not allowed for the ${methodName} method.`,
             )
         }
 
-        return normalizedCriteria
+        if (OrmUtils.isPrimitiveCriteria(criteria)) {
+            if (OrmUtils.isCriteriaNullOrEmpty(criteria)) rejectEmpty()
+            return { criteria, isPrimitive: true }
+        }
+
+        const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+            criteria,
+            this.dataSource.options.invalidWhereValuesBehavior,
+        )
+
+        const isEmpty = Array.isArray(normalizedCriteria)
+            ? normalizedCriteria.length === 0 ||
+              normalizedCriteria.some((element) =>
+                  OrmUtils.isCriteriaNullOrEmpty(element),
+              )
+            : OrmUtils.isCriteriaNullOrEmpty(normalizedCriteria)
+        if (isEmpty) rejectEmpty()
+
+        return { criteria: normalizedCriteria, isPrimitive: false }
     }
 
     /**
@@ -878,34 +901,24 @@ export class EntityManager {
         partialEntity: QueryDeepPartialEntity<Entity>,
         options?: UpdateOptions,
     ): Promise<UpdateResult> {
-        const normalizedCriteria = this.normalizeAndValidateWhereCriteria(
-            criteria as ObjectLiteral | ObjectLiteral[],
-            "update",
-        )
+        const { criteria: whereCriteria, isPrimitive } =
+            this.normalizeAndValidateWhereCriteria(
+                criteria as ObjectLiteral | ObjectLiteral[],
+                "update",
+            )
 
-        if (OrmUtils.isPrimitiveCriteria(criteria)) {
-            const qb = this.createQueryBuilder()
-                .update(target)
-                .set(partialEntity)
-                .whereInIds(criteria)
-
-            if (options?.returning !== undefined) {
-                qb.returning(options.returning)
-            }
-
-            return qb.execute()
+        const qb = this.createQueryBuilder().update(target).set(partialEntity)
+        if (isPrimitive) {
+            qb.whereInIds(whereCriteria)
         } else {
-            const qb = this.createQueryBuilder()
-                .update(target)
-                .set(partialEntity)
-                .where(normalizedCriteria)
-
-            if (options?.returning !== undefined) {
-                qb.returning(options.returning)
-            }
-
-            return qb.execute()
+            qb.where(whereCriteria)
         }
+
+        if (options?.returning !== undefined) {
+            qb.returning(options.returning)
+        }
+
+        return qb.execute()
     }
 
     /**
@@ -956,24 +969,16 @@ export class EntityManager {
             | ObjectId[]
             | any,
     ): Promise<DeleteResult> {
-        const normalizedCriteria = this.normalizeAndValidateWhereCriteria(
-            criteria as ObjectLiteral | ObjectLiteral[],
-            "delete",
-        )
+        const { criteria: whereCriteria, isPrimitive } =
+            this.normalizeAndValidateWhereCriteria(
+                criteria as ObjectLiteral | ObjectLiteral[],
+                "delete",
+            )
 
-        if (OrmUtils.isPrimitiveCriteria(criteria)) {
-            return this.createQueryBuilder()
-                .delete()
-                .from(targetOrEntity)
-                .whereInIds(criteria)
-                .execute()
-        } else {
-            return this.createQueryBuilder()
-                .delete()
-                .from(targetOrEntity)
-                .where(normalizedCriteria)
-                .execute()
-        }
+        const qb = this.createQueryBuilder().delete().from(targetOrEntity)
+        return (
+            isPrimitive ? qb.whereInIds(whereCriteria) : qb.where(whereCriteria)
+        ).execute()
     }
 
     /**
@@ -1014,24 +1019,16 @@ export class EntityManager {
             | ObjectId[]
             | any,
     ): Promise<UpdateResult> {
-        const normalizedCriteria = this.normalizeAndValidateWhereCriteria(
-            criteria as ObjectLiteral | ObjectLiteral[],
-            "softDelete",
-        )
+        const { criteria: whereCriteria, isPrimitive } =
+            this.normalizeAndValidateWhereCriteria(
+                criteria as ObjectLiteral | ObjectLiteral[],
+                "softDelete",
+            )
 
-        if (OrmUtils.isPrimitiveCriteria(criteria)) {
-            return this.createQueryBuilder()
-                .softDelete()
-                .from(targetOrEntity)
-                .whereInIds(criteria)
-                .execute()
-        } else {
-            return this.createQueryBuilder()
-                .softDelete()
-                .from(targetOrEntity)
-                .where(normalizedCriteria)
-                .execute()
-        }
+        const qb = this.createQueryBuilder().softDelete().from(targetOrEntity)
+        return (
+            isPrimitive ? qb.whereInIds(whereCriteria) : qb.where(whereCriteria)
+        ).execute()
     }
 
     /**
@@ -1057,24 +1054,16 @@ export class EntityManager {
             | ObjectId[]
             | any,
     ): Promise<UpdateResult> {
-        const normalizedCriteria = this.normalizeAndValidateWhereCriteria(
-            criteria as ObjectLiteral | ObjectLiteral[],
-            "restore",
-        )
+        const { criteria: whereCriteria, isPrimitive } =
+            this.normalizeAndValidateWhereCriteria(
+                criteria as ObjectLiteral | ObjectLiteral[],
+                "restore",
+            )
 
-        if (OrmUtils.isPrimitiveCriteria(criteria)) {
-            return this.createQueryBuilder()
-                .restore()
-                .from(targetOrEntity)
-                .whereInIds(criteria)
-                .execute()
-        } else {
-            return this.createQueryBuilder()
-                .restore()
-                .from(targetOrEntity)
-                .where(normalizedCriteria)
-                .execute()
-        }
+        const qb = this.createQueryBuilder().restore().from(targetOrEntity)
+        return (
+            isPrimitive ? qb.whereInIds(whereCriteria) : qb.where(whereCriteria)
+        ).execute()
     }
 
     /**

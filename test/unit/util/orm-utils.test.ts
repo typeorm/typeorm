@@ -368,34 +368,27 @@ describe(`OrmUtils`, () => {
             expect(OrmUtils.isCriteriaNullOrEmpty([])).to.equal(true)
         })
 
-        it("treats an array containing any empty element as empty", () => {
-            // a where array is OR-ed, so an empty element renders as an
-            // always-true "1=1" branch that matches every row
-            expect(OrmUtils.isCriteriaNullOrEmpty([{}])).to.equal(true)
-            expect(OrmUtils.isCriteriaNullOrEmpty([{ id: 1 }, {}])).to.equal(
-                true,
-            )
-            // an empty-array element is an empty OR-branch too
-            expect(OrmUtils.isCriteriaNullOrEmpty([[]])).to.equal(true)
-            expect(OrmUtils.isCriteriaNullOrEmpty([{ id: 1 }, []])).to.equal(
-                true,
-            )
-            expect(OrmUtils.isCriteriaNullOrEmpty([null])).to.equal(true)
-        })
-
-        it("treats an array whose every element is non-empty as not empty", () => {
+        it("only checks whole emptiness, not per-element emptiness", () => {
+            // isCriteriaNullOrEmpty is deliberately shallow: a non-empty array
+            // is not empty regardless of its elements. Per-element OR-branch
+            // emptiness (e.g. [{}] / [[]]) is enforced where object criteria is
+            // validated (EntityManager.normalizeAndValidateWhereCriteria), not
+            // here — this keeps it usable for primitive id-arrays and cheap.
+            expect(OrmUtils.isCriteriaNullOrEmpty([{}])).to.equal(false)
+            expect(OrmUtils.isCriteriaNullOrEmpty([[]])).to.equal(false)
             expect(OrmUtils.isCriteriaNullOrEmpty([{ id: 1 }])).to.equal(false)
-            expect(
-                OrmUtils.isCriteriaNullOrEmpty([{ id: 1 }, { id: 2 }]),
-            ).to.equal(false)
             expect(OrmUtils.isCriteriaNullOrEmpty([1, 2, 3])).to.equal(false)
+            // a populated primitive id-list containing "" is NOT empty
+            expect(OrmUtils.isCriteriaNullOrEmpty(["a", "", "c"])).to.equal(
+                false,
+            )
         })
 
-        it("does not recurse infinitely on a self-referential array", () => {
+        it("does not recurse on a self-referential array", () => {
             const cyclic: any[] = []
             cyclic.push(cyclic)
-            // must not throw a RangeError (Maximum call stack size exceeded);
-            // a nested array element is not treated as empty
+            // shallow check — must not throw a RangeError and a non-empty
+            // (self-referential) array is not treated as empty
             expect(OrmUtils.isCriteriaNullOrEmpty(cyclic)).to.equal(false)
         })
     })
