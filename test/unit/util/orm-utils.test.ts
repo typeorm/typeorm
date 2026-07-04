@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import { runInNewContext } from "node:vm"
-import type { DeepPartial } from "../../../src"
+import { TypeORMError, type DeepPartial } from "../../../src"
 import { OrmUtils } from "../../../src/util/OrmUtils"
 
 describe(`OrmUtils`, () => {
@@ -268,6 +268,51 @@ describe(`OrmUtils`, () => {
                     new Uint8Array([1, 2, 4]),
                 ),
             ).to.equal(false)
+        })
+    })
+
+    describe("normalizeWhereCriteria", () => {
+        it("should throw for undefined values by default", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ text: undefined }),
+            ).to.throw(
+                TypeORMError,
+                "Undefined value encountered in property 'text' of a where condition.",
+            )
+        })
+
+        it("should throw for null values by default", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ text: null }),
+            ).to.throw(
+                TypeORMError,
+                "Null value encountered in property 'text' of a where condition.",
+            )
+        })
+
+        it("should throw with indexed paths for top-level criteria arrays by default", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria([{ text: undefined }]),
+            ).to.throw(
+                TypeORMError,
+                "Undefined value encountered in property '0.text' of a where condition.",
+            )
+        })
+
+        it("should still honor explicit ignore behavior", () => {
+            expect(
+                OrmUtils.normalizeWhereCriteria(
+                    {
+                        title: "Post #1",
+                        text: undefined,
+                        category: null,
+                    },
+                    {
+                        undefined: "ignore",
+                        null: "ignore",
+                    },
+                ),
+            ).to.deep.equal({ title: "Post #1" })
         })
     })
 })
