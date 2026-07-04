@@ -250,13 +250,15 @@ Use the dedicated `updateAll()` / `deleteAll()` methods when you intentionally w
 `invalidWhereValuesBehavior` applies to **entity class instances** as well as plain `FindOptionsWhere` objects. An entity instance's set columns are validated key-by-key, exactly as the read/find path validates them — so the same input produces the same result whether you read or write:
 
 ```typescript
+const repository = dataSource.getRepository(Post)
+
 const post = new Post()
 post.title = "Title"
 post.text = null // a null column is validated, not silently passed through
 
 // With invalidWhereValuesBehavior.null = "throw":
-await manager.findBy(Post, post) // throws "Null value encountered..."
-await manager.delete(Post, post) // also throws — consistent with the read path
+await repository.findBy(post) // throws "Null value encountered..."
+await repository.delete(post) // also throws — consistent with the read path
 ```
 
 Primitive criteria (`id` values) and atomic value-types such as `Date` and binary `Buffer`/`Uint8Array` are treated as whole values and are **not** traversed. To match SQL `NULL`, use the `IsNull()` operator (e.g. `{ text: IsNull() }`).
