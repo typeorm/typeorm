@@ -866,19 +866,21 @@ export class EntityManager {
             this.dataSource.options.invalidWhereValuesBehavior,
         )
 
-        // An object criterion produces no WHERE predicate — and therefore
-        // renders as an always-true `1=1` — when it has no own keys. This must
-        // catch non-plain objects too: an empty entity class instance (e.g.
-        // `new Post()`) is not caught by isCriteriaNullOrEmpty (which only
-        // treats empty *plain* objects as empty), so without this it would slip
-        // through to `.where()` as an unfiltered write. Value-type criteria
-        // (Date, Buffer) are executed via the primitive branch and never reach
-        // here, so a key-count check is safe.
+        // On the object-criteria path, `.where()` builds a predicate only from
+        // an object's own keys. Anything else yields an empty predicate list
+        // that renders as an always-true `1=1`, so a criterion is unsafe unless
+        // it is a non-empty object. This must reject:
+        //  - primitives (a bare number/string in a mixed OR-array like
+        //    `[1, { id: 2 }]` — `.where(1)` produces no predicate),
+        //  - empty plain objects (`{}`), empty arrays (`[]`), and
+        //  - empty non-plain objects, e.g. an empty entity instance
+        //    (`new Post()`), which isCriteriaNullOrEmpty does not catch.
+        // Value-type criteria (Date, Buffer) execute via the primitive branch
+        // and never reach here.
         const rendersNoPredicate = (value: unknown): boolean =>
             value === null ||
-            value === undefined ||
-            value === "" ||
-            (typeof value === "object" && Object.keys(value).length === 0)
+            typeof value !== "object" ||
+            Object.keys(value).length === 0
 
         const isEmpty = Array.isArray(normalizedCriteria)
             ? normalizedCriteria.length === 0 ||

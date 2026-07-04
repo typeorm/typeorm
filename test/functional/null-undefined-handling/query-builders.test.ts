@@ -420,6 +420,19 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
                 expect(error.message).to.include("Empty criteria(s)")
             }
 
+            // a bare primitive mixed into an OR-array renders as an always-true
+            // branch (`.where(1)` has no predicate) — `[1, { id }]` => 1=1 OR ...
+            try {
+                await connection.manager.delete(Post, [
+                    1,
+                    { id: post.id },
+                ] as any)
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Empty criteria(s)")
+            }
+
             expect(
                 await connection.manager.findOneBy(Post, { id: post.id }),
             ).to.not.equal(null)
