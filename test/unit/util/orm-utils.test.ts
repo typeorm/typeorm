@@ -294,21 +294,39 @@ describe(`OrmUtils`, () => {
             expect(result).to.deep.equal({ name: "Alice" })
         })
 
-        it("passes entity class instances through unchanged (not validated)", () => {
+        it("validates entity class instances like plain objects (consistent with find)", () => {
             class User {
                 id = 1
                 name = "Alice"
                 parentId: number | null = null
-                deletedAt: Date | undefined = undefined
             }
-            const entity = new User()
-            // even with throw configured, an entity instance is not validated:
-            // its set columns (including a null FK) are part of the where clause.
-            const result = OrmUtils.normalizeWhereCriteria(entity, {
-                null: "throw",
-                undefined: "throw",
-            })
-            expect(result).to.equal(entity)
+            // an entity instance is validated key-by-key, exactly as the read
+            // path (SelectQueryBuilder.buildWhere) validates it — a null column
+            // throws under "throw"
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria(new User(), { null: "throw" }),
+            ).to.throw(/Null value.*'parentId'/)
+
+            // under "ignore" the null key is stripped, leaving the real columns
+            expect(
+                OrmUtils.normalizeWhereCriteria(new User(), { null: "ignore" }),
+            ).to.deep.equal({ id: 1, name: "Alice" })
+        })
+
+        it("passes primitives and atomic value-types (Date, Uint8Array) through unchanged", () => {
+            const date = new Date()
+            const bytes = new Uint8Array([1, 2, 3])
+            expect(
+                OrmUtils.normalizeWhereCriteria(date as any, { null: "throw" }),
+            ).to.equal(date)
+            expect(
+                OrmUtils.normalizeWhereCriteria(bytes as any, {
+                    null: "throw",
+                }),
+            ).to.equal(bytes)
+            expect(
+                OrmUtils.normalizeWhereCriteria(5 as any, { null: "throw" }),
+            ).to.equal(5)
         })
 
         it("ignores the __proto__ key when iterating", () => {

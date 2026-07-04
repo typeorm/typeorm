@@ -245,20 +245,21 @@ await manager.delete(Post, { text: null })
 Use the dedicated `updateAll()` / `deleteAll()` methods when you intentionally want to affect every row.
 :::
 
-### Entity class instances are passed through unchanged
+### Entity class instances are validated too
 
-`invalidWhereValuesBehavior` only applies to plain object (`FindOptionsWhere`) criteria. When you pass an **entity class instance** as criteria to `update` / `delete` / `softDelete` / `restore`, its set columns — including nullable columns that happen to be `null` — are passed through to the `WHERE` clause unchanged, and are **not** validated, transformed, or stripped:
+`invalidWhereValuesBehavior` applies to **entity class instances** as well as plain `FindOptionsWhere` objects. An entity instance's set columns are validated key-by-key, exactly as the read/find path validates them — so the same input produces the same result whether you read or write:
 
 ```typescript
 const post = new Post()
 post.title = "Title"
-post.text = null // a null column on an entity instance is NOT converted or rejected
+post.text = null // a null column is validated, not silently passed through
 
-// Renders `WHERE title = 'Title' AND text = NULL`; `text = NULL` matches nothing
-await manager.delete(Post, post)
+// With invalidWhereValuesBehavior.null = "throw":
+await manager.findBy(post) // throws "Null value encountered..."
+await manager.delete(post) // also throws — consistent with the read path
 ```
 
-If you need `null` handling for such a value, pass a plain object with the `IsNull()` operator (e.g. `{ text: IsNull() }`) instead of an entity instance.
+Primitive criteria (`id` values) and atomic value-types such as `Date` and binary `Buffer`/`Uint8Array` are treated as whole values and are **not** traversed. To match SQL `NULL`, use the `IsNull()` operator (e.g. `{ text: IsNull() }`).
 
 ### QueryBuilder with setFindOptions
 

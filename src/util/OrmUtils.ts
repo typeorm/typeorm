@@ -692,11 +692,20 @@ export class OrmUtils {
             )
         }
 
-        // Entity class instances (and other non-plain objects) are passed through
-        // unchanged: their set columns — including nullable foreign keys that happen
-        // to be null — are intentionally part of the where condition and must not be
-        // validated or stripped. Only plain objects (FindOptionsWhere) are normalized.
-        if (!OrmUtils.isPlainObject(criteria)) {
+        // Primitives and atomic value-type criteria (Date, binary Buffer/
+        // Uint8Array) are whole values, not bags of column conditions, so they
+        // are passed through untouched. Everything else with own keys — plain
+        // FindOptionsWhere objects AND entity class instances alike — is
+        // validated key-by-key, so the write path (update/delete/softDelete/
+        // restore) enforces invalidWhereValuesBehavior consistently with the
+        // read/find path (SelectQueryBuilder.buildWhere), which validates every
+        // key regardless of whether it was given a plain object or an entity.
+        if (
+            criteria === null ||
+            typeof criteria !== "object" ||
+            criteria instanceof Date ||
+            isUint8Array(criteria)
+        ) {
             return criteria
         }
 

@@ -237,12 +237,11 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
         }
     })
 
-    it("passes entity class instances through unchanged instead of validating them", async () => {
+    it("validates entity class instances against invalidWhereValuesBehavior (consistent with find)", async () => {
         for (const connection of dataSources) {
-            // An entity class instance is not validated against
-            // invalidWhereValuesBehavior: its set columns are passed straight
-            // through to the WHERE, exactly as a raw QueryBuilder .where(entity)
-            // would render them.
+            // An entity class instance is validated key-by-key, exactly as the
+            // read/find path validates it — the write path no longer bypasses
+            // invalidWhereValuesBehavior for entity instances.
 
             // a fully populated instance deletes its matching row as usual
             const withText = new Post()
@@ -263,22 +262,22 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
                 await connection.manager.findOneBy(Post, { id: withText.id }),
             ).to.equal(null)
 
-            // a null nullable column does NOT throw (the instance is passed
-            // through, not validated). It renders as `text = NULL`, which matches
-            // nothing — matching a SQL NULL requires the IsNull() operator — so
-            // the delete is a deliberate no-op and the row remains. The key
-            // guarantee here is that no "Null value encountered" error is raised
-            // for the instance.
+            // an instance whose nullable column is null now throws under
+            // "throw" (previously it silently passed through as `text = NULL`),
+            // matching what find()/findBy() does with the same input
             const withNull = new Post()
             withNull.title = "With Null"
             withNull.text = null
             await connection.manager.save(withNull)
 
-            // would throw here if the instance were validated under this config
-            const nullResult = await connection.manager.delete(Post, withNull)
-            if (typeof nullResult.affected === "number") {
-                expect(nullResult.affected).to.equal(0)
+            try {
+                await connection.manager.delete(Post, withNull)
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Null value encountered")
             }
+            // the delete was rejected, so the row is untouched
             expect(
                 await connection.manager.findOneBy(Post, { id: withNull.id }),
             ).to.not.equal(null)
