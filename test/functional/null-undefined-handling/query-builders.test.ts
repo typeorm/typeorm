@@ -250,7 +250,15 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             withText.text = "hello"
             await connection.manager.save(withText)
 
-            await connection.manager.delete(Post, withText)
+            const populatedResult = await connection.manager.delete(
+                Post,
+                withText,
+            )
+            // the delete targets exactly this row — assert the real effect, not
+            // merely the absence of an error (drivers that report affected)
+            if (typeof populatedResult.affected === "number") {
+                expect(populatedResult.affected).to.equal(1)
+            }
             expect(
                 await connection.manager.findOneBy(Post, { id: withText.id }),
             ).to.equal(null)
@@ -258,15 +266,19 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             // a null nullable column does NOT throw (the instance is passed
             // through, not validated). It renders as `text = NULL`, which matches
             // nothing — matching a SQL NULL requires the IsNull() operator — so
-            // the delete is a no-op and the row remains. The key guarantee here is
-            // that no "Null value encountered" error is raised for the instance.
+            // the delete is a deliberate no-op and the row remains. The key
+            // guarantee here is that no "Null value encountered" error is raised
+            // for the instance.
             const withNull = new Post()
             withNull.title = "With Null"
             withNull.text = null
             await connection.manager.save(withNull)
 
             // would throw here if the instance were validated under this config
-            await connection.manager.delete(Post, withNull)
+            const nullResult = await connection.manager.delete(Post, withNull)
+            if (typeof nullResult.affected === "number") {
+                expect(nullResult.affected).to.equal(0)
+            }
             expect(
                 await connection.manager.findOneBy(Post, { id: withNull.id }),
             ).to.not.equal(null)

@@ -228,6 +228,38 @@ await manager.delete(Post, { text: null }) // Respects invalidWhereValuesBehavio
 await manager.softDelete(Post, { text: null }) // Respects invalidWhereValuesBehavior
 ```
 
+:::warning
+**Empty criteria are rejected.** `update`, `delete`, `softDelete`, and `restore` require non-empty criteria — an empty condition would render as `WHERE 1=1` and affect **every** row. Because `"ignore"` strips `null`/`undefined` properties, a criteria whose keys are **all** stripped becomes empty. In that case the operation is rejected instead of running as an unfiltered write:
+
+```typescript
+const dataSource = new DataSource({
+    // ... other options
+    invalidWhereValuesBehavior: { null: "ignore", undefined: "ignore" },
+})
+
+// { text: null } becomes {} after stripping -> rejected; the table is NOT emptied
+await manager.delete(Post, { text: null })
+// Error: Empty criteria(s) are not allowed for the delete method.
+```
+
+Use the dedicated `updateAll()` / `deleteAll()` methods when you intentionally want to affect every row.
+:::
+
+### Entity class instances are passed through unchanged
+
+`invalidWhereValuesBehavior` only applies to plain object (`FindOptionsWhere`) criteria. When you pass an **entity class instance** as criteria to `update` / `delete` / `softDelete` / `restore`, its set columns — including nullable columns that happen to be `null` — are passed through to the `WHERE` clause unchanged, and are **not** validated, transformed, or stripped:
+
+```typescript
+const post = new Post()
+post.title = "Title"
+post.text = null // a null column on an entity instance is NOT converted or rejected
+
+// Renders `WHERE title = 'Title' AND text = NULL`; `text = NULL` matches nothing
+await manager.delete(Post, post)
+```
+
+If you need `null` handling for such a value, pass a plain object with the `IsNull()` operator (e.g. `{ text: IsNull() }`) instead of an entity instance.
+
 ### QueryBuilder with setFindOptions
 
 ```typescript
