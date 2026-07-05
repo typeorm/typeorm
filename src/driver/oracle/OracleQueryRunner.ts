@@ -1146,7 +1146,6 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
         ) {
@@ -1157,6 +1156,27 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             // update cloned table
             clonedTable = table.clone()
+        } else if (
+            oldColumn.length !== newColumn.length ||
+            oldColumn.precision !== newColumn.precision ||
+            oldColumn.scale !== newColumn.scale
+        ) {
+            // Same base type — only length/precision/scale changed.
+            // Use MODIFY to preserve data instead of DROP+ADD.
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} MODIFY "${
+                        newColumn.name
+                    }" ${this.driver.createFullType(newColumn)}`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} MODIFY "${
+                        newColumn.name
+                    }" ${this.driver.createFullType(oldColumn)}`,
+                ),
+            )
         } else {
             if (newColumn.name !== oldColumn.name) {
                 // rename column

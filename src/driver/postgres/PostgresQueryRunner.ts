@@ -1328,7 +1328,6 @@ export class PostgresQueryRunner
 
         if (
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1341,6 +1340,30 @@ export class PostgresQueryRunner
 
             // update cloned table
             clonedTable = table.clone()
+        } else if (
+            oldColumn.length !== newColumn.length ||
+            oldColumn.precision !== newColumn.precision ||
+            oldColumn.scale !== newColumn.scale
+        ) {
+            // Same base type — only length/precision/scale changed.
+            // Use ALTER COLUMN TYPE to preserve data instead of DROP+ADD.
+            const newColumnType = this.driver.createFullType(newColumn)
+            const oldColumnType = this.driver.createFullType(oldColumn)
+
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                        newColumn.name
+                    }" TYPE ${newColumnType}`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                        newColumn.name
+                    }" TYPE ${oldColumnType}`,
+                ),
+            )
         } else {
             if (oldColumn.name !== newColumn.name) {
                 // rename column
