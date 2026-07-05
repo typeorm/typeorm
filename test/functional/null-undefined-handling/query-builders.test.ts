@@ -731,3 +731,41 @@ describe("entity manager > invalidWhereValuesBehavior does NOT affect QB .where(
         }
     })
 })
+
+describe("entity manager > invalidWhereValuesBehavior default (unconfigured)", () => {
+    let dataSources: DataSource[]
+
+    before(async () => {
+        // no invalidWhereValuesBehavior configured -> default behavior
+        dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
+            entities: [Post, Category],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    it("throws on null in write criteria by default, matching the read path", async () => {
+        for (const connection of dataSources) {
+            const post = new Post()
+            post.title = "Test Post"
+            post.text = "text"
+            await connection.manager.save(post)
+
+            // read path already throws by default; the write path must match
+            try {
+                await connection.manager.delete(Post, { text: null } as any)
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Null value encountered")
+            }
+
+            // the row is untouched since the delete was rejected
+            const remaining = await connection.manager.find(Post)
+            expect(remaining.length).to.equal(1)
+        }
+    })
+})
