@@ -855,13 +855,9 @@ export class EntityManager {
             return { criteria, isPrimitive: true }
         }
 
-        // Default to validating (throw on null/undefined) when the option is
-        // unset, so the write path matches the read/find path — which defaults
-        // missing invalidWhereValuesBehavior sub-options to "throw" — and the
-        // documented default. An empty object still resolves to "throw" per key.
         const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
             criteria,
-            this.dataSource.options.invalidWhereValuesBehavior ?? {},
+            this.dataSource.options.invalidWhereValuesBehavior,
         )
 
         // On the object-criteria path, `.where()` builds a predicate only from
