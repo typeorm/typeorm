@@ -40,6 +40,9 @@ import { OrmUtils } from "../util/OrmUtils"
 export class EntityManager {
     readonly "@instanceof" = Symbol.for("EntityManager")
 
+    private static readonly transactionControlQueryRegex =
+        /^(?:START\s+TRANSACTION|BEGIN(?:\s+TRANSACTION)?|SET\s+TRANSACTION\b|COMMIT\b|ROLLBACK\b|SAVEPOINT\b|RELEASE\s+SAVEPOINT\b)/i
+
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
@@ -96,6 +99,10 @@ export class EntityManager {
             // dynamic: this.queryRunner = manager;
             ObjectUtils.assign(this.queryRunner, { manager: this })
         }
+    }
+
+    private static isTransactionControlQuery(query: string): boolean {
+        return EntityManager.transactionControlQueryRegex.test(query.trim())
     }
 
     // -------------------------------------------------------------------------
@@ -155,21 +162,59 @@ export class EntityManager {
         const queryRunner =
             this.queryRunner ?? this.dataSource.createQueryRunner()
 
+        const originalQueryRunnerQuery = queryRunner.query
+        const runQuery = queryRunner.query.bind(queryRunner) as (
+            query: string,
+            parameters?: any[] | ObjectLiteral,
+            useStructuredResult?: boolean,
+        ) => Promise<any>
+        let transactionManagerCanQuery = true
+        let transactionIsFinishing = false
+
+        queryRunner.query = ((
+            query: string,
+            parameters?: any[] | ObjectLiteral,
+            useStructuredResult?: boolean,
+        ) => {
+            const isTransactionControlQuery =
+                EntityManager.isTransactionControlQuery(query)
+
+            if (!transactionManagerCanQuery && !isTransactionControlQuery) {
+                return Promise.reject(
+                    new QueryRunnerProviderAlreadyReleasedError(),
+                )
+            }
+
+            if (transactionIsFinishing && isTransactionControlQuery) {
+                transactionManagerCanQuery = false
+            }
+
+            return runQuery(query, parameters, useStructuredResult)
+        }) as QueryRunner["query"]
+
         try {
             await queryRunner.startTransaction(isolation)
             const result = await runInTransaction(queryRunner.manager)
+            transactionIsFinishing = true
             await queryRunner.commitTransaction()
+            transactionManagerCanQuery = false
             return result
         } catch (err) {
+            transactionIsFinishing = true
             try {
                 // we throw original error even if rollback thrown an error
                 await queryRunner.rollbackTransaction()
             } catch (rollbackError) {}
+            transactionManagerCanQuery = false
             throw err
         } finally {
-            if (!this.queryRunner)
-                // if we used a new query runner provider then release it
-                await queryRunner.release()
+            try {
+                if (!this.queryRunner)
+                    // if we used a new query runner provider then release it
+                    await queryRunner.release()
+            } finally {
+                queryRunner.query = originalQueryRunnerQuery
+            }
         }
     }
 
