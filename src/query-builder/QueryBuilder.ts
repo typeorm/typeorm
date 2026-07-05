@@ -869,6 +869,24 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             this.expressionMap.wheres,
         )
 
+        // A write operation whose provided WHERE renders empty ("1=1") would
+        // silently affect every row. Reject it instead of emitting an unfiltered
+        // UPDATE/DELETE — this also covers criteria that only look non-empty at
+        // the top level but expand to zero predicates (e.g. a relation key whose
+        // value is a keyless object). To affect all rows, use the dedicated
+        // updateAll()/deleteAll() methods, which set no WHERE.
+        const writeQueryTypes = ["update", "delete", "soft-delete", "restore"]
+        if (
+            writeQueryTypes.indexOf(this.expressionMap.queryType) !== -1 &&
+            this.expressionMap.wheres.length > 0 &&
+            (whereExpression.length === 0 || whereExpression === "1=1")
+        ) {
+            throw new TypeORMError(
+                `Empty criteria(s) are not allowed for the ${this.expressionMap.queryType} operation. ` +
+                    `To affect all rows, use the dedicated updateAll/deleteAll methods.`,
+            )
+        }
+
         if (whereExpression.length > 0 && whereExpression !== "1=1") {
             conditionsArray.push(whereExpression)
         }

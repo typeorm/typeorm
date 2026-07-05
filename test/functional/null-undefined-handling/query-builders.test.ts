@@ -306,6 +306,29 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
         }
     })
 
+    it("rejects criteria whose only key expands to zero predicates (nested keyless relation)", async () => {
+        for (const connection of dataSources) {
+            const { post } = await prepareData(connection)
+
+            // { category: <keyless Category> } looks non-empty at the top level
+            // but the relation contributes no predicate, so it would render as
+            // "WHERE 1=1". The query-builder write guard rejects it.
+            try {
+                await connection.manager.delete(Post, {
+                    category: new Category(),
+                } as any)
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Empty criteria(s)")
+            }
+
+            expect(
+                await connection.manager.findOneBy(Post, { id: post.id }),
+            ).to.not.equal(null)
+        }
+    })
+
     // A "__proto__"-only object normalizes to {} (the key is skipped by the
     // prototype-pollution guard). Without a post-normalization emptiness check,
     // .where({}) renders as "WHERE 1=1" and turns a targeted write into a
