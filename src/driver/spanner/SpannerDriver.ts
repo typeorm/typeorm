@@ -16,10 +16,10 @@ import type { Driver } from "../Driver"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { CteCapabilities } from "../types/CteCapabilities"
 import type { DataTypeDefaults } from "../types/DataTypeDefaults"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { ReturningType } from "../types/ReturningType"
-import type { IsolationLevel } from "../types/IsolationLevel"
 import type { UpsertType } from "../types/UpsertType"
 import type { SpannerDataSourceOptions } from "./SpannerDataSourceOptions"
 import { SpannerQueryRunner } from "./SpannerQueryRunner"
@@ -440,7 +440,9 @@ export class SpannerDriver implements Driver {
         if (value === null || value === undefined) return value
 
         if (columnMetadata.type === "numeric") {
-            const lib = this.options.driver ?? PlatformTools.load("spanner")
+            const lib =
+                this.options.driver ??
+                PlatformTools.load("@google-cloud/spanner")
             return lib.Spanner.numeric(value.toString())
         } else if (columnMetadata.type === "date") {
             return DateUtils.mixedDateToDateString(value, {
@@ -804,7 +806,9 @@ export class SpannerDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            const lib = this.options.driver ?? PlatformTools.load("spanner")
+            const lib =
+                this.options.driver ??
+                PlatformTools.load("@google-cloud/spanner")
 
             if (this.options.credentials) {
                 this.spanner = new lib.Spanner({
