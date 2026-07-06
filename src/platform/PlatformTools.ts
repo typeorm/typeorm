@@ -1,9 +1,10 @@
+import { format as sqlFormat } from "@sqltools/formatter"
+import { type Config as SqlFormatterConfig } from "@sqltools/formatter/lib/core/types"
 import ansi from "ansis"
+import crypto from "crypto"
 import fs from "fs"
 import path from "path"
 import { highlight } from "sql-highlight"
-import { format as sqlFormat } from "@sqltools/formatter"
-import { type Config as SqlFormatterConfig } from "@sqltools/formatter/lib/core/types"
 import { type DatabaseType } from "../driver/types/DatabaseType"
 
 export { EventEmitter } from "events"
@@ -20,34 +21,21 @@ export class PlatformTools {
     static type: "browser" | "node" = "node"
 
     /**
-     * Gets global variable where global stuff can be stored.
+     * @returns the platform-specific global variable
      */
     static getGlobalVariable(): any {
+        if (typeof globalThis !== "undefined") {
+            return globalThis
+        }
         return global
     }
 
     /**
-     * Reads the version string from package.json of the given package.
-     * This operation is only supported in node.
-     *
-     * @param name
-     */
-    static readPackageVersion(name: string): string {
-        try {
-            return require(`${name}/package.json`).version
-        } catch (err) {
-            throw new TypeError(
-                `Failed to read package.json for "${name}": ${err.message}`,
-                { cause: err },
-            )
-        }
-    }
-
-    /**
      * Loads ("require"-s) given file or package.
-     * This operation only supports on node platform
+     * This operation is only supported on the NodeJS platform
      *
-     * @param name
+     * @param name name of the module to be imported
+     * @returns the module
      */
     static load(name: string): any {
         // if name is not absolute or relative, then try to load package from the node_modules of the directory we are currently in
@@ -152,6 +140,19 @@ export class PlatformTools {
     }
 
     /**
+     * Returns a SHA-1 hex digest for internal IDs/aliases (not for cryptographic security)
+     *
+     * @param input string to encode
+     * @returns the SHA-1 digest of the input string
+     */
+    static sha1(input: string): string {
+        const hashFunction = crypto.createHash("sha1")
+        hashFunction.update(input, "utf8")
+
+        return hashFunction.digest("hex")
+    }
+
+    /**
      * Normalizes given path. Does "path.normalize" and replaces backslashes with forward slashes on Windows.
      *
      * @param pathStr
@@ -175,10 +176,10 @@ export class PlatformTools {
     /**
      * Resolved given path. Does "path.resolve".
      *
-     * @param pathStr
+     * @param paths
      */
-    static pathResolve(pathStr: string): string {
-        return path.resolve(pathStr)
+    static pathResolve(...paths: string[]): string {
+        return path.resolve(...paths)
     }
 
     /**
