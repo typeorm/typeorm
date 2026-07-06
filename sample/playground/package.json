@@ -14,7 +14,7 @@
     "typeorm": "file:.."
   },
   "devDependencies": {
-    "@types/node": "^22.19.18",
+    "@types/node": "^24.13.2",
     "@types/sql.js": "^1.4.11",
     "typescript": "^5.9.3"
   }

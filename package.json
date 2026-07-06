@@ -95,10 +95,10 @@
   },
   "dependencies": {
     "@sqltools/formatter": "^1.2.5",
-    "ansis": "^4.2.0",
+    "ansis": "^4.3.1",
     "app-root-path": "^3.1.0",
     "buffer": "^6.0.3",
-    "dayjs": "^1.11.20",
+    "dayjs": "^1.11.21",
     "debug": "^4.4.3",
     "dedent": "^1.7.2",
     "dotenv": "^16.6.1",
@@ -108,12 +108,12 @@
     "sql-highlight": "^6.1.0",
     "tslib": "^2.8.1",
     "uuid": "^11.1.1",
-    "yargs": "^17.7.2"
+    "yargs": "^17.7.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
-    "@google-cloud/spanner": "^8.7.1",
-    "@sap/hana-client": "^2.28.20",
+    "@google-cloud/spanner": "^8.8.0",
+    "@sap/hana-client": "^2.29.23",
     "@tsconfig/node16": "^16.1.8",
     "@types/chai": "^4.3.20",
     "@types/chai-as-promised": "^7.1.8",
@@ -134,9 +134,8 @@
     "chai-as-promised": "^7.1.2",
     "class-transformer": "^0.5.1",
     "eslint": "^9.39.4",
-    "eslint-plugin-chai-friendly": "^1.2.0",
+    "eslint-plugin-chai-friendly": "^1.2.1",
     "eslint-plugin-jsdoc": "^62.9.0",
-    "globals": "^17.6.0",
     "gulp": "^4.0.2",
     "gulp-rename": "^2.1.0",
     "gulp-replace": "^1.1.4",
@@ -147,15 +146,15 @@
     "husky": "^9.1.7",
     "is-ci": "^4.1.0",
     "lint-staged": "^16.4.0",
-    "mocha": "^11.7.5",
+    "mocha": "^11.7.6",
     "mongodb": "^6.21.0",
-    "mssql": "^12.5.2",
+    "mssql": "^12.7.0",
     "mysql": "^2.18.1",
-    "mysql2": "^3.22.3",
-    "oracledb": "^6.10.0",
-    "pg": "^8.20.0",
-    "pg-query-stream": "^4.14.0",
-    "pkg-pr-new": "^0.0.71",
+    "mysql2": "^3.22.5",
+    "oracledb": "^7.0.0",
+    "pg": "^8.22.0",
+    "pg-query-stream": "^4.16.0",
+    "pkg-pr-new": "^0.0.75",
     "prettier": "^2.8.8",
     "redis": "^5.12.1",
     "rimraf": "^5.0.10",
@@ -168,7 +167,7 @@
     "standard-changelog": "^7.0.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.59.2"
+    "typescript-eslint": "^8.62.1"
   },
   "peerDependencies": {
     "@google-cloud/spanner": "^5.18.0 || ^6.0.0 || ^7.0.0 || ^8.0.0",
@@ -178,13 +177,13 @@
     "mongodb": "^5.8.0 || ^6.0.0",
     "mssql": "^9.1.1 || ^10.0.0 || ^11.0.0 || ^12.0.0",
     "mysql2": "^2.2.5 || ^3.0.1",
-    "oracledb": "^6.3.0",
+    "oracledb": "^6.3.0 || ^7.0.0",
     "pg": "^8.5.1",
     "pg-native": "^3.0.0",
     "pg-query-stream": "^4.0.0",
     "redis": "^3.1.1 || ^4.0.0 || ^5.0.14",
     "sql.js": "^1.4.0",
-    "sqlite3": "^5.0.3",
+    "sqlite3": "^5.0.3 || ^6.0.0",
     "ts-node": "^10.7.0",
     "typeorm-aurora-data-api-driver": "^2.0.0 || ^3.0.0"
   },
@@ -238,7 +237,7 @@
       "optional": true
     }
   },
-  "packageManager": "pnpm@10.33.4",
+  "packageManager": "pnpm@10.34.4",
   "engines": {
     "node": ">=16.13.0"
   },
@@ -254,8 +253,7 @@
       "libpq",
       "oracledb",
       "protobufjs"
-    ],
-    "minimumReleaseAge": 1440
+    ]
   },
   "collective": {
     "type": "opencollective",
@@ -265,7 +263,7 @@
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
-      "version": "^10.26.2",
+      "version": "^10.34.4",
       "onFail": "error"
     }
   },
