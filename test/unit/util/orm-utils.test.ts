@@ -220,6 +220,30 @@ describe(`OrmUtils`, () => {
         })
     })
 
+    describe("normalizeWhereCriteria", () => {
+        it("should throw for undefined values when no behavior is configured", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ id: undefined }),
+            ).to.throw(
+                "Undefined value encountered in property 'id' of a where condition.",
+            )
+        })
+
+        it("should throw for null values when no behavior is configured", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ id: null }),
+            ).to.throw(
+                "Null value encountered in property 'id' of a where condition.",
+            )
+        })
+
+        it("should preserve valid criteria when no behavior is configured", () => {
+            expect(OrmUtils.normalizeWhereCriteria({ id: 1 })).to.deep.equal({
+                id: 1,
+            })
+        })
+    })
+
     describe("compare2Objects", () => {
         it("should compare two Map.", () => {
             expect(OrmUtils.deepCompare(new Map(), new Map())).to.equal(true)
