@@ -874,6 +874,13 @@ export class EntityManager {
                 criteria as ObjectLiteral | ObjectLiteral[],
                 this.dataSource.options.invalidWhereValuesBehavior,
             )
+            if (OrmUtils.isCriteriaNullOrEmpty(normalizedCriteria)) {
+                return Promise.reject(
+                    new TypeORMError(
+                        `Empty criteria(s) are not allowed for the update method.`,
+                    ),
+                )
+            }
             const qb = this.createQueryBuilder()
                 .update(target)
                 .set(partialEntity)
@@ -955,6 +962,13 @@ export class EntityManager {
                 criteria as ObjectLiteral | ObjectLiteral[],
                 this.dataSource.options.invalidWhereValuesBehavior,
             )
+            if (OrmUtils.isCriteriaNullOrEmpty(normalizedCriteria)) {
+                return Promise.reject(
+                    new TypeORMError(
+                        `Empty criteria(s) are not allowed for the delete method.`,
+                    ),
+                )
+            }
             return this.createQueryBuilder()
                 .delete()
                 .from(targetOrEntity)
@@ -1021,6 +1035,13 @@ export class EntityManager {
                 criteria as ObjectLiteral | ObjectLiteral[],
                 this.dataSource.options.invalidWhereValuesBehavior,
             )
+            if (OrmUtils.isCriteriaNullOrEmpty(normalizedCriteria)) {
+                return Promise.reject(
+                    new TypeORMError(
+                        `Empty criteria(s) are not allowed for the softDelete method.`,
+                    ),
+                )
+            }
             return this.createQueryBuilder()
                 .softDelete()
                 .from(targetOrEntity)
@@ -1072,6 +1093,13 @@ export class EntityManager {
                 criteria as ObjectLiteral | ObjectLiteral[],
                 this.dataSource.options.invalidWhereValuesBehavior,
             )
+            if (OrmUtils.isCriteriaNullOrEmpty(normalizedCriteria)) {
+                return Promise.reject(
+                    new TypeORMError(
+                        `Empty criteria(s) are not allowed for the restore method.`,
+                    ),
+                )
+            }
             return this.createQueryBuilder()
                 .restore()
                 .from(targetOrEntity)
