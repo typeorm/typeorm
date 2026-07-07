@@ -2,7 +2,6 @@ import js from "@eslint/js"
 import pluginChaiFriendly from "eslint-plugin-chai-friendly"
 import { jsdoc } from "eslint-plugin-jsdoc"
 import { defineConfig, globalIgnores } from "eslint/config"
-import globals from "globals"
 import ts from "typescript-eslint"
 
 export default defineConfig([
@@ -19,10 +18,6 @@ export default defineConfig([
             parser: ts.parser,
             parserOptions: {
                 project: "tsconfig.json",
-            },
-            globals: {
-                ...globals.browser,
-                ...globals.node,
             },
         },
         plugins: {
