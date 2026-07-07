@@ -658,11 +658,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (createIndices) {
             table.indices.forEach((index) => {
                 // new index may be passed without name. In this case we generate index name manually.
-                index.name ??= this.dataSource.namingStrategy.indexName(
-                    table,
-                    index.columnNames,
-                    index.where,
-                )
+                index.name ??= this.generateIndexName(table, index)
                 upQueries.push(this.createIndexSql(table, index))
                 downQueries.push(this.dropIndexSql(table, index))
             })
@@ -1922,7 +1918,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             `AND \`TC\`.\`TABLE_NAME\` IN (${loadedTableNames})`
 
         const indicesSql =
-            `SELECT \`I\`.\`TABLE_NAME\`, \`I\`.\`INDEX_NAME\`, \`I\`.\`IS_UNIQUE\`, \`I\`.\`IS_NULL_FILTERED\`, \`IC\`.\`COLUMN_NAME\` ` +
+            `SELECT \`I\`.\`TABLE_NAME\`, \`I\`.\`INDEX_NAME\`, \`I\`.\`IS_UNIQUE\`, \`I\`.\`IS_NULL_FILTERED\`, \`IC\`.\`COLUMN_NAME\`, \`IC\`.\`COLUMN_ORDERING\` ` +
             `FROM \`INFORMATION_SCHEMA\`.\`INDEXES\` \`I\` ` +
             `INNER JOIN \`INFORMATION_SCHEMA\`.\`INDEX_COLUMNS\` \`IC\` ON \`IC\`.\`INDEX_NAME\` = \`I\`.\`INDEX_NAME\` ` +
             `AND \`IC\`.\`TABLE_NAME\` = \`I\`.\`TABLE_NAME\` ` +
@@ -2154,6 +2150,14 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                         table: table,
                         name: constraint["INDEX_NAME"],
                         columnNames: indices.map((i) => i["COLUMN_NAME"]),
+                        columnOrders: indices.reduce(
+                            (map, i) => {
+                                if (i["COLUMN_ORDERING"] === "DESC")
+                                    map[i["COLUMN_NAME"]] = "DESC"
+                                return map
+                            },
+                            {} as { [col: string]: "ASC" | "DESC" },
+                        ),
                         isUnique: constraint["IS_UNIQUE"],
                         isNullFiltered: constraint["IS_NULL_FILTERED"],
                     })
@@ -2378,7 +2382,10 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected createIndexSql(table: Table, index: TableIndex): Query {
         const columns = index.columnNames
-            .map((columnName) => this.driver.escape(columnName))
+            .map((columnName) => {
+                const order = index.columnOrders[columnName]
+                return `${this.driver.escape(columnName)}${order ? ` ${order}` : ""}`
+            })
             .join(", ")
         let indexType = ""
         if (index.isUnique) indexType += "UNIQUE "

@@ -138,4 +138,10 @@ export interface TableColumnOptions {
      * SRID (Spatial Reference ID (EPSG code))
      */
     srid?: number
+
+    /**
+     * Sort order of the column's single-column unique index, if any.
+     * Used by MySQL-family drivers when creating a UNIQUE INDEX from a @Unique decorator.
+     */
+    uniqueColumnOrders?: { [columnName: string]: "ASC" | "DESC" }
 }

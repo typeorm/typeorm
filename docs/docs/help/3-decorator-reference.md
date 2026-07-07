@@ -852,6 +852,28 @@ export class User {
 }
 ```
 
+To control the sort order of an index column, pass an `order` option at the property level or use `{ field, order }` objects in the columns array at the entity level:
+
+```typescript
+@Entity()
+@Index([
+    { field: "createdAt", order: "DESC" },
+    { field: "lastName", order: "ASC" },
+])
+export class User {
+    @Index({ order: "DESC" })
+    @Column()
+    createdAt: Date
+
+    @Index("idx_score_desc", { order: "DESC" })
+    @Column()
+    score: number
+
+    @Column()
+    lastName: string
+}
+```
+
 Learn more about [indexes](../indexes.md).
 
 #### `@Unique`
@@ -879,7 +901,33 @@ export class User {
 }
 ```
 
-> Note: MySQL stores unique constraints as unique indexes
+To specify per-column sort order, pass objects with `field` and `order` instead of plain strings.
+Plain strings and objects can be mixed freely in the same array:
+
+```typescript
+@Entity()
+@Unique([
+    { field: "score", order: "DESC" },
+    { field: "createdAt", order: "DESC" },
+])
+@Unique("UQ_NAMED_ORDER", [{ field: "lastName", order: "ASC" }, "firstName"])
+export class User {
+    @Column()
+    firstName: string
+
+    @Column()
+    lastName: string
+
+    @Column()
+    score: number
+
+    @Column()
+    createdAt: Date
+}
+```
+
+> Note: MySQL stores unique constraints as unique indexes.
+> Sort ordering in unique constraints is not supported by all databases; see [Unique constraints with per-column sort order](../indexes.md#unique-constraints-with-per-column-sort-order) for the compatibility table.
 
 #### `@Check`
 

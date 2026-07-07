@@ -1,3 +1,5 @@
+import type { IndexColumnOptions } from "../decorator/options/IndexColumnOptions"
+
 export interface EntitySchemaIndexOptions {
     /**
      * Index name.
@@ -6,8 +8,11 @@ export interface EntitySchemaIndexOptions {
 
     /**
      * Index column names.
+     * Each entry can be a column name string or an object specifying the column and its sort order.
      */
-    columns?: ((object?: any) => any[] | { [key: string]: number }) | string[]
+    columns?:
+        | ((object?: any) => any[] | { [key: string]: number })
+        | (string | IndexColumnOptions)[]
 
     /**
      * Indicates if index must sync with database index.
