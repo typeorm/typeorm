@@ -870,10 +870,15 @@ export class EntityManager {
 
             return qb.execute()
         } else {
-            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
-                criteria as ObjectLiteral | ObjectLiteral[],
-                this.dataSource.options.invalidWhereValuesBehavior,
-            )
+            let normalizedCriteria: any
+            try {
+                normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+                    criteria as ObjectLiteral | ObjectLiteral[],
+                    this.dataSource.options.invalidWhereValuesBehavior,
+                )
+            } catch (err) {
+                return Promise.reject(err)
+            }
             if (OrmUtils.isCriteriaNullOrEmpty(normalizedCriteria)) {
                 return Promise.reject(
                     new TypeORMError(
@@ -958,10 +963,15 @@ export class EntityManager {
                 .whereInIds(criteria)
                 .execute()
         } else {
-            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
-                criteria as ObjectLiteral | ObjectLiteral[],
-                this.dataSource.options.invalidWhereValuesBehavior,
-            )
+            let normalizedCriteria: any
+            try {
+                normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+                    criteria as ObjectLiteral | ObjectLiteral[],
+                    this.dataSource.options.invalidWhereValuesBehavior,
+                )
+            } catch (err) {
+                return Promise.reject(err)
+            }
             if (OrmUtils.isCriteriaNullOrEmpty(normalizedCriteria)) {
                 return Promise.reject(
                     new TypeORMError(
@@ -1031,10 +1041,15 @@ export class EntityManager {
                 .whereInIds(criteria)
                 .execute()
         } else {
-            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
-                criteria as ObjectLiteral | ObjectLiteral[],
-                this.dataSource.options.invalidWhereValuesBehavior,
-            )
+            let normalizedCriteria: any
+            try {
+                normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+                    criteria as ObjectLiteral | ObjectLiteral[],
+                    this.dataSource.options.invalidWhereValuesBehavior,
+                )
+            } catch (err) {
+                return Promise.reject(err)
+            }
             if (OrmUtils.isCriteriaNullOrEmpty(normalizedCriteria)) {
                 return Promise.reject(
                     new TypeORMError(
@@ -1089,10 +1104,15 @@ export class EntityManager {
                 .whereInIds(criteria)
                 .execute()
         } else {
-            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
-                criteria as ObjectLiteral | ObjectLiteral[],
-                this.dataSource.options.invalidWhereValuesBehavior,
-            )
+            let normalizedCriteria: any
+            try {
+                normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+                    criteria as ObjectLiteral | ObjectLiteral[],
+                    this.dataSource.options.invalidWhereValuesBehavior,
+                )
+            } catch (err) {
+                return Promise.reject(err)
+            }
             if (OrmUtils.isCriteriaNullOrEmpty(normalizedCriteria)) {
                 return Promise.reject(
                     new TypeORMError(

@@ -37,6 +37,31 @@ describe("github issues > #12578 default invalidWhereValuesBehavior is throw", (
             )
             expect(res2).to.deep.equal({})
         })
+
+        it("should throw on prototype pollution keys", () => {
+            const pollution1 = JSON.parse('{"__proto__": {"corrupted": true}}')
+            expect(() => {
+                OrmUtils.normalizeWhereCriteria(pollution1)
+            }).to.throw(TypeORMError, /Prototype pollution key/)
+
+            const pollution2 = {}
+            Object.defineProperty(pollution2, "constructor", {
+                value: {},
+                enumerable: true,
+            })
+            expect(() => {
+                OrmUtils.normalizeWhereCriteria(pollution2)
+            }).to.throw(TypeORMError, /Prototype pollution key/)
+
+            const pollution3 = {}
+            Object.defineProperty(pollution3, "prototype", {
+                value: {},
+                enumerable: true,
+            })
+            expect(() => {
+                OrmUtils.normalizeWhereCriteria(pollution3)
+            }).to.throw(TypeORMError, /Prototype pollution key/)
+        })
     })
 
     describe("EntityManager mutation safety guards", () => {
@@ -59,13 +84,12 @@ describe("github issues > #12578 default invalidWhereValuesBehavior is throw", (
                     const manager = dataSource.manager
 
                     // Default behavior throws on undefined
+                    // Verifies it returns a rejected promise and does not throw synchronously
                     await expect(
-                        Promise.resolve().then(() =>
-                            manager.update(
-                                Post,
-                                { title: undefined },
-                                { description: "updated" },
-                            ),
+                        manager.update(
+                            Post,
+                            { title: undefined },
+                            { description: "updated" },
                         ),
                     ).to.be.rejectedWith(TypeORMError)
                 }),
@@ -74,80 +98,92 @@ describe("github issues > #12578 default invalidWhereValuesBehavior is throw", (
         it("should throw when updating with criteria that normalizes to empty under ignore options", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    ;(dataSource.options as any).invalidWhereValuesBehavior = {
-                        undefined: "ignore",
+                    const options = dataSource.options as {
+                        invalidWhereValuesBehavior?: typeof dataSource.options.invalidWhereValuesBehavior
                     }
-                    const manager = dataSource.manager
+                    const originalBehavior = options.invalidWhereValuesBehavior
+                    try {
+                        options.invalidWhereValuesBehavior = {
+                            undefined: "ignore",
+                        }
+                        const manager = dataSource.manager
 
-                    await expect(
-                        Promise.resolve().then(() =>
+                        await expect(
                             manager.update(
                                 Post,
                                 { title: undefined },
                                 { description: "updated" },
                             ),
-                        ),
-                    ).to.be.rejectedWith(TypeORMError, /Empty criteria/)
-
-                    delete (dataSource.options as any)
-                        .invalidWhereValuesBehavior
+                        ).to.be.rejectedWith(TypeORMError, /Empty criteria/)
+                    } finally {
+                        options.invalidWhereValuesBehavior = originalBehavior
+                    }
                 }),
             ))
 
         it("should throw when deleting with criteria that normalizes to empty", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    ;(dataSource.options as any).invalidWhereValuesBehavior = {
-                        undefined: "ignore",
+                    const options = dataSource.options as {
+                        invalidWhereValuesBehavior?: typeof dataSource.options.invalidWhereValuesBehavior
                     }
-                    const manager = dataSource.manager
+                    const originalBehavior = options.invalidWhereValuesBehavior
+                    try {
+                        options.invalidWhereValuesBehavior = {
+                            undefined: "ignore",
+                        }
+                        const manager = dataSource.manager
 
-                    await expect(
-                        Promise.resolve().then(() =>
+                        await expect(
                             manager.delete(Post, { title: undefined }),
-                        ),
-                    ).to.be.rejectedWith(TypeORMError, /Empty criteria/)
-
-                    delete (dataSource.options as any)
-                        .invalidWhereValuesBehavior
+                        ).to.be.rejectedWith(TypeORMError, /Empty criteria/)
+                    } finally {
+                        options.invalidWhereValuesBehavior = originalBehavior
+                    }
                 }),
             ))
 
         it("should throw when softDeleting with criteria that normalizes to empty", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    ;(dataSource.options as any).invalidWhereValuesBehavior = {
-                        undefined: "ignore",
+                    const options = dataSource.options as {
+                        invalidWhereValuesBehavior?: typeof dataSource.options.invalidWhereValuesBehavior
                     }
-                    const manager = dataSource.manager
+                    const originalBehavior = options.invalidWhereValuesBehavior
+                    try {
+                        options.invalidWhereValuesBehavior = {
+                            undefined: "ignore",
+                        }
+                        const manager = dataSource.manager
 
-                    await expect(
-                        Promise.resolve().then(() =>
+                        await expect(
                             manager.softDelete(Post, { title: undefined }),
-                        ),
-                    ).to.be.rejectedWith(TypeORMError, /Empty criteria/)
-
-                    delete (dataSource.options as any)
-                        .invalidWhereValuesBehavior
+                        ).to.be.rejectedWith(TypeORMError, /Empty criteria/)
+                    } finally {
+                        options.invalidWhereValuesBehavior = originalBehavior
+                    }
                 }),
             ))
 
         it("should throw when restoring with criteria that normalizes to empty", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    ;(dataSource.options as any).invalidWhereValuesBehavior = {
-                        undefined: "ignore",
+                    const options = dataSource.options as {
+                        invalidWhereValuesBehavior?: typeof dataSource.options.invalidWhereValuesBehavior
                     }
-                    const manager = dataSource.manager
+                    const originalBehavior = options.invalidWhereValuesBehavior
+                    try {
+                        options.invalidWhereValuesBehavior = {
+                            undefined: "ignore",
+                        }
+                        const manager = dataSource.manager
 
-                    await expect(
-                        Promise.resolve().then(() =>
+                        await expect(
                             manager.restore(Post, { title: undefined }),
-                        ),
-                    ).to.be.rejectedWith(TypeORMError, /Empty criteria/)
-
-                    delete (dataSource.options as any)
-                        .invalidWhereValuesBehavior
+                        ).to.be.rejectedWith(TypeORMError, /Empty criteria/)
+                    } finally {
+                        options.invalidWhereValuesBehavior = originalBehavior
+                    }
                 }),
             ))
     })

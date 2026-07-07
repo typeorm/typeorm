@@ -682,6 +682,15 @@ export class OrmUtils {
 
         const result: ObjectLiteral = {}
         for (const [key, value] of Object.entries(criteria)) {
+            if (
+                key === "__proto__" ||
+                key === "constructor" ||
+                key === "prototype"
+            ) {
+                throw new TypeORMError(
+                    `Prototype pollution key '${key}' is not allowed in where criteria.`,
+                )
+            }
             const propertyPath = path ? `${path}.${key}` : key
 
             if (value === undefined) {
