@@ -89,6 +89,8 @@ Different RDBMS-es have their own specific options.
 
     Example: `invalidWhereValuesBehavior: { null: 'sql-null', undefined: 'ignore' }`.
 
+    Where conditions also reject prototype-polluting property keys such as `__proto__`, `constructor`, and `prototype`.
+
     Learn more about [Null and Undefined Handling](./5-null-and-undefined-handling.md).
 
 ## Data Source Options example

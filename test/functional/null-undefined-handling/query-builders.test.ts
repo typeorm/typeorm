@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import type { DataSource } from "../../../src"
+import type { DataSource, FindOptionsWhere } from "../../../src"
 import { TypeORMError } from "../../../src"
 import {
     closeTestingConnections,
@@ -8,6 +8,146 @@ import {
 } from "../../utils/test-utils"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
+
+const invalidCriteria = <Entity>(criteria: unknown): FindOptionsWhere<Entity> =>
+    criteria as FindOptionsWhere<Entity>
+
+describe("entity manager > invalidWhereValuesBehavior defaults", () => {
+    // #12578: omitted invalidWhereValuesBehavior should use the documented defaults.
+    let dataSources: DataSource[]
+
+    before(async () => {
+        dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
+            entities: [Post, Category],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    async function prepareData(connection: DataSource) {
+        const category = new Category()
+        category.name = "Test Category"
+        await connection.manager.save(category)
+
+        const post = new Post()
+        post.title = "Test Post"
+        post.text = "Some text"
+        post.category = category
+        await connection.manager.save(post)
+
+        return { category, post }
+    }
+
+    it("should throw for null values in EntityManager.update() when not configured", async () => {
+        for (const connection of dataSources) {
+            await prepareData(connection)
+
+            try {
+                await connection.manager.update(
+                    Post,
+                    invalidCriteria<Post>({ text: null }),
+                    { title: "Updated" },
+                )
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Null value encountered")
+            }
+        }
+    })
+
+    it("should throw for undefined values in EntityManager.delete() when not configured", async () => {
+        for (const connection of dataSources) {
+            await prepareData(connection)
+
+            try {
+                await connection.manager.delete(
+                    Post,
+                    invalidCriteria<Post>({
+                        text: undefined,
+                    }),
+                )
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Undefined value encountered")
+            }
+        }
+    })
+
+    it("should throw for null values in EntityManager.softDelete() when not configured", async () => {
+        for (const connection of dataSources) {
+            await prepareData(connection)
+
+            try {
+                await connection.manager.softDelete(
+                    Post,
+                    invalidCriteria<Post>({
+                        text: null,
+                    }),
+                )
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Null value encountered")
+            }
+        }
+    })
+
+    it("should throw for undefined values in EntityManager.restore() when not configured", async () => {
+        for (const connection of dataSources) {
+            await prepareData(connection)
+
+            try {
+                await connection.manager.restore(
+                    Post,
+                    invalidCriteria<Post>({
+                        text: undefined,
+                    }),
+                )
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Undefined value encountered")
+            }
+        }
+    })
+
+    it("should reject prototype-polluting keys in EntityManager.delete() when not configured", async () => {
+        for (const connection of dataSources) {
+            await prepareData(connection)
+
+            const dangerousCriteria: unknown[] = [
+                JSON.parse('{ "__proto__": { "polluted": true } }'),
+                JSON.parse('{ "constructor": { "polluted": true } }'),
+                JSON.parse('{ "prototype": { "polluted": true } }'),
+                JSON.parse(
+                    '{ "category": { "__proto__": { "polluted": true } } }',
+                ),
+            ]
+
+            for (const criteria of dangerousCriteria) {
+                try {
+                    await connection.manager.delete(
+                        Post,
+                        invalidCriteria<Post>(criteria),
+                    )
+                    expect.fail("Expected error")
+                } catch (error) {
+                    expect(error).to.be.instanceOf(TypeORMError)
+                    expect(error.message).to.include(
+                        "Prototype-polluting property",
+                    )
+                    expect(({} as Record<string, unknown>).polluted).to.be
+                        .undefined
+                }
+            }
+        }
+    })
+})
 
 describe("entity manager > invalidWhereValuesBehavior with throw", () => {
     let dataSources: DataSource[]

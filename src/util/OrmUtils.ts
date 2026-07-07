@@ -657,15 +657,17 @@ export class OrmUtils {
      * @param options
      * @param path
      */
+    private static isPrototypePollutingKey(key: string): boolean {
+        return (
+            key === "__proto__" || key === "constructor" || key === "prototype"
+        )
+    }
+
     static normalizeWhereCriteria(
         criteria: ObjectLiteral | ObjectLiteral[],
         options?: InvalidFindOptionsWhereBehavior,
         path?: string,
     ): ObjectLiteral | ObjectLiteral[] {
-        if (!options) {
-            return criteria
-        }
-
         // multiple criteria are possible at the top level
         if (!path && Array.isArray(criteria)) {
             return criteria.map(
@@ -678,9 +680,15 @@ export class OrmUtils {
             )
         }
 
-        const result: ObjectLiteral = {}
+        const result: ObjectLiteral = Object.create(null)
         for (const [key, value] of Object.entries(criteria)) {
             const propertyPath = path ? `${path}.${key}` : key
+
+            if (OrmUtils.isPrototypePollutingKey(key)) {
+                throw new TypeORMError(
+                    `Prototype-polluting property '${propertyPath}' encountered in a where condition.`,
+                )
+            }
 
             if (value === undefined) {
                 const behavior = options?.undefined ?? "throw"

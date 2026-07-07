@@ -170,6 +170,12 @@ const posts = await repository.find({
 
 Note that this only applies to explicitly set `undefined` values, not omitted properties.
 
+### Prototype-polluting keys
+
+High-level where conditions also reject prototype-polluting property names. If a where condition contains `__proto__`, `constructor`, or `prototype` as a property key, TypeORM throws a `TypeORMError` instead of copying that key into the normalized criteria object.
+
+This validation applies recursively to nested where objects and is independent of the `null` and `undefined` behavior options.
+
 ## Using Both Options Together
 
 You can configure both behaviors independently for comprehensive control:
