@@ -9,6 +9,7 @@ on:
     types:
       - opened
       - edited
+      - labeled
 
 concurrency:
   group: ${{ github.workflow }}-pr-${{ github.event.pull_request.number }}
@@ -19,7 +20,8 @@ jobs:
     if: >-
       github.repository == 'typeorm/typeorm' &&
       github.event.pull_request.user.type != 'Bot' &&
-      !contains(github.event.pull_request.labels.*.name, 'skip-issue-check')
+      !contains(github.event.pull_request.labels.*.name, 'skip-issue-check') &&
+      !contains(fromJSON('["MEMBER","COLLABORATOR","OWNER"]'), github.event.pull_request.author_association)
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -44,8 +46,7 @@ jobs:
           FAIL_TITLE="No issue reference found"
           FAIL_SUMMARY="Link this PR to an issue by adding one of: \
           \`Fixes #NNNN\`, \`Closes #NNNN\`, or \`Resolves #NNNN\` \
-          to your PR description. If no issue exists, please create one first. \
-          Maintainers and bots are exempt via the \`skip-issue-check\` label."
+          to your PR description. If no issue exists, please create one first."
 
           ## Extract issue references ##
           ## Matches: #N, typeorm/typeorm#N, and full issue URLs
@@ -76,7 +77,7 @@ jobs:
 
           ## Status check + triage label ##
           if [ -z "$FIRST_ISSUE" ]; then
-            report_check "failure" "$FAIL_TITLE" "$FAIL_SUMMARY"
+            report_check "action_required" "$FAIL_TITLE" "$FAIL_SUMMARY"
             apply_label "$LABEL_TRIAGE" "$LABEL_LINKED"
             exit 0
           fi
