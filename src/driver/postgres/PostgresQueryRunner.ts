@@ -1328,7 +1328,6 @@ export class PostgresQueryRunner
 
         if (
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1619,6 +1618,7 @@ export class PostgresQueryRunner
             }
 
             if (
+                newColumn.length !== oldColumn.length ||
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {
@@ -1636,6 +1636,17 @@ export class PostgresQueryRunner
                         }" TYPE ${this.driver.createFullType(oldColumn)}`,
                     ),
                 )
+
+                const clonedColumn = clonedTable.columns.find(
+                    (column) =>
+                        column.name === newColumn.name ||
+                        column.name === oldColumn.name,
+                )
+                if (clonedColumn) {
+                    clonedColumn.length = newColumn.length
+                    clonedColumn.precision = newColumn.precision
+                    clonedColumn.scale = newColumn.scale
+                }
             }
 
             if (

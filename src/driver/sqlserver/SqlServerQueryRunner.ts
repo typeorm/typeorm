@@ -1371,7 +1371,6 @@ export class SqlServerQueryRunner
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
             newColumn.type !== oldColumn.type ||
-            newColumn.length !== oldColumn.length ||
             newColumn.asExpression !== oldColumn.asExpression ||
             newColumn.generatedType !== oldColumn.generatedType
         ) {
@@ -1735,6 +1734,17 @@ export class SqlServerQueryRunner
                         )}`,
                     ),
                 )
+
+                const clonedColumn = clonedTable.columns.find(
+                    (column) =>
+                        column.name === newColumn.name ||
+                        column.name === oldColumn.name,
+                )
+                if (clonedColumn) {
+                    clonedColumn.length = newColumn.length
+                    clonedColumn.precision = newColumn.precision
+                    clonedColumn.scale = newColumn.scale
+                }
             }
 
             if (this.isEnumChanged(oldColumn, newColumn)) {

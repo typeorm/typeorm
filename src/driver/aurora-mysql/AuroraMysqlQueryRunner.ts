@@ -889,7 +889,6 @@ export class AuroraMysqlQueryRunner
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             oldColumn.generatedType !== newColumn.generatedType
         ) {
             await this.dropColumn(table, oldColumn)
@@ -1053,6 +1052,17 @@ export class AuroraMysqlQueryRunner
                         }\` ${this.buildCreateColumnSql(oldColumn, true)}`,
                     ),
                 )
+
+                const clonedColumn = clonedTable.columns.find(
+                    (column) =>
+                        column.name === newColumn.name ||
+                        column.name === oldColumn.name,
+                )
+                if (clonedColumn) {
+                    clonedColumn.length = newColumn.length
+                    clonedColumn.precision = newColumn.precision
+                    clonedColumn.scale = newColumn.scale
+                }
             }
 
             if (newColumn.isPrimary !== oldColumn.isPrimary) {
