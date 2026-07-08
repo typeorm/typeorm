@@ -39,17 +39,17 @@
     "@tsconfig/node20": "^20.1.9",
     "@types/chai": "^5.2.3",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^20.19.39",
+    "@types/node": "^20.19.43",
     "c8": "^11.0.0",
     "chai": "^6.2.2",
-    "eslint": "^10.3.0",
-    "eslint-plugin-chai-friendly": "^1.2.0",
-    "mocha": "^11.7.5",
-    "prettier": "^3.8.3",
+    "eslint": "^10.6.0",
+    "eslint-plugin-chai-friendly": "^1.2.1",
+    "mocha": "^11.7.6",
+    "prettier": "^3.9.4",
     "ts-node": "^10.9.2",
     "typeorm": "1.0.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.59.2"
+    "typescript-eslint": "^8.63.0"
   },
   "peerDependencies": {
     "typeorm": "^1.0.0"
