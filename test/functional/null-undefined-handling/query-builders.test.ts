@@ -236,6 +236,217 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             }
         }
     })
+
+    it("passes entity class instances through unchanged (only plain objects are normalized)", async () => {
+        for (const connection of dataSources) {
+            // An entity class instance is not a plain object, so it is not
+            // validated against invalidWhereValuesBehavior: its set columns are
+            // passed straight through to the WHERE.
+
+            // a fully populated instance deletes its matching row as usual
+            const withText = new Post()
+            withText.title = "With Text"
+            withText.text = "hello"
+            await connection.manager.save(withText)
+
+            await connection.manager.delete(Post, withText)
+            expect(
+                await connection.manager.findOneBy(Post, { id: withText.id }),
+            ).to.equal(null)
+
+            // a null nullable column does NOT throw (the instance is passed
+            // through, not validated). It renders as `text = NULL`, which
+            // matches nothing, so the delete is a deliberate no-op and the row
+            // remains.
+            const withNull = new Post()
+            withNull.title = "With Null"
+            withNull.text = null
+            await connection.manager.save(withNull)
+
+            await connection.manager.delete(Post, withNull)
+            expect(
+                await connection.manager.findOneBy(Post, { id: withNull.id }),
+            ).to.not.equal(null)
+        }
+    })
+
+    it("rejects an empty entity class instance instead of deleting the whole table", async () => {
+        for (const connection of dataSources) {
+            const { post } = await prepareData(connection)
+
+            // an entity instance with no set columns has no own keys, so it
+            // would render as "WHERE 1=1" (empty condition) — reject it. An
+            // empty class instance is not caught by the plain-object emptiness
+            // check, so this guards the non-plain path explicitly.
+            try {
+                await connection.manager.delete(Post, new Post())
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Empty criteria(s)")
+            }
+
+            expect(
+                await connection.manager.findOneBy(Post, { id: post.id }),
+            ).to.not.equal(null)
+        }
+    })
+
+    it("rejects criteria whose only key expands to zero predicates (nested keyless relation)", async () => {
+        for (const connection of dataSources) {
+            const { post } = await prepareData(connection)
+
+            // { category: <keyless Category> } looks non-empty at the top level
+            // but the relation contributes no predicate, so it would render as
+            // "WHERE 1=1". The query-builder write guard rejects it.
+            try {
+                await connection.manager.delete(Post, {
+                    category: new Category(),
+                } as any)
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Empty criteria(s)")
+            }
+
+            expect(
+                await connection.manager.findOneBy(Post, { id: post.id }),
+            ).to.not.equal(null)
+        }
+    })
+
+    // A "__proto__"-only object normalizes to {} (the key is skipped by the
+    // prototype-pollution guard). Without a post-normalization emptiness check,
+    // .where({}) renders as "WHERE 1=1" and turns a targeted write into a
+    // full-table one. These assert the operation is rejected and the seeded row
+    // is left untouched.
+    it("rejects a __proto__-only criteria in EntityManager.update() instead of updating the whole table", async () => {
+        for (const connection of dataSources) {
+            const { post } = await prepareData(connection)
+
+            try {
+                await connection.manager.update(
+                    Post,
+                    JSON.parse('{ "__proto__": { "polluted": true } }'),
+                    { title: "Updated" },
+                )
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Empty criteria(s)")
+            }
+
+            const reloaded = await connection.manager.findOneByOrFail(Post, {
+                id: post.id,
+            })
+            expect(reloaded.title).to.equal("Test Post")
+        }
+    })
+
+    it("rejects a __proto__-only criteria in EntityManager.delete() instead of deleting the whole table", async () => {
+        for (const connection of dataSources) {
+            const { post } = await prepareData(connection)
+
+            try {
+                await connection.manager.delete(
+                    Post,
+                    JSON.parse('{ "__proto__": { "polluted": true } }'),
+                )
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Empty criteria(s)")
+            }
+
+            expect(
+                await connection.manager.findOneBy(Post, { id: post.id }),
+            ).to.not.equal(null)
+        }
+    })
+
+    it("rejects a __proto__-only criteria in EntityManager.softDelete()", async () => {
+        for (const connection of dataSources) {
+            const { post } = await prepareData(connection)
+
+            try {
+                await connection.manager.softDelete(
+                    Post,
+                    JSON.parse('{ "__proto__": { "polluted": true } }'),
+                )
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Empty criteria(s)")
+            }
+
+            expect(
+                await connection.manager.findOneBy(Post, { id: post.id }),
+            ).to.not.equal(null)
+        }
+    })
+
+    it("rejects a __proto__-only criteria in EntityManager.restore()", async () => {
+        for (const connection of dataSources) {
+            const { post } = await prepareData(connection)
+
+            try {
+                await connection.manager.restore(
+                    Post,
+                    JSON.parse('{ "__proto__": { "polluted": true } }'),
+                )
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Empty criteria(s)")
+            }
+
+            expect(
+                await connection.manager.findOneBy(Post, { id: post.id }),
+            ).to.not.equal(null)
+        }
+    })
+
+    it("rejects an array criteria that normalizes to an empty OR-branch", async () => {
+        for (const connection of dataSources) {
+            const { post } = await prepareData(connection)
+
+            try {
+                await connection.manager.delete(Post, [
+                    JSON.parse('{ "__proto__": { "polluted": true } }'),
+                ])
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Empty criteria(s)")
+            }
+
+            // an empty-array element is an empty OR-branch (would render 1=1)
+            try {
+                await connection.manager.delete(Post, [[]] as any)
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Empty criteria(s)")
+            }
+
+            // a bare primitive mixed into an OR-array renders as an always-true
+            // branch (`.where(1)` has no predicate) — `[1, { id }]` => 1=1 OR ...
+            try {
+                await connection.manager.delete(Post, [
+                    1,
+                    { id: post.id },
+                ] as any)
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Empty criteria(s)")
+            }
+
+            expect(
+                await connection.manager.findOneBy(Post, { id: post.id }),
+            ).to.not.equal(null)
+        }
+    })
 })
 
 describe("entity manager > invalidWhereValuesBehavior with sql-null", () => {
@@ -411,6 +622,28 @@ describe("entity manager > invalidWhereValuesBehavior with ignore", () => {
 
             const remaining = await connection.manager.find(Post)
             expect(remaining.length).to.equal(0)
+        }
+    })
+
+    it("rejects criteria whose every key is stripped instead of deleting the whole table", async () => {
+        for (const connection of dataSources) {
+            const post = new Post()
+            post.title = "Test Post"
+            post.text = "text"
+            await connection.manager.save(post)
+
+            // With ignore, { text: null } strips its only key, leaving {}. That
+            // would render "WHERE 1=1" and delete every row — reject instead.
+            try {
+                await connection.manager.delete(Post, { text: null } as any)
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Empty criteria(s)")
+            }
+
+            const remaining = await connection.manager.find(Post)
+            expect(remaining.length).to.equal(1)
         }
     })
 })
