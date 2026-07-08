@@ -768,13 +768,76 @@ export class EntityManager {
     }
 
     /**
+     * Shared by update/delete/softDelete/restore. Object criteria is normalized
+     * via {@link OrmUtils.normalizeWhereCriteria}, then rejected if it would
+     * produce no predicate and therefore render as an always-true `WHERE 1=1` —
+     * an empty object or array, an empty OR-branch, a bare primitive inside an
+     * OR-array, or a keyless object. Primitive id criteria is returned untouched
+     * for `whereInIds` (rejected only when wholly empty).
+     *
+     * @param criteria the raw criteria passed to the operation
+     * @param methodName the calling method, used in the error message
+     * @returns the criteria to build with, and whether to execute it via
+     *   `whereInIds` (primitive) or `where` (object)
+     */
+    protected normalizeAndValidateWhereCriteria(
+        criteria: any,
+        methodName: string,
+    ): {
+        // `any`: for the primitive branch this is the raw id/id-array passed to
+        // `whereInIds`; for the object branch it is the normalized where object
+        criteria: any
+        isPrimitive: boolean
+    } {
+        const rejectEmpty = () => {
+            throw new TypeORMError(
+                `Empty criteria(s) are not allowed for the ${methodName} method.`,
+            )
+        }
+
+        if (OrmUtils.isPrimitiveCriteria(criteria)) {
+            if (OrmUtils.isCriteriaNullOrEmpty(criteria)) rejectEmpty()
+            return { criteria, isPrimitive: true }
+        }
+
+        const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
+            criteria,
+            this.connection.options.invalidWhereValuesBehavior,
+        )
+
+        // On the object-criteria path, `.where()` builds a predicate only from
+        // an object's own keys. Anything else yields an empty predicate list
+        // that renders as an always-true `1=1`, so a criterion is unsafe unless
+        // it is a non-empty object. This must reject:
+        //  - primitives (a bare number/string in a mixed OR-array like
+        //    `[1, { id: 2 }]` — `.where(1)` produces no predicate),
+        //  - empty plain objects (`{}`), empty arrays (`[]`), and
+        //  - empty non-plain objects, e.g. an empty entity instance
+        //    (`new Post()`), which isCriteriaNullOrEmpty does not catch.
+        // Value-type criteria (Date, Buffer) execute via the primitive branch
+        // and never reach here.
+        const rendersNoPredicate = (value: unknown): boolean =>
+            value === null ||
+            typeof value !== "object" ||
+            Object.keys(value).length === 0
+
+        const isEmpty = Array.isArray(normalizedCriteria)
+            ? normalizedCriteria.length === 0 ||
+              normalizedCriteria.some(rendersNoPredicate)
+            : rendersNoPredicate(normalizedCriteria)
+        if (isEmpty) rejectEmpty()
+
+        return { criteria: normalizedCriteria, isPrimitive: false }
+    }
+
+    /**
      * Updates entity partially. Entity can be found by a given condition(s).
      * Unlike save method executes a primitive operation without cascades, relations and other operations included.
      * Executes fast and efficient UPDATE query.
      * Does not check if entity exist in the database.
      * Condition(s) cannot be empty.
      */
-    update<Entity extends ObjectLiteral>(
+    async update<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
         criteria:
             | string
@@ -789,42 +852,21 @@ export class EntityManager {
         partialEntity: QueryDeepPartialEntity<Entity>,
         options?: UpdateOptions,
     ): Promise<UpdateResult> {
-        // if user passed empty criteria or empty list of criterias, then throw an error
-        if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
-            return Promise.reject(
-                new TypeORMError(
-                    `Empty criteria(s) are not allowed for the update method.`,
-                ),
-            )
-        }
+        const { criteria: whereCriteria, isPrimitive } =
+            this.normalizeAndValidateWhereCriteria(criteria, "update")
 
-        if (OrmUtils.isPrimitiveCriteria(criteria)) {
-            const qb = this.createQueryBuilder()
-                .update(target)
-                .set(partialEntity)
-                .whereInIds(criteria)
-
-            if (options?.returning !== undefined) {
-                qb.returning(options.returning)
-            }
-
-            return qb.execute()
+        const qb = this.createQueryBuilder().update(target).set(partialEntity)
+        if (isPrimitive) {
+            qb.whereInIds(whereCriteria)
         } else {
-            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
-                criteria as ObjectLiteral | ObjectLiteral[],
-                this.connection.options.invalidWhereValuesBehavior,
-            )
-            const qb = this.createQueryBuilder()
-                .update(target)
-                .set(partialEntity)
-                .where(normalizedCriteria)
-
-            if (options?.returning !== undefined) {
-                qb.returning(options.returning)
-            }
-
-            return qb.execute()
+            qb.where(whereCriteria)
         }
+
+        if (options?.returning !== undefined) {
+            qb.returning(options.returning)
+        }
+
+        return qb.execute()
     }
 
     /**
@@ -855,7 +897,7 @@ export class EntityManager {
      * Does not check if entity exist in the database.
      * Condition(s) cannot be empty.
      */
-    delete<Entity extends ObjectLiteral>(
+    async delete<Entity extends ObjectLiteral>(
         targetOrEntity: EntityTarget<Entity>,
         criteria:
             | string
@@ -868,32 +910,13 @@ export class EntityManager {
             | ObjectId[]
             | any,
     ): Promise<DeleteResult> {
-        // if user passed empty criteria or empty list of criterias, then throw an error
-        if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
-            return Promise.reject(
-                new TypeORMError(
-                    `Empty criteria(s) are not allowed for the delete method.`,
-                ),
-            )
-        }
+        const { criteria: whereCriteria, isPrimitive } =
+            this.normalizeAndValidateWhereCriteria(criteria, "delete")
 
-        if (OrmUtils.isPrimitiveCriteria(criteria)) {
-            return this.createQueryBuilder()
-                .delete()
-                .from(targetOrEntity)
-                .whereInIds(criteria)
-                .execute()
-        } else {
-            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
-                criteria as ObjectLiteral | ObjectLiteral[],
-                this.connection.options.invalidWhereValuesBehavior,
-            )
-            return this.createQueryBuilder()
-                .delete()
-                .from(targetOrEntity)
-                .where(normalizedCriteria)
-                .execute()
-        }
+        const qb = this.createQueryBuilder().delete().from(targetOrEntity)
+        return (
+            isPrimitive ? qb.whereInIds(whereCriteria) : qb.where(whereCriteria)
+        ).execute()
     }
 
     /**
@@ -916,7 +939,7 @@ export class EntityManager {
      * Does not check if entity exist in the database.
      * Condition(s) cannot be empty.
      */
-    softDelete<Entity extends ObjectLiteral>(
+    async softDelete<Entity extends ObjectLiteral>(
         targetOrEntity: EntityTarget<Entity>,
         criteria:
             | string
@@ -929,32 +952,13 @@ export class EntityManager {
             | ObjectId[]
             | any,
     ): Promise<UpdateResult> {
-        // if user passed empty criteria or empty list of criterias, then throw an error
-        if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
-            return Promise.reject(
-                new TypeORMError(
-                    `Empty criteria(s) are not allowed for the softDelete method.`,
-                ),
-            )
-        }
+        const { criteria: whereCriteria, isPrimitive } =
+            this.normalizeAndValidateWhereCriteria(criteria, "softDelete")
 
-        if (OrmUtils.isPrimitiveCriteria(criteria)) {
-            return this.createQueryBuilder()
-                .softDelete()
-                .from(targetOrEntity)
-                .whereInIds(criteria)
-                .execute()
-        } else {
-            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
-                criteria as ObjectLiteral | ObjectLiteral[],
-                this.connection.options.invalidWhereValuesBehavior,
-            )
-            return this.createQueryBuilder()
-                .softDelete()
-                .from(targetOrEntity)
-                .where(normalizedCriteria)
-                .execute()
-        }
+        const qb = this.createQueryBuilder().softDelete().from(targetOrEntity)
+        return (
+            isPrimitive ? qb.whereInIds(whereCriteria) : qb.where(whereCriteria)
+        ).execute()
     }
 
     /**
@@ -964,7 +968,7 @@ export class EntityManager {
      * Does not check if entity exist in the database.
      * Condition(s) cannot be empty.
      */
-    restore<Entity extends ObjectLiteral>(
+    async restore<Entity extends ObjectLiteral>(
         targetOrEntity: EntityTarget<Entity>,
         criteria:
             | string
@@ -977,32 +981,13 @@ export class EntityManager {
             | ObjectId[]
             | any,
     ): Promise<UpdateResult> {
-        // if user passed empty criteria or empty list of criterias, then throw an error
-        if (OrmUtils.isCriteriaNullOrEmpty(criteria)) {
-            return Promise.reject(
-                new TypeORMError(
-                    `Empty criteria(s) are not allowed for the restore method.`,
-                ),
-            )
-        }
+        const { criteria: whereCriteria, isPrimitive } =
+            this.normalizeAndValidateWhereCriteria(criteria, "restore")
 
-        if (OrmUtils.isPrimitiveCriteria(criteria)) {
-            return this.createQueryBuilder()
-                .restore()
-                .from(targetOrEntity)
-                .whereInIds(criteria)
-                .execute()
-        } else {
-            const normalizedCriteria = OrmUtils.normalizeWhereCriteria(
-                criteria as ObjectLiteral | ObjectLiteral[],
-                this.connection.options.invalidWhereValuesBehavior,
-            )
-            return this.createQueryBuilder()
-                .restore()
-                .from(targetOrEntity)
-                .where(normalizedCriteria)
-                .execute()
-        }
+        const qb = this.createQueryBuilder().restore().from(targetOrEntity)
+        return (
+            isPrimitive ? qb.whereInIds(whereCriteria) : qb.where(whereCriteria)
+        ).execute()
     }
 
     /**

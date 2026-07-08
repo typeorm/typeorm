@@ -336,7 +336,13 @@ export class OrmUtils {
     }
 
     /**
-     * Checks if given criteria is null or empty.
+     * Checks whether the given criteria is null or wholly empty — `null`,
+     * `undefined`, `""`, an empty array, or an empty plain object. Does not
+     * recurse into array elements, so it is safe on self-referential/cyclic
+     * arrays. Per-element OR-branch emptiness (an array containing an empty
+     * element) is handled where object criteria is validated, not here.
+     *
+     * @param criteria
      */
     public static isCriteriaNullOrEmpty(criteria: unknown): boolean {
         return (
@@ -590,17 +596,22 @@ export class OrmUtils {
     }
 
     /**
-     * Recursively validates an object where clause, throwing for null/undefined
-     * based on the provided invalidWhereValuesBehavior config.
+     * Applies invalidWhereValuesBehavior to a plain-object where criteria: for
+     * each own key a null/undefined value is thrown on, skipped, or converted
+     * to IsNull() per the configured behavior. Only plain FindOptionsWhere
+     * objects are normalized; anything else (entity/class instances,
+     * FindOperators, arrays, Date, Buffer, primitives) — and the criteria when
+     * no behavior is configured — is returned untouched.
+     *
      * @param criteria
      * @param options
      * @param path
      */
     static normalizeWhereCriteria(
-        criteria: ObjectLiteral | ObjectLiteral[],
+        criteria: any,
         options?: InvalidFindOptionsWhereBehavior,
         path?: string,
-    ): ObjectLiteral | ObjectLiteral[] {
+    ): any {
         if (!options) {
             return criteria
         }
@@ -617,8 +628,18 @@ export class OrmUtils {
             )
         }
 
+        // Only iterate a plain object criteria. Anything else — an entity/class
+        // instance, a FindOperator, an array, Date, Buffer, a primitive — is
+        // passed through untouched (its keys are not a bag of column
+        // conditions). Validating those properly would need entity metadata,
+        // which is out of scope here.
+        if (!OrmUtils.isPlainObject(criteria)) {
+            return criteria
+        }
+
         const result: ObjectLiteral = {}
         for (const [key, value] of Object.entries(criteria)) {
+            if (key === "__proto__") continue
             const propertyPath = path ? `${path}.${key}` : key
 
             if (value === undefined) {
