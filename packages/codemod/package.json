@@ -48,5 +48,13 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "pnpm": {
+    "overrides": {
+      "brace-expansion@>=5.0.0 <5.0.6": ">=5.0.6",
+      "diff@>=6.0.0 <8.0.3": ">=8.0.3",
+      "serialize-javascript@<=7.0.2": ">=7.0.3",
+      "serialize-javascript@>=5.0.0 <7.0.5": ">=7.0.5"
+    }
   }
 }
