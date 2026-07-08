@@ -270,4 +270,38 @@ describe(`OrmUtils`, () => {
             ).to.equal(false)
         })
     })
+    describe("normalizeWhereCriteria", () => {
+        it("should throw by default if criteria contains undefined and options are not provided", () => {
+            expect(() => {
+                OrmUtils.normalizeWhereCriteria({ name: undefined })
+            }).to.throw(
+                "Undefined value encountered in property 'name' of a where condition.",
+            )
+        })
+
+        it("should throw by default if criteria contains null and options are not provided", () => {
+            expect(() => {
+                OrmUtils.normalizeWhereCriteria({ name: null })
+            }).to.throw(
+                "Null value encountered in property 'name' of a where condition.",
+            )
+        })
+
+        it("should not throw if criteria contains undefined and undefined behavior is ignore", () => {
+            expect(() => {
+                OrmUtils.normalizeWhereCriteria(
+                    { name: undefined },
+                    { undefined: "ignore" },
+                )
+            }).not.to.throw()
+        })
+
+        it("should ignore undefined values when behavior is ignore", () => {
+            const result = OrmUtils.normalizeWhereCriteria(
+                { name: undefined, age: 30 },
+                { undefined: "ignore" },
+            )
+            expect(result).to.deep.equal({ age: 30 })
+        })
+    })
 })

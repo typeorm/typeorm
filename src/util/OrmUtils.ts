@@ -662,9 +662,7 @@ export class OrmUtils {
         options?: InvalidFindOptionsWhereBehavior,
         path?: string,
     ): ObjectLiteral | ObjectLiteral[] {
-        if (!options) {
-            return criteria
-        }
+        options = options ?? {}
 
         // multiple criteria are possible at the top level
         if (!path && Array.isArray(criteria)) {
