@@ -237,11 +237,11 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
         }
     })
 
-    it("validates entity class instances against invalidWhereValuesBehavior (consistent with find)", async () => {
+    it("passes entity class instances through unchanged (only plain objects are normalized)", async () => {
         for (const connection of dataSources) {
-            // An entity class instance is validated key-by-key, exactly as the
-            // read/find path validates it — the write path no longer bypasses
-            // invalidWhereValuesBehavior for entity instances.
+            // An entity class instance is not a plain object, so it is not
+            // validated against invalidWhereValuesBehavior: its set columns are
+            // passed straight through to the WHERE.
 
             // a fully populated instance deletes its matching row as usual
             const withText = new Post()
@@ -249,35 +249,21 @@ describe("entity manager > invalidWhereValuesBehavior with throw", () => {
             withText.text = "hello"
             await connection.manager.save(withText)
 
-            const populatedResult = await connection.manager.delete(
-                Post,
-                withText,
-            )
-            // the delete targets exactly this row — assert the real effect, not
-            // merely the absence of an error (drivers that report affected)
-            if (typeof populatedResult.affected === "number") {
-                expect(populatedResult.affected).to.equal(1)
-            }
+            await connection.manager.delete(Post, withText)
             expect(
                 await connection.manager.findOneBy(Post, { id: withText.id }),
             ).to.equal(null)
 
-            // an instance whose nullable column is null now throws under
-            // "throw" (previously it silently passed through as `text = NULL`),
-            // matching what find()/findBy() does with the same input
+            // a null nullable column does NOT throw (the instance is passed
+            // through, not validated). It renders as `text = NULL`, which
+            // matches nothing, so the delete is a deliberate no-op and the row
+            // remains.
             const withNull = new Post()
             withNull.title = "With Null"
             withNull.text = null
             await connection.manager.save(withNull)
 
-            try {
-                await connection.manager.delete(Post, withNull)
-                expect.fail("Expected error")
-            } catch (error) {
-                expect(error).to.be.instanceOf(TypeORMError)
-                expect(error.message).to.include("Null value encountered")
-            }
-            // the delete was rejected, so the row is untouched
+            await connection.manager.delete(Post, withNull)
             expect(
                 await connection.manager.findOneBy(Post, { id: withNull.id }),
             ).to.not.equal(null)

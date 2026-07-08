@@ -44,6 +44,12 @@ import { escapeRegExp } from "../util/escapeRegExp"
 // .loadAndMap("post.categories", Category, qb => ...)
 
 /**
+ * Query types that mutate rows and therefore must not run with an empty WHERE
+ * that a caller intended to filter on.
+ */
+const WRITE_QUERY_TYPES = ["update", "delete", "soft-delete", "restore"]
+
+/**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
 export abstract class QueryBuilder<Entity extends ObjectLiteral> {
@@ -871,19 +877,18 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
         // A write operation whose provided WHERE renders empty ("1=1") would
         // silently affect every row. Reject it instead of emitting an unfiltered
-        // UPDATE/DELETE — this also covers criteria that only look non-empty at
-        // the top level but expand to zero predicates (e.g. a relation key whose
-        // value is a keyless object). To affect all rows, use the dedicated
-        // updateAll()/deleteAll() methods, which set no WHERE.
-        const writeQueryTypes = ["update", "delete", "soft-delete", "restore"]
+        // statement — this also covers criteria that only look non-empty at the
+        // top level but expand to zero predicates (e.g. a relation key whose
+        // value is a keyless object). Build the query without a WHERE to
+        // intentionally affect all rows.
         if (
-            writeQueryTypes.indexOf(this.expressionMap.queryType) !== -1 &&
+            WRITE_QUERY_TYPES.includes(this.expressionMap.queryType) &&
             this.expressionMap.wheres.length > 0 &&
             (whereExpression.length === 0 || whereExpression === "1=1")
         ) {
             throw new TypeORMError(
                 `Empty criteria(s) are not allowed for the ${this.expressionMap.queryType} operation. ` +
-                    `To affect all rows, use the dedicated updateAll/deleteAll methods.`,
+                    `Provide a WHERE condition, or build the query without one to intentionally affect all rows.`,
             )
         }
 

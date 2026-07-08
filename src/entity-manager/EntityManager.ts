@@ -836,7 +836,7 @@ export class EntityManager {
      *   `whereInIds` (primitive) or `where` (object)
      */
     protected normalizeAndValidateWhereCriteria(
-        criteria: ObjectLiteral | ObjectLiteral[],
+        criteria: any,
         methodName: string,
     ): {
         // `any`: for the primitive branch this is the raw id/id-array passed to
@@ -913,10 +913,7 @@ export class EntityManager {
         options?: UpdateOptions,
     ): Promise<UpdateResult> {
         const { criteria: whereCriteria, isPrimitive } =
-            this.normalizeAndValidateWhereCriteria(
-                criteria as ObjectLiteral | ObjectLiteral[],
-                "update",
-            )
+            this.normalizeAndValidateWhereCriteria(criteria, "update")
 
         const qb = this.createQueryBuilder().update(target).set(partialEntity)
         if (isPrimitive) {
@@ -981,10 +978,7 @@ export class EntityManager {
             | any,
     ): Promise<DeleteResult> {
         const { criteria: whereCriteria, isPrimitive } =
-            this.normalizeAndValidateWhereCriteria(
-                criteria as ObjectLiteral | ObjectLiteral[],
-                "delete",
-            )
+            this.normalizeAndValidateWhereCriteria(criteria, "delete")
 
         const qb = this.createQueryBuilder().delete().from(targetOrEntity)
         return (
@@ -1031,10 +1025,7 @@ export class EntityManager {
             | any,
     ): Promise<UpdateResult> {
         const { criteria: whereCriteria, isPrimitive } =
-            this.normalizeAndValidateWhereCriteria(
-                criteria as ObjectLiteral | ObjectLiteral[],
-                "softDelete",
-            )
+            this.normalizeAndValidateWhereCriteria(criteria, "softDelete")
 
         const qb = this.createQueryBuilder().softDelete().from(targetOrEntity)
         return (
@@ -1066,10 +1057,7 @@ export class EntityManager {
             | any,
     ): Promise<UpdateResult> {
         const { criteria: whereCriteria, isPrimitive } =
-            this.normalizeAndValidateWhereCriteria(
-                criteria as ObjectLiteral | ObjectLiteral[],
-                "restore",
-            )
+            this.normalizeAndValidateWhereCriteria(criteria, "restore")
 
         const qb = this.createQueryBuilder().restore().from(targetOrEntity)
         return (

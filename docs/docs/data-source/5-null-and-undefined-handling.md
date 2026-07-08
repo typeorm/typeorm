@@ -245,11 +245,11 @@ await manager.delete(Post, { text: null })
 Use the dedicated `updateAll()` / `deleteAll()` methods when you intentionally want to affect every row.
 :::
 
-### Entity class instances are validated too
+### Only plain-object criteria is normalized
 
-`invalidWhereValuesBehavior` applies to **entity class instances** as well as plain `FindOptionsWhere` objects. When a loaded entity is used as criteria for `update`, `delete`, `softDelete`, or `restore`, its set columns are validated key-by-key — exactly as the read/find path validates them. So an entity whose nullable column is `null` throws under `"throw"`, matches `IS NULL` under `"sql-null"`, or is skipped under `"ignore"`, identical to passing the equivalent plain object.
+`invalidWhereValuesBehavior` normalizes **plain `FindOptionsWhere` objects** only. Any other criteria value passed to `update` / `delete` / `softDelete` / `restore` — an **entity class instance**, a `FindOperator`, an array, a `Date`, a `Buffer`, or a primitive `id` — is passed through untouched and is **not** validated. So an entity instance whose nullable column is `null` renders as `col = NULL` (matching nothing), rather than throwing/converting. If you need null handling, pass a plain object with the `IsNull()` operator (e.g. `{ text: IsNull() }`).
 
-Primitive criteria (`id` values) and atomic value-types such as `Date` and binary `Buffer`/`Uint8Array` are treated as whole values and are **not** traversed. To match SQL `NULL`, use the `IsNull()` operator (e.g. `{ text: IsNull() }`).
+> Deep validation of entity-instance criteria requires entity metadata and is out of scope here; use a plain `FindOptionsWhere` object when you want `invalidWhereValuesBehavior` applied.
 
 ### QueryBuilder with setFindOptions
 

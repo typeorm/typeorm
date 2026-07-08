@@ -654,22 +654,22 @@ export class OrmUtils {
     }
 
     /**
-     * Applies invalidWhereValuesBehavior to a where criteria. For each own key,
-     * a null/undefined value is thrown on, skipped, or converted to IsNull()
-     * according to the configured behavior. Plain FindOptionsWhere objects and
-     * entity class instances are validated alike (matching the read/find path);
-     * primitives and atomic value-types (Date, Buffer/Uint8Array) are returned
-     * untouched, as is the criteria when no behavior is configured.
+     * Applies invalidWhereValuesBehavior to a plain-object where criteria: for
+     * each own key a null/undefined value is thrown on, skipped, or converted
+     * to IsNull() per the configured behavior. Only plain FindOptionsWhere
+     * objects are normalized; anything else (entity/class instances,
+     * FindOperators, arrays, Date, Buffer, primitives) — and the criteria when
+     * no behavior is configured — is returned untouched.
      *
      * @param criteria
      * @param options
      * @param path
      */
     static normalizeWhereCriteria(
-        criteria: ObjectLiteral | ObjectLiteral[],
+        criteria: any,
         options?: InvalidFindOptionsWhereBehavior,
         path?: string,
-    ): ObjectLiteral | ObjectLiteral[] {
+    ): any {
         if (!options) {
             return criteria
         }
@@ -686,20 +686,12 @@ export class OrmUtils {
             )
         }
 
-        // Primitives and atomic value-type criteria (Date, binary Buffer/
-        // Uint8Array) are whole values, not bags of column conditions, so they
-        // are passed through untouched. Everything else with own keys — plain
-        // FindOptionsWhere objects AND entity class instances alike — is
-        // validated key-by-key, so the write path (update/delete/softDelete/
-        // restore) enforces invalidWhereValuesBehavior consistently with the
-        // read/find path (SelectQueryBuilder.buildWhere), which validates every
-        // key regardless of whether it was given a plain object or an entity.
-        if (
-            criteria === null ||
-            typeof criteria !== "object" ||
-            criteria instanceof Date ||
-            isUint8Array(criteria)
-        ) {
+        // Only iterate a plain object criteria. Anything else — an entity/class
+        // instance, a FindOperator, an array, Date, Buffer, a primitive — is
+        // passed through untouched (its keys are not a bag of column
+        // conditions). Validating those properly would need entity metadata,
+        // which is out of scope here.
+        if (!OrmUtils.isPlainObject(criteria)) {
             return criteria
         }
 

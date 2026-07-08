@@ -294,23 +294,19 @@ describe(`OrmUtils`, () => {
             expect(result).to.deep.equal({ name: "Alice" })
         })
 
-        it("validates entity class instances like plain objects (consistent with find)", () => {
+        it("passes entity class instances through unchanged (only plain objects are normalized)", () => {
             class User {
                 id = 1
                 name = "Alice"
                 parentId: number | null = null
             }
-            // an entity instance is validated key-by-key, exactly as the read
-            // path (SelectQueryBuilder.buildWhere) validates it — a null column
-            // throws under "throw"
-            expect(() =>
-                OrmUtils.normalizeWhereCriteria(new User(), { null: "throw" }),
-            ).to.throw(/Null value.*'parentId'/)
-
-            // under "ignore" the null key is stripped, leaving the real columns
+            const entity = new User()
+            // an entity instance is not a plain object, so it is returned
+            // untouched — its null column is not validated/stripped even under
+            // "throw" (proper handling would need entity metadata)
             expect(
-                OrmUtils.normalizeWhereCriteria(new User(), { null: "ignore" }),
-            ).to.deep.equal({ id: 1, name: "Alice" })
+                OrmUtils.normalizeWhereCriteria(entity, { null: "throw" }),
+            ).to.equal(entity)
         })
 
         it("passes primitives and atomic value-types (Date, Uint8Array) through unchanged", () => {
