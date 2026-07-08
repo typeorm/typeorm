@@ -1770,6 +1770,11 @@ export class PostgresDriver implements Driver {
             }
         }
 
+        // Validate and build the session-parameters handler before allocating the
+        // pool, so invalid configuration fails without leaking pool resources.
+        const sessionParametersHandler =
+            DriverUtils.buildSessionParametersHandler(options.sessionParameters)
+
         // create a connection pool
         const pool = new this.postgres.Pool(connectionOptions)
 
@@ -1783,9 +1788,6 @@ export class PostgresDriver implements Driver {
           cause the hosting app to crash.
          */
         pool.on("error", poolErrorHandler)
-
-        const sessionParametersHandler =
-            DriverUtils.buildSessionParametersHandler(options.sessionParameters)
 
         return new Promise((ok, fail) => {
             pool.connect(

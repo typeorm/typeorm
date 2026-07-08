@@ -72,7 +72,7 @@ describe("driver > session parameters > invalid configuration", () => {
         if (!options) return
 
         const dataSource = new DataSource({
-            ...(options as any),
+            ...options,
             // Valid identifier, but not a real parameter: it passes up-front
             // validation and fails at set_config runtime, which must fail
             // initialization rather than leaving connections unconfigured.
