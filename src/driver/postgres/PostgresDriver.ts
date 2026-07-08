@@ -1784,28 +1784,45 @@ export class PostgresDriver implements Driver {
          */
         pool.on("error", poolErrorHandler)
 
-        return new Promise((ok, fail) => {
-            pool.connect((err: any, connection: any, release: Function) => {
-                if (err) return fail(err)
+        const sessionParametersHandler =
+            DriverUtils.buildSessionParametersHandler(options.sessionParameters)
 
-                if (options.logNotifications) {
-                    connection.on("notice", (msg: any) => {
-                        if (msg) {
-                            this.dataSource.logger.log("info", msg.message)
+        return new Promise((ok, fail) => {
+            pool.connect(
+                async (err: any, connection: any, release: Function) => {
+                    if (err) return fail(err)
+
+                    if (sessionParametersHandler) {
+                        try {
+                            await sessionParametersHandler(connection)
+                        } catch (sessionParametersError) {
+                            release(sessionParametersError)
+                            return fail(sessionParametersError)
                         }
-                    })
-                    connection.on("notification", (msg: any) => {
-                        if (msg) {
-                            this.dataSource.logger.log(
-                                "info",
-                                `Received NOTIFY on channel ${msg.channel}: ${msg.payload}.`,
-                            )
-                        }
-                    })
-                }
-                release()
-                ok(pool)
-            })
+                        pool.on("connect", (c: any) =>
+                            sessionParametersHandler(c).catch(poolErrorHandler),
+                        )
+                    }
+
+                    if (options.logNotifications) {
+                        connection.on("notice", (msg: any) => {
+                            if (msg) {
+                                this.dataSource.logger.log("info", msg.message)
+                            }
+                        })
+                        connection.on("notification", (msg: any) => {
+                            if (msg) {
+                                this.dataSource.logger.log(
+                                    "info",
+                                    `Received NOTIFY on channel ${msg.channel}: ${msg.payload}.`,
+                                )
+                            }
+                        })
+                    }
+                    release()
+                    ok(pool)
+                },
+            )
         })
     }
 
