@@ -662,20 +662,58 @@ export class OrmUtils {
         options?: InvalidFindOptionsWhereBehavior,
         path?: string,
     ): ObjectLiteral | ObjectLiteral[] {
-        if (!options) {
-            return criteria
-        }
+        const undefinedBehavior = options?.undefined ?? "throw"
+        const nullBehavior = options?.null ?? "throw"
+        const isDefaultBehavior =
+            undefinedBehavior === "throw" && nullBehavior === "throw"
 
         // multiple criteria are possible at the top level
         if (!path && Array.isArray(criteria)) {
-            return criteria.map(
-                (criterion, index): ObjectLiteral =>
+            if (isDefaultBehavior) {
+                for (let i = 0; i < criteria.length; i++) {
                     OrmUtils.normalizeWhereCriteria(
-                        criterion,
+                        criteria[i],
                         options,
-                        String(index),
-                    ),
-            )
+                        String(i),
+                    )
+                }
+                return criteria
+            } else {
+                return criteria.map(
+                    (criterion, index): ObjectLiteral =>
+                        OrmUtils.normalizeWhereCriteria(
+                            criterion,
+                            options,
+                            String(index),
+                        ) as ObjectLiteral,
+                )
+            }
+        }
+
+        if (isDefaultBehavior) {
+            for (const [key, value] of Object.entries(criteria)) {
+                const propertyPath = path ? `${path}.${key}` : key
+
+                if (value === undefined) {
+                    throw new TypeORMError(
+                        `Undefined value encountered in property '${propertyPath}' of a where condition. ` +
+                            `Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
+                    )
+                } else if (value === null) {
+                    throw new TypeORMError(
+                        `Null value encountered in property '${propertyPath}' of a where condition. ` +
+                            `To match with SQL NULL, the IsNull() operator must be used. ` +
+                            `Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
+                    )
+                } else if (OrmUtils.isPlainObject(value)) {
+                    OrmUtils.normalizeWhereCriteria(
+                        value,
+                        options,
+                        propertyPath,
+                    )
+                }
+            }
+            return criteria
         }
 
         const result: ObjectLiteral = {}
@@ -683,8 +721,7 @@ export class OrmUtils {
             const propertyPath = path ? `${path}.${key}` : key
 
             if (value === undefined) {
-                const behavior = options?.undefined ?? "throw"
-                if (behavior === "throw") {
+                if (undefinedBehavior === "throw") {
                     throw new TypeORMError(
                         `Undefined value encountered in property '${propertyPath}' of a where condition. ` +
                             `Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
@@ -692,14 +729,13 @@ export class OrmUtils {
                 }
                 // else: "ignore" — skip this key
             } else if (value === null) {
-                const behavior = options?.null ?? "throw"
-                if (behavior === "throw") {
+                if (nullBehavior === "throw") {
                     throw new TypeORMError(
                         `Null value encountered in property '${propertyPath}' of a where condition. ` +
                             `To match with SQL NULL, the IsNull() operator must be used. ` +
                             `Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
                     )
-                } else if (behavior === "sql-null") {
+                } else if (nullBehavior === "sql-null") {
                     result[key] = IsNull()
                 }
                 // else: "ignore" — skip this key
@@ -709,7 +745,7 @@ export class OrmUtils {
                     options,
                     propertyPath,
                 )
-                if (Object.keys(nested).length > 0) {
+                if (Object.keys(nested as any).length > 0) {
                     result[key] = nested
                 }
             } else {
