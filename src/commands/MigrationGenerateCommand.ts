@@ -71,6 +71,10 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
             })
     }
 
+    private static normalizeMigrationName(name: string): string {
+        return name.replaceAll(/[^A-Za-z0-9\s_-]/g, " ")
+    }
+
     async handler(args: yargs.Arguments<any & { path: string }>) {
         const timestamp = CommandUtils.getTimestamp(args.timestamp)
         const extension = args.outputJs ? ".js" : ".ts"
@@ -240,7 +244,10 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
         upSqls: string[],
         downSqls: string[],
     ): string {
-        const migrationName = `${camelCase(name, true)}${timestamp}`
+        const migrationName = `${camelCase(
+            MigrationGenerateCommand.normalizeMigrationName(name),
+            true,
+        )}${timestamp}`
 
         return `import { MigrationInterface, QueryRunner } from "typeorm";
 
@@ -277,7 +284,10 @@ ${downSqls.join(`
         downSqls: string[],
         esm: boolean,
     ): string {
-        const migrationName = `${camelCase(name, true)}${timestamp}`
+        const migrationName = `${camelCase(
+            MigrationGenerateCommand.normalizeMigrationName(name),
+            true,
+        )}${timestamp}`
 
         const exportMethod = esm ? "export" : "module.exports ="
 

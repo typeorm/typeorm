@@ -170,4 +170,39 @@ describe("commands - migration generate", () => {
             getConnectionOptionsStub.restore()
         }
     })
+
+    it("sanitizes invalid characters in the generated migration class name", async () => {
+        for (const connectionOption of connectionOptions) {
+            createFileStub.resetHistory()
+
+            baseConnectionOptions = await connectionOptionsReader.get()
+            getConnectionOptionsStub = sinon
+                .stub(ConnectionOptionsReader.prototype, "get")
+                .resolves([
+                    {
+                        ...baseConnectionOptions[0],
+                        entities: [Post],
+                    },
+                ])
+
+            loadDataSourceStub.resolves(new DataSource(connectionOption))
+
+            await migrationGenerateCommand.handler(
+                testHandlerArgs({
+                    dataSource: "dummy-path",
+                    path: "test-directory/refresh#2",
+                    timestamp: "1610975184784",
+                    exitProcess: false,
+                }),
+            )
+
+            sinon.assert.calledWith(
+                createFileStub,
+                sinon.match(/test-directory.*refresh#2\.ts/),
+                sinon.match(/export class Refresh2\d+ implements MigrationInterface/),
+            )
+
+            getConnectionOptionsStub.restore()
+        }
+    })
 })
