@@ -272,9 +272,13 @@ describe(`OrmUtils`, () => {
     })
 
     describe("normalizeWhereCriteria", () => {
-        it("returns criteria unchanged when no options are provided", () => {
-            const criteria = { name: null, email: undefined }
-            expect(OrmUtils.normalizeWhereCriteria(criteria)).to.equal(criteria)
+        it("throws on null/undefined when no options are provided", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ name: undefined }),
+            ).to.throw(/Undefined value.*'name'/)
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ email: null }),
+            ).to.throw(/Null value.*'email'/)
         })
 
         it("throws on null/undefined by default when options are provided", () => {
