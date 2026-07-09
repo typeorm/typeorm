@@ -35,6 +35,22 @@ await myDataSource
     .execute()
 ```
 
+`softDelete()` updates rows directly by criteria. If you need entity-level
+cascades or subscribers/listeners to run, use `softRemove()` through the
+repository or entity manager instead.
+
+For example:
+
+```typescript
+const user = await dataSource.getRepository(User).findOneBy({ id: 1 })
+if (user) {
+    await dataSource.getRepository(User).softRemove(user)
+}
+```
+
+See also the repository API docs for `softDelete` versus `softRemove`:
+[working-with-entity-manager/6-repository-api.md](../working-with-entity-manager/6-repository-api.md).
+
 ## `Restore-Soft-Delete`
 
 Alternatively, You can recover the soft deleted rows by using the `restore()` method:
