@@ -272,12 +272,16 @@ describe(`OrmUtils`, () => {
     })
 
     describe("normalizeWhereCriteria", () => {
-        it("returns criteria unchanged when no options are provided", () => {
-            const criteria = { name: null, email: undefined }
-            expect(OrmUtils.normalizeWhereCriteria(criteria)).to.equal(criteria)
+        it("throws on null/undefined by default when no options are provided", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ name: undefined }),
+            ).to.throw(/Undefined value.*'name'/)
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ email: null }),
+            ).to.throw(/Null value.*'email'/)
         })
 
-        it("throws on null/undefined by default when options are provided", () => {
+        it("throws on null/undefined by default when empty options are provided", () => {
             expect(() =>
                 OrmUtils.normalizeWhereCriteria({ name: undefined }, {}),
             ).to.throw(/Undefined value.*'name'/)
@@ -302,7 +306,7 @@ describe(`OrmUtils`, () => {
             }
             const entity = new User()
             // an entity instance is not a plain object, so it is returned
-            // untouched — its null column is not validated/stripped even under
+            // untouched â€” its null column is not validated/stripped even under
             // "throw" (proper handling would need entity metadata)
             expect(
                 OrmUtils.normalizeWhereCriteria(entity, { null: "throw" }),
@@ -369,7 +373,7 @@ describe(`OrmUtils`, () => {
             // is not empty regardless of its elements. Per-element OR-branch
             // emptiness (e.g. [{}] / [[]]) is enforced where object criteria is
             // validated (EntityManager.normalizeAndValidateWhereCriteria), not
-            // here — this keeps it usable for primitive id-arrays and cheap.
+            // here â€” this keeps it usable for primitive id-arrays and cheap.
             expect(OrmUtils.isCriteriaNullOrEmpty([{}])).to.equal(false)
             expect(OrmUtils.isCriteriaNullOrEmpty([[]])).to.equal(false)
             expect(OrmUtils.isCriteriaNullOrEmpty([{ id: 1 }])).to.equal(false)
@@ -383,7 +387,7 @@ describe(`OrmUtils`, () => {
         it("does not recurse on a self-referential array", () => {
             const cyclic: any[] = []
             cyclic.push(cyclic)
-            // shallow check — must not throw a RangeError and a non-empty
+            // shallow check â€” must not throw a RangeError and a non-empty
             // (self-referential) array is not treated as empty
             expect(OrmUtils.isCriteriaNullOrEmpty(cyclic)).to.equal(false)
         })
