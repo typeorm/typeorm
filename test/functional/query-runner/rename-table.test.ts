@@ -267,7 +267,9 @@ describe("query runner > rename table", () => {
                     table!,
                     ["name"],
                 )
-                expect(table!.indices[0].name).to.equal(newIndexName)
+                expect(
+                    table!.indices.find((index) => index.name === newIndexName),
+                ).to.exist
 
                 await queryRunner.renameTable(
                     categoryTableName,
@@ -283,7 +285,11 @@ describe("query runner > rename table", () => {
                     )
                 expect(table!.foreignKeys[0].name).to.equal(newForeignKeyName)
                 if (DriverUtils.isMySQLFamily(dataSource.driver)) {
-                    expect(table!.indices[0].name).to.equal(newForeignKeyName)
+                    expect(
+                        table!.indices.find(
+                            (index) => index.name === newForeignKeyName,
+                        ),
+                    ).to.exist
                 }
 
                 await queryRunner.executeMemoryDownSql()
