@@ -105,8 +105,7 @@ export class IndexMetadata {
      * User specified column names.
      */
     givenColumnNames?:
-        | ((object?: any) => any[] | { [key: string]: number })
-        | string[]
+        ((object?: any) => any[] | { [key: string]: number }) | string[]
 
     /**
      * Final index name.
