@@ -656,10 +656,11 @@ export class OrmUtils {
     /**
      * Applies invalidWhereValuesBehavior to a plain-object where criteria: for
      * each own key a null/undefined value is thrown on, skipped, or converted
-     * to IsNull() per the configured behavior. Only plain FindOptionsWhere
-     * objects are normalized; anything else (entity/class instances,
-     * FindOperators, arrays, Date, Buffer, primitives) — and the criteria when
-     * no behavior is configured — is returned untouched.
+     * to IsNull() per the configured behavior. Plain FindOptionsWhere objects
+     * and top-level arrays of them are normalized; anything else
+     * (entity/class instances, FindOperators, Date, Buffer, primitives) is
+     * returned untouched. When no behavior is configured, null and undefined
+     * values default to "throw".
      *
      * @param criteria
      * @param options
