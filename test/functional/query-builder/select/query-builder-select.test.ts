@@ -831,6 +831,36 @@ describe("query builder > select", () => {
                     expect(posts.length).to.equal(0)
                 }),
             ))
+
+        it("should return empty array when take(0) is used in actual query execution with joins", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    // Insert some test data
+                    await dataSource.getRepository(Post).save([
+                        {
+                            id: "1",
+                            title: "Post 1",
+                            description: "Description 1",
+                            rating: 1,
+                        },
+                        {
+                            id: "2",
+                            title: "Post 2",
+                            description: "Description 2",
+                            rating: 2,
+                        },
+                    ])
+
+                    const posts = await dataSource
+                        .createQueryBuilder(Post, "post")
+                        .leftJoinAndSelect("post.category", "category")
+                        .take(0)
+                        .getMany()
+
+                    expect(posts).to.be.an("array")
+                    expect(posts.length).to.equal(0)
+                }),
+            ))
     })
 
     describe("column order in select statement", () => {
