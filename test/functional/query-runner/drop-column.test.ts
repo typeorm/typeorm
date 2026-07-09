@@ -65,12 +65,10 @@ describe("query runner > drop column", () => {
                     table = await queryRunner.getTable("post")
                     expect(table!.findColumnByName("name")).to.be.undefined
                     expect(table!.findColumnByName("version")).to.be.undefined
-                    if (
-                        !(
-                            dataSource.driver.options.type === "cockroachdb" ||
-                            dataSource.driver.options.type === "spanner"
-                        )
-                    )
+                    if (!(
+                        dataSource.driver.options.type === "cockroachdb" ||
+                        dataSource.driver.options.type === "spanner"
+                    ))
                         expect(table!.findColumnByName("id")).to.be.undefined
 
                     await queryRunner.executeMemoryDownSql()
@@ -130,12 +128,10 @@ describe("query runner > drop column", () => {
                     table = await queryRunner.getTable("post")
                     expect(table!.findColumnByName("name")).to.be.undefined
                     expect(table!.findColumnByName("version")).to.be.undefined
-                    if (
-                        !(
-                            dataSource.driver.options.type === "cockroachdb" ||
-                            dataSource.driver.options.type === "spanner"
-                        )
-                    )
+                    if (!(
+                        dataSource.driver.options.type === "cockroachdb" ||
+                        dataSource.driver.options.type === "spanner"
+                    ))
                         expect(table!.findColumnByName("id")).to.be.undefined
 
                     await queryRunner.executeMemoryDownSql()

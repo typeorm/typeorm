@@ -676,13 +676,12 @@ export class OrmUtils {
 
         // multiple criteria are possible at the top level
         if (!path && Array.isArray(criteria)) {
-            return criteria.map(
-                (criterion, index): ObjectLiteral =>
-                    OrmUtils.normalizeWhereCriteria(
-                        criterion,
-                        options,
-                        String(index),
-                    ),
+            return criteria.map((criterion, index): ObjectLiteral =>
+                OrmUtils.normalizeWhereCriteria(
+                    criterion,
+                    options,
+                    String(index),
+                ),
             )
         }
 

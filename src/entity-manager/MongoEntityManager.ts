@@ -100,9 +100,7 @@ export class MongoEntityManager extends EntityManager {
     async find<Entity>(
         entityClassOrName: EntityTarget<Entity>,
         optionsOrConditions?:
-            | FindManyOptions<Entity>
-            | Partial<Entity>
-            | FilterOperators<Entity>,
+            FindManyOptions<Entity> | Partial<Entity> | FilterOperators<Entity>,
     ): Promise<Entity[]> {
         const metadata = this.dataSource.getMetadata(entityClassOrName)
         const query = this.replaceObjectIdProperty(
@@ -284,8 +282,7 @@ export class MongoEntityManager extends EntityManager {
     async insert<Entity>(
         target: EntityTarget<Entity>,
         entity:
-            | QueryDeepPartialEntity<Entity>
-            | QueryDeepPartialEntity<Entity>[],
+            QueryDeepPartialEntity<Entity> | QueryDeepPartialEntity<Entity>[],
     ): Promise<InsertResult> {
         // todo: convert entity to its database name
         const result = new InsertResult()
@@ -1160,9 +1157,7 @@ export class MongoEntityManager extends EntityManager {
      */
     protected convertFindOneOptionsOrConditionsToMongodbQuery<Entity>(
         optionsOrConditions:
-            | MongoFindOneOptions<Entity>
-            | Partial<Entity>
-            | undefined,
+            MongoFindOneOptions<Entity> | Partial<Entity> | undefined,
     ): ObjectLiteral | undefined {
         if (!optionsOrConditions) return undefined
 
@@ -1425,9 +1420,7 @@ export class MongoEntityManager extends EntityManager {
     protected async executeFind<Entity>(
         entityClassOrName: EntityTarget<Entity>,
         optionsOrConditions?:
-            | MongoFindManyOptions<Entity>
-            | Partial<Entity>
-            | any[],
+            MongoFindManyOptions<Entity> | Partial<Entity> | any[],
     ): Promise<Entity[]> {
         const metadata = this.dataSource.getMetadata(entityClassOrName)
         const query = this.replaceObjectIdProperty(

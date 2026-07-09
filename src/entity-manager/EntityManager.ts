@@ -128,8 +128,7 @@ export class EntityManager {
      */
     async transaction<T>(
         isolationOrRunInTransaction:
-            | IsolationLevel
-            | ((entityManager: EntityManager) => Promise<T>),
+            IsolationLevel | ((entityManager: EntityManager) => Promise<T>),
         runInTransactionParam?: (entityManager: EntityManager) => Promise<T>,
     ): Promise<T> {
         const isolation =
@@ -741,8 +740,7 @@ export class EntityManager {
     async insert<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
         entity:
-            | QueryDeepPartialEntity<Entity>
-            | QueryDeepPartialEntity<Entity>[],
+            QueryDeepPartialEntity<Entity> | QueryDeepPartialEntity<Entity>[],
     ): Promise<InsertResult> {
         return this.createQueryBuilder()
             .insert()
@@ -754,8 +752,7 @@ export class EntityManager {
     async upsert<Entity extends ObjectLiteral>(
         target: EntityTarget<Entity>,
         entityOrEntities:
-            | QueryDeepPartialEntity<Entity>
-            | QueryDeepPartialEntity<Entity>[],
+            QueryDeepPartialEntity<Entity> | QueryDeepPartialEntity<Entity>[],
         conflictPathsOrOptions: string[] | UpsertOptions<Entity>,
     ): Promise<InsertResult> {
         const metadata = this.dataSource.getMetadata(target)

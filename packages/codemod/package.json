@@ -23,38 +23,29 @@
   },
   "dependencies": {
     "jscodeshift": "^17.3.0",
-    "semver": "^7.7.4",
-    "tinyglobby": "^0.2.16"
+    "semver": "^7.8.5",
+    "tinyglobby": "^0.2.17"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/chai": "^4.3.20",
     "@types/jscodeshift": "^17.3.0",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^20.19.39",
+    "@types/node": "^20.19.43",
     "@types/semver": "^7.7.1",
-    "@types/sinon": "^21.0.1",
+    "@types/sinon": "^22.0.0",
     "c8": "^11.0.0",
     "chai": "^4.5.0",
-    "eslint": "^10.2.1",
-    "eslint-plugin-chai-friendly": "^1.2.0",
-    "globals": "^17.5.0",
-    "mocha": "^11.7.5",
-    "prettier": "^3.8.3",
-    "sinon": "^21.1.2",
+    "eslint": "^10.6.0",
+    "eslint-plugin-chai-friendly": "^1.2.1",
+    "mocha": "^11.7.6",
+    "prettier": "^3.9.4",
+    "sinon": "^22.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.59.0"
+    "typescript-eslint": "^8.63.0"
   },
   "engines": {
     "node": ">=20"
-  },
-  "pnpm": {
-    "overrides": {
-      "brace-expansion@>=5.0.0 <5.0.6": ">=5.0.6",
-      "diff@>=6.0.0 <8.0.3": ">=8.0.3",
-      "serialize-javascript@<=7.0.2": ">=7.0.3",
-      "serialize-javascript@>=5.0.0 <7.0.5": ">=7.0.5"
-    }
   }
 }
