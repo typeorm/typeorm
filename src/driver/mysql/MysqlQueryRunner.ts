@@ -816,6 +816,22 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 (index) => index.name === oldForeignKeyName,
             )
             if (supportingIndex) {
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(newTable)} DROP INDEX \`${
+                            supportingIndex.name
+                        }\`, ADD INDEX \`${newForeignKeyName}\` (${columnNames})`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(
+                            newTable,
+                        )} DROP INDEX \`${newForeignKeyName}\`, ADD INDEX \`${
+                            supportingIndex.name
+                        }\` (${columnNames})`,
+                    ),
+                )
                 supportingIndex.name = newForeignKeyName
             }
         })
