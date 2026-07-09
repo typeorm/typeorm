@@ -296,7 +296,7 @@ await repository.softDelete([{ firstName: "Jake" }, { age: 25 }, { id: 42 }])
 // UPDATE entity SET deletedAt = NOW() WHERE id = 42
 ```
 
-- `softRemove` and `recover` - This is alternative to `softDelete` and `restore`.
+- `softRemove` and `recover` - This is an alternative to `softDelete` and `restore` when you want entity listeners, subscribers, and cascades to run. Use `softDelete` for direct criteria-based soft deletion, and `softRemove` when you already have entity instances:
 
 ```typescript
 // You can soft-delete them using softRemove
