@@ -209,7 +209,12 @@ describe("commands - migration generate", () => {
                 ])
 
             // DataSource reflects current DB state (Post with 255) but entity is PostWithLongTitle (500)
-            loadDataSourceStub.resolves(new DataSource(connectionOption))
+            loadDataSourceStub.resolves(
+                new DataSource({
+                    ...connectionOption,
+                    entities: [PostWithLongTitle],
+                }),
+            )
 
             await migrationGenerateCommand.handler(
                 testHandlerArgs({
