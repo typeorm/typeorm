@@ -70,13 +70,9 @@ export function ForeignKey<
 >(
     typeFunctionOrTarget: string | ((type?: any) => ObjectType<T>),
     inverseSideOrColumnNamesOrOptions?:
-        | string
-        | ((object: T) => any)
-        | C
-        | ForeignKeyOptions,
+        string | ((object: T) => any) | C | ForeignKeyOptions,
     referencedColumnNamesOrOptions?:
-        | { [K in keyof C]: string }
-        | ForeignKeyOptions,
+        { [K in keyof C]: string } | ForeignKeyOptions,
     maybeOptions?: ForeignKeyOptions,
 ): ClassDecorator & PropertyDecorator {
     const inverseSide =

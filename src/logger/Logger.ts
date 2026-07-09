@@ -59,13 +59,7 @@ export interface Logger {
  * Log level.
  */
 export type LogLevel =
-    | "query"
-    | "schema"
-    | "error"
-    | "warn"
-    | "info"
-    | "log"
-    | "migration"
+    "query" | "schema" | "error" | "warn" | "info" | "log" | "migration"
 
 /**
  * Log message.

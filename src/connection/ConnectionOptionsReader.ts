@@ -55,9 +55,7 @@ export class ConnectionOptionsReader {
      */
     protected async load(): Promise<DataSourceOptions[] | undefined> {
         let connectionOptions:
-            | DataSourceOptions
-            | DataSourceOptions[]
-            | undefined = undefined
+            DataSourceOptions | DataSourceOptions[] | undefined = undefined
 
         const fileFormats = ["js", "mjs", "cjs", "ts", "mts", "cts", "json"]
 
