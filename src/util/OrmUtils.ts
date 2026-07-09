@@ -717,6 +717,18 @@ export class OrmUtils {
             }
         }
 
+        // Guard: if this is a top-level call and all keys were ignored (e.g. via
+        // `undefined: "ignore"`), the result would be an empty object that compiles
+        // to `WHERE 1=1`, silently turning a filtered UPDATE/DELETE into a full-table
+        // write. Reject early instead.
+        if (!path && Object.keys(result).length === 0) {
+            throw new TypeORMError(
+                `All where criteria properties were ignored by 'invalidWhereValuesBehavior' settings, ` +
+                    `resulting in an empty condition which would affect all rows. ` +
+                    `Provide at least one non-ignored criterion.`,
+            )
+        }
+
         return result
     }
 }

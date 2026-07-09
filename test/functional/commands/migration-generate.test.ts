@@ -10,6 +10,7 @@ import {
 import { CommandUtils } from "../../../src/commands/CommandUtils"
 import { MigrationGenerateCommand } from "../../../src/commands/MigrationGenerateCommand"
 import { Post } from "./entity/Post"
+import { PostWithLongTitle } from "./entity/PostWithLongTitle"
 import { resultsTemplates } from "./templates/result-templates-generate"
 
 describe("commands - migration generate", () => {
@@ -165,6 +166,66 @@ describe("commands - migration generate", () => {
                 createFileStub,
                 sinon.match("test-directory/1641163894670-test-migration.ts"),
                 sinon.match(resultsTemplates[connectionOption.type]?.timestamp),
+            )
+
+            getConnectionOptionsStub.restore()
+        }
+    })
+
+    /**
+     * Regression test for https://github.com/typeorm/typeorm/issues/3357
+     *
+     * When only the `length` property of a column is changed (e.g. VARCHAR 255 → 500),
+     * TypeORM must generate an ALTER COLUMN migration. Previously this produced an empty
+     * migration because `isColumnChanged` did not check `length`.
+     */
+    it("generates ALTER COLUMN when only column length changes (issue #3357)", async () => {
+        // Drivers that support length-based column types and have expected templates
+        const lengthChangeDrivers = ["mysql", "mariadb", "mssql", "oracle"]
+
+        const lengthChangeConnectionOptions = connectionOptions.filter((opt) =>
+            lengthChangeDrivers.includes(opt.type as string),
+        )
+
+        for (const connectionOption of lengthChangeConnectionOptions) {
+            // First, set up the DB with the original Post entity (title varchar 255)
+            const setupConnections = await createTestingConnections({
+                entities: [Post],
+                enabledDrivers: [connectionOption.type as DatabaseType],
+            })
+            await reloadTestingDatabases(setupConnections)
+            await closeTestingConnections(setupConnections)
+
+            createFileStub.resetHistory()
+
+            baseConnectionOptions = await connectionOptionsReader.get()
+            getConnectionOptionsStub = sinon
+                .stub(ConnectionOptionsReader.prototype, "get")
+                .resolves([
+                    {
+                        ...baseConnectionOptions[0],
+                        entities: [PostWithLongTitle],
+                    },
+                ])
+
+            // DataSource reflects current DB state (Post with 255) but entity is PostWithLongTitle (500)
+            loadDataSourceStub.resolves(new DataSource(connectionOption))
+
+            await migrationGenerateCommand.handler(
+                testHandlerArgs({
+                    dataSource: "dummy-path",
+                    timestamp: "1610975184784",
+                    exitProcess: false,
+                }),
+            )
+
+            // The migration must contain an ALTER statement, not be empty
+            sinon.assert.calledWith(
+                createFileStub,
+                sinon.match(/test-directory.*test-migration.ts/),
+                sinon.match(
+                    resultsTemplates[connectionOption.type]?.lengthChange,
+                ),
             )
 
             getConnectionOptionsStub.restore()

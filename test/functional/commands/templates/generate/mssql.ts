@@ -1,4 +1,19 @@
 export const mssql: Record<string, string> = {
+    lengthChange: `import { MigrationInterface, QueryRunner } from "typeorm";
+
+export class TestMigration1610975184784 implements MigrationInterface {
+    name = 'TestMigration1610975184784'
+
+    public async up(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(\`ALTER TABLE "post" ALTER COLUMN "title" nvarchar(500) NOT NULL\`);
+    }
+
+    public async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(\`ALTER TABLE "post" ALTER COLUMN "title" nvarchar(255) NOT NULL\`);
+    }
+
+}`,
+
     control: `import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class TestMigration1610975184784 implements MigrationInterface {

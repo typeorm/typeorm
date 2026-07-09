@@ -1,4 +1,19 @@
 export const mysql: Record<string, string> = {
+    lengthChange: `import { MigrationInterface, QueryRunner } from "typeorm";
+
+export class TestMigration1610975184784 implements MigrationInterface {
+    name = 'TestMigration1610975184784'
+
+    public async up(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(\`ALTER TABLE \\\`post\\\` CHANGE \\\`title\\\` \\\`title\\\` varchar(500) NOT NULL\`);
+    }
+
+    public async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(\`ALTER TABLE \\\`post\\\` CHANGE \\\`title\\\` \\\`title\\\` varchar(255) NOT NULL\`);
+    }
+
+}`,
+
     control: `import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class TestMigration1610975184784 implements MigrationInterface {

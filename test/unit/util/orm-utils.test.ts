@@ -270,4 +270,69 @@ describe(`OrmUtils`, () => {
             ).to.equal(false)
         })
     })
+
+    describe("normalizeWhereCriteria", () => {
+        it("should throw by default if criteria contains undefined and options are not provided", () => {
+            expect(() => {
+                OrmUtils.normalizeWhereCriteria({ name: undefined })
+            }).to.throw(
+                "Undefined value encountered in property 'name' of a where condition.",
+            )
+        })
+
+        it("should throw by default if criteria contains null and options are not provided", () => {
+            expect(() => {
+                OrmUtils.normalizeWhereCriteria({ name: null })
+            }).to.throw(
+                "Null value encountered in property 'name' of a where condition.",
+            )
+        })
+
+        it("should not throw if criteria contains undefined and undefined behavior is ignore, but at least one valid key remains", () => {
+            expect(() => {
+                OrmUtils.normalizeWhereCriteria(
+                    { name: undefined, id: 1 },
+                    { undefined: "ignore" },
+                )
+            }).not.to.throw()
+        })
+
+        it("should ignore undefined values when behavior is ignore and at least one valid key remains", () => {
+            const result = OrmUtils.normalizeWhereCriteria(
+                { name: undefined, age: 30 },
+                { undefined: "ignore" },
+            )
+            expect(result).to.deep.equal({ age: 30 })
+        })
+
+        it("should throw when all criteria keys are ignored, preventing WHERE 1=1 tautology", () => {
+            expect(() => {
+                OrmUtils.normalizeWhereCriteria(
+                    { name: undefined },
+                    { undefined: "ignore" },
+                )
+            }).to.throw(
+                "All where criteria properties were ignored by 'invalidWhereValuesBehavior' settings",
+            )
+        })
+
+        it("should throw when all criteria keys are null and null behavior is ignore", () => {
+            expect(() => {
+                OrmUtils.normalizeWhereCriteria(
+                    { name: null, status: null },
+                    { null: "ignore" },
+                )
+            }).to.throw(
+                "All where criteria properties were ignored by 'invalidWhereValuesBehavior' settings",
+            )
+        })
+
+        it("should not throw when at least one non-ignored key remains", () => {
+            const result = OrmUtils.normalizeWhereCriteria(
+                { name: undefined, id: 1 },
+                { undefined: "ignore" },
+            )
+            expect(result).to.deep.equal({ id: 1 })
+        })
+    })
 })
