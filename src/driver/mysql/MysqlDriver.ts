@@ -13,6 +13,13 @@ import type { TableForeignKey } from "../../schema-builder/table/TableForeignKey
 import type { View } from "../../schema-builder/view/View"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DateUtils } from "../../util/DateUtils"
+import {
+    PlainDateTimeUtils,
+    PlainDateUtils,
+    PlainTimeUtils,
+    TemporalUtils,
+    ZonedDateTimeUtils,
+} from "../../util/TemporalUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
 import { VersionUtils } from "../../util/VersionUtils"
@@ -627,21 +634,49 @@ export class MysqlDriver implements Driver {
 
         if (value === null || value === undefined) return value
 
+        const temporalKind = TemporalUtils.inferKindFromReflectType(
+            columnMetadata.type,
+            this.options.temporal,
+        )
+
         if (columnMetadata.type === Boolean) {
             return value === true ? 1 : 0
-        } else if (columnMetadata.type === "date") {
+        } else if (
+            columnMetadata.type === "date" ||
+            temporalKind === "plain-date"
+        ) {
+            if (columnMetadata.temporal) {
+                return PlainDateUtils.fromTemporal(value)
+            }
             return DateUtils.mixedDateToDateString(value, {
                 utc: columnMetadata.utc,
             })
-        } else if (columnMetadata.type === "time") {
+        } else if (
+            columnMetadata.type === "time" ||
+            temporalKind === "plain-time"
+        ) {
+            if (columnMetadata.temporal) {
+                return PlainTimeUtils.fromTemporal(value)
+            }
             return DateUtils.mixedDateToTimeString(value)
         } else if (columnMetadata.type === "json") {
             return JSON.stringify(value)
         } else if (
-            columnMetadata.type === "timestamp" ||
             columnMetadata.type === "datetime" ||
-            columnMetadata.type === Date
+            temporalKind === "plain-date-time"
         ) {
+            if (columnMetadata.temporal) {
+                return PlainDateTimeUtils.fromTemporal(value)
+            }
+            return DateUtils.mixedDateToDate(value)
+        } else if (
+            columnMetadata.type === "timestamp" ||
+            columnMetadata.type === Date ||
+            temporalKind === "zoned-date-time"
+        ) {
+            if (columnMetadata.temporal) {
+                return ZonedDateTimeUtils.fromTemporal(value)
+            }
             return DateUtils.mixedDateToDate(value)
         } else if (columnMetadata.type === "simple-array") {
             return DateUtils.simpleArrayToString(value)
@@ -677,6 +712,11 @@ export class MysqlDriver implements Driver {
                   )
                 : value
 
+        const temporalKind = TemporalUtils.inferKindFromReflectType(
+            columnMetadata.type,
+            this.options.temporal,
+        )
+
         if (
             columnMetadata.type === Boolean ||
             columnMetadata.type === "bool" ||
@@ -685,13 +725,50 @@ export class MysqlDriver implements Driver {
             value = value ? true : false
         } else if (
             columnMetadata.type === "datetime" ||
-            columnMetadata.type === Date
+            temporalKind === "plain-date-time"
         ) {
-            value = DateUtils.normalizeHydratedDate(value)
-        } else if (columnMetadata.type === "date") {
-            value = DateUtils.mixedDateToDateString(value, {
-                utc: columnMetadata.utc,
-            })
+            if (columnMetadata.temporal) {
+                value = PlainDateTimeUtils.toTemporal(
+                    value,
+                    this.options.temporal,
+                )
+            } else {
+                value = DateUtils.normalizeHydratedDate(value)
+            }
+        } else if (
+            columnMetadata.type === "timestamp" ||
+            columnMetadata.type === Date ||
+            temporalKind === "zoned-date-time"
+        ) {
+            if (columnMetadata.temporal) {
+                const tz =
+                    typeof columnMetadata.temporal === "object" &&
+                    columnMetadata.temporal.timeZone
+                        ? columnMetadata.temporal.timeZone
+                        : "UTC"
+                value = ZonedDateTimeUtils.toTemporal(
+                    value,
+                    tz,
+                    this.options.temporal,
+                )
+            } else {
+                value = DateUtils.normalizeHydratedDate(value)
+            }
+        } else if (
+            columnMetadata.type === "date" ||
+            temporalKind === "plain-date"
+        ) {
+            if (columnMetadata.temporal) {
+                value = PlainDateUtils.toTemporal(
+                    value,
+                    { utc: columnMetadata.utc },
+                    this.options.temporal,
+                )
+            } else {
+                value = DateUtils.mixedDateToDateString(value, {
+                    utc: columnMetadata.utc,
+                })
+            }
         } else if (columnMetadata.type === "json") {
             // Only parse if it's a valid JSON string representation,
             // but not if it's already an object or a JSON primitive.
@@ -707,8 +784,15 @@ export class MysqlDriver implements Driver {
                     // Keep value as is
                 }
             }
-        } else if (columnMetadata.type === "time") {
-            value = DateUtils.mixedTimeToString(value)
+        } else if (
+            columnMetadata.type === "time" ||
+            temporalKind === "plain-time"
+        ) {
+            if (columnMetadata.temporal) {
+                value = PlainTimeUtils.toTemporal(value, this.options.temporal)
+            } else {
+                value = DateUtils.mixedTimeToString(value)
+            }
         } else if (columnMetadata.type === "simple-array") {
             value = DateUtils.stringToSimpleArray(value)
         } else if (columnMetadata.type === "simple-json") {
@@ -753,6 +837,15 @@ export class MysqlDriver implements Driver {
         precision?: number | null
         scale?: number
     }): string {
+        const temporalKind = TemporalUtils.inferKindFromReflectType(
+            column.type,
+            this.options.temporal,
+        )
+        if (temporalKind === "zoned-date-time") return "timestamp"
+        if (temporalKind === "plain-date-time") return "datetime"
+        if (temporalKind === "plain-date") return "date"
+        if (temporalKind === "plain-time") return "time"
+
         if (column.type === Number || column.type === "integer") {
             return "int"
         } else if (column.type === String) {
