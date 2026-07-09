@@ -380,7 +380,7 @@ export class OrmUtils {
     }
 
     /**
-     * Checks whether the given criteria is null or wholly empty — `null`,
+     * Checks whether the given criteria is null or wholly empty â€” `null`,
      * `undefined`, `""`, an empty array, or an empty plain object. Does not
      * recurse into array elements, so it is safe on self-referential/cyclic
      * arrays. Per-element OR-branch emptiness (an array containing an empty
@@ -658,8 +658,8 @@ export class OrmUtils {
      * each own key a null/undefined value is thrown on, skipped, or converted
      * to IsNull() per the configured behavior. Only plain FindOptionsWhere
      * objects are normalized; anything else (entity/class instances,
-     * FindOperators, arrays, Date, Buffer, primitives) — and the criteria when
-     * no behavior is configured — is returned untouched.
+     * FindOperators, arrays, Date, Buffer, primitives) is returned untouched.
+     * When no behavior is configured, null and undefined throw by default.
      *
      * @param criteria
      * @param options
@@ -670,10 +670,6 @@ export class OrmUtils {
         options?: InvalidFindOptionsWhereBehavior,
         path?: string,
     ): any {
-        if (!options) {
-            return criteria
-        }
-
         // multiple criteria are possible at the top level
         if (!path && Array.isArray(criteria)) {
             return criteria.map(
@@ -686,8 +682,8 @@ export class OrmUtils {
             )
         }
 
-        // Only iterate a plain object criteria. Anything else — an entity/class
-        // instance, a FindOperator, an array, Date, Buffer, a primitive — is
+        // Only iterate a plain object criteria. Anything else â€” an entity/class
+        // instance, a FindOperator, an array, Date, Buffer, a primitive â€” is
         // passed through untouched (its keys are not a bag of column
         // conditions). Validating those properly would need entity metadata,
         // which is out of scope here.
@@ -708,7 +704,7 @@ export class OrmUtils {
                             `Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
                     )
                 }
-                // else: "ignore" — skip this key
+                // else: "ignore" â€” skip this key
             } else if (value === null) {
                 const behavior = options?.null ?? "throw"
                 if (behavior === "throw") {
@@ -720,7 +716,7 @@ export class OrmUtils {
                 } else if (behavior === "sql-null") {
                     result[key] = IsNull()
                 }
-                // else: "ignore" — skip this key
+                // else: "ignore" â€” skip this key
             } else if (OrmUtils.isPlainObject(value)) {
                 const nested = OrmUtils.normalizeWhereCriteria(
                     value,
