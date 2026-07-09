@@ -282,6 +282,9 @@ describe("query runner > rename table", () => {
                         ["id"],
                     )
                 expect(table!.foreignKeys[0].name).to.equal(newForeignKeyName)
+                if (DriverUtils.isMySQLFamily(dataSource.driver)) {
+                    expect(table!.indices[0].name).to.equal(newForeignKeyName)
+                }
 
                 await queryRunner.executeMemoryDownSql()
 

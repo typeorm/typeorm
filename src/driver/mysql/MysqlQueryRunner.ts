@@ -808,6 +808,16 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             // replace constraint name
             foreignKey.name = newForeignKeyName
+
+            // MySQL creates a supporting index for the FK columns when needed.
+            // If the index inherited the FK name, keep it in sync with the
+            // renamed constraint so schema diffs do not try to drop it later.
+            const supportingIndex = newTable.indices.find(
+                (index) => index.name === oldForeignKeyName,
+            )
+            if (supportingIndex) {
+                supportingIndex.name = newForeignKeyName
+            }
         })
 
         await this.executeQueries(upQueries, downQueries)
