@@ -1109,12 +1109,8 @@ Due to this change you might need to refactor the way you load entities using Mo
 
 ```ts
 const users = await userRepository.find({
-    where: {
-        /* conditions */
-    },
-    relations: {
-        /* relations */
-    },
+    where: {/* conditions */},
+    relations: {/* relations */},
 })
 ```
 
@@ -1326,18 +1322,14 @@ This change is due to type-safety improvement new `relations` signature brings.
   simply do:
 
 ```ts
-const myDataSource = new DataSource({
-    /*...*/
-})
+const myDataSource = new DataSource({/*...*/})
 await myDataSource.connect()
 ```
 
 - `getConnection()` is deprecated. To have a globally accessible connection, simply export your data source and use it in places you need it:
 
 ```ts
-export const myDataSource = new DataSource({
-    /*...*/
-})
+export const myDataSource = new DataSource({/*...*/})
 // now you can use myDataSource anywhere in your application
 ```
 
@@ -1345,9 +1337,7 @@ export const myDataSource = new DataSource({
   are all deprecated now. Use globally accessible data source instead:
 
 ```ts
-export const myDataSource = new DataSource({
-    /*...*/
-})
+export const myDataSource = new DataSource({/*...*/})
 export const Manager = myDataSource.manager
 export const UserRepository = myDataSource.getRepository(UserEntity)
 export const PhotoRepository = myDataSource.getRepository(PhotoEntity)
@@ -1359,15 +1349,9 @@ export const PhotoRepository = myDataSource.getRepository(PhotoEntity)
   of data sources, just define them in a variable, simply as:
 
 ```ts
-const dataSource1 = new DataSource({
-    /*...*/
-})
-const dataSource2 = new DataSource({
-    /*...*/
-})
-const dataSource3 = new DataSource({
-    /*...*/
-})
+const dataSource1 = new DataSource({/*...*/})
+const dataSource2 = new DataSource({/*...*/})
+const dataSource3 = new DataSource({/*...*/})
 
 export const MyDataSources = {
     dataSource1,

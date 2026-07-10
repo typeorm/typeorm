@@ -3,6 +3,7 @@ import type { DataSource } from "../../data-source/DataSource"
 import { DriverPackageNotInstalledError } from "../../error"
 import type { ColumnMetadata } from "../../metadata/ColumnMetadata"
 import type { EntityMetadata } from "../../metadata/EntityMetadata"
+import { PlatformTools } from "../../platform/PlatformTools"
 import type { QueryRunner } from "../../query-runner/QueryRunner"
 import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
 import type { Table } from "../../schema-builder/table/Table"
@@ -17,9 +18,9 @@ import type { Driver } from "../Driver"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { CteCapabilities } from "../types/CteCapabilities"
 import type { DataTypeDefaults } from "../types/DataTypeDefaults"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
 import type { ReplicationMode } from "../types/ReplicationMode"
-import type { IsolationLevel } from "../types/IsolationLevel"
 import type { UpsertType } from "../types/UpsertType"
 import type { ReactNativeDataSourceOptions } from "./ReactNativeDataSourceOptions"
 import { ReactNativeQueryRunner } from "./ReactNativeQueryRunner"
@@ -1033,10 +1034,10 @@ export class ReactNativeDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            const sqlite =
-                this.options.driver ?? require("react-native-sqlite-storage")
-            this.sqlite = sqlite
-        } catch (e) {
+            this.sqlite =
+                this.options.driver ??
+                PlatformTools.load("react-native-sqlite-storage")
+        } catch {
             throw new DriverPackageNotInstalledError(
                 "React-Native",
                 "react-native-sqlite-storage",
