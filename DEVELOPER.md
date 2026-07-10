@@ -170,7 +170,7 @@ The `bun-sqlite` driver uses the built-in `bun:sqlite` module and requires the [
 2. In your `ormconfig.json`, set `"skip": false` for the `bun-sqlite` entry (and optionally `"skip": true` for drivers you are not testing).
 3. Compile the TypeScript source:
    ```shell
-   node node_modules/typescript/bin/tsc
+   pnpm run compile
    ```
 4. Run the bun-sqlite tests directly with Bun (note: use `mocha.js`, not `mocha.exe`):
    ```shell
