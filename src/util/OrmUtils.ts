@@ -658,8 +658,7 @@ export class OrmUtils {
      * each own key a null/undefined value is thrown on, skipped, or converted
      * to IsNull() per the configured behavior. Only plain FindOptionsWhere
      * objects are normalized; anything else (entity/class instances,
-     * FindOperators, arrays, Date, Buffer, primitives) — and the criteria when
-     * no behavior is configured — is returned untouched.
+     * FindOperators, arrays, Date, Buffer, primitives) is returned untouched.
      *
      * @param criteria
      * @param options
@@ -670,10 +669,6 @@ export class OrmUtils {
         options?: InvalidFindOptionsWhereBehavior,
         path?: string,
     ): any {
-        if (!options) {
-            return criteria
-        }
-
         // multiple criteria are possible at the top level
         if (!path && Array.isArray(criteria)) {
             return criteria.map((criterion, index): ObjectLiteral =>
