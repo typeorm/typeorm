@@ -76,6 +76,10 @@ export class BunSqliteQueryRunner extends AbstractSqliteQueryRunner {
 
     /**
      * Executes a given SQL query.
+     *
+     * @param query
+     * @param parameters
+     * @param useStructuredResult
      */
     async query(
         query: string,
@@ -114,7 +118,18 @@ export class BunSqliteQueryRunner extends AbstractSqliteQueryRunner {
 
             // bun:sqlite has no stmt.reader — use columnNames as indicator instead.
             if (stmt.columnNames.length > 0) {
-                const raw = stmt.all(...normalizedParameters)
+                const raw = stmt
+                    .all(...normalizedParameters)
+                    .map((row: any) =>
+                        Object.fromEntries(
+                            Object.entries(row).map(([key, value]) => [
+                                key,
+                                value instanceof Uint8Array
+                                    ? Buffer.from(value)
+                                    : value,
+                            ]),
+                        ),
+                    )
 
                 result.raw = raw
 
