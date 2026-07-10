@@ -41,9 +41,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
      * Called after migrations are run.
      */
     async afterMigration(): Promise<void> {
-        if (!this.driver.options.preserveForeignKeysDuringMigrations) {
-            await this.query(`PRAGMA foreign_keys = ON`)
-        }
+        await this.query(`PRAGMA foreign_keys = ON`)
     }
 
     /**

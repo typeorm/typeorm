@@ -74,10 +74,8 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
      * Called after migrations are run.
      */
     async afterMigration(): Promise<void> {
-        if (!this.driver.options.preserveForeignKeysDuringMigrations) {
-            const databaseConnection = await this.connect()
-            databaseConnection.pragma("foreign_keys = ON")
-        }
+        const databaseConnection = await this.connect()
+        databaseConnection.pragma("foreign_keys = ON")
     }
 
     /**
