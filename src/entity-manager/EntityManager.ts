@@ -1436,32 +1436,13 @@ export class EntityManager {
         propertyPath: string,
         value: number | string,
     ): Promise<UpdateResult> {
-        const metadata = this.dataSource.getMetadata(entityClass)
-        const column = metadata.findColumnWithPropertyPath(propertyPath)
-        if (!column)
-            throw new TypeORMError(
-                `Column ${propertyPath} was not found in ${metadata.targetName} entity.`,
-            )
-
-        if (isNaN(Number(value)))
-            throw new TypeORMError(`Value "${value}" is not a number.`)
-
-        // convert possible embedded path "social.likes" into object { social: { like: () => value } }
-        const values: QueryDeepPartialEntity<Entity> = propertyPath
-            .split(".")
-            .reduceRight(
-                (value, key) => ({ [key]: value }) as any,
-                () =>
-                    this.dataSource.driver.escape(column.databaseName) +
-                    " + " +
-                    value,
-            )
-
-        return this.createQueryBuilder<Entity>(entityClass as any, "entity")
-            .update(entityClass)
-            .set(values)
-            .where(conditions)
-            .execute()
+        return this.incrementOrDecrementBy(
+            "increment",
+            entityClass,
+            conditions,
+            propertyPath,
+            value,
+        )
     }
 
     /**
@@ -1478,6 +1459,27 @@ export class EntityManager {
         propertyPath: string,
         value: number | string,
     ): Promise<UpdateResult> {
+        return this.incrementOrDecrementBy(
+            "decrement",
+            entityClass,
+            conditions,
+            propertyPath,
+            value,
+        )
+    }
+
+    /**
+     * Shared implementation of {@link increment} and {@link decrement}: builds a
+     * `column = column +/- value` UPDATE for the rows matched by the conditions,
+     * validating the criteria the same way the other write methods do.
+     */
+    protected incrementOrDecrementBy<Entity extends ObjectLiteral>(
+        operation: "increment" | "decrement",
+        entityClass: EntityTarget<Entity>,
+        conditions: FindOptionsWhere<Entity>,
+        propertyPath: string,
+        value: number | string,
+    ): Promise<UpdateResult> {
         const metadata = this.dataSource.getMetadata(entityClass)
         const column = metadata.findColumnWithPropertyPath(propertyPath)
         if (!column)
@@ -1488,6 +1490,8 @@ export class EntityManager {
         if (isNaN(Number(value)))
             throw new TypeORMError(`Value "${value}" is not a number.`)
 
+        const operator = operation === "increment" ? "+" : "-"
+
         // convert possible embedded path "social.likes" into object { social: { like: () => value } }
         const values: QueryDeepPartialEntity<Entity> = propertyPath
             .split(".")
@@ -1495,15 +1499,23 @@ export class EntityManager {
                 (value, key) => ({ [key]: value }) as any,
                 () =>
                     this.dataSource.driver.escape(column.databaseName) +
-                    " - " +
+                    ` ${operator} ` +
                     value,
             )
 
-        return this.createQueryBuilder<Entity>(entityClass as any, "entity")
+        const { criteria: whereCriteria, isPrimitive } =
+            this.normalizeAndValidateWhereCriteria(conditions, operation)
+
+        const qb = this.createQueryBuilder<Entity>(entityClass as any, "entity")
             .update(entityClass)
             .set(values)
-            .where(conditions)
-            .execute()
+        if (isPrimitive) {
+            qb.whereInIds(whereCriteria)
+        } else {
+            qb.where(whereCriteria)
+        }
+
+        return qb.execute()
     }
 
     /**
