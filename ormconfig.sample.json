@@ -30,7 +30,7 @@
     "logging": false
   },
   {
-    "skip": false,
+    "skip": true,
     "type": "bun-sqlite",
     "database": "temp/bun-sqlite.db",
     "logging": false

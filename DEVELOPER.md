@@ -162,6 +162,25 @@ Instead, for a quicker feedback cycle, you can run `pnpm run compile -- --watch`
 
 Once TypeScript finishes compiling your changes, you can run `pnpm run test:fast` (instead of `test`), to trigger a test without causing a full recompile, which allows you to edit and check your changes much faster.
 
+### Running bun-sqlite tests
+
+The `bun-sqlite` driver uses the built-in `bun:sqlite` module and requires the [Bun](https://bun.sh) runtime. It cannot be tested with Node.js.
+
+1. Install Bun: https://bun.sh/docs/installation
+2. In your `ormconfig.json`, set `"skip": false` for the `bun-sqlite` entry (and optionally `"skip": true` for drivers you are not testing).
+3. Compile the TypeScript source:
+   ```shell
+   node node_modules/typescript/bin/tsc
+   ```
+4. Run the bun-sqlite tests directly with Bun (note: use `mocha.js`, not `mocha.exe`):
+   ```shell
+   bun node_modules/mocha/bin/mocha.js --no-config --timeout 90000 \
+     --file build/compiled/test/utils/test-setup.js \
+     "build/compiled/test/functional/driver/bun-sqlite/*.test.js"
+   ```
+
+> **Why not `pnpm run test`?** The standard test command invokes `mocha.exe` (a Node.js shebang wrapper), which spawns its own Node.js process. `bun:sqlite` is unavailable in that process. Running `bun node_modules/mocha/bin/mocha.js` directly keeps the Bun runtime throughout.
+
 ## Using Docker
 
 To run your tests you need the Database Management Systems (DBMS) installed on your machine. Alternatively, you can use docker with the DBMS running in containers. To have docker run all the DBMS for you simply run `docker compose up` in the root of the project. Once all images are fetched and are running, you can run the tests.
