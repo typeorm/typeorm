@@ -656,10 +656,12 @@ export class OrmUtils {
     /**
      * Applies invalidWhereValuesBehavior to a plain-object where criteria: for
      * each own key a null/undefined value is thrown on, skipped, or converted
-     * to IsNull() per the configured behavior. Only plain FindOptionsWhere
-     * objects are normalized; anything else (entity/class instances,
-     * FindOperators, arrays, Date, Buffer, primitives) — and the criteria when
-     * no behavior is configured — is returned untouched.
+     * to IsNull() per the configured behavior. A top-level array (OR list) is
+     * normalized element by element. Anything else — an entity/class instance,
+     * a FindOperator, Date, Buffer, a primitive — is returned untouched.
+     *
+     * When no behavior is configured, both sub-options default to "throw", so a
+     * null/undefined value throws by default — matching the read/find path.
      *
      * @param criteria
      * @param options
@@ -670,9 +672,8 @@ export class OrmUtils {
         options?: InvalidFindOptionsWhereBehavior,
         path?: string,
     ): any {
-        if (!options) {
-            return criteria
-        }
+        // default to "throw" when unconfigured, matching the read/find path
+        options ??= {}
 
         // multiple criteria are possible at the top level
         if (!path && Array.isArray(criteria)) {
