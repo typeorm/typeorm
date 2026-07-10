@@ -24,7 +24,7 @@ describe("bun:sqlite driver > throws an error when queried after closing connect
                 await dataSource.destroy()
                 await expect(
                     dataSource.query("select * from sqlite_master;"),
-                ).to.rejectedWith("The database connection is not open")
+                ).to.rejectedWith("Cannot use a closed database")
             }),
         ))
 })
