@@ -22,7 +22,7 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 
 ### Common sqlite data source options
 
-- `preserveForeignKeysDuringMigrations` - Keeps SQLite foreign-key checks enabled during migrations (default `false`).
+- `preserveForeignKeysDuringMigrations` - Keeps SQLite foreign-key checks enabled during migrations and schema synchronization (default `false`).
 
 ### `better-sqlite3` data source options
 
