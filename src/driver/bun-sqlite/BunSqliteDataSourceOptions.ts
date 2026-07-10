@@ -1,5 +1,18 @@
 import type { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 
+/** Minimal structural type for a bun:sqlite Statement instance. */
+export interface BunSqliteStatement {
+    readonly columnNames: string[]
+    all(...params: unknown[]): Record<string, unknown>[]
+    run(...params: unknown[]): { changes: number; lastInsertRowid: number | bigint }
+}
+
+/** Minimal structural type for a bun:sqlite Database instance. */
+export interface BunSqliteDatabase {
+    prepare(sql: string): BunSqliteStatement
+    close(): void
+}
+
 /**
  * Bun SQLite-specific connection options.
  * Uses the built-in `bun:sqlite` module — no native addon required.
@@ -26,7 +39,7 @@ export interface BunSqliteDataSourceOptions extends BaseDataSourceOptions {
      * You can set pragmas, register plugins or register
      * functions or aggregates in this function.
      */
-    readonly prepareDatabase?: (db: any) => void | Promise<void>
+    readonly prepareDatabase?: (db: BunSqliteDatabase) => void | Promise<void>
 
     /**
      * Open the database connection in readonly mode.

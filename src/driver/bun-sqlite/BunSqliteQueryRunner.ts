@@ -7,6 +7,7 @@ import { NamedPlaceholdersNotSupportedError } from "../../error/NamedPlaceholder
 import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
 import type { BunSqliteDriver } from "./BunSqliteDriver"
+import type { BunSqliteStatement } from "./BunSqliteDataSourceOptions"
 
 /**
  * Runs queries on a single bun:sqlite database connection.
@@ -36,14 +37,14 @@ export class BunSqliteQueryRunner extends AbstractSqliteQueryRunner {
     }
 
     private cacheSize: number
-    private stmtCache = new Map<string, any>()
+    private stmtCache = new Map<string, BunSqliteStatement>()
 
     private async getStmt(query: string) {
         if (this.cacheSize > 0) {
             let stmt = this.stmtCache.get(query)
             if (!stmt) {
                 const databaseConnection = await this.connect()
-                stmt = databaseConnection.prepare(query)
+                stmt = databaseConnection.prepare(query) as BunSqliteStatement
                 this.stmtCache.set(query, stmt)
                 while (this.stmtCache.size > this.cacheSize) {
                     // FIFO eviction — Map preserves insertion order
@@ -120,7 +121,7 @@ export class BunSqliteQueryRunner extends AbstractSqliteQueryRunner {
             if (stmt.columnNames.length > 0) {
                 const raw = stmt
                     .all(...normalizedParameters)
-                    .map((row: any) =>
+                    .map((row: Record<string, unknown>) =>
                         Object.fromEntries(
                             Object.entries(row).map(([key, value]) => [
                                 key,

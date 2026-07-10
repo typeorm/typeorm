@@ -29,6 +29,7 @@ export class InitCommand implements yargs.CommandModule {
                     "mysql",
                     "mariadb",
                     "better-sqlite3",
+                    "bun-sqlite",
                     "mssql",
                     "oracle",
                     "mongodb",
@@ -191,6 +192,13 @@ export class InitCommand implements yargs.CommandModule {
             case "better-sqlite3":
                 dbSettings = [
                     'type: "better-sqlite3"',
+                    'database: "database.sqlite"',
+                ]
+                break
+
+            case "bun-sqlite":
+                dbSettings = [
+                    'type: "bun-sqlite"',
                     'database: "database.sqlite"',
                 ]
                 break
@@ -629,6 +637,9 @@ AppDataSource.initialize().then(async () => {
             case "better-sqlite3":
                 throw new TypeORMError(`SQLite does not require docker`)
 
+            case "bun-sqlite":
+                throw new TypeORMError(`SQLite does not require docker`)
+
             case "oracle":
                 throw new TypeORMError(
                     `You cannot initialize a project with docker for Oracle driver yet.`,
@@ -748,6 +759,9 @@ Steps to run this project:
             case "better-sqlite3":
                 packageJson.dependencies["better-sqlite3"] =
                     ourPackageJson.devDependencies["better-sqlite3"]
+                break
+            case "bun-sqlite":
+                // bun:sqlite is a built-in Bun module — no npm dependency needed
                 break
             case "oracle":
                 packageJson.dependencies["oracledb"] =
