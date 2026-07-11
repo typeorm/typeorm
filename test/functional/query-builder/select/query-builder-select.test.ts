@@ -832,6 +832,7 @@ describe("query builder > select", () => {
                 }),
             ))
 
+        // Regression test for #12666.
         it("should return empty array when take(0) is used in actual query execution with joins", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
