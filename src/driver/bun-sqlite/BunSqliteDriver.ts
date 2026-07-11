@@ -164,9 +164,12 @@ export class BunSqliteDriver extends AbstractSqliteDriver {
 
     /**
      * Auto creates database directory if it does not exist.
+     * Skips mkdir(".") to avoid a Bun bug where fs.promises.mkdir(".") throws ENOENT.
      */
     protected async createDatabaseDirectory(dbPath: string): Promise<void> {
-        await fs.mkdir(dbPath, { recursive: true })
+        if (dbPath !== ".") {
+            await fs.mkdir(dbPath, { recursive: true })
+        }
     }
 
     /**
