@@ -799,7 +799,7 @@ Steps to run this project:
         if (database === "bun-sqlite") {
             Object.assign(packageJson.scripts, {
                 start: "bun src/index.ts",
-                typeorm: "bun node_modules/typeorm/build/package/cli.js",
+                typeorm: "bunx typeorm",
             })
         } else if (projectIsEsm)
             Object.assign(packageJson.scripts, {
