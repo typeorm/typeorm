@@ -81,7 +81,8 @@ export class InitCommand implements yargs.CommandModule {
             )
             await CommandUtils.createFile(
                 basePath + "/README.md",
-                InitCommand.getReadmeTemplate({ docker: isDocker }),
+                InitCommand.getReadmeTemplate({ docker: isDocker, database }),
+
                 false,
             )
             await CommandUtils.createFile(
@@ -688,12 +689,19 @@ AppDataSource.initialize().then(async () => {
      * @param options
      * @param options.docker
      */
-    protected static getReadmeTemplate(options: { docker: boolean }): string {
+    protected static getReadmeTemplate(options: {
+        docker: boolean
+        database?: string
+    }): string {
+        const isBun = options.database === "bun-sqlite"
+        const installCmd = isBun ? "bun install" : "npm i"
+        const startCmd = isBun ? "bun start" : "npm start"
+
         let template = `# Awesome Project Build with TypeORM
 
 Steps to run this project:
 
-1. Run \`npm i\` command
+1. Run \`${installCmd}\` command
 `
 
         if (options.docker) {
@@ -704,7 +712,7 @@ Steps to run this project:
 `
         }
 
-        template += `3. Run \`npm start\` command
+        template += `3. Run \`${startCmd}\` command
 `
         return template
     }
@@ -788,7 +796,12 @@ Steps to run this project:
 
         packageJson.scripts ??= {}
 
-        if (projectIsEsm)
+        if (database === "bun-sqlite") {
+            Object.assign(packageJson.scripts, {
+                start: "bun src/index.ts",
+                typeorm: "bun node_modules/typeorm/build/package/cli.js",
+            })
+        } else if (projectIsEsm)
             Object.assign(packageJson.scripts, {
                 start: /*(docker ? "docker-compose up && " : "") + */ "node --loader ts-node/esm src/index.ts",
                 typeorm: "typeorm-ts-node-esm",
