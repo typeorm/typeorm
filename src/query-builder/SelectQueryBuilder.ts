@@ -2995,8 +2995,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         ) {
             selectionPath = (
                 this.dataSource.driver as
-                    | AbstractSqliteDriver
-                    | ReactNativeDriver
+                    AbstractSqliteDriver | ReactNativeDriver
             ).wrapWithJsonFunction(selectionPath, column, false)
         }
 

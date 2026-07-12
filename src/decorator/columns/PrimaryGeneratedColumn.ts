@@ -86,10 +86,7 @@ export function PrimaryGeneratedColumn(
     if (strategyOrOptions) {
         if (typeof strategyOrOptions === "string")
             strategy = strategyOrOptions as
-                | "increment"
-                | "uuid"
-                | "rowid"
-                | "identity"
+                "increment" | "uuid" | "rowid" | "identity"
 
         if (ObjectUtils.isObject(strategyOrOptions)) {
             strategy = "increment"

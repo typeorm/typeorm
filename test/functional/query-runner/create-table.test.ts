@@ -81,14 +81,12 @@ describe("query runner > create table", () => {
                 nameColumn!.isUnique.should.be.true
                 table!.should.exist
 
-                if (
-                    !(
-                        DriverUtils.isMySQLFamily(dataSource.driver) ||
-                        dataSource.driver.options.type === "aurora-mysql" ||
-                        dataSource.driver.options.type === "sap" ||
-                        dataSource.driver.options.type === "spanner"
-                    )
-                ) {
+                if (!(
+                    DriverUtils.isMySQLFamily(dataSource.driver) ||
+                    dataSource.driver.options.type === "aurora-mysql" ||
+                    dataSource.driver.options.type === "sap" ||
+                    dataSource.driver.options.type === "spanner"
+                )) {
                     table!.uniques.length.should.be.equal(1)
                 }
 
@@ -114,14 +112,12 @@ describe("query runner > create table", () => {
                 const nameColumn = table!.findColumnByName("name")
 
                 table!.should.exist
-                if (
-                    !(
-                        DriverUtils.isMySQLFamily(dataSource.driver) ||
-                        dataSource.driver.options.type === "aurora-mysql" ||
-                        dataSource.driver.options.type === "sap" ||
-                        dataSource.driver.options.type === "spanner"
-                    )
-                ) {
+                if (!(
+                    DriverUtils.isMySQLFamily(dataSource.driver) ||
+                    dataSource.driver.options.type === "aurora-mysql" ||
+                    dataSource.driver.options.type === "sap" ||
+                    dataSource.driver.options.type === "spanner"
+                )) {
                     table!.uniques.length.should.be.equal(2)
                     table!.checks.length.should.be.equal(1)
                 }
@@ -312,15 +308,13 @@ describe("query runner > create table", () => {
                 }
 
                 // When we mark column as unique, MySql create index for that column and we don't need to create index separately.
-                if (
-                    !(
-                        DriverUtils.isMySQLFamily(dataSource.driver) ||
-                        dataSource.driver.options.type === "aurora-mysql" ||
-                        dataSource.driver.options.type === "oracle" ||
-                        dataSource.driver.options.type === "sap" ||
-                        dataSource.driver.options.type === "spanner"
-                    )
-                )
+                if (!(
+                    DriverUtils.isMySQLFamily(dataSource.driver) ||
+                    dataSource.driver.options.type === "aurora-mysql" ||
+                    dataSource.driver.options.type === "oracle" ||
+                    dataSource.driver.options.type === "sap" ||
+                    dataSource.driver.options.type === "spanner"
+                ))
                     categoryTableOptions.indices = [
                         { columnNames: ["questionId"] },
                     ]
