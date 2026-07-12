@@ -1833,11 +1833,7 @@ export class PostgresDriver implements Driver {
     protected executeQuery(connection: any, query: string) {
         this.dataSource.logger.logQuery(query)
 
-        return new Promise((ok, fail) => {
-            connection.query(query, (err: any, result: any) =>
-                err ? fail(err) : ok(result),
-            )
-        })
+        return connection.query(query)
     }
 
     /**
