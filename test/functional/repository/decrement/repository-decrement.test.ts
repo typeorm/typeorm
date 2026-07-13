@@ -172,6 +172,62 @@ describe("repository > decrement method", () => {
                         .rejected
                 }),
             ))
+
+        it("should throw on empty criteria and not touch any rows", () =>
+            Promise.all(
+                connections.map(async (dataSource) => {
+                    const post1 = new Post()
+                    post1.id = 1
+                    post1.title = "post #1"
+                    post1.counter = 5
+                    const post2 = new Post()
+                    post2.id = 2
+                    post2.title = "post #2"
+                    post2.counter = 5
+                    await dataSource.manager.save([post1, post2])
+
+                    // an empty criteria must not run an unfiltered UPDATE
+                    await dataSource
+                        .getRepository(Post)
+                        .decrement({}, "counter", 1)
+                        .should.be.rejectedWith(/Empty criteria/)
+
+                    const posts = await dataSource.manager.find(Post)
+                    posts.forEach((post) => post.counter.should.be.equal(5))
+                }),
+            ))
+    })
+
+    describe("invalidWhereValuesBehavior", () => {
+        let dataSources: DataSource[]
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [Post],
+                driverSpecific: {
+                    invalidWhereValuesBehavior: {
+                        null: "throw",
+                        undefined: "throw",
+                    },
+                },
+            })
+        })
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
+
+        it("should throw on a null value in the criteria", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const post = new Post()
+                    post.id = 1
+                    post.title = "post #1"
+                    post.counter = 5
+                    await dataSource.manager.save(post)
+
+                    await dataSource.manager
+                        .decrement(Post, { title: null } as any, "counter", 1)
+                        .should.be.rejectedWith(/Null value encountered/)
+                }),
+            ))
     })
 
     describe("bigint", () => {
