@@ -74,8 +74,7 @@ describe("commands - migration generate - template literal escaping", () => {
         })
 
         const fileContent = createFileStub.firstCall?.args[1] as
-            | string
-            | undefined
+            string | undefined
         createFileStub.resetHistory()
 
         if (driver === "postgres" || driver === "cockroachdb") {
