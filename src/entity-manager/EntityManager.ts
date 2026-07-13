@@ -1470,8 +1470,8 @@ export class EntityManager {
 
     /**
      * Shared implementation of {@link increment} and {@link decrement}: builds a
-     * `column = column +/- value` UPDATE for the rows matched by the conditions,
-     * validating the criteria the same way the other write methods do.
+     * `column = column +/- value` UPDATE and delegates execution to {@link update},
+     * so the criteria handling stays aligned with the other write methods.
      */
     protected incrementOrDecrementBy<Entity extends ObjectLiteral>(
         operation: "increment" | "decrement",
@@ -1503,19 +1503,7 @@ export class EntityManager {
                     value,
             )
 
-        const { criteria: whereCriteria, isPrimitive } =
-            this.normalizeAndValidateWhereCriteria(conditions, operation)
-
-        const qb = this.createQueryBuilder<Entity>(entityClass as any, "entity")
-            .update(entityClass)
-            .set(values)
-        if (isPrimitive) {
-            qb.whereInIds(whereCriteria)
-        } else {
-            qb.where(whereCriteria)
-        }
-
-        return qb.execute()
+        return this.update(entityClass, conditions, values)
     }
 
     /**
