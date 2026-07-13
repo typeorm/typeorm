@@ -75,11 +75,8 @@ export class OneToManySubjectBuilder {
                 relation.getEntityValue(subject.databaseEntity)
             if (relatedEntityDatabaseRelation) {
                 relatedEntityDatabaseRelationIds =
-                    relatedEntityDatabaseRelation.map(
-                        (entity) =>
-                            relation.inverseEntityMetadata.getEntityIdMap(
-                                entity,
-                            )!,
+                    relatedEntityDatabaseRelation.map((entity) =>
+                        relation.inverseEntityMetadata.getEntityIdMap(entity)!,
                     )
             }
         }
