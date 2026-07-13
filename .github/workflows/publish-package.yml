@@ -26,4 +26,4 @@ jobs:
       - run: pnpm run package
       - run: |
           cd build/package
-          pnpm publish --provenance --access public --no-git-checks --ignore-scripts
+          pnpm publish --provenance --access public --no-git-checks --ignore-scripts --tag legacy
