@@ -6,7 +6,7 @@
 
   If unsure about something.. just do as best as you're able,
   or reach out through our community support channels!
-  https://github.com/typeorm/typeorm/blob/master/docs/support.md
+  https://typeorm.io/docs/help/support
   https://github.com/typeorm/typeorm/blob/master/CONTRIBUTING.md
 -->
 
@@ -31,7 +31,7 @@
   If an item is not applicable, you can add "N/A" to the end.
 -->
 
--   [ ] Code is up-to-date with the `master` branch
+-   [ ] Code is up-to-date with the `v0` branch
 -   [ ] This pull request links relevant issues as `Fixes #00000`
 -   [ ] There are new or updated tests validating the change (`tests/**.test.ts`)
 -   [ ] Documentation has been updated to reflect this change (`docs/docs/**.md`)
