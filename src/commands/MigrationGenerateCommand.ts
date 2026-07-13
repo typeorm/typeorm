@@ -117,7 +117,9 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 sqlInMemory.upQueries.forEach((upQuery) => {
                     upSqls.push(
                         "        await queryRunner.query(`" +
-                            upQuery.query.replaceAll("`", "\\`") +
+                            MigrationGenerateCommand.escapeTemplateLiteral(
+                                upQuery.query,
+                            ) +
                             "`" +
                             MigrationGenerateCommand.queryParams(
                                 upQuery.parameters,
@@ -128,7 +130,9 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 sqlInMemory.downQueries.forEach((downQuery) => {
                     downSqls.push(
                         "        await queryRunner.query(`" +
-                            downQuery.query.replaceAll("`", "\\`") +
+                            MigrationGenerateCommand.escapeTemplateLiteral(
+                                downQuery.query,
+                            ) +
                             "`" +
                             MigrationGenerateCommand.queryParams(
                                 downQuery.parameters,
@@ -297,6 +301,18 @@ ${downSqls.join(`
     }
 }
 `
+    }
+
+    /**
+     * Escapes a SQL string for safe embedding inside a JavaScript template literal.
+     * Prevents backslash consumption, backtick breakout, and `${...}` interpolation
+     * from DB-introspected schema metadata (e.g. column COMMENT, DEFAULT).
+     */
+    protected static escapeTemplateLiteral(query: string): string {
+        return query
+            .replace(/\\/g, "\\\\")
+            .replace(/`/g, "\\`")
+            .replace(/\$\{/g, "\\${")
     }
 
     /**
