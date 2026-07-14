@@ -2995,7 +2995,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         ) {
             selectionPath = (
                 this.dataSource.driver as
-                    AbstractSqliteDriver | ReactNativeDriver
+                    | AbstractSqliteDriver
+                    | ReactNativeDriver
             ).wrapWithJsonFunction(selectionPath, column, false)
         }
 
@@ -3827,8 +3828,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         orderCriteria: string,
         parentAlias: string,
     ): string {
+        const aliasesByName = new Map(
+            this.expressionMap.aliases.map((alias) => [alias.name, alias]),
+        )
+        const aliasNames = new Set(aliasesByName.keys())
         const buildReference = (aliasName: string, propertyPath: string) => {
-            const alias = this.expressionMap.findAliasByName(aliasName)
+            const alias =
+                aliasesByName.get(aliasName) ??
+                this.expressionMap.findAliasByName(aliasName)
             let databaseName = propertyPath
             if (alias.hasMetadata) {
                 const column =
@@ -3882,7 +3889,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         })
 
         // fast path: a plain or quoted `alias.property.path` column reference
-        const aliasNames = this.expressionMap.aliases.map((alias) => alias.name)
         const singleColumnMatch =
             singleQualifiedColumnReferencePattern.exec(orderCriteria)
         if (singleColumnMatch) {
@@ -3936,11 +3942,23 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         )
                     return aliasName &&
                         propertyPath &&
-                        aliasNames.includes(aliasName)
+                        aliasNames.has(aliasName)
                         ? buildReference(aliasName, propertyPath)
                         : match
                 },
             )
+
+        const isEscapedByBackslashes = (criteria: string, index: number) => {
+            let backslashCount = 0
+            for (
+                let cursor = index - 1;
+                cursor >= 0 && criteria[cursor] === "\\";
+                cursor--
+            ) {
+                backslashCount++
+            }
+            return backslashCount % 2 === 1
+        }
 
         const replaceOutsideStringLiterals = (criteria: string) => {
             let result = ""
@@ -3965,6 +3983,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
                     if (criteria[index + 1] === "'") {
                         index += 2
+                        continue
+                    }
+
+                    if (isEscapedByBackslashes(criteria, index)) {
+                        index++
                         continue
                     }
 
