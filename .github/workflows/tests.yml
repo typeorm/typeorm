@@ -15,6 +15,7 @@ jobs:
       - uses: dorny/paths-filter@v3
         id: detect-changes
         with:
+          base: v0.3
           filters: |
             package-json: &package-json
               - package.json

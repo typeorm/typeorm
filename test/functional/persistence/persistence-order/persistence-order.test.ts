@@ -50,7 +50,7 @@ describe("persistence > order of persistence execution operations", () => {
         )
         beforeEach(() => reloadTestingDatabases(connections))
         after(() => closeTestingConnections(connections))
-        it("", () =>
+        it("should persist all entities in correct order", () =>
             Promise.all(
                 connections.map(async (connection) => {
                     // create first category and post and save them

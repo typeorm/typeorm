@@ -112,7 +112,7 @@ describe("github issues > #9381 The column option 《transformer》 affects the 
                 })
 
                 result = await repository.findOneBy({
-                    jsonvalue: JsonContains([5, 6, 7, 8] as any),
+                    jsonvalue: JsonContains([5, 6, 7, 8]),
                 })
                 expect(result).to.be.eql({
                     id: "7",

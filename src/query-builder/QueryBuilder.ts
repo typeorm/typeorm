@@ -1520,7 +1520,15 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         parameters.push(this.createParameter(v))
                     }
                 } else {
-                    parameters.push(this.createParameter(parameterValue.value))
+                    let value = parameterValue.value
+                    if (
+                        parameterValue.type === "jsonContains" &&
+                        value !== null &&
+                        typeof value === "object"
+                    ) {
+                        value = JSON.stringify(value)
+                    }
+                    parameters.push(this.createParameter(value))
                 }
             }
 
@@ -1581,32 +1589,6 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     operator: parameterValue.type,
                     parameters: [aliasPath, ...parameters],
                 }
-            }
-        } else if (parameterValue === null) {
-            const nullBehavior =
-                this.connection.options.invalidWhereValuesBehavior?.null ||
-                "ignore"
-            if (nullBehavior === "sql-null") {
-                return {
-                    operator: "isNull",
-                    parameters: [aliasPath],
-                }
-            } else if (nullBehavior === "throw") {
-                throw new TypeORMError(
-                    `Null value encountered in property '${aliasPath}' of a where condition. ` +
-                        `To match with SQL NULL, the IsNull() operator must be used. ` +
-                        `Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
-                )
-            }
-        } else if (parameterValue === undefined) {
-            const undefinedBehavior =
-                this.connection.options.invalidWhereValuesBehavior?.undefined ||
-                "ignore"
-            if (undefinedBehavior === "throw") {
-                throw new TypeORMError(
-                    `Undefined value encountered in property '${aliasPath}' of a where condition. ` +
-                        `Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
-                )
             }
         }
 

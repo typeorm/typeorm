@@ -13,6 +13,7 @@ import { Person } from "./entity/Person"
 import { Question } from "./entity/Question"
 import { Answer } from "./entity/Answer"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
+import { PostWithSchema } from "./entity/PostWithSchema"
 
 describe("multi-schema-and-database > basic-functionality", () => {
     describe("custom-table-schema", () => {
@@ -20,9 +21,17 @@ describe("multi-schema-and-database > basic-functionality", () => {
         before(async () => {
             connections = await createTestingConnections({
                 entities: [Post, User, Category],
-                enabledDrivers: ["mssql", "postgres"],
+                enabledDrivers: ["mssql", "postgres", "cockroachdb"],
                 schema: "custom",
             })
+            const sapDataSource = await createTestingConnections({
+                entities: [Post, User, Category],
+                enabledDrivers: ["sap"],
+                // schema gets passed down to client as currentSchema option,
+                // but "custom" schema doesn't exist so using "sys" schema the default one
+                schema: "sys",
+            })
+            connections.push(...sapDataSource)
         })
         beforeEach(() => reloadTestingDatabases(connections))
         after(() => closeTestingConnections(connections))
@@ -35,7 +44,9 @@ describe("multi-schema-and-database > basic-functionality", () => {
                     await queryRunner.release()
 
                     expect(table.database).to.not.be.undefined
-                    expect(table.schema).to.be.equal("custom")
+                    if (connection.driver.options.type === "sap")
+                        expect(table.schema).to.be.equal("sys")
+                    else expect(table.schema).to.be.equal("custom")
                 }),
             ))
 
@@ -67,7 +78,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
                         .where("post.id = :id", { id: 1 })
                         .getSql()
 
-                    if (connection.driver.options.type === "postgres")
+                    if (DriverUtils.isPostgresFamily(connection.driver))
                         sql.should.be.equal(
                             `SELECT "post"."id" AS "post_id", "post"."name" AS "post_name" FROM "custom"."post" "post" WHERE "post"."id" = $1`,
                         )
@@ -77,7 +88,14 @@ describe("multi-schema-and-database > basic-functionality", () => {
                             `SELECT "post"."id" AS "post_id", "post"."name" AS "post_name" FROM "custom"."post" "post" WHERE "post"."id" = @0`,
                         )
 
-                    table!.name.should.be.equal("custom.post")
+                    if (connection.driver.options.type === "sap")
+                        sql.should.be.equal(
+                            `SELECT "post"."id" AS "post_id", "post"."name" AS "post_name" FROM "sys"."post" "post" WHERE "post"."id" = ?`,
+                        )
+
+                    if (connection.driver.options.type === "sap")
+                        table!.name.should.be.equal("sys.post")
+                    else table!.name.should.be.equal("custom.post")
                 }),
             ))
 
@@ -97,7 +115,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
                         .where("user.id = :id", { id: 1 })
                         .getSql()
 
-                    if (connection.driver.options.type === "postgres")
+                    if (DriverUtils.isPostgresFamily(connection.driver))
                         sql.should.be.equal(
                             `SELECT "user"."id" AS "user_id", "user"."name" AS "user_name" FROM "userSchema"."user" "user" WHERE "user"."id" = $1`,
                         )
@@ -105,6 +123,11 @@ describe("multi-schema-and-database > basic-functionality", () => {
                     if (connection.driver.options.type === "mssql")
                         sql.should.be.equal(
                             `SELECT "user"."id" AS "user_id", "user"."name" AS "user_name" FROM "userSchema"."user" "user" WHERE "user"."id" = @0`,
+                        )
+
+                    if (connection.driver.options.type === "sap")
+                        sql.should.be.equal(
+                            `SELECT "user"."id" AS "user_id", "user"."name" AS "user_name" FROM "userSchema"."user" "user" WHERE "user"."id" = ?`,
                         )
 
                     table!.name.should.be.equal("userSchema.user")
@@ -143,7 +166,7 @@ describe("multi-schema-and-database > basic-functionality", () => {
                         .where("category.id = :id", { id: 1 })
                         .getSql()
 
-                    if (connection.driver.options.type === "postgres")
+                    if (DriverUtils.isPostgresFamily(connection.driver))
                         sql.should.be.equal(
                             `SELECT "category"."id" AS "category_id", "category"."name" AS "category_name",` +
                                 ` "category"."postId" AS "category_postId", "post"."id" AS "post_id", "post"."name" AS "post_name"` +
@@ -155,6 +178,13 @@ describe("multi-schema-and-database > basic-functionality", () => {
                             `SELECT "category"."id" AS "category_id", "category"."name" AS "category_name",` +
                                 ` "category"."postId" AS "category_postId", "post"."id" AS "post_id", "post"."name" AS "post_name"` +
                                 ` FROM "guest"."category" "category" INNER JOIN "custom"."post" "post" ON "post"."id"="category"."postId" WHERE "category"."id" = @0`,
+                        )
+
+                    if (connection.driver.options.type === "sap")
+                        sql.should.be.equal(
+                            `SELECT "category"."id" AS "category_id", "category"."name" AS "category_name",` +
+                                ` "category"."postId" AS "category_postId", "post"."id" AS "post_id", "post"."name" AS "post_name"` +
+                                ` FROM "guest"."category" "category" INNER JOIN "sys"."post" "post" ON "post"."id"="category"."postId" WHERE "category"."id" = ?`,
                         )
 
                     table!.name.should.be.equal("guest.category")
@@ -186,9 +216,9 @@ describe("multi-schema-and-database > basic-functionality", () => {
                         .where("category.id = :id", { id: 1 })
                         .andWhere("post.id = category.post")
 
-                    ;(await query.getRawOne())!.should.be.not.empty
+                    expect(await query.getRawOne()).to.be.not.empty
 
-                    if (connection.driver.options.type === "postgres")
+                    if (DriverUtils.isPostgresFamily(connection.driver))
                         query
                             .getSql()
                             .should.be.equal(
@@ -203,6 +233,43 @@ describe("multi-schema-and-database > basic-functionality", () => {
                                 `SELECT * FROM "guest"."category" "category", "userSchema"."user" "user",` +
                                     ` "custom"."post" "post" WHERE "category"."id" = @0 AND "post"."id" = "category"."postId"`,
                             )
+
+                    if (connection.driver.options.type === "sap")
+                        query
+                            .getSql()
+                            .should.be.equal(
+                                `SELECT * FROM "guest"."category" "category", "userSchema"."user" "user",` +
+                                    ` "sys"."post" "post" WHERE "category"."id" = ? AND "post"."id" = "category"."postId"`,
+                            )
+                }),
+            ))
+    })
+
+    describe("same tables in different schemas", () => {
+        let dataSources: DataSource[]
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [Post, PostWithSchema],
+                enabledDrivers: ["postgres", "cockroachdb", "mssql", "sap"],
+            })
+        })
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
+
+        it("should create tables in the correct schema", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const queryRunner = dataSource.createQueryRunner()
+                    const postTable = (await queryRunner.getTable("post"))!
+                    const postWithSchema = (await queryRunner.getTable(
+                        "custom.post",
+                    ))!
+                    await queryRunner.release()
+
+                    expect(postTable.name).to.be.equal("post")
+                    expect(postTable.columns).lengthOf(2)
+                    expect(postWithSchema.name).to.be.equal("custom.post")
+                    expect(postWithSchema.columns).lengthOf(2)
                 }),
             ))
     })
