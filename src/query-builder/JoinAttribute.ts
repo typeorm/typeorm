@@ -163,8 +163,24 @@ export class JoinAttribute {
                 if (!QueryBuilderUtils.isAliasProperty(this.entityOrProperty))
                     return undefined
 
+                const parentAlias = this.parentAlias!
+                const relationOwnerCandidate =
+                    this.queryExpressionMap.aliases.find(
+                        (alias) => alias.name === parentAlias,
+                    )
+
+                if (
+                    typeof this.entityOrProperty === "string" &&
+                    this.connection.hasMetadata(this.entityOrProperty) &&
+                    !relationOwnerCandidate
+                ) {
+                    return undefined
+                }
+
                 const relationOwnerSelection =
-                    this.queryExpressionMap.findAliasByName(this.parentAlias!)
+                    relationOwnerCandidate ??
+                    this.queryExpressionMap.findAliasByName(parentAlias)
+
                 let relation =
                     relationOwnerSelection.metadata.findRelationWithPropertyPath(
                         this.relationPropertyPath!,
