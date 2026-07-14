@@ -2,7 +2,7 @@ import "reflect-metadata"
 import { expect } from "chai"
 import { DataSource } from "../../../src/data-source/DataSource"
 import type { DataSourceOptions } from "../../../src/data-source/DataSourceOptions"
-import { DriverUtils } from "../../../src/driver/DriverUtils"
+import { PostgresUtils } from "../../../src/driver/postgres/PostgresUtils"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -12,13 +12,13 @@ import {
 describe("driver > session parameters validation", () => {
     it("should throw on an invalid session parameter name", () => {
         expect(() =>
-            DriverUtils.buildSessionParametersHandler({ "bad name!": "x" }),
+            PostgresUtils.buildSessionParametersHandler({ "bad name!": "x" }),
         ).to.throw(/Invalid session parameter name/)
     })
 
     it("should throw on a null or undefined value", () => {
         expect(() =>
-            DriverUtils.buildSessionParametersHandler({
+            PostgresUtils.buildSessionParametersHandler({
                 statement_timeout: undefined,
             }),
         ).to.throw(/must not be null or undefined/)
@@ -26,14 +26,14 @@ describe("driver > session parameters validation", () => {
 
     it("should accept a namespaced (dotted) parameter name", () => {
         expect(() =>
-            DriverUtils.buildSessionParametersHandler({
+            PostgresUtils.buildSessionParametersHandler({
                 "my_app.setting": "x",
             }),
         ).to.not.throw()
     })
 
     it("should return undefined when nothing is configured", () => {
-        expect(DriverUtils.buildSessionParametersHandler(undefined)).to.be
+        expect(PostgresUtils.buildSessionParametersHandler(undefined)).to.be
             .undefined
     })
 })

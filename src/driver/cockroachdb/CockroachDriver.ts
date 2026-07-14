@@ -27,6 +27,7 @@ import type { ReplicationMode } from "../types/ReplicationMode"
 import type { ReturningType } from "../types/ReturningType"
 import type { IsolationLevel } from "../types/IsolationLevel"
 import type { UpsertType } from "../types/UpsertType"
+import { PostgresUtils } from "../postgres/PostgresUtils"
 import type { CockroachConnectionCredentialsOptions } from "./CockroachConnectionCredentialsOptions"
 import type { CockroachDataSourceOptions } from "./CockroachDataSourceOptions"
 import { CockroachQueryRunner } from "./CockroachQueryRunner"
@@ -1191,7 +1192,9 @@ export class CockroachDriver implements Driver {
         // Validate and build the session-parameters handler before allocating the
         // pool, so invalid configuration fails without leaking pool resources.
         const sessionParametersHandler =
-            DriverUtils.buildSessionParametersHandler(options.sessionParameters)
+            PostgresUtils.buildSessionParametersHandler(
+                options.sessionParameters,
+            )
 
         // create a connection pool
         const pool = new this.postgres.Pool(connectionOptions)

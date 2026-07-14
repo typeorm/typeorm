@@ -33,6 +33,7 @@ import type { UpsertType } from "../types/UpsertType"
 import type { PostgresConnectionCredentialsOptions } from "./PostgresConnectionCredentialsOptions"
 import type { PostgresDataSourceOptions } from "./PostgresDataSourceOptions"
 import { PostgresQueryRunner } from "./PostgresQueryRunner"
+import { PostgresUtils } from "./PostgresUtils"
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -1773,7 +1774,9 @@ export class PostgresDriver implements Driver {
         // Validate and build the session-parameters handler before allocating the
         // pool, so invalid configuration fails without leaking pool resources.
         const sessionParametersHandler =
-            DriverUtils.buildSessionParametersHandler(options.sessionParameters)
+            PostgresUtils.buildSessionParametersHandler(
+                options.sessionParameters,
+            )
 
         // create a connection pool
         const pool = new this.postgres.Pool(connectionOptions)
