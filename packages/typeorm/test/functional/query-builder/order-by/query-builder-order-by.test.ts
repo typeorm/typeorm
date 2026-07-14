@@ -572,6 +572,40 @@ describe("query builder > order-by", () => {
                 }),
             ))
 
+        it("should not rewrite alias references after backslash-escaped quotes inside orderBy string literals", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const query = new TestSelectQueryBuilder(
+                        dataSource.manager.createQueryBuilder(Post, "post"),
+                    )
+                    const parentAlias = "distinctAlias"
+                    const rewritten =
+                        query.replaceAliasColumnsForDistinctSelectForTest(
+                            "CASE WHEN post.title = 'it\\'s post.title' THEN post.num1 ELSE post.num2 END",
+                            parentAlias,
+                        )
+                    const reference = (column: string) =>
+                        dataSource.driver.escape(parentAlias) +
+                        "." +
+                        dataSource.driver.escape(
+                            DriverUtils.buildAlias(
+                                dataSource.driver,
+                                undefined,
+                                "post",
+                                column,
+                            ),
+                        )
+
+                    expect(rewritten).to.be.equal(
+                        `CASE WHEN ${reference(
+                            "title",
+                        )} = 'it\\'s post.title' THEN ${reference(
+                            "num1",
+                        )} ELSE ${reference("num2")} END`,
+                    )
+                }),
+            ))
+
         it("should not rewrite alias references inside orderBy parameter placeholders", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
