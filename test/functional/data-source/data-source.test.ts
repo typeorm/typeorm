@@ -1,9 +1,11 @@
 import { expect } from "chai"
 import "reflect-metadata"
+import sinon from "sinon"
 import {
     CannotConnectAlreadyConnectedError,
     CannotExecuteNotConnectedError,
 } from "../../../src"
+import type { QueryResultCache } from "../../../src/cache/QueryResultCache"
 import { DataSource } from "../../../src/data-source/DataSource"
 import type { PostgresDataSourceOptions } from "../../../src/driver/postgres/PostgresDataSourceOptions"
 import { EntityManager } from "../../../src/entity-manager/EntityManager"
@@ -30,6 +32,103 @@ import { SiteLocation } from "./entity/SiteLocation"
 import { Site } from "./entity/Site"
 
 describe("DataSource", () => {
+    describe("when cache initialization fails", () => {
+        it("should disconnect the database driver", async () => {
+            const cacheConnectionError = new Error(
+                "query cache connection failed",
+            )
+            const failingCacheProvider: QueryResultCache = {
+                connect() {
+                    return Promise.reject(cacheConnectionError)
+                },
+                async disconnect() {},
+                async synchronize() {},
+                getFromCache() {
+                    return Promise.resolve(undefined)
+                },
+                async storeInCache() {},
+                isExpired() {
+                    return false
+                },
+                async clear() {},
+                async remove() {},
+            }
+            const dataSource = new DataSource({
+                type: "better-sqlite3",
+                database: ":memory:",
+                cache: {
+                    provider: () => failingCacheProvider,
+                },
+            })
+            const disconnectSpy = sinon.spy(dataSource.driver, "disconnect")
+            const cacheDisconnectSpy = sinon.spy(
+                failingCacheProvider,
+                "disconnect",
+            )
+
+            try {
+                await expect(dataSource.initialize()).to.be.rejectedWith(
+                    cacheConnectionError,
+                )
+                expect(disconnectSpy).to.have.been.calledOnce
+                expect(cacheDisconnectSpy).to.have.been.calledOnce
+                expect(dataSource.isInitialized).to.be.false
+            } finally {
+                if (disconnectSpy.notCalled) {
+                    await dataSource.driver.disconnect()
+                }
+            }
+        })
+    })
+
+    describe("while initialization is in progress", () => {
+        it("should reject another initialization attempt", async () => {
+            const dataSource = new DataSource({
+                type: "better-sqlite3",
+                database: ":memory:",
+            })
+            const originalConnect = dataSource.driver.connect.bind(
+                dataSource.driver,
+            )
+            let allowConnection!: () => void
+            const connectionGate = new Promise<void>((resolve) => {
+                allowConnection = resolve
+            })
+            let reportConnectionStarted!: () => void
+            const connectionStarted = new Promise<void>((resolve) => {
+                reportConnectionStarted = resolve
+            })
+            const connectStub = sinon.stub(dataSource.driver, "connect")
+            connectStub.onFirstCall().callsFake(async () => {
+                reportConnectionStarted()
+                await connectionGate
+                await originalConnect()
+            })
+            connectStub
+                .onSecondCall()
+                .rejects(new Error("driver connect called more than once"))
+
+            const firstInitialization = dataSource.initialize()
+            await connectionStarted
+            const secondInitialization = dataSource.initialize()
+            allowConnection()
+
+            try {
+                // assert the rejection first so a handler is attached to the
+                // already-rejected promise within the same tick it was created
+                await expect(secondInitialization).to.be.rejectedWith(
+                    CannotConnectAlreadyConnectedError,
+                )
+                await expect(firstInitialization).to.be.fulfilled
+                expect(connectStub).to.have.been.calledOnce
+            } finally {
+                if (dataSource.isInitialized) {
+                    await dataSource.destroy()
+                }
+            }
+        })
+    })
+
     describe("before connection is established", () => {
         let dataSource: DataSource
         before(() => {
