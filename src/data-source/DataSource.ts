@@ -128,6 +128,8 @@ export class DataSource {
 
     readonly relationIdLoader: RelationIdLoader
 
+    private isInitializing = false
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -236,45 +238,64 @@ export class DataSource {
      * but it also can setup a connection pool with database to use.
      */
     async initialize(): Promise<this> {
-        if (this.isInitialized) throw new CannotConnectAlreadyConnectedError()
+        if (this.isInitialized || this.isInitializing)
+            throw new CannotConnectAlreadyConnectedError()
 
-        // validate isolationLevel before connecting
-        validateIsolationLevel(
-            this.driver.supportedIsolationLevels,
-            this.options.isolationLevel,
-        )
-
-        // connect to the database via its driver
-        await this.driver.connect()
-
-        // connect to the cache-specific database if cache is enabled
-        if (this.queryResultCache) await this.queryResultCache.connect()
-
-        // set connected status for the current connection
-        ObjectUtils.assign(this, { isInitialized: true })
-
+        this.isInitializing = true
         try {
-            // build all metadatas registered in the current connection
-            await this.buildMetadatas()
+            // validate isolationLevel before connecting
+            validateIsolationLevel(
+                this.driver.supportedIsolationLevels,
+                this.options.isolationLevel,
+            )
 
-            await this.driver.afterConnect()
+            // connect to the database via its driver
+            await this.driver.connect()
 
-            // if option is set - drop schema once connection is done
-            if (this.options.dropSchema) await this.dropDatabase()
+            try {
+                // connect to the cache-specific database if cache is enabled
+                if (this.queryResultCache) await this.queryResultCache.connect()
 
-            // if option is set - automatically synchronize a schema
-            if (this.options.migrationsRun)
-                await this.runMigrations({
-                    transaction: this.options.migrationsTransactionMode,
-                })
+                // set connected status for the current connection
+                ObjectUtils.assign(this, { isInitialized: true })
 
-            // if option is set - automatically synchronize a schema
-            if (this.options.synchronize) await this.synchronize()
-        } catch (error) {
-            // if for some reason build metadata fail (for example validation error during entity metadata check)
-            // connection needs to be closed
-            await this.destroy()
-            throw error
+                // build all metadatas registered in the current connection
+                await this.buildMetadatas()
+
+                await this.driver.afterConnect()
+
+                // if option is set - drop schema once connection is done
+                if (this.options.dropSchema) await this.dropDatabase()
+
+                // if option is set - automatically synchronize a schema
+                if (this.options.migrationsRun)
+                    await this.runMigrations({
+                        transaction: this.options.migrationsTransactionMode,
+                    })
+
+                // if option is set - automatically synchronize a schema
+                if (this.options.synchronize) await this.synchronize()
+            } catch (error) {
+                // if for some reason build metadata fail (for example validation error during entity metadata check)
+                // connection needs to be closed
+                if (this.isInitialized) {
+                    await this.destroy()
+                } else {
+                    // the cache provider may have partially connected before
+                    // failing; clean it up without masking the original error
+                    if (this.queryResultCache) {
+                        try {
+                            await this.queryResultCache.disconnect()
+                        } catch {
+                            // ignore
+                        }
+                    }
+                    await this.driver.disconnect()
+                }
+                throw error
+            }
+        } finally {
+            this.isInitializing = false
         }
 
         return this
