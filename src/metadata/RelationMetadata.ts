@@ -490,8 +490,19 @@ export class RelationMetadata {
      *
      * @param entity
      * @param value
+     * @param forceOverwrite When true, always assigns `value` to the relation
+     * property instead of merging into an existing object/class-instance
+     * value. Used by hydration call-sites to distinguish a value that was
+     * pre-set by the user (e.g. in the entity constructor) - which must be
+     * overwritten by the first hydrated value - from a value that was
+     * already hydrated earlier in the same run, which should keep the
+     * existing merge/no-op behavior (see #12683 and #11265).
      */
-    setEntityValue(entity: ObjectLiteral, value: any): void {
+    setEntityValue(
+        entity: ObjectLiteral,
+        value: any,
+        forceOverwrite: boolean = false,
+    ): void {
         const propertyName = this.isLazy
             ? "__" + this.propertyName + "__"
             : this.propertyName
@@ -524,7 +535,7 @@ export class RelationMetadata {
                 entity,
             )
         } else {
-            if (ObjectUtils.isObject(entity[propertyName])) {
+            if (!forceOverwrite && ObjectUtils.isObject(entity[propertyName])) {
                 OrmUtils.mergeDeep(entity[propertyName], value)
             } else {
                 entity[propertyName] = value
