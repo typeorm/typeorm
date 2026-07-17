@@ -772,17 +772,15 @@ describe("query builder > locking", () => {
 
     it('skip_locked with "pessimistic_read"', () => {
         for (const dataSource of dataSources) {
-            if (
-                !(
-                    dataSource.driver.options.type === "postgres" ||
-                    dataSource.driver.options.type === "sap" ||
-                    (dataSource.driver.options.type === "mysql" &&
-                        DriverUtils.isReleaseVersionOrGreater(
-                            dataSource.driver,
-                            "8.0.0",
-                        ))
-                )
-            ) {
+            if (!(
+                dataSource.driver.options.type === "postgres" ||
+                dataSource.driver.options.type === "sap" ||
+                (dataSource.driver.options.type === "mysql" &&
+                    DriverUtils.isReleaseVersionOrGreater(
+                        dataSource.driver,
+                        "8.0.0",
+                    ))
+            )) {
                 return
             }
 
@@ -803,17 +801,15 @@ describe("query builder > locking", () => {
 
     it('nowait with "pessimistic_read"', () => {
         for (const dataSource of dataSources) {
-            if (
-                !(
-                    dataSource.driver.options.type === "postgres" ||
-                    dataSource.driver.options.type === "sap" ||
-                    (dataSource.driver.options.type === "mysql" &&
-                        DriverUtils.isReleaseVersionOrGreater(
-                            dataSource.driver,
-                            "8.0.0",
-                        ))
-                )
-            ) {
+            if (!(
+                dataSource.driver.options.type === "postgres" ||
+                dataSource.driver.options.type === "sap" ||
+                (dataSource.driver.options.type === "mysql" &&
+                    DriverUtils.isReleaseVersionOrGreater(
+                        dataSource.driver,
+                        "8.0.0",
+                    ))
+            )) {
                 return
             }
 
