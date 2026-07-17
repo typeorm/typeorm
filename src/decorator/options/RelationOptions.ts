@@ -16,8 +16,7 @@ export interface RelationOptions {
      *
      */
     cascade?:
-        | boolean
-        | ("insert" | "update" | "remove" | "soft-remove" | "recover")[]
+        boolean | ("insert" | "update" | "remove" | "soft-remove" | "recover")[]
 
     /**
      * Indicates if relation column value can be nullable or not.

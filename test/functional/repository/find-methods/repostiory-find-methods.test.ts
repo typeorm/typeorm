@@ -7,6 +7,8 @@ import {
 } from "../../../utils/test-utils"
 import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
+import { Category } from "./entity/Category"
+import { Counters } from "./entity/Counters"
 import type { User } from "./model/User"
 import { EntityNotFoundError } from "../../../../src/error/EntityNotFoundError"
 import { UserEntity } from "./schema/UserEntity"
@@ -15,7 +17,7 @@ describe("repository > find methods", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
-            entities: [Post, UserEntity],
+            entities: [Post, Category, UserEntity],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
@@ -130,6 +132,189 @@ describe("repository > find methods", () => {
                         order: { id: "ASC" },
                     })
                     count.should.be.equal(5)
+                }),
+            ))
+
+        it("should support distinct count when select is provided", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const repository = dataSource.getRepository(Category)
+
+                    await repository.save([
+                        { id: 1, name: "Bears" },
+                        { id: 2, name: "Bears" },
+                        { id: 3, name: "Cats" },
+                    ])
+
+                    const count1 = await repository.count({
+                        select: { name: true },
+                    })
+                    const count2 = await repository.count({
+                        select: { name: true },
+                        where: { name: "Bears" },
+                    })
+                    const count3 = await repository.count()
+
+                    expect(count1).to.equal(2)
+                    expect(count2).to.equal(1)
+                    expect(count3).to.equal(3)
+                }),
+            ))
+
+        it("should support distinct count with embed", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const repository = dataSource.getRepository(Post)
+                    const firstPost = new Post()
+                    firstPost.id = 1
+                    firstPost.title = "post #1"
+                    firstPost.categoryName = "other"
+                    firstPost.counters = new Counters()
+                    firstPost.counters.likes = 1
+                    await repository.save(firstPost)
+
+                    const secondPost = new Post()
+                    secondPost.id = 2
+                    secondPost.title = "post #2"
+                    secondPost.categoryName = "other"
+                    secondPost.counters = new Counters()
+                    secondPost.counters.likes = 2
+                    await repository.save(secondPost)
+
+                    const count = await repository.count({
+                        select: {
+                            counters: {
+                                likes: true,
+                            },
+                        },
+                    })
+                    count.should.be.equal(2)
+                }),
+            ))
+
+        it("should support distinct count with relation select", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const categoryRepository =
+                        dataSource.getRepository(Category)
+                    const postRepository = dataSource.getRepository(Post)
+
+                    const bear1 = await categoryRepository.save({
+                        id: 1,
+                        name: "Bears",
+                    })
+                    const bear2 = await categoryRepository.save({
+                        id: 2,
+                        name: "Bears",
+                    })
+                    const cats = await categoryRepository.save({
+                        id: 3,
+                        name: "Cats",
+                    })
+
+                    const firstPost = new Post()
+                    firstPost.id = 1
+                    firstPost.title = "post #1"
+                    firstPost.categoryName = "other"
+                    firstPost.category = bear1
+                    await postRepository.save(firstPost)
+
+                    const secondPost = new Post()
+                    secondPost.id = 2
+                    secondPost.title = "post #2"
+                    secondPost.categoryName = "other"
+                    secondPost.category = bear2
+                    await postRepository.save(secondPost)
+
+                    const thirdPost = new Post()
+                    thirdPost.id = 3
+                    thirdPost.title = "post #3"
+                    thirdPost.categoryName = "other"
+                    thirdPost.category = cats
+                    await postRepository.save(thirdPost)
+
+                    const count1 = await postRepository.count({
+                        select: {
+                            category: {
+                                name: true,
+                            },
+                        },
+                        relations: {
+                            category: true,
+                        },
+                    })
+                    const count2 = await postRepository.count()
+
+                    count1.should.be.equal(2)
+                    count2.should.be.equal(3)
+                }),
+            ))
+
+        it("should support distinct count with embedded relation select", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const categoryRepository =
+                        dataSource.getRepository(Category)
+                    const postRepository = dataSource.getRepository(Post)
+
+                    const bear1 = await categoryRepository.save({
+                        id: 1,
+                        name: "Bears",
+                    })
+                    const bear2 = await categoryRepository.save({
+                        id: 2,
+                        name: "Bears",
+                    })
+                    const cats = await categoryRepository.save({
+                        id: 3,
+                        name: "Cats",
+                    })
+
+                    const firstPost = new Post()
+                    firstPost.id = 1
+                    firstPost.title = "post #1"
+                    firstPost.categoryName = "other"
+                    firstPost.counters = new Counters()
+                    firstPost.counters.likes = 1
+                    firstPost.counters.category = bear1
+                    await postRepository.save(firstPost)
+
+                    const secondPost = new Post()
+                    secondPost.id = 2
+                    secondPost.title = "post #2"
+                    secondPost.categoryName = "other"
+                    secondPost.counters = new Counters()
+                    secondPost.counters.likes = 2
+                    secondPost.counters.category = bear2
+                    await postRepository.save(secondPost)
+
+                    const thirdPost = new Post()
+                    thirdPost.id = 3
+                    thirdPost.title = "post #3"
+                    thirdPost.categoryName = "other"
+                    thirdPost.counters = new Counters()
+                    thirdPost.counters.likes = 3
+                    thirdPost.counters.category = cats
+                    await postRepository.save(thirdPost)
+
+                    const count1 = await postRepository.count({
+                        select: {
+                            counters: {
+                                category: {
+                                    name: true,
+                                },
+                            },
+                        },
+                        relations: {
+                            counters: {
+                                category: true,
+                            },
+                        },
+                    })
+                    const count2 = await postRepository.count()
+
+                    count1.should.be.equal(2)
+                    count2.should.be.equal(3)
                 }),
             ))
     })

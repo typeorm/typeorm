@@ -270,4 +270,132 @@ describe(`OrmUtils`, () => {
             ).to.equal(false)
         })
     })
+
+    describe("normalizeWhereCriteria", () => {
+        it("throws on null/undefined by default when no options are provided", () => {
+            // unconfigured invalidWhereValuesBehavior defaults to "throw",
+            // matching the read/find path
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ name: null }),
+            ).to.throw(/Null value.*'name'/)
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ email: undefined }),
+            ).to.throw(/Undefined value.*'email'/)
+            // a criteria with no null/undefined is normalized and returned
+            expect(
+                OrmUtils.normalizeWhereCriteria({ name: "Alice" }),
+            ).to.deep.equal({ name: "Alice" })
+        })
+
+        it("throws on null/undefined by default when empty options are provided", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ name: undefined }, {}),
+            ).to.throw(/Undefined value.*'name'/)
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria({ email: null }, {}),
+            ).to.throw(/Null value.*'email'/)
+        })
+
+        it("honors 'ignore' by stripping null/undefined keys", () => {
+            const result = OrmUtils.normalizeWhereCriteria(
+                { name: "Alice", email: null, phone: undefined },
+                { null: "ignore", undefined: "ignore" },
+            )
+            expect(result).to.deep.equal({ name: "Alice" })
+        })
+
+        it("passes entity class instances through unchanged (only plain objects are normalized)", () => {
+            class User {
+                id = 1
+                name = "Alice"
+                parentId: number | null = null
+            }
+            const entity = new User()
+            // an entity instance is not a plain object, so it is returned
+            // untouched — its null column is not validated/stripped even under
+            // "throw" (proper handling would need entity metadata)
+            expect(
+                OrmUtils.normalizeWhereCriteria(entity, { null: "throw" }),
+            ).to.equal(entity)
+        })
+
+        it("passes primitives and atomic value-types (Date, Uint8Array) through unchanged", () => {
+            const date = new Date()
+            const bytes = new Uint8Array([1, 2, 3])
+            expect(
+                OrmUtils.normalizeWhereCriteria(date as any, { null: "throw" }),
+            ).to.equal(date)
+            expect(
+                OrmUtils.normalizeWhereCriteria(bytes as any, {
+                    null: "throw",
+                }),
+            ).to.equal(bytes)
+            expect(
+                OrmUtils.normalizeWhereCriteria(5 as any, { null: "throw" }),
+            ).to.equal(5)
+        })
+
+        it("ignores the __proto__ key when iterating", () => {
+            const result = OrmUtils.normalizeWhereCriteria(
+                JSON.parse('{ "__proto__": { "polluted": true }, "id": 1 }'),
+                {},
+            ) as Record<string, unknown>
+            expect(result).to.deep.equal({ id: 1 })
+            // the guard must prevent a `result["__proto__"] = ...` assignment from
+            // re-pointing the returned object's prototype (per-object pollution),
+            // not just global Object.prototype pollution.
+            expect(Object.getPrototypeOf(result)).to.equal(Object.prototype)
+            expect(result.polluted).to.equal(undefined)
+            expect(({} as any).polluted).to.equal(undefined)
+        })
+    })
+
+    describe("isCriteriaNullOrEmpty", () => {
+        it("treats null/undefined/empty-string as empty", () => {
+            expect(OrmUtils.isCriteriaNullOrEmpty(null)).to.equal(true)
+            expect(OrmUtils.isCriteriaNullOrEmpty(undefined)).to.equal(true)
+            expect(OrmUtils.isCriteriaNullOrEmpty("")).to.equal(true)
+        })
+
+        it("treats a non-empty primitive as not empty", () => {
+            expect(OrmUtils.isCriteriaNullOrEmpty(1)).to.equal(false)
+            expect(OrmUtils.isCriteriaNullOrEmpty("id")).to.equal(false)
+        })
+
+        it("treats an empty plain object as empty", () => {
+            expect(OrmUtils.isCriteriaNullOrEmpty({})).to.equal(true)
+        })
+
+        it("treats a non-empty plain object as not empty", () => {
+            expect(OrmUtils.isCriteriaNullOrEmpty({ id: 1 })).to.equal(false)
+        })
+
+        it("treats an empty array as empty", () => {
+            expect(OrmUtils.isCriteriaNullOrEmpty([])).to.equal(true)
+        })
+
+        it("only checks whole emptiness, not per-element emptiness", () => {
+            // isCriteriaNullOrEmpty is deliberately shallow: a non-empty array
+            // is not empty regardless of its elements. Per-element OR-branch
+            // emptiness (e.g. [{}] / [[]]) is enforced where object criteria is
+            // validated (EntityManager.normalizeAndValidateWhereCriteria), not
+            // here — this keeps it usable for primitive id-arrays and cheap.
+            expect(OrmUtils.isCriteriaNullOrEmpty([{}])).to.equal(false)
+            expect(OrmUtils.isCriteriaNullOrEmpty([[]])).to.equal(false)
+            expect(OrmUtils.isCriteriaNullOrEmpty([{ id: 1 }])).to.equal(false)
+            expect(OrmUtils.isCriteriaNullOrEmpty([1, 2, 3])).to.equal(false)
+            // a populated primitive id-list containing "" is NOT empty
+            expect(OrmUtils.isCriteriaNullOrEmpty(["a", "", "c"])).to.equal(
+                false,
+            )
+        })
+
+        it("does not recurse on a self-referential array", () => {
+            const cyclic: any[] = []
+            cyclic.push(cyclic)
+            // shallow check — must not throw a RangeError and a non-empty
+            // (self-referential) array is not treated as empty
+            expect(OrmUtils.isCriteriaNullOrEmpty(cyclic)).to.equal(false)
+        })
+    })
 })
