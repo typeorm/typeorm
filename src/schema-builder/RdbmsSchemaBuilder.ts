@@ -914,13 +914,11 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             // drop all composite uniques related to this column
             // Mysql does not support unique constraints.
-            if (
-                !(
-                    DriverUtils.isMySQLFamily(this.dataSource.driver) ||
-                    this.dataSource.driver.options.type === "aurora-mysql" ||
-                    this.dataSource.driver.options.type === "spanner"
-                )
-            ) {
+            if (!(
+                DriverUtils.isMySQLFamily(this.dataSource.driver) ||
+                this.dataSource.driver.options.type === "aurora-mysql" ||
+                this.dataSource.driver.options.type === "spanner"
+            )) {
                 for (const changedColumn of changedColumns) {
                     await this.dropColumnCompositeUniques(
                         this.getTablePath(metadata),

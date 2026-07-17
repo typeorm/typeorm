@@ -39,7 +39,4 @@ export interface WhereClause {
 }
 
 export type WhereClauseCondition =
-    | string
-    | WherePredicateOperator
-    | WhereWrappingOperator
-    | WhereClause[]
+    string | WherePredicateOperator | WhereWrappingOperator | WhereClause[]

@@ -114,10 +114,7 @@ export interface TestingOptions {
                * - "redis" means cached values will be stored inside redis. You must provide redis connection options.
                */
               readonly type?:
-                  | "database"
-                  | "redis"
-                  | "ioredis"
-                  | "ioredis/cluster" // todo: add mongodb and other cache providers as well in the future
+                  "database" | "redis" | "ioredis" | "ioredis/cluster" // todo: add mongodb and other cache providers as well in the future
 
               /**
                * Factory function for custom cache providers that implement QueryResultCache.

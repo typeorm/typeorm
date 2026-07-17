@@ -401,8 +401,7 @@ export class BaseEntity {
     static upsert<T extends BaseEntity>(
         this: { new (): T } & typeof BaseEntity,
         entityOrEntities:
-            | QueryDeepPartialEntity<T>
-            | QueryDeepPartialEntity<T>[],
+            QueryDeepPartialEntity<T> | QueryDeepPartialEntity<T>[],
         conflictPathsOrOptions: string[] | UpsertOptions<T>,
     ): Promise<InsertResult> {
         return this.getRepository<T>().upsert(
