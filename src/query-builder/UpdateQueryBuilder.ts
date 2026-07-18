@@ -778,7 +778,12 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                             return columnName + " " + orderBys[columnName]
                         } else {
                             const { order, nulls } = orderBys[columnName] as any
-                            return columnName + " " + order + (nulls ? " " + nulls : "")
+                            return (
+                                columnName +
+                                " " +
+                                order +
+                                (nulls ? " " + nulls : "")
+                            )
                         }
                     })
                     .join(", ")
