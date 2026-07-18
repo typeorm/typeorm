@@ -103,6 +103,16 @@
   },
   {
     "skip": false,
+    "type": "postgres-js",
+    "host": "localhost",
+    "port": 5432,
+    "username": "username",
+    "password": "password",
+    "database": "typeorm",
+    "logging": false
+  },
+  {
+    "skip": false,
     "type": "sap",
     "host": "localhost",
     "port": 39041,

@@ -20,10 +20,15 @@ const expectCurrentApplicationName = async (
     expect(result[0].application_name).to.equal(name)
 }
 
+const expectedDefaultApplicationName = (dataSource: DataSource) =>
+    dataSource.options.type === "postgres-js" ? "postgres.js" : ""
+
 describe("Connection replication", () => {
     const ormConfigConnectionOptionsArray = getTypeOrmConfig()
     const postgresOptions = ormConfigConnectionOptionsArray.find(
-        (options) => options.type == "postgres" && !options.skip,
+        (options) =>
+            (options.type === "postgres" || options.type === "postgres-js") &&
+            !options.skip,
     )
     if (!postgresOptions) {
         return
@@ -227,7 +232,10 @@ describe("Connection replication", () => {
             const queryRunner = dataSource.createQueryRunner()
             expect(queryRunner.getReplicationMode()).to.equal("master")
 
-            await expectCurrentApplicationName(queryRunner, "")
+            await expectCurrentApplicationName(
+                queryRunner,
+                expectedDefaultApplicationName(dataSource),
+            )
             await queryRunner.release()
         })
 
@@ -240,7 +248,9 @@ describe("Connection replication", () => {
                     "current_setting",
                 )
                 .execute()
-            expect(result[0].current_setting).to.equal("")
+            expect(result[0].current_setting).to.equal(
+                expectedDefaultApplicationName(dataSource),
+            )
         })
     })
 })

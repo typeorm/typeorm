@@ -27,7 +27,10 @@ describe("github issues > #2067 Unhandled promise rejection warning on postgres 
                 const connectionFailureMessage =
                     "Test error to simulate a connection error"
 
-                if (connection.driver.options.type === "postgres") {
+                if (
+                    connection.driver.options.type === "postgres" ||
+                    connection.driver.options.type === "postgres-js"
+                ) {
                     connection.driver.obtainMasterConnection = () =>
                         Promise.reject<any>(new Error(connectionFailureMessage))
                     connection.driver.obtainSlaveConnection = () =>

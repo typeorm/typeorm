@@ -707,7 +707,10 @@ describe("query builder > locking", () => {
     it("should allow using lockTables on all types of locking", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                if (dataSource.driver.options.type !== "postgres") {
+                if (
+                    dataSource.driver.options.type !== "postgres" &&
+                    dataSource.driver.options.type !== "postgres-js"
+                ) {
                     return
                 }
 
@@ -774,6 +777,7 @@ describe("query builder > locking", () => {
         for (const dataSource of dataSources) {
             if (!(
                 dataSource.driver.options.type === "postgres" ||
+                dataSource.driver.options.type === "postgres-js" ||
                 dataSource.driver.options.type === "sap" ||
                 (dataSource.driver.options.type === "mysql" &&
                     DriverUtils.isReleaseVersionOrGreater(
@@ -803,6 +807,7 @@ describe("query builder > locking", () => {
         for (const dataSource of dataSources) {
             if (!(
                 dataSource.driver.options.type === "postgres" ||
+                dataSource.driver.options.type === "postgres-js" ||
                 dataSource.driver.options.type === "sap" ||
                 (dataSource.driver.options.type === "mysql" &&
                     DriverUtils.isReleaseVersionOrGreater(
@@ -833,6 +838,7 @@ describe("query builder > locking", () => {
             dataSources.map(async (dataSource) => {
                 if (
                     dataSource.driver.options.type === "postgres" ||
+                    dataSource.driver.options.type === "postgres-js" ||
                     dataSource.driver.options.type === "sap" ||
                     (dataSource.driver.options.type === "mysql" &&
                         DriverUtils.isReleaseVersionOrGreater(
@@ -855,7 +861,10 @@ describe("query builder > locking", () => {
     it('skip_locked with "for_key_share" check getOne', () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                if (dataSource.driver.options.type !== "postgres") {
+                if (
+                    dataSource.driver.options.type !== "postgres" &&
+                    dataSource.driver.options.type !== "postgres-js"
+                ) {
                     return
                 }
 

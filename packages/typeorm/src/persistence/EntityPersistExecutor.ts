@@ -148,7 +148,11 @@ export class EntityPersistExecutor {
             // CockroachDB uses the pg package over a single connection too.
             const driverType = this.dataSource.options.type
             let executors: SubjectExecutor[]
-            if (driverType === "postgres" || driverType === "cockroachdb") {
+            if (
+                driverType === "postgres" ||
+                driverType === "postgres-js" ||
+                driverType === "cockroachdb"
+            ) {
                 executors = []
                 for (const entities of entitiesInChunks) {
                     executors.push(await buildExecutor(entities))
