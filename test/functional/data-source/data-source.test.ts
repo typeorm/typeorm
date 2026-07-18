@@ -32,6 +32,7 @@ import { SiteLocation } from "./entity/SiteLocation"
 import { Site } from "./entity/Site"
 
 describe("DataSource", () => {
+    // regression test for github issue #12705
     describe("when cache initialization fails", () => {
         it("should disconnect the database driver", async () => {
             const cacheConnectionError = new Error(
@@ -81,6 +82,7 @@ describe("DataSource", () => {
         })
     })
 
+    // regression test for github issue #12705
     describe("while initialization is in progress", () => {
         it("should reject another initialization attempt", async () => {
             const dataSource = new DataSource({
@@ -124,6 +126,12 @@ describe("DataSource", () => {
             } finally {
                 if (dataSource.isInitialized) {
                     await dataSource.destroy()
+                } else {
+                    try {
+                        await dataSource.driver.disconnect()
+                    } catch {
+                        // the driver may never have connected
+                    }
                 }
             }
         })

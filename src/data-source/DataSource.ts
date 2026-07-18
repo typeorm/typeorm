@@ -281,8 +281,8 @@ export class DataSource {
                 if (this.isInitialized) {
                     await this.destroy()
                 } else {
-                    // the cache provider may have partially connected before
-                    // failing; clean it up without masking the original error
+                    // clean up whatever partially connected, without letting
+                    // a cleanup failure mask the original error
                     if (this.queryResultCache) {
                         try {
                             await this.queryResultCache.disconnect()
@@ -290,7 +290,11 @@ export class DataSource {
                             // ignore
                         }
                     }
-                    await this.driver.disconnect()
+                    try {
+                        await this.driver.disconnect()
+                    } catch {
+                        // ignore
+                    }
                 }
                 throw error
             }
