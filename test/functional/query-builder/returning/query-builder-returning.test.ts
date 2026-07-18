@@ -43,7 +43,10 @@ describe("query builder > insert/update/delete returning", () => {
                     expect(sql).to.equal(
                         `INSERT INTO "user"("name") OUTPUT inserted.* VALUES (@0)`,
                     )
-                } else if (dataSource.driver.options.type === "postgres") {
+                } else if (
+                    dataSource.driver.options.type === "postgres" ||
+                    dataSource.driver.options.type === "postgres-js"
+                ) {
                     expect(sql).to.equal(
                         `INSERT INTO "user"("name") VALUES ($1) RETURNING *`,
                     )
@@ -85,7 +88,10 @@ describe("query builder > insert/update/delete returning", () => {
                     expect(sql).to.equal(
                         `UPDATE "user" SET "name" = @0 OUTPUT inserted.* WHERE "name" = @1`,
                     )
-                } else if (dataSource.driver.options.type === "postgres") {
+                } else if (
+                    dataSource.driver.options.type === "postgres" ||
+                    dataSource.driver.options.type === "postgres-js"
+                ) {
                     expect(sql).to.equal(
                         `UPDATE "user" SET "name" = $1 WHERE "name" = $2 RETURNING *`,
                     )
@@ -127,7 +133,10 @@ describe("query builder > insert/update/delete returning", () => {
                     expect(sql).to.equal(
                         `DELETE FROM "user" OUTPUT deleted.* WHERE "name" = @0`,
                     )
-                } else if (dataSource.driver.options.type === "postgres") {
+                } else if (
+                    dataSource.driver.options.type === "postgres" ||
+                    dataSource.driver.options.type === "postgres-js"
+                ) {
                     expect(sql).to.equal(
                         `DELETE FROM "user" WHERE "name" = $1 RETURNING *`,
                     )

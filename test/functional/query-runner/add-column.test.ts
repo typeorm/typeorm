@@ -136,6 +136,7 @@ describe("query runner > add column", () => {
                 if (
                     DriverUtils.isMySQLFamily(dataSource.driver) ||
                     dataSource.driver.options.type === "postgres" ||
+                    dataSource.driver.options.type === "postgres-js" ||
                     dataSource.driver.options.type === "spanner"
                 ) {
                     const isMySQL = dataSource.options.type === "mysql"
@@ -143,7 +144,10 @@ describe("query runner > add column", () => {
                         dataSource.driver.options.type === "spanner"
                     let postgresSupported = false
 
-                    if (dataSource.driver.options.type === "postgres") {
+                    if (
+                        dataSource.driver.options.type === "postgres" ||
+                        dataSource.driver.options.type === "postgres-js"
+                    ) {
                         postgresSupported = (
                             dataSource.driver as PostgresDriver
                         ).isGeneratedColumnsSupported

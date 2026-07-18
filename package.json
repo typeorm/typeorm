@@ -141,6 +141,7 @@
     "pg": "^8.22.0",
     "pg-query-stream": "^4.16.0",
     "pkg-pr-new": "^0.0.75",
+    "postgres": "^3.4.9",
     "prettier": "^3.9.4",
     "prettier-plugin-packagejson": "^3.0.2",
     "prettier-plugin-toml": "^2.0.6",
@@ -167,6 +168,7 @@
     "pg": "^8.5.1",
     "pg-native": "^3.0.0",
     "pg-query-stream": "^4.0.0",
+    "postgres": "^3.4.9",
     "redis": "^5.0.0 || ^6.0.0",
     "sql.js": "^1.4.0",
     "ts-node": "^10.9.2",
@@ -204,6 +206,9 @@
       "optional": true
     },
     "pg-query-stream": {
+      "optional": true
+    },
+    "postgres": {
       "optional": true
     },
     "redis": {

@@ -1,6 +1,6 @@
 # Postgres / CockroachDB
 
-PostgreSQL, CockroachDB and Amazon Aurora Postgres are supported as TypeORM drivers.
+PostgreSQL, CockroachDB and Amazon Aurora Postgres are supported as TypeORM drivers. PostgreSQL can use either the [`pg`](https://node-postgres.com/) client with `type: "postgres"` or [Postgres.js](https://github.com/porsager/postgres) with `type: "postgres-js"`. Both client choices use TypeORM's same PostgreSQL dialect, metadata, schema builder, migrations, repositories and query APIs.
 
 Databases that are PostgreSQL-compatible can also be used with TypeORM via the `postgres` data source type.
 
@@ -8,19 +8,111 @@ To use YugabyteDB, refer to [their ORM docs](https://docs.yugabyte.com/stable/dr
 
 ## Installation
 
+For `pg`:
+
 ```shell
 npm install pg
 ```
 
-For streaming support:
+Install `pg-query-stream` as well when your application uses `QueryRunner.stream()` with `pg`:
 
 ```shell
 npm install pg-query-stream
 ```
 
+For Postgres.js:
+
+```shell
+npm install postgres
+```
+
+Postgres.js streaming uses its built-in cursor API and does not require `pg-query-stream`.
+
+## Configuration
+
+With `pg`:
+
+```typescript
+import { DataSource } from "typeorm"
+
+export const dataSource = new DataSource({
+    type: "postgres",
+    host: "localhost",
+    port: 5432,
+    username: "app",
+    password: "secret",
+    database: "app",
+    entities: [User],
+})
+```
+
+With Postgres.js, the portable configuration is identical apart from `type`:
+
+```typescript
+import { DataSource } from "typeorm"
+
+export const dataSource = new DataSource({
+    type: "postgres-js",
+    host: "localhost",
+    port: 5432,
+    username: "app",
+    password: "secret",
+    database: "app",
+    entities: [User],
+})
+```
+
+## Migrating from `pg` to Postgres.js
+
+For a standard TypeORM configuration, migration is two changes:
+
+```diff
+ dependencies: {
+-    "pg": "^8.0.0"
++    "postgres": "^3.4.9"
+ }
+
+ const dataSource = new DataSource({
+-    type: "postgres",
++    type: "postgres-js",
+     // the rest of the portable options stay unchanged
+ })
+```
+
+Your entities, migrations, subscribers, repositories and application calls stay unchanged. Portable Data Source options such as credentials, `poolSize`, `connectTimeoutMS`, `applicationName`, replication and logging also keep their TypeORM-level meaning.
+
+Do not copy `pg` APIs or quirks into the new configuration. The `extra` object belongs to the selected client: use `pg` options with `type: "postgres"` and native Postgres.js options with `type: "postgres-js"`. TypeORM translates only the common migration aliases listed below. Unknown Postgres.js-native keys pass through unchanged.
+
+### Postgres.js compatibility mappings
+
+`connectTimeoutMS` always uses milliseconds at the TypeORM API boundary; TypeORM converts it to Postgres.js seconds internally. Explicit Postgres.js-native keys in `extra` take precedence over TypeORM values and translated aliases.
+
+| TypeORM or common `pg` input    | Postgres.js behavior                                       | Migration guidance                                                                              |
+| ------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `poolSize`                      | `max`                                                      | No configuration change required.                                                               |
+| `connectTimeoutMS`              | `connect_timeout`, milliseconds converted to seconds       | Keep the TypeORM option in milliseconds.                                                        |
+| `applicationName`               | `connection.application_name`                              | No configuration change required. If unset, Postgres.js keeps its native `postgres.js` default. |
+| `extra.connectionTimeoutMillis` | `extra.connect_timeout`, milliseconds converted to seconds | Prefer native `connect_timeout`; it wins if both are present.                                   |
+| `extra.idleTimeoutMillis`       | `extra.idle_timeout`, milliseconds converted to seconds    | Prefer native `idle_timeout`; it wins if both are present.                                      |
+| `extra.application_name`        | `extra.connection.application_name`                        | Prefer native `connection.application_name`; it wins if both are present.                       |
+| `extra.allowExitOnIdle`         | Unsupported and reported with a warning                    | Remove it. Close the DataSource normally; shutdown awaits `sql.end()`.                          |
+| `extra.maxUses`                 | Unsupported and reported with a warning                    | Use native `max_lifetime` for time-based connection recycling.                                  |
+| `extra.query_timeout`           | Unsupported and reported with a warning                    | Use `extra.connection.statement_timeout` or application-level cancellation.                     |
+
+`nativeDriver`, `poolErrorHandler` and `pg-query-stream` are `pg`-only. Postgres.js reports query errors on the query promise instead of emulating a global pool error event.
+
+### Verified Postgres.js behavior
+
+- Replication uses separate master and slave pools and preserves per-node `applicationName` values.
+- `QueryRunner.stream()` uses Postgres.js cursors, emits ordered object rows and propagates cursor errors.
+- `parseInt8` is `false` by default, so int8 values remain strings. With `true`, safe int8 values become numbers; values outside JavaScript's safe integer range remain strings to avoid precision loss. Numeric and decimal values remain strings.
+- `logNotifications: true` logs PostgreSQL NOTICE and LISTEN/NOTIFY messages once at `info` level while preserving native user callbacks in `extra`.
+- Concurrent calls on one reserved Postgres.js QueryRunner are serialized, preserving transaction and session state.
+- `destroy()` releases tracked QueryRunners and awaits every master/slave Postgres.js pool shutdown.
+
 ## Data Source Options
 
-See [Data Source Options](../data-source/2-data-source-options.md) for the common data source options. You can use the data source type `postgres`, `cockroachdb` or `aurora-postgres` to connect to the respective databases.
+See [Data Source Options](../data-source/2-data-source-options.md) for the common data source options. Use `postgres` for `pg`, `postgres-js` for Postgres.js, or `cockroachdb` / `aurora-postgres` for their respective databases.
 
 - `url` - Connection url where the connection is performed. Please note that other data source options will override parameters set from url.
 
@@ -38,11 +130,13 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 
 - `connectTimeoutMS` - The milliseconds before a timeout occurs during the initial connection to the postgres server. If `undefined`, or set to `0`, there is no timeout. Defaults to `undefined`.
 
-- `ssl` - Object with ssl parameters. See [TLS/SSL](https://node-postgres.com/features/ssl).
+- `ssl` - Object with SSL parameters supported by the selected client.
 
 - `uuidExtension` - The Postgres extension to use when generating UUIDs. Defaults to `uuid-ossp`. It can be changed to `pgcrypto` if the `uuid-ossp` extension is unavailable.
 
-- `poolErrorHandler` - A function that gets called when the underlying pool emits `'error'` event. Takes a single parameter (error instance) and defaults to logging with `warn` level.
+- `nativeDriver` - `pg`-only. An optional `pg-native` driver object.
+
+- `poolErrorHandler` - `pg`-only. A function called when the `pg` pool emits an `'error'` event. Postgres.js keeps errors query-local and does not emulate this global event.
 
 - `maxTransactionRetries` - A maximum number of transaction retries in case of a 40001 error. Defaults to 5.
 
@@ -54,13 +148,13 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 
 - `applicationName` - A string visible in statistics and logs to help referencing an application to a connection (default: `undefined`)
 
-- `parseInt8` - A boolean to enable parsing 64-bit integers (int8) as JavaScript numbers. By default, `int8` (bigint) values are returned as strings to avoid overflows. JavaScript numbers are IEEE-754 and lose precision over the maximum safe integer (`Number.MAX_SAFE_INTEGER = +2^53`). If you require the full 64-bit range consider working with the returned strings or converting them to native `bigint` instead of using this option.
+- `parseInt8` - A boolean to enable parsing safe 64-bit integers (int8) as JavaScript numbers. By default, values are returned as strings. Postgres.js leaves values outside `Number.MAX_SAFE_INTEGER` as strings even when enabled, avoiding silent precision loss.
 
-Additional options can be added to the `extra` object and will be passed directly to the client library. See more in `pg`'s documentation for [Pool](https://node-postgres.com/apis/pool#new-pool) and [Client](https://node-postgres.com/apis/client#new-client).
+Additional options in `extra` go to the selected client library. See `pg`'s [Pool](https://node-postgres.com/apis/pool#new-pool) and [Client](https://node-postgres.com/apis/client#new-client) options, or the Postgres.js [connection options](https://github.com/porsager/postgres#connection-details).
 
 ## Column Types
 
-### Column types for `postgres`
+### Column types for `postgres` and `postgres-js`
 
 `int`, `int2`, `int4`, `int8`, `smallint`, `integer`, `bigint`, `decimal`, `numeric`, `real`, `float`, `float4`, `float8`, `double precision`, `money`, `character varying`, `varchar`, `character`, `char`, `text`, `citext`, `hstore`, `bytea`, `bit`, `varbit`, `bit varying`, `timetz`, `timestamptz`, `timestamp`, `timestamp without time zone`, `timestamp with time zone`, `date`, `time`, `time without time zone`, `time with time zone`, `interval`, `bool`, `boolean`, `enum`, `point`, `line`, `lseg`, `box`, `path`, `polygon`, `circle`, `cidr`, `inet`, `macaddr`, `macaddr8`, `tsvector`, `tsquery`, `uuid`, `xml`, `json`, `jsonb`, `jsonpath`, `int4range`, `int8range`, `numrange`, `tsrange`, `tstzrange`, `daterange`, `int4multirange`, `int8multirange`, `nummultirange`, `tsmultirange`, `tstzmultirange`, `multidaterange`, `geometry`, `geography`, `cube`, `ltree`, `vector`, `halfvec`.
 

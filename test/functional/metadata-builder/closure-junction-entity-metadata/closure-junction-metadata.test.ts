@@ -120,6 +120,7 @@ describe("metadata-builder > closure-junction-entity-metadata > schema handling"
         cockroachdb: true,
         mssql: true,
         postgres: true,
+        "postgres-js": true,
         spanner: true,
         oracle: false,
         sap: false,

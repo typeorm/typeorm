@@ -186,7 +186,10 @@ export class EntityMetadataValidator {
         }
 
         // Postgres supports only STORED generated columns.
-        if (driver.options.type === "postgres") {
+        if (
+            driver.options.type === "postgres" ||
+            driver.options.type === "postgres-js"
+        ) {
             const virtualColumn = entityMetadata.columns.find(
                 (column) =>
                     column.asExpression &&

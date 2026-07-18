@@ -59,6 +59,7 @@ export class PlatformTools {
             "pg",
             "pg-native",
             "pg-query-stream",
+            "postgres",
             // React Native
             "react-native-sqlite-storage",
             // SAP HANA

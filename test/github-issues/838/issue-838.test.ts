@@ -19,7 +19,9 @@ describe.skip("github issues > #838 Time zones for timestamp columns are incorre
             enabledDrivers: ["postgres"],
         })
         postgresConnection = dataSources.find(
-            (connection) => connection.driver.options.type === "postgres",
+            (connection) =>
+                connection.driver.options.type === "postgres" ||
+                connection.driver.options.type === "postgres-js",
         )!
     })
 

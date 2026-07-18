@@ -155,7 +155,10 @@ describe("repository > find options > locking", () => {
                     } else {
                         expect(executedSql[0]).to.contain("LOCK IN SHARE MODE")
                     }
-                } else if (dataSource.driver.options.type === "postgres") {
+                } else if (
+                    dataSource.driver.options.type === "postgres" ||
+                    dataSource.driver.options.type === "postgres-js"
+                ) {
                     expect(executedSql[0]).to.contain("FOR SHARE")
                 } else if (dataSource.driver.options.type === "sap") {
                     expect(executedSql[0]).to.contain("FOR SHARE LOCK")
@@ -172,7 +175,10 @@ describe("repository > find options > locking", () => {
     it("should attach for no key update lock statement on query if locking enabled", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                if (dataSource.driver.options.type !== "postgres") {
+                if (
+                    dataSource.driver.options.type !== "postgres" &&
+                    dataSource.driver.options.type !== "postgres-js"
+                ) {
                     return
                 }
 
@@ -204,7 +210,10 @@ describe("repository > find options > locking", () => {
     it("should attach for key share lock statement on query if locking enabled", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                if (!(dataSource.driver.options.type === "postgres")) {
+                if (!(
+                    dataSource.driver.options.type === "postgres" ||
+                    dataSource.driver.options.type === "postgres-js"
+                )) {
                     return
                 }
 
@@ -238,6 +247,7 @@ describe("repository > find options > locking", () => {
             dataSources.map(async (dataSource) => {
                 if (!(
                     dataSource.driver.options.type === "postgres" ||
+                    dataSource.driver.options.type === "postgres-js" ||
                     dataSource.driver.options.type === "sap" ||
                     (dataSource.driver.options.type === "mysql" &&
                         DriverUtils.isReleaseVersionOrGreater(
@@ -289,6 +299,7 @@ describe("repository > find options > locking", () => {
             dataSources.map(async (dataSource) => {
                 if (!(
                     dataSource.driver.options.type === "postgres" ||
+                    dataSource.driver.options.type === "postgres-js" ||
                     dataSource.driver.options.type === "sap" ||
                     (DriverUtils.isMySQLFamily(dataSource.driver) &&
                         DriverUtils.isReleaseVersionOrGreater(
@@ -640,7 +651,10 @@ describe("repository > find options > locking", () => {
     it("should allow using lockTables on all types of locking", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                if (dataSource.driver.options.type !== "postgres") {
+                if (
+                    dataSource.driver.options.type !== "postgres" &&
+                    dataSource.driver.options.type !== "postgres-js"
+                ) {
                     return
                 }
 

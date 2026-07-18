@@ -205,7 +205,10 @@ describe("query builder > insert > on conflict", () => {
     it("should perform insertion using partial index and skipping update on no change", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                if (dataSource.driver.options.type !== "postgres") {
+                if (
+                    dataSource.driver.options.type !== "postgres" &&
+                    dataSource.driver.options.type !== "postgres-js"
+                ) {
                     return
                 }
 

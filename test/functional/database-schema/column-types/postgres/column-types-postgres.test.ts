@@ -18,7 +18,10 @@ describe("database schema > column types > postgres", () => {
         })
 
         for (const dataSource of dataSources) {
-            if (dataSource.driver.options.type === "postgres") {
+            if (
+                dataSource.driver.options.type === "postgres" ||
+                dataSource.driver.options.type === "postgres-js"
+            ) {
                 // We want to have UTC as timezone
                 await dataSource.query("SET TIME ZONE 'UTC';")
             }
