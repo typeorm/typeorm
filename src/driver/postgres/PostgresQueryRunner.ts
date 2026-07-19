@@ -1619,25 +1619,9 @@ export class PostgresQueryRunner
 
             if (
                 newColumn.precision !== oldColumn.precision ||
-                newColumn.scale !== oldColumn.scale
+                newColumn.scale !== oldColumn.scale ||
+                newColumn.length !== oldColumn.length
             ) {
-                upQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
-                        }" TYPE ${this.driver.createFullType(newColumn)}`,
-                    ),
-                )
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
-                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
-                    ),
-                )
-            }
-
-            if (newColumn.length !== oldColumn.length) {
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${

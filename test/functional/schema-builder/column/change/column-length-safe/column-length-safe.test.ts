@@ -139,27 +139,29 @@ describe("schema builder > change column > column length safe", () => {
             dataSources.map(async (dataSource) => {
                 const queryRunner = dataSource.createQueryRunner()
 
-                const table = await queryRunner.getTable("post")
-                const nameCol = table!.findColumnByName("name")!
-                const textCol = table!.findColumnByName("text")!
+                try {
+                    const table = await queryRunner.getTable("post")
+                    const nameCol = table!.findColumnByName("name")!
+                    const textCol = table!.findColumnByName("text")!
 
-                const newNameCol = nameCol.clone()
-                const newTextCol = textCol.clone()
-                newNameCol.length = "200"
-                newTextCol.length = "100"
+                    const newNameCol = nameCol.clone()
+                    const newTextCol = textCol.clone()
+                    newNameCol.length = "200"
+                    newTextCol.length = "100"
 
-                await queryRunner.changeColumn(table!, nameCol, newNameCol)
-                await queryRunner.changeColumn(table!, textCol, newTextCol)
+                    await queryRunner.changeColumn(table!, nameCol, newNameCol)
+                    await queryRunner.changeColumn(table!, textCol, newTextCol)
 
-                const updatedTable = await queryRunner.getTable("post")
-                expect(updatedTable!.findColumnByName("name")!.length).to.equal(
-                    "200",
-                )
-                expect(updatedTable!.findColumnByName("text")!.length).to.equal(
-                    "100",
-                )
-
-                await queryRunner.release()
+                    const updatedTable = await queryRunner.getTable("post")
+                    expect(
+                        updatedTable!.findColumnByName("name")!.length,
+                    ).to.equal("200")
+                    expect(
+                        updatedTable!.findColumnByName("text")!.length,
+                    ).to.equal("100")
+                } finally {
+                    await queryRunner.release()
+                }
             }),
         ))
 })
