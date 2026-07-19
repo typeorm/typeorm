@@ -236,17 +236,15 @@ describe("repository > find options > locking", () => {
     it("should attach SKIP LOCKED for pessimistic_read", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                if (
-                    !(
-                        dataSource.driver.options.type === "postgres" ||
-                        dataSource.driver.options.type === "sap" ||
-                        (dataSource.driver.options.type === "mysql" &&
-                            DriverUtils.isReleaseVersionOrGreater(
-                                dataSource.driver,
-                                "8.0.0",
-                            ))
-                    )
-                ) {
+                if (!(
+                    dataSource.driver.options.type === "postgres" ||
+                    dataSource.driver.options.type === "sap" ||
+                    (dataSource.driver.options.type === "mysql" &&
+                        DriverUtils.isReleaseVersionOrGreater(
+                            dataSource.driver,
+                            "8.0.0",
+                        ))
+                )) {
                     return
                 }
 
@@ -289,17 +287,15 @@ describe("repository > find options > locking", () => {
     it("should attach NOWAIT for pessimistic_write", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                if (
-                    !(
-                        dataSource.driver.options.type === "postgres" ||
-                        dataSource.driver.options.type === "sap" ||
-                        (DriverUtils.isMySQLFamily(dataSource.driver) &&
-                            DriverUtils.isReleaseVersionOrGreater(
-                                dataSource.driver,
-                                "8.0.0",
-                            ))
-                    )
-                ) {
+                if (!(
+                    dataSource.driver.options.type === "postgres" ||
+                    dataSource.driver.options.type === "sap" ||
+                    (DriverUtils.isMySQLFamily(dataSource.driver) &&
+                        DriverUtils.isReleaseVersionOrGreater(
+                            dataSource.driver,
+                            "8.0.0",
+                        ))
+                )) {
                     return
                 }
 

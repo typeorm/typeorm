@@ -97,9 +97,7 @@ export class MongoRepository<
      */
     find(
         options?:
-            | FindManyOptions<Entity>
-            | Partial<Entity>
-            | FilterOperators<Entity>,
+            FindManyOptions<Entity> | Partial<Entity> | FilterOperators<Entity>,
     ): Promise<Entity[]> {
         return this.manager.find(this.metadata.target, options)
     }

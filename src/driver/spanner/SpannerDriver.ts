@@ -16,10 +16,10 @@ import type { Driver } from "../Driver"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { CteCapabilities } from "../types/CteCapabilities"
 import type { DataTypeDefaults } from "../types/DataTypeDefaults"
+import type { IsolationLevel } from "../types/IsolationLevel"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { ReturningType } from "../types/ReturningType"
-import type { IsolationLevel } from "../types/IsolationLevel"
 import type { UpsertType } from "../types/UpsertType"
 import type { SpannerDataSourceOptions } from "./SpannerDataSourceOptions"
 import { SpannerQueryRunner } from "./SpannerQueryRunner"
@@ -440,7 +440,9 @@ export class SpannerDriver implements Driver {
         if (value === null || value === undefined) return value
 
         if (columnMetadata.type === "numeric") {
-            const lib = this.options.driver ?? PlatformTools.load("spanner")
+            const lib =
+                this.options.driver ??
+                PlatformTools.load("@google-cloud/spanner")
             return lib.Spanner.numeric(value.toString())
         } else if (columnMetadata.type === "date") {
             return DateUtils.mixedDateToDateString(value, {
@@ -804,7 +806,9 @@ export class SpannerDriver implements Driver {
      */
     protected loadDependencies(): void {
         try {
-            const lib = this.options.driver ?? PlatformTools.load("spanner")
+            const lib =
+                this.options.driver ??
+                PlatformTools.load("@google-cloud/spanner")
 
             if (this.options.credentials) {
                 this.spanner = new lib.Spanner({
@@ -860,31 +864,6 @@ export class SpannerDriver implements Driver {
         }
 
         return columnMetadataValue === databaseValue
-    }
-
-    /**
-     * If parameter is a datetime function, e.g. "CURRENT_TIMESTAMP", normalizes it.
-     * Otherwise returns original input.
-     *
-     * @param value
-     */
-    protected normalizeDatetimeFunction(value?: string) {
-        if (!value) return value
-
-        // check if input is datetime function
-        const isDatetimeFunction =
-            value.toUpperCase().indexOf("CURRENT_TIMESTAMP") !== -1 ||
-            value.toUpperCase().indexOf("NOW") !== -1
-
-        if (isDatetimeFunction) {
-            // extract precision, e.g. "(3)"
-            const precision = value.match(/\(\d+\)/)
-            return precision
-                ? `CURRENT_TIMESTAMP${precision[0]}`
-                : "CURRENT_TIMESTAMP"
-        } else {
-            return value
-        }
     }
 
     /**
