@@ -8,6 +8,8 @@ import {
 } from "../../../../../utils/test-utils"
 import { Post } from "./entity/Post"
 
+// Regression test for issue #3357: migration should ALTER COLUMN TYPE
+// instead of DROP+ADD when only column length changes
 describe("schema builder > change column > column length safe", () => {
     let dataSources: DataSource[]
     before(async () => {
