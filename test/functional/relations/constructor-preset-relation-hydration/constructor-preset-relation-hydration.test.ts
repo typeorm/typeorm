@@ -1,15 +1,15 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import type { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
+} from "../../../utils/test-utils"
 import { Author } from "./entity/Author"
 import { Post } from "./entity/Post"
 
-describe("github issues > #12683 relation hydration silently dropped when entity constructor pre-initializes the relation property", () => {
+describe("relations > constructor-preset-relation-hydration", () => {
     let dataSources: DataSource[]
 
     before(async () => {
@@ -31,17 +31,19 @@ describe("github issues > #12683 relation hydration silently dropped when entity
         post.title = "1984"
         post.author = author
         await dataSource.manager.save(post)
+
+        return { author, post }
     }
 
-    it("should hydrate the requested relation even though the constructor pre-initializes it with an empty instance", () =>
+    it("should hydrate the requested relation even though the constructor pre-initializes it with an empty instance (issue #12683)", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                await prepareData(dataSource)
+                const { author, post } = await prepareData(dataSource)
 
                 const loadedPost = await dataSource.manager.findOneOrFail(
                     Post,
                     {
-                        where: { id: 1 },
+                        where: { id: post.id },
                         relations: { author: true },
                     },
                 )
@@ -53,19 +55,19 @@ describe("github issues > #12683 relation hydration silently dropped when entity
                 // merge into a class instance is a silent no-op and the
                 // freshly hydrated Author columns are discarded.
                 expect(loadedPost.author).to.not.be.undefined
-                expect(loadedPost.author.id).to.equal(1)
+                expect(loadedPost.author.id).to.equal(author.id)
                 expect(loadedPost.author.name).to.equal("George Orwell")
             }),
         ))
 
-    it("should not populate the relation when it was not requested", () =>
+    it("should not populate the relation when it was not requested (issue #12683)", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                await prepareData(dataSource)
+                const { post } = await prepareData(dataSource)
 
                 const loadedPost = await dataSource.manager.findOneOrFail(
                     Post,
-                    { where: { id: 1 } },
+                    { where: { id: post.id } },
                 )
 
                 // The constructor-created placeholder instance is left
