@@ -717,3 +717,123 @@ describe("entity manager > invalidWhereValuesBehavior does NOT affect QB .where(
         }
     })
 })
+
+describe("entity manager > invalidWhereValuesBehavior default (unconfigured)", () => {
+    let dataSources: DataSource[]
+
+    // no invalidWhereValuesBehavior configured: the write path must default to
+    // "throw" on null/undefined, matching the read/find path
+    before(async () => {
+        dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
+            entities: [Post, Category],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    async function prepareData(connection: DataSource) {
+        const post = new Post()
+        post.title = "Test Post"
+        post.text = "Some text"
+        await connection.manager.save(post)
+        return { post }
+    }
+
+    it("EntityManager.delete throws on a null value by default and leaves the row", async () => {
+        for (const connection of dataSources) {
+            const { post } = await prepareData(connection)
+
+            try {
+                await connection.manager.delete(Post, { text: null } as any)
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Null value encountered")
+            }
+
+            expect(
+                await connection.manager.findOneBy(Post, { id: post.id }),
+            ).to.not.equal(null)
+        }
+    })
+
+    it("EntityManager.update throws on an undefined value by default", async () => {
+        for (const connection of dataSources) {
+            await prepareData(connection)
+            try {
+                await connection.manager.update(
+                    Post,
+                    { text: undefined } as any,
+                    { title: "Updated" },
+                )
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Undefined value encountered")
+            }
+        }
+    })
+
+    it("throws on a null value inside an array (OR) criteria by default", async () => {
+        for (const connection of dataSources) {
+            const { post } = await prepareData(connection)
+            try {
+                await connection.manager.delete(Post, [
+                    { text: null },
+                    { id: post.id },
+                ] as any)
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Null value encountered")
+            }
+        }
+    })
+
+    it("EntityManager.softDelete throws on a null value by default", async () => {
+        for (const connection of dataSources) {
+            await prepareData(connection)
+            try {
+                await connection.manager.softDelete(Post, {
+                    text: null,
+                } as any)
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Null value encountered")
+            }
+        }
+    })
+
+    it("passes entity class instances through (does not throw) even when unconfigured", async () => {
+        for (const connection of dataSources) {
+            // a fully populated instance (no null columns) deletes its row —
+            // entity instances bypass normalization, so no default-throw applies
+            const entity = new Post()
+            entity.title = "Loaded"
+            entity.text = "value"
+            await connection.manager.save(entity)
+
+            await connection.manager.delete(Post, entity)
+            expect(
+                await connection.manager.findOneBy(Post, { id: entity.id }),
+            ).to.equal(null)
+        }
+    })
+
+    it("matches the read path: findBy also throws on null by default", async () => {
+        for (const connection of dataSources) {
+            await prepareData(connection)
+            try {
+                await connection.manager.findBy(Post, { text: null } as any)
+                expect.fail("Expected error")
+            } catch (error) {
+                expect(error).to.be.instanceOf(TypeORMError)
+                expect(error.message).to.include("Null value encountered")
+            }
+        }
+    })
+})

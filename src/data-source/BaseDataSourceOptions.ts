@@ -219,7 +219,8 @@ export interface BaseDataSourceOptions {
     readonly isolateWhereStatements?: boolean
 
     /**
-     * Controls how null and undefined values are handled in find operations.
+     * Controls how null/undefined values in where criteria are handled by find
+     * and write methods (update/delete/softDelete/restore). Defaults to "throw".
      */
     readonly invalidWhereValuesBehavior?: InvalidFindOptionsWhereBehavior
 }
