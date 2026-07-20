@@ -667,7 +667,8 @@ export class OrmUtils {
         },
         path?: string,
     ): ObjectLiteral {
-        if (!options) return criteria
+        // Default to "throw" behavior when options not provided
+        const effectiveOptions = options ?? { null: "throw", undefined: "throw" }
 
         const result: ObjectLiteral = {}
 
@@ -675,7 +676,7 @@ export class OrmUtils {
             const propertyPath = path ? `${path}.${key}` : key
 
             if (value === undefined) {
-                const behavior = options?.undefined ?? "throw"
+                const behavior = effectiveOptions.undefined ?? "throw"
                 if (behavior === "throw") {
                     throw new TypeORMError(
                         `Undefined value encountered in property '${propertyPath}' of a where condition. ` +
@@ -684,7 +685,7 @@ export class OrmUtils {
                 }
                 // "ignore" — skip this key
             } else if (value === null) {
-                const behavior = options?.null ?? "throw"
+                const behavior = effectiveOptions.null ?? "throw"
                 if (behavior === "throw") {
                     throw new TypeORMError(
                         `Null value encountered in property '${propertyPath}' of a where condition. ` +
@@ -703,7 +704,7 @@ export class OrmUtils {
             ) {
                 const nested = OrmUtils.normalizeWhereCriteria(
                     value,
-                    options,
+                    effectiveOptions,
                     propertyPath,
                 )
                 if (Object.keys(nested).length > 0) {
