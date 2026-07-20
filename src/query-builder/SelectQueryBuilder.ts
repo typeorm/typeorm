@@ -1990,11 +1990,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * key and therefore never splits the pagination subquery's DISTINCT list.
      *
      * Used by lazyCount: for a paginated joined query the total may only be
-     * inferred from the loaded page size when the page cannot be truncated. This
-     * is intentionally conservative — anything that is not a bare "mainAlias.col"
-     * reference (a joined column, an embedded path, a raw/computed select alias
-     * such as addSelect("a.x || b.y", "k"), or an unresolved identifier) is
-     * treated as unsafe so the caller falls back to a real count query.
+     * inferred from the loaded page size when the page cannot be truncated.
+     * Anything that is not a bare "mainAlias.col" reference (a joined column,
+     * an embedded path, or a select alias for a raw/computed expression such
+     * as addSelect("a.x || b.y", "k")) is treated as unsafe so the caller
+     * falls back to a real count query. A bare identifier that matches no
+     * select at all stays safe: it adds nothing to the pagination subquery's
+     * DISTINCT list (see createOrderByCombinedWithSelectExpression).
      */
     private orderByIsPrimaryKeySafe(): boolean {
         const mainAliasName = this.expressionMap.mainAlias?.name

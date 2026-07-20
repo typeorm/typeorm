@@ -90,7 +90,7 @@ describe("query builder > getManyAndCount with join + pagination", () => {
                 const buildQuery = () =>
                     dataSource
                         .createQueryBuilder(Sport, "sports")
-                        .leftJoinAndSelect("sports.players", "players")
+                        .leftJoin("sports.players", "players")
                         .addSelect("players.name", "playerName")
                         .orderBy("playerName", "DESC")
                         .take(2)
