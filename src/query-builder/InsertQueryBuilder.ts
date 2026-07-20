@@ -125,12 +125,10 @@ export class InsertQueryBuilder<
                 this.expressionMap.updateEntity === true &&
                 this.expressionMap.mainAlias!.hasMetadata
             ) {
-                if (
-                    !(
-                        valueSets.length > 1 &&
-                        this.dataSource.driver.options.type === "oracle"
-                    )
-                ) {
+                if (!(
+                    valueSets.length > 1 &&
+                    this.dataSource.driver.options.type === "oracle"
+                )) {
                     this.expressionMap.extraReturningColumns =
                         this.expressionMap.mainAlias!.metadata.getInsertionReturningColumns()
                 }
@@ -261,8 +259,7 @@ export class InsertQueryBuilder<
      */
     values(
         values:
-            | QueryDeepPartialEntity<Entity>
-            | QueryDeepPartialEntity<Entity>[],
+            QueryDeepPartialEntity<Entity> | QueryDeepPartialEntity<Entity>[],
     ): this {
         this.expressionMap.valuesSet = values
         return this

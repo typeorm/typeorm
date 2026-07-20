@@ -307,10 +307,7 @@ export abstract class AbstractLogger implements Logger {
     protected abstract writeLog(
         level: LogLevel,
         message:
-            | LogMessage
-            | string
-            | number
-            | (LogMessage | string | number)[],
+            LogMessage | string | number | (LogMessage | string | number)[],
         queryRunner?: QueryRunner,
     ): void
 
@@ -323,10 +320,7 @@ export abstract class AbstractLogger implements Logger {
      */
     protected prepareLogMessages(
         logMessage:
-            | LogMessage
-            | string
-            | number
-            | (LogMessage | string | number)[],
+            LogMessage | string | number | (LogMessage | string | number)[],
         options?: Partial<PrepareLogMessagesOptions>,
         queryRunner?: QueryRunner,
     ): LogMessage[] {

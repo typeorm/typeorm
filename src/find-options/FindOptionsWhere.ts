@@ -32,13 +32,12 @@ export type FindOptionsWhereProperty<
                       : PropertyToBeNarrowed extends boolean
                         ? Property | FindOperator<Property>
                         : PropertyToBeNarrowed extends object
-                          ?
-                                | FindOptionsWhere<Property>
-                                | FindOptionsWhere<Property>[]
-                                | EqualOperator<Property>
-                                | FindOperator<any>
-                                | boolean
-                                | Property
+                          ? | FindOptionsWhere<Property>
+                            | FindOptionsWhere<Property>[]
+                            | EqualOperator<Property>
+                            | FindOperator<any>
+                            | boolean
+                            | Property
                           : Property | FindOperator<Property>
 
 /**
