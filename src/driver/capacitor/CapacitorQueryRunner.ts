@@ -3,6 +3,7 @@ import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { QueryResult } from "../../query-runner/QueryResult"
 import { Broadcaster } from "../../subscriber/Broadcaster"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
 import type { CapacitorDriver } from "./CapacitorDriver"
 import { NamedPlaceholdersNotSupportedError } from "../../error/NamedPlaceholdersNotSupportedError"
@@ -68,6 +69,10 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
         const databaseConnection = await this.connect()
 
         this.driver.dataSource.logger.logQuery(query, parameters, this)
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
+
+        const broadcasterResult = new BroadcasterResult()
+        const queryStartTime = Date.now()
 
         const spaceIndex = query.indexOf(" ")
         const command = spaceIndex === -1 ? query : query.slice(0, spaceIndex)
@@ -91,6 +96,19 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
             } else {
                 raw = await databaseConnection.query(query, parameters ?? [])
             }
+
+            const queryEndTime = Date.now()
+            const queryExecutionTime = queryEndTime - queryStartTime
+
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                true,
+                queryExecutionTime,
+                raw,
+                undefined,
+            )
 
             const result = new QueryResult()
 
@@ -116,8 +134,19 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
                 parameters,
                 this,
             )
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                false,
+                undefined,
+                undefined,
+                err,
+            )
 
             throw new QueryFailedError(query, parameters, err)
+        } finally {
+            await broadcasterResult.wait()
         }
     }
 
