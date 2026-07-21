@@ -75,11 +75,11 @@ export interface CockroachDataSourceOptions
     readonly maxTransactionRetries?: number
 
     /**
-     * Session parameters applied to every pooled connection via
+     * Session variables applied to every pooled connection via
      * `set_config(<key>, <value>, false)` — equivalent to `SET key TO 'value'`.
      *
-     * Parameter names must be valid identifiers; an invalid name throws during
+     * Variable names must be valid identifiers; an invalid name throws during
      * connection setup.
      */
-    readonly sessionParameters?: Record<string, any>
+    readonly sessionVariables?: Record<string, any>
 }

@@ -54,7 +54,7 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 
 - `applicationName` - A string visible in statistics and logs to help referencing an application to a connection (default: `undefined`)
 
-- `sessionParameters` - An object of session parameters applied to every pooled connection via `set_config(<key>, <value>, false)` (e.g. `{ statement_timeout: "5s" }`). Parameter names must be valid identifiers; an invalid name throws during connection setup.
+- `sessionVariables` - An object of session variables applied to every pooled connection via `set_config(<key>, <value>, false)` (e.g. `{ statement_timeout: "5s" }`). Variable names must be valid identifiers; an invalid name throws during connection setup.
 
 - `parseInt8` - A boolean to enable parsing 64-bit integers (int8) as JavaScript numbers. By default, `int8` (bigint) values are returned as strings to avoid overflows. JavaScript numbers are IEEE-754 and lose precision over the maximum safe integer (`Number.MAX_SAFE_INTEGER = +2^53`). If you require the full 64-bit range consider working with the returned strings or converting them to native `bigint` instead of using this option.
 

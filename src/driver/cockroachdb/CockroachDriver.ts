@@ -1189,12 +1189,10 @@ export class CockroachDriver implements Driver {
             options.extra ?? {},
         )
 
-        // Validate and build the session-parameters handler before allocating the
+        // Validate and build the session-variables handler before allocating the
         // pool, so invalid configuration fails without leaking pool resources.
-        const sessionParametersHandler =
-            PostgresUtils.buildSessionParametersHandler(
-                options.sessionParameters,
-            )
+        const sessionVariablesHandler =
+            PostgresUtils.buildSessionVariablesHandler(options.sessionVariables)
 
         // create a connection pool
         const pool = new this.postgres.Pool(connectionOptions)
@@ -1216,15 +1214,15 @@ export class CockroachDriver implements Driver {
                 async (err: any, connection: any, release: Function) => {
                     if (err) return fail(err)
 
-                    if (sessionParametersHandler) {
+                    if (sessionVariablesHandler) {
                         try {
-                            await sessionParametersHandler(connection)
-                        } catch (sessionParametersError) {
-                            release(sessionParametersError)
-                            return fail(sessionParametersError)
+                            await sessionVariablesHandler(connection)
+                        } catch (sessionVariablesError) {
+                            release(sessionVariablesError)
+                            return fail(sessionVariablesError)
                         }
                         pool.on("connect", (c: any) =>
-                            sessionParametersHandler(c).catch(poolErrorHandler),
+                            sessionVariablesHandler(c).catch(poolErrorHandler),
                         )
                     }
 
