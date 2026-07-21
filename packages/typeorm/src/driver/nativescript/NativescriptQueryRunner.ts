@@ -107,7 +107,11 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
                         undefined,
                         err,
                     )
-                    await broadcasterResult.wait()
+                    try {
+                        await broadcasterResult.wait()
+                    } catch {
+                        // a subscriber failing must not hide the original query error
+                    }
                     fail(new QueryFailedError(query, parameters, err))
                     return
                 }
@@ -128,7 +132,13 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
                     raw,
                     undefined,
                 )
-                await broadcasterResult.wait()
+
+                try {
+                    await broadcasterResult.wait()
+                } catch (subscriberErr) {
+                    fail(subscriberErr)
+                    return
+                }
 
                 if (useStructuredResult) {
                     ok(result)
