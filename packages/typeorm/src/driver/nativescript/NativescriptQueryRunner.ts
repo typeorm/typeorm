@@ -4,6 +4,7 @@ import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { QueryResult } from "../../query-runner/QueryResult"
 import { Broadcaster } from "../../subscriber/Broadcaster"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
 import type { NativescriptDriver } from "./NativescriptDriver"
 
@@ -63,11 +64,15 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
 
         const databaseConnection = await this.connect()
 
+        connection.logger.logQuery(query, parameters, this)
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
+
+        const broadcasterResult = new BroadcasterResult()
+
         return new Promise((ok, fail) => {
             const isInsertQuery = query.startsWith("INSERT INTO")
-            connection.logger.logQuery(query, parameters, this)
 
-            const handler = (err: any, raw: any) => {
+            const handler = async (err: any, raw: any) => {
                 // log slow queries if maxQueryExecution time is set
                 const maxQueryExecutionTime =
                     this.driver.options.maxQueryExecutionTime
@@ -93,7 +98,18 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
                         parameters,
                         this,
                     )
+                    this.broadcaster.broadcastAfterQueryEvent(
+                        broadcasterResult,
+                        query,
+                        parameters,
+                        false,
+                        undefined,
+                        undefined,
+                        err,
+                    )
+                    await broadcasterResult.wait()
                     fail(new QueryFailedError(query, parameters, err))
+                    return
                 }
 
                 const result = new QueryResult()
@@ -102,6 +118,17 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
                 if (!isInsertQuery && Array.isArray(raw)) {
                     result.records = raw
                 }
+
+                this.broadcaster.broadcastAfterQueryEvent(
+                    broadcasterResult,
+                    query,
+                    parameters,
+                    true,
+                    queryExecutionTime,
+                    raw,
+                    undefined,
+                )
+                await broadcasterResult.wait()
 
                 if (useStructuredResult) {
                     ok(result)
