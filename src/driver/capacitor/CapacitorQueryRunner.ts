@@ -77,9 +77,9 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
         const spaceIndex = query.indexOf(" ")
         const command = spaceIndex === -1 ? query : query.slice(0, spaceIndex)
 
-        try {
-            let raw: any
+        let raw: any
 
+        try {
             if (
                 [
                     "BEGIN",
@@ -96,37 +96,6 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
             } else {
                 raw = await databaseConnection.query(query, parameters ?? [])
             }
-
-            const queryEndTime = Date.now()
-            const queryExecutionTime = queryEndTime - queryStartTime
-
-            this.broadcaster.broadcastAfterQueryEvent(
-                broadcasterResult,
-                query,
-                parameters,
-                true,
-                queryExecutionTime,
-                raw,
-                undefined,
-            )
-
-            const result = new QueryResult()
-
-            if (raw?.hasOwnProperty("values")) {
-                result.raw = raw.values
-                result.records = raw.values
-            }
-
-            if (raw?.hasOwnProperty("changes")) {
-                result.affected = raw.changes.changes
-                result.raw = raw.changes.lastId ?? raw.changes.changes
-            }
-
-            if (!useStructuredResult) {
-                return result.raw
-            }
-
-            return result
         } catch (err) {
             this.driver.dataSource.logger.logQueryError(
                 err,
@@ -143,11 +112,46 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
                 undefined,
                 err,
             )
+            try {
+                await broadcasterResult.wait()
+            } catch {
+                // a subscriber failing must not hide the original query error
+            }
 
             throw new QueryFailedError(query, parameters, err)
-        } finally {
-            await broadcasterResult.wait()
         }
+
+        const queryEndTime = Date.now()
+        const queryExecutionTime = queryEndTime - queryStartTime
+
+        this.broadcaster.broadcastAfterQueryEvent(
+            broadcasterResult,
+            query,
+            parameters,
+            true,
+            queryExecutionTime,
+            raw,
+            undefined,
+        )
+        await broadcasterResult.wait()
+
+        const result = new QueryResult()
+
+        if (raw?.hasOwnProperty("values")) {
+            result.raw = raw.values
+            result.records = raw.values
+        }
+
+        if (raw?.hasOwnProperty("changes")) {
+            result.affected = raw.changes.changes
+            result.raw = raw.changes.lastId ?? raw.changes.changes
+        }
+
+        if (!useStructuredResult) {
+            return result.raw
+        }
+
+        return result
     }
 
     // -------------------------------------------------------------------------
