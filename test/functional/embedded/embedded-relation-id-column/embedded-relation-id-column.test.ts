@@ -1,21 +1,22 @@
 import "reflect-metadata"
-import type { DataSource } from "../../../src"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
+} from "../../../utils/test-utils"
 import { Avatar } from "./entity/Avatar"
 import { Profile, User } from "./entity/User"
 import { expect } from "chai"
 
-describe("github issues > #12725 relation assigned inside an embedded entity is not persisted when the join column is shared with an explicit column", () => {
+// https://github.com/typeorm/typeorm/issues/12725
+describe("embedded > embedded-relation-id-column", () => {
     let dataSources: DataSource[]
 
     before(async () => {
         dataSources = await createTestingConnections({
-            entities: [Avatar, User],
-            enabledDrivers: ["better-sqlite3"],
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            disabledDrivers: ["spanner"],
         })
     })
 
