@@ -32,7 +32,10 @@ describe("github issues > #1716 send timestamp to database without converting it
             })
 
             for (const connection of dataSources) {
-                if (connection.driver.options.type === "postgres") {
+                if (
+                    connection.driver.options.type === "postgres" ||
+                    connection.driver.options.type === "postgres-js"
+                ) {
                     // We want to have UTC as timezone
                     await connection.query("SET TIME ZONE 'UTC';")
                 }

@@ -220,6 +220,11 @@ jobs:
       fail-fast: false
       matrix:
         postgres-version: ["14.22", "17.9"]
+        postgres-client:
+          - name: pg
+            type: postgres
+          - name: postgres-js
+            type: postgres-js
 
     services:
       postgres:
@@ -242,12 +247,12 @@ jobs:
           node-version: ${{ inputs.node-version }}
           download-build: true
 
-      - run: jq 'map(select(.type == "postgres"))' ormconfig.sample.json > ormconfig.json
+      - run: jq --arg type '${{ matrix.postgres-client.type }}' 'map(select(.type == $type))' ormconfig.sample.json > ormconfig.json
       - run: pnpm exec c8 pnpm run test:ci
 
       - uses: ./.github/actions/upload-coverage
         with:
-          name: postgres-${{ matrix.postgres-version }}-node-${{ inputs.node-version }}-linux
+          name: postgres-${{ matrix.postgres-client.name }}-${{ matrix.postgres-version }}-node-${{ inputs.node-version }}-linux
 
   sap:
     runs-on: ubuntu-latest

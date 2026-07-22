@@ -29,7 +29,10 @@ describe("schema builder > idempotency > same name across tables", () => {
                     postTableName = "testDB.testSchema.post"
                     await queryRunner.createDatabase("testDB", true)
                     await queryRunner.createSchema("testDB.testSchema", true)
-                } else if (connection.driver.options.type === "postgres") {
+                } else if (
+                    connection.driver.options.type === "postgres" ||
+                    connection.driver.options.type === "postgres-js"
+                ) {
                     postTableName = "testSchema.post"
                     await queryRunner.createSchema("testSchema", true)
                 } else if (DriverUtils.isMySQLFamily(connection.driver)) {

@@ -64,7 +64,11 @@ describe("deferrable foreign key constraint", () => {
         Promise.all(
             dataSources.map(async (dataSource) => {
                 // changing the constraint check time is only supported on postgres
-                if (dataSource.driver.options.type !== "postgres") return
+                if (
+                    dataSource.driver.options.type !== "postgres" &&
+                    dataSource.driver.options.type !== "postgres-js"
+                )
+                    return
 
                 await dataSource.manager.transaction(async (entityManager) => {
                     // first set constraints deferred manually
