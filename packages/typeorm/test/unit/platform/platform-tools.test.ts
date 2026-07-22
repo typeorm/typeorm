@@ -1,12 +1,13 @@
 import { expect } from "chai"
-import "reflect-metadata"
 
 import { PlatformTools } from "../../../src/platform/PlatformTools"
 
 describe("PlatformTools > load", () => {
     describe("module validation", () => {
         it("should throw TypeError for unknown module names", () => {
-            expect(() => PlatformTools.load("nonexistent-fake-module-xyz")).to.throw(
+            expect(() =>
+                PlatformTools.load("nonexistent-fake-module-xyz"),
+            ).to.throw(
                 TypeError,
                 "Invalid Package for PlatformTools.load: nonexistent-fake-module-xyz",
             )
@@ -24,9 +25,12 @@ describe("PlatformTools > load", () => {
 
     describe("static require calls for bundler compatibility", () => {
         it("should include all known modules as static require cases", () => {
-            // Verify the switch covers the full set of supported driver modules.
-            // These are the module names that must have explicit require() calls
-            // so bundlers can statically analyze them (issue #12721).
+            // Modules in the switch will throw MODULE_NOT_FOUND (not "Invalid
+            // Package") when uninstalled. Modules missing from the switch will
+            // throw TypeError with "Invalid Package" instead.
+            // This test verifies each supported module is covered by checking
+            // that the error is NOT the "Invalid Package" rejection.
+            // issue #12721
             const expectedModules = [
                 "typeorm-aurora-data-api-driver",
                 "better-sqlite3",

@@ -38,62 +38,82 @@ export class PlatformTools {
      * @returns the module
      */
     static load(name: string): any {
-        // Use explicit static require() calls for each known module so that
-        // bundlers (Webpack, Vite, esbuild, etc.) can statically analyze
-        // which dependencies need to be included in the bundle.
-        // Dynamic require(name) is invisible to static analysis.
         try {
-            /* eslint-disable @typescript-eslint/no-require-imports */
             switch (name) {
                 case "typeorm-aurora-data-api-driver":
+                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("typeorm-aurora-data-api-driver")
                 case "better-sqlite3":
+                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("better-sqlite3")
                 case "expo-sqlite":
+                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("expo-sqlite")
                 case "@google-cloud/spanner":
+                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("@google-cloud/spanner")
                 case "mssql":
+                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("mssql")
                 case "mongodb":
+                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("mongodb")
                 case "mysql2":
+                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("mysql2")
                 case "oracledb":
+                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("oracledb")
                 case "pg":
+                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("pg")
                 case "pg-native":
+                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("pg-native")
                 case "pg-query-stream":
+                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("pg-query-stream")
                 case "react-native-sqlite-storage":
+                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("react-native-sqlite-storage")
                 case "@sap/hana-client":
+                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("@sap/hana-client")
                 case "@sap/hana-client/extension/Stream":
+                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("@sap/hana-client/extension/Stream")
                 case "sql.js":
+                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("sql.js")
                 case "redis":
+                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("redis")
                 case "ioredis":
+                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("ioredis")
             }
-            /* eslint-enable @typescript-eslint/no-require-imports */
-        } catch {
-            // if module resolution fails (e.g., typeorm is installed globally
-            // but the driver is in the project's node_modules), try loading
-            // from the current working directory as a fallback
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
-            return require(
-                path.resolve(process.cwd() + "/node_modules/" + name),
-            )
+        } catch (e: any) {
+            if (
+                e?.code !== "MODULE_NOT_FOUND" ||
+                !(
+                    e.message === `Cannot find module '${name}'` ||
+                    e.message.startsWith(`Cannot find module '${name}'\n`)
+                )
+            ) {
+                throw e
+            }
+
+            try {
+                // eslint-disable-next-line @typescript-eslint/no-require-imports
+                return require(
+                    path.resolve(process.cwd() + "/node_modules/" + name),
+                )
+            } catch {
+                throw e
+            }
         }
 
-        throw new TypeError(
-            `Invalid Package for PlatformTools.load: ${name}`,
-        )
+        throw new TypeError(`Invalid Package for PlatformTools.load: ${name}`)
     }
 
     /**
@@ -122,7 +142,7 @@ export class PlatformTools {
     }
 
     /**
-     * Gets file extension. Does "path.extname".
+     * Returns the extension of the given path. Does "path.extname".
      *
      * @param pathStr
      */
@@ -131,7 +151,7 @@ export class PlatformTools {
     }
 
     /**
-     * Resolved given path. Does "path.resolve".
+     * Resolves the given paths. Does "path.resolve".
      *
      * @param paths
      */
@@ -140,7 +160,7 @@ export class PlatformTools {
     }
 
     /**
-     * Synchronously checks if file exist. Does "fs.existsSync".
+     * Synchronously checks if file exists. Does "fs.existsSync".
      *
      * @param pathStr
      */
