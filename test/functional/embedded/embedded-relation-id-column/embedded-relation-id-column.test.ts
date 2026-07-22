@@ -43,11 +43,12 @@ describe("embedded > embedded-relation-id-column", () => {
     it("persists a relation object assigned on a top-level property (control)", async () => {
         await Promise.all(
             dataSources.map(async (dataSource) => {
-                const avatar = await dataSource
-                    .getRepository(Avatar)
-                    .save(new Avatar())
+                const avatar = new Avatar()
+                avatar.url = "avatar.png"
+                await dataSource.getRepository(Avatar).save(avatar)
 
                 const user = new User()
+                user.name = "user"
                 user.profile = new Profile()
                 user.topAvatar = avatar
                 await dataSource.getRepository(User).save(user)
@@ -63,11 +64,12 @@ describe("embedded > embedded-relation-id-column", () => {
     it("persists a relation object assigned inside an embedded", async () => {
         await Promise.all(
             dataSources.map(async (dataSource) => {
-                const avatar = await dataSource
-                    .getRepository(Avatar)
-                    .save(new Avatar())
+                const avatar = new Avatar()
+                avatar.url = "avatar.png"
+                await dataSource.getRepository(Avatar).save(avatar)
 
                 const user = new User()
+                user.name = "user"
                 user.profile = new Profile()
                 user.profile.avatar = avatar
                 await dataSource.getRepository(User).save(user)
@@ -83,11 +85,12 @@ describe("embedded > embedded-relation-id-column", () => {
     it("persists a relation object assigned inside an embedded on update", async () => {
         await Promise.all(
             dataSources.map(async (dataSource) => {
-                const avatar = await dataSource
-                    .getRepository(Avatar)
-                    .save(new Avatar())
+                const avatar = new Avatar()
+                avatar.url = "avatar.png"
+                await dataSource.getRepository(Avatar).save(avatar)
 
                 const user = new User()
+                user.name = "user"
                 user.profile = new Profile()
                 await dataSource.getRepository(User).save(user)
 
