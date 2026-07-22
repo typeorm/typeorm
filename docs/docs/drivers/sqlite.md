@@ -8,6 +8,8 @@
 npm install better-sqlite3
 ```
 
+- for **bun:sqlite** — no installation needed. `bun:sqlite` is built into the [Bun](https://bun.sh) runtime.
+
 - for **sql.js**:
 
 ```shell
@@ -32,6 +34,16 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 - `statementCacheSize` - Cache size of the SQLite statement to speed up queries (default `100`).
 - `timeout` - The number of milliseconds to wait when executing queries on a locked database, before throwing a SQLITE_BUSY error (default `5000`).
 - `verbose` - A function that gets called with every SQL string executed by the database connection.
+
+### `bun-sqlite` data source options
+
+> **Requires the [Bun](https://bun.sh) runtime.** `bun:sqlite` is a built-in Bun module and is not available in Node.js.
+
+- `database` - Database path. For example, `"mydb.sqlite"`. Use `":memory:"` for an in-memory database.
+- `enableWAL` - Enables WAL mode (default `false`). See [SQLite WAL mode](https://www.sqlite.org/wal.html).
+- `prepareDatabase` - Function to run before a database is used in typeorm. You can access the original `bun:sqlite` Database object here.
+- `readonly` - Open the database connection in readonly mode (default `false`).
+- `statementCacheSize` - Cache size of prepared statements (default `100`).
 
 ### `sql.js` data source options
 

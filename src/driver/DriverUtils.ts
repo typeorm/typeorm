@@ -18,6 +18,7 @@ export class DriverUtils {
     static isSQLiteFamily(driver: Driver): boolean {
         return [
             "better-sqlite3",
+            "bun-sqlite",
             "capacitor",
             "cordova",
             "expo",

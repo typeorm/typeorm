@@ -43,6 +43,8 @@ export class PlatformTools {
             "typeorm-aurora-data-api-driver",
             // better-sqlite3
             "better-sqlite3",
+            // bun:sqlite (built-in Bun module)
+            "bun:sqlite",
             // Expo
             "expo-sqlite",
             // Google Cloud Spanner
