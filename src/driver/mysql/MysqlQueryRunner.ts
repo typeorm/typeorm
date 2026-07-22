@@ -809,12 +809,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             // replace constraint name
             foreignKey.name = newForeignKeyName
 
-            // rename FK-supporting index (MySQL auto-creates it with the FK name).
-            // The table loader filters FK-named indexes out of table.indices
-            // (LEFT JOIN REFERENTIAL_CONSTRAINTS ... WHERE rc.CONSTRAINT_NAME IS NULL),
-            // so we cannot look it up there. Instead we emit the rename SQL
-            // unconditionally since InnoDB always creates a supporting index
-            // for every foreign key with the same name as the constraint.
+            // InnoDB creates a supporting index for every FK with the
+            // same name. Rename it to match the renamed constraint.
             const fkIdxColumns = foreignKey.columnNames
                 .map((column) => `\`${column}\``)
                 .join(", ")
