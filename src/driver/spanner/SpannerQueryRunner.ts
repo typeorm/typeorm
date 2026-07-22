@@ -26,6 +26,7 @@ import type { IsolationLevel } from "../types/IsolationLevel"
 import { validateIsolationLevel } from "../validate-isolation-level"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
+import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
 import type { SpannerDriver } from "./SpannerDriver"
 
 /**
@@ -987,9 +988,9 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             )
 
         if (
+            (oldColumn.type !== newColumn.type &&
+                !isSafeAlter(oldColumn, newColumn)) ||
             oldColumn.name !== newColumn.name ||
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             oldColumn.isArray !== newColumn.isArray ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
@@ -1001,6 +1002,29 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             // update cloned table
             clonedTable = table.clone()
         } else {
+            if (oldColumn.type !== newColumn.type) {
+                await this.alterColumnType(
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                )
+            } else if (
+                oldColumn.type === newColumn.type &&
+                oldColumn.length !== newColumn.length
+            ) {
+                await this.alterColumnLength(
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                )
+            }
+
             if (
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
@@ -1713,7 +1737,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Spanner does not support TRUNCATE TABLE statement, so we use DELETE FROM.
      *
      * @param tableName
-     * @param options
      * @param options.cascade
      */
     async clearTable(
@@ -2518,6 +2541,152 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         return c
+    }
+
+    /**
+     * Handles length-only fast path changes for Spanner.
+     * Returns true if change was handled.
+     *
+     */
+    private async alterColumnLength(
+        table: Table,
+        clonedTable: Table,
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+        upQueries: Query[],
+        downQueries: Query[],
+    ): Promise<boolean> {
+        const oldLen = oldColumn.length
+            ? Number.parseInt(String(oldColumn.length), 10)
+            : undefined
+        const newLen = newColumn.length
+            ? Number.parseInt(String(newColumn.length), 10)
+            : undefined
+        const col = oldColumn.name
+
+        if (oldLen && newLen && newLen < oldLen) {
+            upQueries.push(
+                new Query(
+                    `UPDATE ${this.escapePath(table)} SET ${this.driver.escape(
+                        col,
+                    )} = SUBSTR(${this.driver.escape(
+                        col,
+                    )}, 1, ${newLen}) WHERE LENGTH(${this.driver.escape(
+                        col,
+                    )}) > ${newLen}`,
+                ),
+            )
+        }
+
+        const spannerType =
+            String(oldColumn.type).toLowerCase() === "bytes"
+                ? "BYTES"
+                : "STRING"
+
+        upQueries.push(
+            new Query(
+                `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN ${this.driver.escape(
+                    col,
+                )} ${spannerType}(${newLen ?? oldLen ?? "MAX"})`,
+            ),
+        )
+        downQueries.push(
+            new Query(
+                `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN ${this.driver.escape(
+                    col,
+                )} ${spannerType}(${oldLen ?? newLen ?? "MAX"})`,
+            ),
+        )
+
+        // Update clonedTable to reflect the new column definition to avoid false drift detection
+        const tableColumn = clonedTable.columns.find(
+            (column) => column.name === oldColumn.name,
+        )
+        if (tableColumn) {
+            const index = clonedTable.columns.indexOf(tableColumn)
+            clonedTable.columns[index] = newColumn
+        }
+
+        return true
+    }
+
+    /**
+     * Handles safe ALTER COLUMN changes for Spanner.
+     * Returns true if change was handled.
+     *
+     */
+    private async alterColumnType(
+        table: Table,
+        clonedTable: Table,
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+        upQueries: Query[],
+        downQueries: Query[],
+    ): Promise<boolean> {
+        // Skip generated/computed/identity columns (cannot freely change)
+        if (oldColumn.asExpression || newColumn.asExpression) return false
+        if (oldColumn.generatedIdentity || newColumn.generatedIdentity)
+            return false
+
+        // Only proceed when caller says this change is safely widening
+        if (!isSafeAlter(oldColumn, newColumn)) return false
+
+        const tableSql = this.escapePath(table)
+        const colName = String(oldColumn.name)
+        const q = (i: string) => `\`${i.replaceAll("`", "``")}\``
+
+        const buildColumnType = (column: TableColumn): string => {
+            const t = String(column.type ?? "").toLowerCase()
+            const len = column.length
+                ? Number.parseInt(String(column.length), 10)
+                : undefined
+            const prec = column.precision
+
+            const withTimePrec = (base: string) =>
+                prec == null ? base : `${base}(${prec})`
+
+            // strings
+            if (t === "string" || t === "text")
+                return len ? `STRING(${len})` : "STRING(MAX)"
+            if (t === "bytes") return len ? `BYTES(${len})` : "BYTES(MAX)"
+
+            // numerics
+            if (t === "int64" || t === "int") return "INT64"
+            if (t === "float64" || t === "float") return "FLOAT64"
+
+            // temporals
+            if (t === "timestamp") return withTimePrec("TIMESTAMP")
+            if (t === "date") return "DATE"
+
+            // fallback: return raw type
+            return t
+        }
+
+        // TYPE-only fragments (nullability/default unchanged)
+        const newType = buildColumnType(newColumn)
+        const oldType = buildColumnType(oldColumn)
+
+        // Spanner GoogleSQL syntax
+        const upSql = `ALTER TABLE ${tableSql} ALTER COLUMN ${q(
+            colName,
+        )} SET DATA TYPE ${newType}`
+        const downSql = `ALTER TABLE ${tableSql} ALTER COLUMN ${q(
+            colName,
+        )} SET DATA TYPE ${oldType}`
+
+        upQueries.push(new Query(upSql))
+        downQueries.push(new Query(downSql))
+
+        // Update clonedTable to reflect the new column definition to avoid false drift detection
+        const tableColumn = clonedTable.columns.find(
+            (column) => column.name === oldColumn.name,
+        )
+        if (tableColumn) {
+            const index = clonedTable.columns.indexOf(tableColumn)
+            clonedTable.columns[index] = newColumn
+        }
+
+        return true
     }
 
     /**
