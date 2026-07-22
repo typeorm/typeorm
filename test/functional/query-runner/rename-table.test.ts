@@ -283,6 +283,21 @@ describe("query runner > rename table", () => {
                     )
                 expect(table!.foreignKeys[0].name).to.equal(newForeignKeyName)
 
+                // verify FK-supporting index is renamed for MySQL-family drivers
+                // (InnoDB auto-creates an index with the FK constraint name)
+                // issue #12671
+                if (DriverUtils.isMySQLFamily(dataSource.driver)) {
+                    const dbName = "testDB"
+                    const tableName = "renamedCategory"
+                    const statsResult = await queryRunner.query(
+                        `SELECT INDEX_NAME FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = '${dbName}' AND TABLE_NAME = '${tableName}' AND INDEX_NAME = '${newForeignKeyName}'`,
+                    )
+                    expect(
+                        statsResult.length,
+                        `FK-supporting index '${newForeignKeyName}' not found on ${tableName}`,
+                    ).to.be.greaterThan(0)
+                }
+
                 await queryRunner.executeMemoryDownSql()
 
                 table = await queryRunner.getTable(questionTableName)

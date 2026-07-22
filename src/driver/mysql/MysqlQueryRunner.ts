@@ -808,6 +808,23 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             // replace constraint name
             foreignKey.name = newForeignKeyName
+
+            // InnoDB creates a supporting index for every FK with the
+            // same name. Rename it to match the renamed constraint.
+            const fkIdxColumns = foreignKey.columnNames
+                .map((column) => `\`${column}\``)
+                .join(", ")
+
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(newTable)} DROP INDEX \`${oldForeignKeyName}\`, ADD INDEX \`${newForeignKeyName}\` (${fkIdxColumns})`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(newTable)} DROP INDEX \`${newForeignKeyName}\`, ADD INDEX \`${oldForeignKeyName}\` (${fkIdxColumns})`,
+                ),
+            )
         })
 
         await this.executeQueries(upQueries, downQueries)
