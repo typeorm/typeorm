@@ -989,7 +989,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (
             oldColumn.name !== newColumn.name ||
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             oldColumn.isArray !== newColumn.isArray ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
@@ -1003,7 +1002,8 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         } else {
             if (
                 newColumn.precision !== oldColumn.precision ||
-                newColumn.scale !== oldColumn.scale
+                newColumn.scale !== oldColumn.scale ||
+                newColumn.length !== oldColumn.length
             ) {
                 upQueries.push(
                     new Query(

@@ -889,7 +889,6 @@ export class AuroraMysqlQueryRunner
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             oldColumn.generatedType !== newColumn.generatedType
         ) {
             await this.dropColumn(table, oldColumn)
@@ -897,6 +896,25 @@ export class AuroraMysqlQueryRunner
 
             // update cloned table
             clonedTable = table.clone()
+        } else if (
+            oldColumn.length !== newColumn.length
+        ) {
+            // Same base type — only length changed.
+            // Use MODIFY to preserve data instead of DROP+ADD.
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} MODIFY \`${
+                        newColumn.name
+                    }\` ${this.buildCreateColumnSql(newColumn, true, true)}`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} MODIFY \`${
+                        oldColumn.name
+                    }\` ${this.buildCreateColumnSql(oldColumn, true, true)}`,
+                ),
+            )
         } else {
             if (newColumn.name !== oldColumn.name) {
                 // We don't change any column properties, just rename it.
