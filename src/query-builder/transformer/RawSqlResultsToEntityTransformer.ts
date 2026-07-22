@@ -31,6 +31,19 @@ export class RawSqlResultsToEntityTransformer {
         Map<EntityMetadata, [string, ColumnMetadata][]>
     >
 
+    /**
+     * Tracks, per entity, which relation property paths have already been
+     * hydrated by transformJoins() during this transform run. The first
+     * hydration of a relation must overwrite any pre-existing value (e.g. a
+     * default instance set in the entity constructor, see #12683); any
+     * subsequent hydration of the *same* relation on the *same* entity
+     * within this run (e.g. an eager auto-join re-hydrating a relation that
+     * was already deep-loaded via a manually specified nested relation, see
+     * #11265) keeps the existing merge/no-op behavior so the earlier,
+     * deeper value is preserved.
+     */
+    private hydratedJoinRelations = new WeakMap<ObjectLiteral, Set<string>>()
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -330,7 +343,16 @@ export class RawSqlResultsToEntityTransformer {
                 entity[join.mapToPropertyPropertyName] = result // todo: fix embeds
             } else {
                 // otherwise set to relation
-                join.relation!.setEntityValue(entity, result)
+                const relationPath = join.relation!.propertyPath
+                let hydratedRelations = this.hydratedJoinRelations.get(entity)
+                if (!hydratedRelations) {
+                    hydratedRelations = new Set()
+                    this.hydratedJoinRelations.set(entity, hydratedRelations)
+                }
+                const isFirstHydration = !hydratedRelations.has(relationPath)
+                hydratedRelations.add(relationPath)
+
+                join.relation!.setEntityValue(entity, result, isFirstHydration)
             }
 
             hasData = true
