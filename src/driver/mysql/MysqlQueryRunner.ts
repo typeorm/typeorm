@@ -808,6 +808,38 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             // replace constraint name
             foreignKey.name = newForeignKeyName
+
+            // rename FK-supporting index (MySQL auto-creates it with FK name)
+            const fkIndex = newTable.indices.find(
+                (idx) => idx.name === oldForeignKeyName,
+            )
+            if (fkIndex) {
+                const idxColumnNames = fkIndex.columnNames
+                    .map((column) => `\`${column}\``)
+                    .join(", ")
+
+                let idxType = ""
+                if (fkIndex.isUnique) idxType += "UNIQUE "
+                if (fkIndex.isSpatial) idxType += "SPATIAL "
+                if (fkIndex.isFulltext) idxType += "FULLTEXT "
+                const idxParser =
+                    fkIndex.isFulltext && fkIndex.parser
+                        ? ` WITH PARSER ${fkIndex.parser}`
+                        : ""
+
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(newTable)} DROP INDEX \`${oldForeignKeyName}\`, ADD ${idxType}INDEX \`${newForeignKeyName}\` (${idxColumnNames})${idxParser}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(newTable)} DROP INDEX \`${newForeignKeyName}\`, ADD ${idxType}INDEX \`${oldForeignKeyName}\` (${idxColumnNames})${idxParser}`,
+                    ),
+                )
+
+                fkIndex.name = newForeignKeyName
+            }
         })
 
         await this.executeQueries(upQueries, downQueries)

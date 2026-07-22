@@ -625,11 +625,39 @@ export class AuroraMysqlQueryRunner
             upQueries.push(new Query(up))
             downQueries.push(new Query(down))
 
+            const oldForeignKeyName = foreignKey.name
+
             // replace constraint name
             foreignKey.name = newForeignKeyName
-        })
 
-        await this.executeQueries(upQueries, downQueries)
+            // rename FK-supporting index (MySQL auto-creates it with FK name)
+            const fkIndex = newTable.indices.find(
+                (idx) => idx.name === oldForeignKeyName,
+            )
+            if (fkIndex) {
+                const idxColumnNames = fkIndex.columnNames
+                    .map((column) => `\`${column}\``)
+                    .join(", ")
+
+                let idxType = ""
+                if (fkIndex.isUnique) idxType += "UNIQUE "
+                if (fkIndex.isSpatial) idxType += "SPATIAL "
+                if (fkIndex.isFulltext) idxType += "FULLTEXT "
+
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(newTable)} DROP INDEX \`${oldForeignKeyName}\`, ADD ${idxType}INDEX \`${newForeignKeyName}\` (${idxColumnNames})`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(newTable)} DROP INDEX \`${newForeignKeyName}\`, ADD ${idxType}INDEX \`${oldForeignKeyName}\` (${idxColumnNames})`,
+                    ),
+                )
+
+                fkIndex.name = newForeignKeyName
+            }
+        })
 
         // rename old table and replace it in cached tabled;
         oldTable.name = newTable.name
