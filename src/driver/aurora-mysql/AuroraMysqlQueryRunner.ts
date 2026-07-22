@@ -630,34 +630,29 @@ export class AuroraMysqlQueryRunner
             // replace constraint name
             foreignKey.name = newForeignKeyName
 
-            // rename FK-supporting index (MySQL auto-creates it with FK name)
-            const fkIndex = newTable.indices.find(
-                (idx) => idx.name === oldForeignKeyName,
+            // rename FK-supporting index (MySQL auto-creates it with the FK name).
+            // The table loader filters FK-named indexes out of table.indices
+            // (LEFT JOIN REFERENTIAL_CONSTRAINTS ... WHERE rc.CONSTRAINT_NAME IS NULL),
+            // so we cannot look it up there. Instead we emit the rename SQL
+            // unconditionally since InnoDB always creates a supporting index
+            // for every foreign key with the same name as the constraint.
+            const fkIdxColumns = foreignKey.columnNames
+                .map((column) => `\`${column}\``)
+                .join(", ")
+
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(newTable)} DROP INDEX \`${oldForeignKeyName}\`, ADD INDEX \`${newForeignKeyName}\` (${fkIdxColumns})`,
+                ),
             )
-            if (fkIndex) {
-                const idxColumnNames = fkIndex.columnNames
-                    .map((column) => `\`${column}\``)
-                    .join(", ")
-
-                let idxType = ""
-                if (fkIndex.isUnique) idxType += "UNIQUE "
-                if (fkIndex.isSpatial) idxType += "SPATIAL "
-                if (fkIndex.isFulltext) idxType += "FULLTEXT "
-
-                upQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(newTable)} DROP INDEX \`${oldForeignKeyName}\`, ADD ${idxType}INDEX \`${newForeignKeyName}\` (${idxColumnNames})`,
-                    ),
-                )
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(newTable)} DROP INDEX \`${newForeignKeyName}\`, ADD ${idxType}INDEX \`${oldForeignKeyName}\` (${idxColumnNames})`,
-                    ),
-                )
-
-                fkIndex.name = newForeignKeyName
-            }
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(newTable)} DROP INDEX \`${newForeignKeyName}\`, ADD INDEX \`${oldForeignKeyName}\` (${fkIdxColumns})`,
+                ),
+            )
         })
+
+        await this.executeQueries(upQueries, downQueries)
 
         // rename old table and replace it in cached tabled;
         oldTable.name = newTable.name
