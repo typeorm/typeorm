@@ -623,7 +623,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Checks if at least one of column properties was changed.
-     * Does not checks column type, length and autoincrement, because these properties changes separately.
+     * Does not check column type and autoincrement, because these properties change separately.
      *
      * @param oldColumn
      * @param newColumn
@@ -639,6 +639,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
         checkEnum = true,
     ): boolean {
         return (
+            oldColumn.length !== newColumn.length ||
             oldColumn.charset !== newColumn.charset ||
             oldColumn.collation !== newColumn.collation ||
             oldColumn.precision !== newColumn.precision ||
