@@ -10,6 +10,7 @@ import type { EntityManager } from "../entity-manager/EntityManager"
 import type { TableColumn } from "../schema-builder/table/TableColumn"
 import type { Broadcaster } from "../subscriber/Broadcaster"
 import type { ReplicationMode } from "../driver/types/ReplicationMode"
+import type { ColumnChangeClassification } from "../driver/types/ColumnTypes"
 import { TypeORMError } from "../error/TypeORMError"
 import type { EntityMetadata } from "../metadata/EntityMetadata"
 import type { TableForeignKey } from "../schema-builder/table/TableForeignKey"
@@ -658,6 +659,23 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
             oldColumn.enum ?? [],
             newColumn.enum ?? [],
         )
+    }
+
+    /**
+     * Classifies a column type/length change. Override per-driver to enable
+     * `changeStrategy` support. Base returns "no-change" which causes
+     * the strategy logic to fall through to the driver's default behavior.
+     *
+     * @param _oldColumn
+     * @param _newColumn
+     * @param _table
+     */
+    protected classifyColumnChange(
+        _oldColumn: TableColumn,
+        _newColumn: TableColumn,
+        _table: Table,
+    ): ColumnChangeClassification {
+        return "no-change"
     }
 
     /**

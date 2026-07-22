@@ -183,6 +183,12 @@ export class ColumnMetadata {
     generatedType?: "VIRTUAL" | "STORED"
 
     /**
+     * Per-column strategy for handling type/length changes during migration generation.
+     * Overrides the default `"drop-add"` behavior when set.
+     */
+    changeStrategy?: "auto" | "alter" | "drop-add"
+
+    /**
      * Return type of HSTORE column.
      * Returns value as string or as object.
      */
@@ -405,6 +411,8 @@ export class ColumnMetadata {
             this.scale = options.args.options.scale
         if (options.args.options.unsigned)
             this.unsigned = options.args.options.unsigned
+        if (options.args.options.changeStrategy)
+            this.changeStrategy = options.args.options.changeStrategy
         if (options.args.options.precision !== null)
             this.precision = options.args.options.precision
         if (options.args.options.enum) {
