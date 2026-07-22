@@ -771,7 +771,7 @@ export class ColumnMetadata {
             if (embeddedObject) {
                 if (this.relationMetadata && this.referencedColumn) {
                     const relatedEntity =
-                        this.relationMetadata.getEntityValue(embeddedObject)
+                        this.relationMetadata.getEntityValue(entity)
                     if (
                         relatedEntity &&
                         ObjectUtils.isObject(relatedEntity) &&
