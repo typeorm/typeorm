@@ -4464,6 +4464,17 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         continue
                     }
 
+                    // primitive values like 1 or "str" are not valid for
+                    // relation where conditions -- the user likely meant
+                    // { id: value }
+                    if (typeof where[key] !== "object") {
+                        throw new TypeORMError(
+                            `Invalid value for relation property '${alias}.${key}' in where condition. ` +
+                            `Expected an object with the relation's primary key(s) (e.g. { id: 1 }), ` +
+                            `but received a value of type '${typeof where[key]}'.`,
+                        )
+                    }
+
                     // if all properties of where are undefined we don't need to join anything
                     // this can happen when user defines map with conditional queries inside
                     if (typeof where[key] === "object") {
