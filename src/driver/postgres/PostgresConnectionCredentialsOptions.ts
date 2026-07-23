@@ -44,4 +44,11 @@ export interface PostgresConnectionCredentialsOptions {
      * the service using this connection. Defaults to 'undefined'
      */
     readonly applicationName?: string
+
+    /**
+     * Per-endpoint extra pool options merged over the top-level `extra`.
+     * Useful in replication mode to apply different pool settings per
+     * master/slave endpoint (e.g. `maxLifetimeSeconds` only on slaves).
+     */
+    readonly extra?: any
 }
