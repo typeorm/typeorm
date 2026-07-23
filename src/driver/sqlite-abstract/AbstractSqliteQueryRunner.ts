@@ -48,6 +48,43 @@ export abstract class AbstractSqliteQueryRunner
     }
 
     // -------------------------------------------------------------------------
+    // Private Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Extracts column collation from the given sql.
+     *
+     * @param sql
+     * @param columnName
+     * @returns
+     */
+
+    private getColumnCollation(
+        sql: string,
+        columnName: string,
+    ): string | undefined {
+        const escapedColumnName = this.driver.escape(columnName)
+        const columnDefStart = sql.indexOf(`${escapedColumnName}`)
+        if (columnDefStart === -1) return undefined
+
+        sql = sql.slice(columnDefStart + escapedColumnName.length)
+        sql = sql.replaceAll(/CHECK\s*\(\s*(.*)\s+\)\s*/g, "")
+        sql = sql.replaceAll(/DEFAULT\s+\(.*\)\s*/g, "")
+
+        const collateStart = sql.indexOf("COLLATE")
+        if (collateStart === -1) return undefined
+
+        const stripped = sql.slice(0, collateStart)
+
+        if (stripped.indexOf(",") !== -1) return undefined
+
+        const collateRegex = /\bCOLLATE\s+"(\w+)"\s*/i
+        const matches = collateRegex.exec(sql)
+        if (!matches) return undefined
+        return matches[1]
+    }
+
+    // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 
@@ -1551,6 +1588,10 @@ export abstract class AbstractSqliteQueryRunner
                         : dbTable["name"]
 
                 const sql = dbTable["sql"]
+                const tableDefinition = sql.slice(
+                    sql.indexOf("(") + 1,
+                    sql.lastIndexOf(")"),
+                )
 
                 const withoutRowid = sql.includes("WITHOUT ROWID")
                 const table = new Table({ name: tablePath, withoutRowid })
@@ -1647,6 +1688,14 @@ export abstract class AbstractSqliteQueryRunner
                                 sql,
                                 tableColumn.name,
                             )
+                        }
+
+                        const collation = this.getColumnCollation(
+                            tableDefinition,
+                            tableColumn.name,
+                        )
+                        if (collation) {
+                            tableColumn.collation = collation
                         }
 
                         // parse datatype and attempt to retrieve length, precision and scale
@@ -2187,7 +2236,7 @@ export abstract class AbstractSqliteQueryRunner
         )
             // don't use skipPrimary here since updates can update already exist primary without auto inc.
             c += " AUTOINCREMENT"
-        if (column.collation) c += " COLLATE " + column.collation
+        if (column.collation) c += " COLLATE " + `"${column.collation}"`
         if (column.isNullable !== true) c += " NOT NULL"
 
         if (column.asExpression) {
