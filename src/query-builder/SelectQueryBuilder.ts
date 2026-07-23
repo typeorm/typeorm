@@ -3488,8 +3488,15 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         // where we make two queries to find the data we need
         // first query find ids in skip and take range
         // and second query loads the actual data in given ids range
+        // a take of 0 is a meaningful limit (return no rows), so it must be
+        // detected explicitly rather than through truthiness; a skip of 0 is a
+        // no-op offset, so it is treated as unset (mirrors the checks in lazyCount)
         if (
-            (this.expressionMap.skip || this.expressionMap.take) &&
+            ((this.expressionMap.take !== undefined &&
+                this.expressionMap.take !== null) ||
+                (this.expressionMap.skip !== undefined &&
+                    this.expressionMap.skip !== null &&
+                    this.expressionMap.skip > 0)) &&
             this.expressionMap.joinAttributes.length > 0
         ) {
             // we are skipping order by here because its not working in subqueries anyway
