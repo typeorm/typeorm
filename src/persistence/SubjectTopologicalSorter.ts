@@ -134,14 +134,22 @@ export class SubjectTopologicalSorter {
      */
     protected getNonNullableDependencies(): string[][] {
         return this.metadatas.reduce((dependencies, metadata) => {
-            metadata.relationsWithJoinColumns.forEach((relation) => {
-                if (relation.isNullable) return
-
+            const nonNullableRelations =
+                metadata.relationsWithJoinColumns.filter(
+                    (relation) => !relation.isNullable,
+                )
+            nonNullableRelations.forEach((relation) => {
                 dependencies.push([
                     metadata.targetName,
                     relation.inverseEntityMetadata.targetName,
                 ])
             })
+            if (metadata.parentEntityMetadata && nonNullableRelations.length) {
+                dependencies.push([
+                    metadata.parentEntityMetadata.targetName,
+                    metadata.targetName,
+                ])
+            }
             return dependencies
         }, [] as string[][])
     }
