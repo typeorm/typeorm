@@ -430,7 +430,7 @@ export class PostgresDriver implements Driver {
      * Makes any action after connection (e.g. create extensions in Postgres driver).
      */
     async afterConnect(): Promise<void> {
-        const [connection, release] = await this.obtainMasterConnection()
+        const connection = await this.obtainMasterConnection()
 
         const installExtensions =
             this.options.installExtensions === undefined ||
@@ -458,7 +458,7 @@ export class PostgresDriver implements Driver {
             "12.0",
         )
 
-        await release()
+        connection.release()
     }
 
     protected async getAvailableExtensions(connection: any) {
@@ -1401,20 +1401,12 @@ export class PostgresDriver implements Driver {
      * Used for replication.
      * If replication is not setup then returns default connection's database connection.
      */
-    async obtainMasterConnection(): Promise<[any, Function]> {
+    obtainMasterConnection(): Promise<any> {
         if (!this.master) {
             throw new TypeORMError("Driver not Connected")
         }
 
-        return new Promise((ok, fail) => {
-            this.master.connect((err: any, connection: any, release: any) => {
-                if (err) {
-                    fail(err)
-                } else {
-                    ok([connection, release])
-                }
-            })
-        })
+        return this.master.connect()
     }
 
     /**
@@ -1422,24 +1414,14 @@ export class PostgresDriver implements Driver {
      * Used for replication.
      * If replication is not setup then returns master (default) connection's database connection.
      */
-    async obtainSlaveConnection(): Promise<[any, Function]> {
+    obtainSlaveConnection(): Promise<any> {
         if (!this.slaves.length) {
             return this.obtainMasterConnection()
         }
 
         const random = Math.floor(Math.random() * this.slaves.length)
 
-        return new Promise((ok, fail) => {
-            this.slaves[random].connect(
-                (err: any, connection: any, release: any) => {
-                    if (err) {
-                        fail(err)
-                    } else {
-                        ok([connection, release])
-                    }
-                },
-            )
-        })
+        return this.slaves[random].connect()
     }
 
     /**
@@ -1784,29 +1766,26 @@ export class PostgresDriver implements Driver {
          */
         pool.on("error", poolErrorHandler)
 
-        return new Promise((ok, fail) => {
-            pool.connect((err: any, connection: any, release: Function) => {
-                if (err) return fail(err)
+        const connection = await pool.connect()
 
-                if (options.logNotifications) {
-                    connection.on("notice", (msg: any) => {
-                        if (msg) {
-                            this.dataSource.logger.log("info", msg.message)
-                        }
-                    })
-                    connection.on("notification", (msg: any) => {
-                        if (msg) {
-                            this.dataSource.logger.log(
-                                "info",
-                                `Received NOTIFY on channel ${msg.channel}: ${msg.payload}.`,
-                            )
-                        }
-                    })
+        if (options.logNotifications) {
+            connection.on("notice", (msg: any) => {
+                if (msg) {
+                    this.dataSource.logger.log("info", msg.message)
                 }
-                release()
-                ok(pool)
             })
-        })
+            connection.on("notification", (msg: any) => {
+                if (msg) {
+                    this.dataSource.logger.log(
+                        "info",
+                        `Received NOTIFY on channel ${msg.channel}: ${msg.payload}.`,
+                    )
+                }
+            })
+        }
+        connection.release()
+
+        return pool
     }
 
     /**
@@ -1819,9 +1798,7 @@ export class PostgresDriver implements Driver {
             await this.connectedQueryRunners[0].release()
         }
 
-        return new Promise<void>((ok, fail) => {
-            pool.end((err: any) => (err ? fail(err) : ok()))
-        })
+        await pool.end()
     }
 
     /**
@@ -1833,11 +1810,7 @@ export class PostgresDriver implements Driver {
     protected executeQuery(connection: any, query: string) {
         this.dataSource.logger.logQuery(query)
 
-        return new Promise((ok, fail) => {
-            connection.query(query, (err: any, result: any) =>
-                err ? fail(err) : ok(result),
-            )
-        })
+        return connection.query(query)
     }
 
     /**
