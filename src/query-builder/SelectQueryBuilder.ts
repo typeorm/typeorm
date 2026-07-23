@@ -1920,13 +1920,32 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         const hasLimit =
             this.expressionMap.limit !== undefined &&
             this.expressionMap.limit !== null
-        if (this.expressionMap.joinAttributes.length > 0 && hasLimit) {
-            return undefined
-        }
-
         const hasTake =
             this.expressionMap.take !== undefined &&
             this.expressionMap.take !== null
+        const hasSkip =
+            this.expressionMap.skip !== undefined &&
+            this.expressionMap.skip !== null &&
+            this.expressionMap.skip > 0
+        const hasOffset =
+            this.expressionMap.offset !== undefined &&
+            this.expressionMap.offset !== null &&
+            this.expressionMap.offset > 0
+
+        // When a join is combined with any pagination (take/limit/skip/offset)
+        // the number of returned entities cannot be used to derive the total
+        // count: pagination is applied through a distinct-id sub-query, so a
+        // single parent that owns several joined rows consumes several of the
+        // paginated rows and the page can contain fewer distinct parents than
+        // requested (and `skip`/`offset` may skip fewer distinct parents than
+        // their value). In that case we must fall back to the dedicated count
+        // query. See #11744.
+        if (
+            this.expressionMap.joinAttributes.length > 0 &&
+            (hasLimit || hasTake || hasSkip || hasOffset)
+        ) {
+            return undefined
+        }
 
         // limit overrides take when no join is defined
         const maxResults = hasLimit
@@ -1942,15 +1961,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             // stop here when the result set contains the max number of rows; we need to execute a full count
             return undefined
         }
-
-        const hasSkip =
-            this.expressionMap.skip !== undefined &&
-            this.expressionMap.skip !== null &&
-            this.expressionMap.skip > 0
-        const hasOffset =
-            this.expressionMap.offset !== undefined &&
-            this.expressionMap.offset !== null &&
-            this.expressionMap.offset > 0
 
         if (entitiesAndRaw.entities.length === 0 && (hasSkip || hasOffset)) {
             // when skip or offset were used and no results found, we need to execute a full count
