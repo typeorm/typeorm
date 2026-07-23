@@ -3489,7 +3489,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         // first query find ids in skip and take range
         // and second query loads the actual data in given ids range
         if (
-            (this.expressionMap.skip || this.expressionMap.take) &&
+            (this.expressionMap.take != null ||
+                (this.expressionMap.skip != null &&
+                    this.expressionMap.skip !== 0)) &&
             this.expressionMap.joinAttributes.length > 0
         ) {
             // we are skipping order by here because its not working in subqueries anyway

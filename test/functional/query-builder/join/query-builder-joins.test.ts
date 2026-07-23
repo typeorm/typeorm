@@ -1582,6 +1582,53 @@ describe("query builder > joins", () => {
                 }),
             ))
 
+        it("should return no rows when take(0) is used with a join", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const category = new Category()
+                    category.name = "Category"
+                    await dataSource.manager.save(category)
+
+                    const post = new Post()
+                    post.title = "Post"
+                    post.categories = [category]
+                    await dataSource.manager.save(post)
+
+                    const [posts, count] = await dataSource
+                        .getRepository(Post)
+                        .createQueryBuilder("post")
+                        .leftJoinAndSelect("post.categories", "category")
+                        .take(0)
+                        .getManyAndCount()
+
+                    expect(posts).to.have.lengthOf(0)
+                    expect(count).to.equal(1)
+                }),
+            ))
+
+        it("should still return all rows when skip(0) is used alone with a join, since offset 0 is a no-op", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const category = new Category()
+                    category.name = "Category"
+                    await dataSource.manager.save(category)
+
+                    const post = new Post()
+                    post.title = "Post"
+                    post.categories = [category]
+                    await dataSource.manager.save(post)
+
+                    const posts = await dataSource
+                        .getRepository(Post)
+                        .createQueryBuilder("post")
+                        .leftJoinAndSelect("post.categories", "category")
+                        .skip(0)
+                        .getMany()
+
+                    expect(posts).to.have.lengthOf(1)
+                }),
+            ))
+
         it("should work correctly with explicit primary key selection", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
