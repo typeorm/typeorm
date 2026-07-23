@@ -292,6 +292,23 @@ describe("column > virtual columns", () => {
             }),
         ))
 
+    it("should expand virtual columns used in a query builder where clause", () =>
+        dataSources.map((dataSource) => {
+            const sql = dataSource
+                .createQueryBuilder(Company, "company")
+                .select("company.name")
+                .where("company.totalEmployeesCount > 2")
+                .getSql()
+
+            let expectedExpression = `(SELECT COUNT("name") FROM "employees" WHERE "companyName" = "company"."name") > 2`
+            if (DriverUtils.isMySQLFamily(dataSource.driver)) {
+                expectedExpression = expectedExpression.replaceAll('"', "`")
+            }
+
+            expect(sql).to.include(expectedExpression)
+            expect(sql).not.to.include("totalEmployeesCount >")
+        }))
+
     it("should be able to read non-selectable virtual columns (with query builder)", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
