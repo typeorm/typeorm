@@ -4,6 +4,8 @@ import type { EntityTarget } from "../common/EntityTarget"
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner"
 import type { MongoDriver } from "../driver/mongodb/MongoDriver"
+import type { IsolationLevel } from "../driver/types/IsolationLevel"
+import type { QueryRunner } from "../query-runner/QueryRunner"
 import { DocumentToEntityTransformer } from "../query-builder/transformer/DocumentToEntityTransformer"
 import type { FindManyOptions } from "../find-options/FindManyOptions"
 import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
@@ -13,7 +15,11 @@ import { InsertResult } from "../query-builder/result/InsertResult"
 import { UpdateResult } from "../query-builder/result/UpdateResult"
 import { DeleteResult } from "../query-builder/result/DeleteResult"
 import type { EntityMetadata } from "../metadata/EntityMetadata"
-import { EntityPropertyNotFoundError } from "../error"
+import {
+    EntityPropertyNotFoundError,
+    QueryRunnerProviderAlreadyReleasedError,
+    TypeORMError,
+} from "../error"
 
 import type {
     AggregateOptions,
@@ -31,6 +37,7 @@ import type {
     DeleteOptions,
     DeleteResult as DeleteResultMongoDb,
     Document,
+    DropIndexesOptions,
     Filter,
     FilterOperators,
     FindCursor,
@@ -46,16 +53,18 @@ import type {
     ListIndexesCursor,
     ListIndexesOptions,
     ObjectId,
+    OperationOptions,
     OptionalId,
     OrderedBulkOperation,
     RenameOptions,
     ReplaceOptions,
+    TransactionOptions,
     UnorderedBulkOperation,
     UpdateFilter,
     UpdateOptions,
     UpdateResult as UpdateResultMongoDb,
 } from "../driver/mongodb/typings"
-import type { DataSource } from "../data-source/DataSource"
+import type { DataSource } from "../data-source"
 import type { MongoFindManyOptions } from "../find-options/mongodb/MongoFindManyOptions"
 import type { MongoFindOneOptions } from "../find-options/mongodb/MongoFindOneOptions"
 import type { FindOptionsSelect } from "../find-options/FindOptionsSelect"
@@ -72,6 +81,10 @@ export class MongoEntityManager extends EntityManager {
     readonly "@instanceof" = Symbol.for("MongoEntityManager")
 
     get mongoQueryRunner(): MongoQueryRunner {
+        if (this.queryRunner) {
+            return this.queryRunner as MongoQueryRunner
+        }
+
         return (this.dataSource.driver as MongoDriver)
             .queryRunner as MongoQueryRunner
     }
@@ -80,13 +93,77 @@ export class MongoEntityManager extends EntityManager {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(dataSource: DataSource) {
-        super(dataSource)
+    constructor(dataSource: DataSource, queryRunner?: QueryRunner) {
+        super(dataSource, queryRunner)
     }
 
     // -------------------------------------------------------------------------
     // Overridden Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Wraps given function execution (and all operations made there) in a transaction.
+     * Supports MongoDB transaction options as an alternative first parameter.
+     */
+    async transaction<T>(
+        runInTransaction: (entityManager: EntityManager) => Promise<T>,
+    ): Promise<T>
+
+    async transaction<T>(
+        isolationLevel: IsolationLevel,
+        runInTransaction: (entityManager: EntityManager) => Promise<T>,
+    ): Promise<T>
+
+    async transaction<T>(
+        options: TransactionOptions,
+        runInTransaction: (entityManager: EntityManager) => Promise<T>,
+    ): Promise<T>
+
+    async transaction<T>(
+        isolationOrOptionsOrRunInTransaction:
+            | IsolationLevel
+            | TransactionOptions
+            | ((entityManager: EntityManager) => Promise<T>),
+        runInTransactionParam?: (entityManager: EntityManager) => Promise<T>,
+    ): Promise<T> {
+        const isolation =
+            typeof isolationOrOptionsOrRunInTransaction === "string"
+                ? isolationOrOptionsOrRunInTransaction
+                : undefined
+        const options =
+            typeof isolationOrOptionsOrRunInTransaction === "object" &&
+            isolationOrOptionsOrRunInTransaction !== null
+                ? isolationOrOptionsOrRunInTransaction
+                : undefined
+        const runInTransaction =
+            typeof isolationOrOptionsOrRunInTransaction === "function"
+                ? isolationOrOptionsOrRunInTransaction
+                : runInTransactionParam
+
+        if (!runInTransaction) {
+            throw new TypeORMError(
+                `Transaction method requires callback in second parameter if first parameter is supplied.`,
+            )
+        }
+
+        if (this.queryRunner?.isReleased)
+            throw new QueryRunnerProviderAlreadyReleasedError()
+
+        const queryRunner = (this.queryRunner ??
+            this.dataSource.createQueryRunner()) as MongoQueryRunner
+
+        try {
+            await queryRunner.startTransaction(isolation, options)
+            const result = await runInTransaction(queryRunner.manager)
+            await queryRunner.commitTransaction()
+            return result
+        } catch (err) {
+            await queryRunner.rollbackTransaction()
+            throw err
+        } finally {
+            if (!this.queryRunner) await queryRunner.release()
+        }
+    }
 
     /**
      * Finds entities that match given find options.
@@ -605,15 +682,18 @@ export class MongoEntityManager extends EntityManager {
      *
      * @param entityClassOrName
      * @param indexSpecs
+     * @param options
      */
     createCollectionIndexes<Entity>(
         entityClassOrName: EntityTarget<Entity>,
         indexSpecs: IndexDescription[],
+        options?: CreateIndexesOptions,
     ): Promise<string[]> {
         const metadata = this.dataSource.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.createCollectionIndexes(
             metadata.tableName,
             indexSpecs,
+            options,
         )
     }
 
@@ -704,12 +784,17 @@ export class MongoEntityManager extends EntityManager {
      * Drops all indexes from the collection.
      *
      * @param entityClassOrName
+     * @param options
      */
     dropCollectionIndexes<Entity>(
         entityClassOrName: EntityTarget<Entity>,
-    ): Promise<any> {
+        options?: DropIndexesOptions,
+    ): Promise<boolean> {
         const metadata = this.dataSource.getMetadata(entityClassOrName)
-        return this.mongoQueryRunner.dropCollectionIndexes(metadata.tableName)
+        return this.mongoQueryRunner.dropCollectionIndexes(
+            metadata.tableName,
+            options,
+        )
     }
 
     /**
@@ -782,12 +867,17 @@ export class MongoEntityManager extends EntityManager {
      * Retrieve all the indexes on the collection.
      *
      * @param entityClassOrName
+     * @param options
      */
     collectionIndexes<Entity>(
         entityClassOrName: EntityTarget<Entity>,
+        options?: ListIndexesOptions,
     ): Promise<Document> {
         const metadata = this.dataSource.getMetadata(entityClassOrName)
-        return this.mongoQueryRunner.collectionIndexes(metadata.tableName)
+        return this.mongoQueryRunner.collectionIndexes(
+            metadata.tableName,
+            options,
+        )
     }
 
     /**
@@ -795,15 +885,18 @@ export class MongoEntityManager extends EntityManager {
      *
      * @param entityClassOrName
      * @param indexes
+     * @param options
      */
     collectionIndexExists<Entity>(
         entityClassOrName: EntityTarget<Entity>,
         indexes: string | string[],
+        options?: ListIndexesOptions,
     ): Promise<boolean> {
         const metadata = this.dataSource.getMetadata(entityClassOrName)
         return this.mongoQueryRunner.collectionIndexExists(
             metadata.tableName,
             indexes,
+            options,
         )
     }
 
@@ -898,10 +991,14 @@ export class MongoEntityManager extends EntityManager {
      * Returns if the collection is a capped collection.
      *
      * @param entityClassOrName
+     * @param options
      */
-    isCapped<Entity>(entityClassOrName: EntityTarget<Entity>): Promise<any> {
+    isCapped<Entity>(
+        entityClassOrName: EntityTarget<Entity>,
+        options?: OperationOptions,
+    ): Promise<any> {
         const metadata = this.dataSource.getMetadata(entityClassOrName)
-        return this.mongoQueryRunner.isCapped(metadata.tableName)
+        return this.mongoQueryRunner.isCapped(metadata.tableName, options)
     }
 
     /**

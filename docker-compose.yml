@@ -159,9 +159,25 @@ services:
       test: "/hana/shared/HXE/exe/linuxx86_64/hdb/hdbsql -n localhost:39041 -u SYSTEM -p HXEHana1 \"\\s\""
       interval: 5s
 
-  # mongodb
+    # mongodb
   mongodb:
     image: "mongo:8.2.5"
     container_name: "typeorm-mongodb"
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
     ports:
       - "27017:27017"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mongosh --quiet --eval 'if (!db.hello().isWritablePrimary) { quit(1); }'",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - ./docker/mongodb/init-replica-set.js:/docker-entrypoint-initdb.d/init-replica-set.js:ro
+      - mongodb-data:/data/db
+
+volumes:
+  mongodb-data:
