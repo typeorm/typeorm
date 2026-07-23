@@ -291,6 +291,52 @@ describe("persistence > many-to-many", function () {
             }),
         ))
 
+    // regression test for github issue #12710
+    it("should not remove junction rows of an entity saved in the same call without its relation loaded", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const categoryRepository = dataSource.getRepository(Category)
+
+                const category1 = new Category()
+                category1.name = "Animals"
+                await categoryRepository.save(category1)
+
+                const category2 = new Category()
+                category2.name = "Nature"
+                await categoryRepository.save(category2)
+
+                const post1 = new Post()
+                post1.title = "post #1"
+                post1.categories = [category1]
+
+                const post2 = new Post()
+                post2.title = "post #2"
+                post2.categories = [category2]
+                await postRepository.save([post1, post2])
+
+                // load post1 WITH its categories and post2 WITHOUT them,
+                // so post2's categories stay undefined (not loaded)
+                const loadedPost1 = await postRepository.findOneOrFail({
+                    where: { id: post1.id },
+                    relations: { categories: true },
+                })
+                const loadedPost2 = await postRepository.findOneOrFail({
+                    where: { id: post2.id },
+                })
+
+                loadedPost1.title = "post #1 renamed"
+                loadedPost2.title = "post #2 renamed"
+                await postRepository.save([loadedPost1, loadedPost2])
+
+                const reloadedPost2 = await postRepository.findOneOrFail({
+                    where: { id: post2.id },
+                    relations: { categories: true },
+                })
+                expect(reloadedPost2.categories!.length).to.be.equal(1)
+            }),
+        ))
+
     it("remove all elements from many-to-many relation if parent entity is removed", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
