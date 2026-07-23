@@ -34,7 +34,6 @@ export default defineConfig([
         },
         extends: [js.configs.recommended, ...ts.configs.recommendedTypeChecked],
         rules: {
-            // custom rules
             "@typescript-eslint/consistent-type-exports": "error",
             "@typescript-eslint/consistent-type-imports": "error",
             "@typescript-eslint/prefer-nullish-coalescing": "error",
@@ -90,10 +89,8 @@ export default defineConfig([
 
             // exceptions for eslint/recommended
             "no-async-promise-executor": "warn",
-            "no-useless-assignment": "warn",
             "no-control-regex": "warn",
             "no-empty": "warn",
-            "no-loss-of-precision": "warn",
             "no-prototype-builtins": "warn",
             "no-regex-spaces": "warn",
             "no-return-assign": ["error", "always"],
