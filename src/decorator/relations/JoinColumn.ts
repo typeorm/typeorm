@@ -37,7 +37,7 @@ export function JoinColumn(options: JoinColumnOptions[]): PropertyDecorator
 export function JoinColumn(
     optionsOrOptionsArray?: JoinColumnOptions | JoinColumnOptions[],
 ): PropertyDecorator {
-    return function (object: Object, propertyName: string) {
+    return function (object: object, propertyName: string) {
         const options = Array.isArray(optionsOrOptionsArray)
             ? optionsOrOptionsArray
             : [optionsOrOptionsArray ?? {}]

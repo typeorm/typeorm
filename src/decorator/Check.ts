@@ -42,7 +42,7 @@ export function Check(
     if (!expression) throw new TypeORMError(`Check expression is required`)
 
     return function (
-        clsOrObject: Function | Object,
+        clsOrObject: Function | object,
         propertyName?: string | symbol,
     ) {
         getMetadataArgsStorage().checks.push({

@@ -99,7 +99,7 @@ export function ForeignKey<
               : maybeOptions
 
     return function (
-        clsOrObject: Function | Object,
+        clsOrObject: Function | object,
         propertyName?: string | symbol,
     ) {
         getMetadataArgsStorage().foreignKeys.push({

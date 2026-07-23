@@ -97,7 +97,7 @@ export function PrimaryGeneratedColumn(
     }
     if (ObjectUtils.isObject(maybeOptions)) Object.assign(options, maybeOptions)
 
-    return function (object: Object, propertyName: string) {
+    return function (object: object, propertyName: string) {
         // if column type is not explicitly set then determine it based on generation strategy
         if (!options.type) {
             if (strategy === "increment" || strategy === "identity") {

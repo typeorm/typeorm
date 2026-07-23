@@ -5,7 +5,7 @@ import type { ColumnMetadataArgs } from "../../metadata-args/ColumnMetadataArgs"
  * Creates a "level"/"length" column to the table that holds a closure table.
  */
 export function TreeLevelColumn(): PropertyDecorator {
-    return function (object: Object, propertyName: string) {
+    return function (object: object, propertyName: string) {
         getMetadataArgsStorage().columns.push({
             target: object.constructor,
             propertyName: propertyName,
