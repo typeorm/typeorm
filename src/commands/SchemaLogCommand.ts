@@ -43,22 +43,51 @@ export class SchemaLogCommand implements yargs.CommandModule {
                 .log()
 
             if (sqlInMemory.upQueries.length === 0) {
-                console.log(
-                    ansi.yellow`Your schema is up to date - there are no queries to be executed by schema synchronization.`,
-                )
+                if (
+                    !CommandUtils.logDataSourceMessage(
+                        dataSource,
+                        "Your schema is up to date - there are no queries to be executed by schema synchronization.",
+                        "schema-build",
+                    )
+                ) {
+                    console.log(
+                        ansi.yellow`Your schema is up to date - there are no queries to be executed by schema synchronization.`,
+                    )
+                }
             } else {
                 const lineSeparator = "".padStart(
                     63 + String(sqlInMemory.upQueries.length).length,
                     "-",
                 )
-                console.log(ansi.yellow(lineSeparator))
-                console.log(
-                    ansi.yellow
-                        .bold`-- Schema synchronization will execute following sql queries (${ansi.white(
-                        sqlInMemory.upQueries.length.toString(),
-                    )}):`,
-                )
-                console.log(ansi.yellow(lineSeparator))
+                const header = `-- Schema synchronization will execute following sql queries (${sqlInMemory.upQueries.length}):`
+
+                if (
+                    CommandUtils.logDataSourceMessage(
+                        dataSource,
+                        lineSeparator,
+                        "schema-build",
+                    )
+                ) {
+                    CommandUtils.logDataSourceMessage(
+                        dataSource,
+                        header,
+                        "schema-build",
+                    )
+                    CommandUtils.logDataSourceMessage(
+                        dataSource,
+                        lineSeparator,
+                        "schema-build",
+                    )
+                } else {
+                    console.log(ansi.yellow(lineSeparator))
+                    console.log(
+                        ansi.yellow
+                            .bold`-- Schema synchronization will execute following sql queries (${ansi.white(
+                            sqlInMemory.upQueries.length.toString(),
+                        )}):`,
+                    )
+                    console.log(ansi.yellow(lineSeparator))
+                }
 
                 sqlInMemory.upQueries.forEach((upQuery) => {
                     let sqlString = upQuery.query
@@ -66,7 +95,16 @@ export class SchemaLogCommand implements yargs.CommandModule {
                     sqlString = sqlString.endsWith(";")
                         ? sqlString
                         : sqlString + ";"
-                    console.log(PlatformTools.highlightSql(sqlString))
+
+                    if (
+                        !CommandUtils.logDataSourceMessage(
+                            dataSource,
+                            sqlString,
+                            "schema-build",
+                        )
+                    ) {
+                        console.log(PlatformTools.highlightSql(sqlString))
+                    }
                 })
             }
             await dataSource.destroy()

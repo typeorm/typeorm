@@ -81,6 +81,22 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
 
         let dataSource: DataSource | undefined
         try {
+            const logMigrationMessage = (
+                message: string,
+                fallback: () => void,
+                loggerType: "migration" | "warn" = "migration",
+            ) => {
+                if (
+                    !CommandUtils.logDataSourceMessage(
+                        dataSource,
+                        message,
+                        loggerType,
+                    )
+                ) {
+                    fallback()
+                }
+            }
+
             dataSource = await CommandUtils.loadDataSource(
                 path.resolve(process.cwd(), args.dataSource as string),
             )
@@ -146,18 +162,34 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
 
             if (!upSqls.length) {
                 if (args.check) {
-                    console.log(
-                        ansi.green`No changes in database schema were found`,
+                    logMigrationMessage(
+                        "No changes in database schema were found",
+                        () =>
+                            console.log(
+                                ansi.green`No changes in database schema were found`,
+                            ),
                     )
                     process.exit(0)
                 } else {
-                    console.log(
-                        ansi.yellow`No changes in database schema were found - cannot generate a migration. To create a new empty migration use "typeorm migration:create" command`,
+                    logMigrationMessage(
+                        'No changes in database schema were found - cannot generate a migration. To create a new empty migration use "typeorm migration:create" command',
+                        () =>
+                            console.log(
+                                ansi.yellow`No changes in database schema were found - cannot generate a migration. To create a new empty migration use "typeorm migration:create" command`,
+                            ),
+                        "warn",
                     )
                     process.exit(1)
                 }
             } else if (!args.path) {
-                console.log(ansi.yellow`Please specify a migration path`)
+                logMigrationMessage(
+                    "Please specify a migration path",
+                    () =>
+                        console.log(
+                            ansi.yellow`Please specify a migration path`,
+                        ),
+                    "warn",
+                )
                 process.exit(1)
             }
 
@@ -177,31 +209,44 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                   )
 
             if (args.check) {
-                console.log(
-                    ansi.yellow`Unexpected changes in database schema were found in check mode:\n\n${ansi.white(
-                        fileContent,
-                    )}`,
+                logMigrationMessage(
+                    `Unexpected changes in database schema were found in check mode:\n\n${fileContent}`,
+                    () =>
+                        console.log(
+                            ansi.yellow`Unexpected changes in database schema were found in check mode:\n\n${ansi.white(
+                                fileContent,
+                            )}`,
+                        ),
+                    "warn",
                 )
                 process.exit(1)
             }
 
             if (args.dryrun) {
-                console.log(
-                    ansi.green(
-                        `Migration ${ansi.blue(
-                            fullPath + extension,
-                        )} has content:\n\n${ansi.white(fileContent)}`,
-                    ),
+                logMigrationMessage(
+                    `Migration ${fullPath + extension} has content:\n\n${fileContent}`,
+                    () =>
+                        console.log(
+                            ansi.green(
+                                `Migration ${ansi.blue(
+                                    fullPath + extension,
+                                )} has content:\n\n${ansi.white(fileContent)}`,
+                            ),
+                        ),
                 )
             } else {
                 const migrationFileName =
                     path.dirname(fullPath) + "/" + filename
                 await CommandUtils.createFile(migrationFileName, fileContent)
 
-                console.log(
-                    ansi.green`Migration ${ansi.blue(
-                        migrationFileName,
-                    )} has been generated successfully.`,
+                logMigrationMessage(
+                    `Migration ${migrationFileName} has been generated successfully.`,
+                    () =>
+                        console.log(
+                            ansi.green`Migration ${ansi.blue(
+                                migrationFileName,
+                            )} has been generated successfully.`,
+                        ),
                 )
                 if (args.exitProcess !== false) {
                     process.exit(0)
