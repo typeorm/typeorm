@@ -1704,7 +1704,7 @@ export abstract class AbstractSqliteQueryRunner
                     referencedTableName: string
                 }[] = []
                 const fkRegex =
-                    /CONSTRAINT "([^"]*)" FOREIGN KEY ?\((.*?)\) REFERENCES "([^"]*)"/g
+                    /CONSTRAINT "([^"]*)"\s+FOREIGN KEY\s*\(([^)]*)\)\s+REFERENCES\s+"([^"]*)"/g
                 while ((fkResult = fkRegex.exec(sql)) !== null) {
                     fkMappings.push({
                         name: fkResult[1],
@@ -1758,7 +1758,8 @@ export abstract class AbstractSqliteQueryRunner
                 // find unique constraints from CREATE TABLE sql
                 let uniqueRegexResult
                 const uniqueMappings: { name: string; columns: string[] }[] = []
-                const uniqueRegex = /CONSTRAINT "([^"]*)" UNIQUE ?\((.*?)\)/g
+                const uniqueRegex =
+                    /CONSTRAINT "([^"]*)"\s+UNIQUE\s*\(([^)]*)\)/g
                 while ((uniqueRegexResult = uniqueRegex.exec(sql)) !== null) {
                     uniqueMappings.push({
                         name: uniqueRegexResult[1],
@@ -1823,7 +1824,7 @@ export abstract class AbstractSqliteQueryRunner
                 // build checks
                 let result
                 const regexp =
-                    /CONSTRAINT "([^"]*)" CHECK ?(\(.*?\))([,]|[)]$)/g
+                    /CONSTRAINT "([^"]*)"\s+CHECK\s*(\(.*?\))\s*(,|\)$)/gs
                 while ((result = regexp.exec(sql)) !== null) {
                     table.checks.push(
                         new TableCheck({
