@@ -19,7 +19,9 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
     }
 
     async beforeMigration(): Promise<void> {
-        await this.query("PRAGMA foreign_keys = OFF")
+        if (!this.driver.options.preserveForeignKeysDuringMigrations) {
+            await this.query("PRAGMA foreign_keys = OFF")
+        }
     }
 
     async afterMigration(): Promise<void> {

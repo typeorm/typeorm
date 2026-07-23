@@ -1,9 +1,9 @@
-import type { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import type { AbstractSqliteDataSourceOptions } from "../sqlite-abstract/AbstractSqliteDataSourceOptions"
 
 /**
  * Sql.js-specific connection options.
  */
-export interface SqljsDataSourceOptions extends BaseDataSourceOptions {
+export interface SqljsDataSourceOptions extends AbstractSqliteDataSourceOptions {
     /**
      * Database type.
      */
