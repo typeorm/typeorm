@@ -11,6 +11,19 @@ export interface ColumnCommonOptions {
     select?: boolean
 
     /**
+     * Indicates if column is inserted by default.
+     * Default value is "true".
+     */
+    insert?: boolean
+
+    /**
+     * Indicates if column value is updated by "save" operation.
+     * If false, you'll be able to write this value only when you first time insert the object.
+     * Default value is "true".
+     */
+    update?: boolean
+
+    /**
      * Column name in the database.
      */
     name?: string
