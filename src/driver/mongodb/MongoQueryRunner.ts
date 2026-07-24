@@ -38,21 +38,8 @@ import type {
     UpdateOptions,
     UpdateResult,
 } from "../../driver/mongodb/typings"
-import type { MongoEntityManager } from "../../entity-manager/MongoEntityManager"
-import { TypeORMError } from "../../error"
-import type { ReadStream } from "../../platform/PlatformTools"
-import type { QueryRunner } from "../../query-runner/QueryRunner"
-import type { Table } from "../../schema-builder/table/Table"
-import type { TableCheck } from "../../schema-builder/table/TableCheck"
-import type { TableColumn } from "../../schema-builder/table/TableColumn"
-import type { TableExclusion } from "../../schema-builder/table/TableExclusion"
-import type { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
-import type { TableIndex } from "../../schema-builder/table/TableIndex"
-import type { TableUnique } from "../../schema-builder/table/TableUnique"
-import type { View } from "../../schema-builder/view/View"
-import { Broadcaster } from "../../subscriber/Broadcaster"
-import type { SqlInMemory } from "../SqlInMemory"
-import type { ReplicationMode } from "../types/ReplicationMode"
+import type { DataSource } from "../../data-source/DataSource"
+import type { LegacyReplicationMode } from "../types/ReplicationMode"
 
 /**
  * Runs queries on a single MongoDB connection.
@@ -774,7 +761,7 @@ export class MongoQueryRunner implements QueryRunner {
         )
     }
 
-    getReplicationMode(): ReplicationMode {
+    getReplicationMode(): LegacyReplicationMode {
         return "master"
     }
 
