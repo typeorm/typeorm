@@ -631,6 +631,17 @@ export class ColumnMetadata {
                     const embeddedPropertyName = embeddedMetadata.propertyName
                     const embeddedPropertyValue = value[embeddedPropertyName]
 
+                    // When embedded property is explicitly set to null,
+                    // return the column with null value so that the database
+                    // columns are set to NULL (see #3913)
+                    if (embeddedPropertyValue === null) {
+                        return {
+                            [embeddedPropertyName]: {
+                                [this.propertyName]: null,
+                            },
+                        }
+                    }
+
                     if (
                         embeddedMetadata.isArray &&
                         Array.isArray(embeddedPropertyValue)
@@ -768,7 +779,11 @@ export class ColumnMetadata {
                 propertyNames,
                 entity,
             )
-            if (embeddedObject) {
+            // When embedded object is explicitly set to null,
+            // all its columns should be null (see #3913)
+            if (embeddedObject === null) {
+                value = null
+            } else if (embeddedObject) {
                 if (this.relationMetadata && this.referencedColumn) {
                     const relatedEntity =
                         this.relationMetadata.getEntityValue(entity)
