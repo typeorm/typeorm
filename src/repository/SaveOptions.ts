@@ -36,4 +36,14 @@ export interface SaveOptions {
      * Enabled by default.
      */
     reload?: boolean
+
+    /**
+     * When set to true, skips the SELECT query that checks whether each insertable entity
+     * already exists in the database, treating those entities as new and always issuing an
+     * INSERT. Relations that are cascade-update-only (cascade: ['update'] without
+     * cascade: ['insert']) are not affected and still perform their normal existence check.
+     * Use this as a performance optimization for bulk-insert scenarios where you are certain
+     * none of the directly saved entities exist in the database yet.
+     */
+    skipExistingRecordCheck?: boolean
 }
