@@ -1176,6 +1176,9 @@ export class MysqlDriver implements Driver {
                 insecureAuth: options.insecureAuth,
                 supportBigNumbers: options.supportBigNumbers ?? true,
                 bigNumberStrings: options.bigNumberStrings ?? true,
+                decimalNumbers:
+                    (options.supportBigNumbers ?? true) &&
+                    !(options.bigNumberStrings ?? true),
                 dateStrings: options.dateStrings,
                 debug: options.debug,
                 trace: options.trace,
