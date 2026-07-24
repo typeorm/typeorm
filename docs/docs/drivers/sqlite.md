@@ -71,7 +71,7 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 
 ## Column Types
 
-`int`, `int2`, `int8`, `integer`, `tinyint`, `smallint`, `mediumint`, `bigint`, `decimal`, `numeric`, `float`, `double`, `real`, `double precision`, `datetime`, `varying character`, `character`, `native character`, `varchar`, `nchar`, `nvarchar2`, `unsigned big int`, `boolean`, `blob`, `text`, `clob`, `date`, `json`, `jsonb`
+`int`, `int2`, `int8`, `integer`, `tinyint`, `smallint`, `mediumint`, `bigint`, `decimal`, `numeric`, `float`, `double`, `real`, `double precision`, `datetime`, `varying character`, `character`, `native character`, `varchar`, `nchar`, `nvarchar2`, `unsigned big int`, `boolean`, `blob`, `text`, `clob`, `date`, `json`, `jsonb`, `any`
 
 TypeORM supports both `json` and `jsonb` types in SQLite:
 
@@ -79,3 +79,54 @@ TypeORM supports both `json` and `jsonb` types in SQLite:
 - `jsonb` is stored as SQLite's binary JSON format. TypeORM automatically wraps values with the `jsonb()` function during persistence and with the `json()` function during retrieval for transparent support and better performance.
 
 JSONB support requires SQLite 3.45.0 or newer. When using the `jsonb` column type, TypeORM will use the `jsonb` type in your database schema, which SQLite handles as a binary `BLOB` internally.
+
+## Strict Tables
+
+SQLite supports strict tables (requires SQLite 3.37.0+), which enforce type safety and enhance data integrity. To enable strict mode for an entity, use the `strict` option in the `@Entity` decorator:
+
+```typescript
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
+
+@Entity({ strict: true })
+export class User {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    @Column()
+    name: string
+
+    @Column()
+    email: string
+}
+```
+
+When strict mode is enabled, TypeORM will:
+
+- Create the table with the `STRICT` keyword
+- Automatically convert column types to SQLite strict-compatible types:
+    - Text types (`varchar`, `char`, `nchar`, etc.) → `text`
+    - Integer types (`int`, `tinyint`, `smallint`, `bigint`, etc.) → `integer`
+    - Numeric/decimal types → `real`
+    - Date/time types → `text` (SQLite stores as text)
+    - Boolean → `integer` (SQLite stores as 0/1)
+    - JSON → `text`
+    - BLOB → `blob`
+    - Other types → `any`
+
+`any` type behavior in strict tables:
+
+- `any` can be used only when entity is marked with `strict: true`.
+- Primitive values are stored using native SQLite storage classes.
+    - `number`, `string`, `bigint`, and `Uint8Array` values are persisted as-is.
+    - `boolean` values are persisted as `0` or `1`.
+- Complex values (`object` and `array`) are persisted as JSON text.
+- On hydration, JSON text representing objects/arrays (and JSON-quoted strings) is parsed back to JavaScript values.
+- Numeric values like `0` and `1` remain numbers for `any` columns.
+
+Benefits of strict tables:
+
+- **Type safety**: Ensures data stored matches the declared column type
+- **Data integrity**: Prevents type coercion issues
+- **Standards compliance**: Aligns SQLite behavior more closely with other SQL databases
+
+For more information, see the [SQLite strict tables documentation](https://www.sqlite.org/stricttables.html).

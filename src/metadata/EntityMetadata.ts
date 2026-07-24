@@ -122,6 +122,16 @@ export class EntityMetadata {
     withoutRowid?: boolean = false
 
     /**
+     * Enables strict mode. This will make sure that columns are always treated with their defined types.
+     * For example, if a column is defined as an integer, it will always be treated as an integer.
+     * This can help prevent issues with type coercion and ensure data integrity.
+     * Supports only Sqlite.
+     *
+     * @see https://www.sqlite.org/stricttables.html
+     */
+    strict?: boolean = false
+
+    /**
      * Original user-given table name (taken from schema or @Entity(tableName) decorator).
      * If user haven't specified a table name this property will be undefined.
      */
@@ -550,6 +560,7 @@ export class EntityMetadata {
         this.tableType = this.tableMetadataArgs.type
         this.expression = this.tableMetadataArgs.expression
         this.withoutRowid = this.tableMetadataArgs.withoutRowid
+        this.strict = this.tableMetadataArgs.strict
         this.dependsOn = this.tableMetadataArgs.dependsOn
     }
 
@@ -1069,6 +1080,8 @@ export class EntityMetadata {
         this.expression = this.tableMetadataArgs.expression
         this.withoutRowid =
             this.tableMetadataArgs.withoutRowid === true ? true : false
+        this.strict = this.tableMetadataArgs.strict === true
+
         this.tablePath = this.dataSource.driver.buildTableName(
             this.tableName,
             this.schema,
@@ -1098,7 +1111,7 @@ export class EntityMetadata {
      * @param column
      */
     registerColumn(column: ColumnMetadata) {
-        if (this.ownColumns.indexOf(column) !== -1) return
+        if (this.ownColumns.includes(column)) return
 
         this.ownColumns.push(column)
         this.columns = this.embeddeds.reduce(
