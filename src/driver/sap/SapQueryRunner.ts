@@ -2784,6 +2784,37 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
+     * Renames an index in place via SAP HANA's standalone `RENAME INDEX`
+     * statement. Unlike other constraints, HANA supports a native index
+     * rename; no drop+create fallback is needed.
+     *
+     * @param tableOrName
+     * @param indexOrName
+     * @param newName
+     */
+    async renameIndex(
+        tableOrName: Table | string,
+        indexOrName: TableIndex | string,
+        newName: string,
+    ): Promise<void> {
+        const table = InstanceChecker.isTable(tableOrName)
+            ? tableOrName
+            : await this.getCachedTable(tableOrName)
+        const index = InstanceChecker.isTableIndex(indexOrName)
+            ? indexOrName
+            : table.indices.find((i) => i.name === indexOrName)
+        if (!index?.name) {
+            throw new TypeORMError(
+                `Supplied index was not found in table ${table.name}`,
+            )
+        }
+
+        const { up, down } = this.renameIndexSql(table, index.name, newName)
+        await this.executeQueries(up, down)
+        index.name = newName
+    }
+
+    /**
      * Clears all table contents.
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      *
@@ -3772,6 +3803,31 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 tableOrName,
             )} DROP CONSTRAINT "${foreignKeyName}"`,
         )
+    }
+
+    /**
+     * Builds up/down queries that rename an index in place via HANA's
+     * standalone `RENAME INDEX` statement. The source identifier can be
+     * schema-qualified; the target is a bare identifier in the same schema
+     * (HANA does not support cross-schema rename).
+     *
+     * @param table
+     * @param oldName
+     * @param newName
+     * @returns Reversible up/down query pair.
+     */
+    protected renameIndexSql(
+        table: Table,
+        oldName: string,
+        newName: string,
+    ): { up: Query; down: Query } {
+        const { schema } = this.driver.parseTableName(table)
+        const qualify = (name: string) =>
+            schema ? `"${schema}"."${name}"` : `"${name}"`
+        return {
+            up: new Query(`RENAME INDEX ${qualify(oldName)} TO "${newName}"`),
+            down: new Query(`RENAME INDEX ${qualify(newName)} TO "${oldName}"`),
+        }
     }
 
     /**
