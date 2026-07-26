@@ -1326,16 +1326,18 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        // Recreate only when the base type / array / generated expression changes.
+        // Length-only changes must use ALTER COLUMN TYPE so existing data is preserved
+        // (fixes https://github.com/typeorm/typeorm/issues/3357).
         if (
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
                 newColumn.generatedType === "STORED")
         ) {
-            // To avoid data conversion, we just recreate column
+            // To avoid unsafe data conversion across incompatible types, recreate column
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
@@ -1619,9 +1621,11 @@ export class PostgresQueryRunner
             }
 
             if (
+                newColumn.length !== oldColumn.length ||
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {
+                // Same base type: ALTER TYPE preserves column data (e.g. varchar(50)→varchar(51))
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${

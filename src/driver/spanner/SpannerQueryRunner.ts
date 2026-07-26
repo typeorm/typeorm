@@ -986,10 +986,10 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        // Length-only changes ALTER TYPE below (preserves data). See typeorm#3357.
         if (
             oldColumn.name !== newColumn.name ||
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             oldColumn.isArray !== newColumn.isArray ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
@@ -1002,6 +1002,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             clonedTable = table.clone()
         } else {
             if (
+                newColumn.length !== oldColumn.length ||
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {

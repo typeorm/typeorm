@@ -1134,11 +1134,11 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 `Column "${oldColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        // Length-only changes use MODIFY below (preserves data). See typeorm#3357.
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             (oldColumn.generatedType &&
                 newColumn.generatedType &&
                 oldColumn.generatedType !== newColumn.generatedType) ||
