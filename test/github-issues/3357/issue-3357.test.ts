@@ -52,6 +52,8 @@ describe("github issues > #3357 Migration generation drops and creates columns i
         await Promise.all(
             dataSources.map(async (dataSource) => {
                 const queryRunner = dataSource.createQueryRunner()
+                queryRunner.enableSqlMemory()
+
                 const table = await queryRunner.getTable("post")
                 const oldColumn = table!.findColumnByName("title")!
 
@@ -60,13 +62,13 @@ describe("github issues > #3357 Migration generation drops and creates columns i
 
                 await queryRunner.changeColumn(table!, oldColumn, newColumn)
 
-                const executedQueries = (queryRunner as any)
-                    .executedQueries as string[]
+                const sqlInMemory = queryRunner.getMemorySql()
+                const upQueries = sqlInMemory.upQueries.map((q) => q.query)
 
-                const hasDrop = executedQueries?.some((q: string) =>
+                const hasDrop = upQueries.some((q: string) =>
                     q.includes("DROP COLUMN"),
                 )
-                const hasAlter = executedQueries?.some(
+                const hasAlter = upQueries.some(
                     (q: string) =>
                         q.includes("ALTER COLUMN") && q.includes("TYPE"),
                 )
@@ -74,6 +76,7 @@ describe("github issues > #3357 Migration generation drops and creates columns i
                 expect(hasDrop).to.not.be.true
                 expect(hasAlter).to.be.true
 
+                queryRunner.clearSqlMemory()
                 await queryRunner.release()
             }),
         )
