@@ -1146,7 +1146,6 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
         ) {
@@ -1368,6 +1367,26 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     clonedTable.columns.indexOf(oldTableColumn!)
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
+            }
+
+            if (
+                oldColumn.length !== newColumn.length &&
+                !this.isColumnChanged(oldColumn, newColumn, true)
+            ) {
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} MODIFY "${
+                            oldColumn.name
+                        }" ${this.dataSource.driver.createFullType(newColumn)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} MODIFY "${
+                            oldColumn.name
+                        }" ${this.dataSource.driver.createFullType(oldColumn)}`,
+                    ),
+                )
             }
 
             if (this.isColumnChanged(oldColumn, newColumn, true)) {

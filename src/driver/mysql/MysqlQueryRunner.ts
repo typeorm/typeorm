@@ -1138,7 +1138,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             (oldColumn.generatedType &&
                 newColumn.generatedType &&
                 oldColumn.generatedType !== newColumn.generatedType) ||
@@ -1317,6 +1316,26 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     clonedTable.columns.indexOf(oldTableColumn!)
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
+            }
+
+            if (
+                oldColumn.length !== newColumn.length &&
+                !this.isColumnChanged(oldColumn, newColumn, true, true)
+            ) {
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                            oldColumn.name
+                        }\` ${this.buildCreateColumnSql(newColumn, true)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                            newColumn.name
+                        }\` ${this.buildCreateColumnSql(oldColumn, true)}`,
+                    ),
+                )
             }
 
             if (this.isColumnChanged(oldColumn, newColumn, true, true)) {

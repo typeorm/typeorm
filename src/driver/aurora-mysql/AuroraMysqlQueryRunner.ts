@@ -889,7 +889,6 @@ export class AuroraMysqlQueryRunner
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             oldColumn.generatedType !== newColumn.generatedType
         ) {
             await this.dropColumn(table, oldColumn)
@@ -1036,6 +1035,26 @@ export class AuroraMysqlQueryRunner
                     clonedTable.columns.indexOf(oldTableColumn!)
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
+            }
+
+            if (
+                oldColumn.length !== newColumn.length &&
+                !this.isColumnChanged(oldColumn, newColumn, true)
+            ) {
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                            oldColumn.name
+                        }\` ${this.buildCreateColumnSql(newColumn, true)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                            newColumn.name
+                        }\` ${this.buildCreateColumnSql(oldColumn, true)}`,
+                    ),
+                )
             }
 
             if (this.isColumnChanged(oldColumn, newColumn, true)) {

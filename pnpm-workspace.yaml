@@ -1,0 +1,8 @@
+allowBuilds:
+  '@sap/hana-client': set this to true or false
+  better-sqlite3: set this to true or false
+  cpu-features: set this to true or false
+  libpq: set this to true or false
+  oracledb: set this to true or false
+  protobufjs: set this to true or false
+  ssh2: set this to true or false
