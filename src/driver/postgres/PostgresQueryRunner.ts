@@ -1328,7 +1328,6 @@ export class PostgresQueryRunner
 
         if (
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1341,6 +1340,47 @@ export class PostgresQueryRunner
 
             // update cloned table
             clonedTable = table.clone()
+        } else if (
+            oldColumn.length !== newColumn.length
+        ) {
+            // Only length changed - check if we can safely use ALTER COLUMN TYPE
+            // For string types (varchar, char, text, etc.), increasing length is safe
+            const stringTypes = [
+                "varchar",
+                "character varying",
+                "char",
+                "character",
+                "text",
+                "bpchar",
+                "citext",
+            ]
+            const oldType = (oldColumn.type || "").toLowerCase()
+            const isStringType = stringTypes.includes(oldType)
+            const isLengthIncrease = 
+                typeof oldColumn.length === "number" &&
+                typeof newColumn.length === "number" &&
+                newColumn.length >= oldColumn.length
+
+            if (isStringType && isLengthIncrease) {
+                // Safe to use ALTER COLUMN TYPE for length increase
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(newColumn)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" TYPE ${this.driver.createFullType(oldColumn)}`,
+                    ),
+                )
+            } else {
+                // Unsafe or unsupported length change - recreate column
+                await this.dropColumn(table, oldColumn)
+                await this.addColumn(table, newColumn)
+
+                // update cloned table
+                clonedTable = table.clone()
+            }
         } else {
             if (oldColumn.name !== newColumn.name) {
                 // rename column
