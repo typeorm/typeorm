@@ -1,5 +1,5 @@
 <div align="center">
-  <a href="http://typeorm.io/">
+  <a href="https://typeorm.io/">
     <picture>
         <source media="(prefers-color-scheme: dark)" srcset="https://github.com/typeorm/typeorm/raw/master/resources/typeorm-logo-colored-light.png">
         <source  media="(prefers-color-scheme: light)" srcset="https://github.com/typeorm/typeorm/raw/master/resources/typeorm-logo-colored-dark.png">
@@ -22,8 +22,8 @@ TypeORM supports more databases than any other JS/TS ORM: [Google Spanner](./doc
 
 TypeORM supports both [Active Record](./docs/docs/guides/1-active-record-data-mapper.md#what-is-the-active-record-pattern) and [Data Mapper](./docs/docs/guides/1-active-record-data-mapper.md#what-is-the-data-mapper-pattern) patterns, unlike all other JavaScript ORMs currently in existence, which means you can write high-quality, loosely coupled, scalable, maintainable applications in the most productive way.
 
-TypeORM is highly influenced by other ORMs, such as [Hibernate](http://hibernate.org/orm/),
-[Doctrine](http://www.doctrine-project.org/) and [Entity Framework](https://www.asp.net/entity-framework).
+TypeORM is highly influenced by other ORMs, such as [Hibernate](https://hibernate.org/orm/),
+[Doctrine](https://www.doctrine-project.org/) and [Entity Framework](https://www.asp.net/entity-framework).
 
 ## Features
 
