@@ -48,24 +48,20 @@ describe("query runner > add column", () => {
                 })
 
                 // CockroachDB and Spanner does not support altering primary key constraint
-                if (
-                    !(
-                        dataSource.driver.options.type === "cockroachdb" ||
-                        dataSource.driver.options.type === "spanner"
-                    )
-                )
+                if (!(
+                    dataSource.driver.options.type === "cockroachdb" ||
+                    dataSource.driver.options.type === "spanner"
+                ))
                     column1.isPrimary = true
 
                 // MySql, CockroachDB and Sqlite does not supports autoincrement composite primary keys.
                 // Spanner does not support autoincrement.
-                if (
-                    !(
-                        DriverUtils.isMySQLFamily(dataSource.driver) ||
-                        DriverUtils.isSQLiteFamily(dataSource.driver) ||
-                        dataSource.driver.options.type === "cockroachdb" ||
-                        dataSource.driver.options.type === "spanner"
-                    )
-                ) {
+                if (!(
+                    DriverUtils.isMySQLFamily(dataSource.driver) ||
+                    DriverUtils.isSQLiteFamily(dataSource.driver) ||
+                    dataSource.driver.options.type === "cockroachdb" ||
+                    dataSource.driver.options.type === "spanner"
+                )) {
                     column1.isGenerated = true
                     column1.generationStrategy = "increment"
                 }
@@ -110,24 +106,20 @@ describe("query runner > add column", () => {
                 }
 
                 // CockroachDB and Spanner does not support altering primary key constraint
-                if (
-                    !(
-                        dataSource.driver.options.type === "cockroachdb" ||
-                        dataSource.driver.options.type === "spanner"
-                    )
-                )
+                if (!(
+                    dataSource.driver.options.type === "cockroachdb" ||
+                    dataSource.driver.options.type === "spanner"
+                ))
                     column1!.isPrimary.should.be.true
 
                 // MySql, CockroachDB and Sqlite does not supports autoincrement composite primary keys.
                 // Spanner does not support autoincrement.
-                if (
-                    !(
-                        DriverUtils.isMySQLFamily(dataSource.driver) ||
-                        DriverUtils.isSQLiteFamily(dataSource.driver) ||
-                        dataSource.driver.options.type === "cockroachdb" ||
-                        dataSource.driver.options.type === "spanner"
-                    )
-                ) {
+                if (!(
+                    DriverUtils.isMySQLFamily(dataSource.driver) ||
+                    DriverUtils.isSQLiteFamily(dataSource.driver) ||
+                    dataSource.driver.options.type === "cockroachdb" ||
+                    dataSource.driver.options.type === "spanner"
+                )) {
                     column1!.isGenerated.should.be.true
                     column1!.generationStrategy!.should.be.equal("increment")
                 }

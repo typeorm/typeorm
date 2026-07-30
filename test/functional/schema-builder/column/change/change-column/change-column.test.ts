@@ -371,14 +371,12 @@ describe("schema builder > change column", () => {
         Promise.all(
             dataSources.map(async (dataSource) => {
                 // Skip the contents of this test if not one of the drivers that support comments
-                if (
-                    !(
-                        dataSource.driver.options.type === "cockroachdb" ||
-                        dataSource.driver.options.type === "postgres" ||
-                        dataSource.driver.options.type === "sap" ||
-                        DriverUtils.isMySQLFamily(dataSource.driver)
-                    )
-                ) {
+                if (!(
+                    dataSource.driver.options.type === "cockroachdb" ||
+                    dataSource.driver.options.type === "postgres" ||
+                    dataSource.driver.options.type === "sap" ||
+                    DriverUtils.isMySQLFamily(dataSource.driver)
+                )) {
                     return
                 }
 

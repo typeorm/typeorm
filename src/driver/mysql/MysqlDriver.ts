@@ -1289,25 +1289,28 @@ export class MysqlDriver implements Driver {
     protected normalizeDatetimeFunction(value?: string) {
         if (!value) return value
 
-        // check if input is datetime function
-        const isDatetimeFunction =
-            value.toUpperCase().indexOf("CURRENT_TIMESTAMP") !== -1 ||
-            value.toUpperCase().indexOf("NOW") !== -1
+        const match = value
+            .trim()
+            .toUpperCase()
+            .match(/^(CURRENT_TIMESTAMP|NOW)(\(\d*\))?$/)
 
-        if (isDatetimeFunction) {
-            // extract precision, e.g. "(3)"
-            const precision = value.match(/\(\d+\)/)
-            if (this.options.type === "mariadb") {
-                return precision
-                    ? `CURRENT_TIMESTAMP${precision[0]}`
-                    : "CURRENT_TIMESTAMP()"
-            } else {
-                return precision
-                    ? `CURRENT_TIMESTAMP${precision[0]}`
-                    : "CURRENT_TIMESTAMP"
-            }
-        } else {
-            return value
+        if (!match) return value
+
+        const [, funcName, precision = ""] = match
+
+        switch (funcName) {
+            case "CURRENT_TIMESTAMP":
+            case "NOW":
+                if (this.options.type === "mariadb") {
+                    return precision
+                        ? `CURRENT_TIMESTAMP${precision}`
+                        : `CURRENT_TIMESTAMP()`
+                }
+                return precision === "()"
+                    ? `CURRENT_TIMESTAMP`
+                    : `CURRENT_TIMESTAMP${precision}`
+            default:
+                return value
         }
     }
 

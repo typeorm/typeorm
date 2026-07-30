@@ -68,7 +68,9 @@ export class ConnectionMetadataBuilder {
             .filterSubscribers(allSubscriberClasses)
             .map(
                 (metadata) =>
-                    new (metadata.target as new () => EntitySubscriberInterface<any>)(),
+                    new (
+                        metadata.target as new () => EntitySubscriberInterface<any>
+                    )(),
             )
     }
 

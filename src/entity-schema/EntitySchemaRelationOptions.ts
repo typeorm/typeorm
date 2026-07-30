@@ -79,8 +79,7 @@ export interface EntitySchemaRelationOptions {
      * This is option a shortcut if you would like to set cascadeInsert, cascadeUpdate and cascadeRemove to true.
      */
     cascade?:
-        | boolean
-        | ("insert" | "update" | "remove" | "soft-remove" | "recover")[]
+        boolean | ("insert" | "update" | "remove" | "soft-remove" | "recover")[]
 
     /**
      * Default database value.

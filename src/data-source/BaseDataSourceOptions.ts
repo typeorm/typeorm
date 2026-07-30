@@ -1,13 +1,17 @@
-import type { EntitySchema } from "../entity-schema/EntitySchema"
-import type { LoggerOptions } from "../logger/LoggerOptions"
-import type { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
+import type { QueryResultCache } from "../cache/QueryResultCache"
+import type { MixedList } from "../common/MixedList"
+import type { DataSource } from "../data-source/DataSource"
 import type { DatabaseType } from "../driver/types/DatabaseType"
+import type { InvalidFindOptionsWhereBehavior } from "../driver/types/InvalidFindOptionsWhereBehavior"
 import type { IsolationLevel } from "../driver/types/IsolationLevel"
+import type { EntitySchema } from "../entity-schema/EntitySchema"
 import type { Logger } from "../logger/Logger"
 import type { DataSource } from "../data-source/DataSource"
 import type { QueryResultCache } from "../cache/QueryResultCache"
 import type { MixedList } from "../common/MixedList"
 import type { EntityMetadata } from "../metadata/EntityMetadata"
+import type { LoggerOptions } from "../logger/LoggerOptions"
+import type { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
 
 /**
  * BaseDataSourceOptions is set of DataSourceOptions shared by all database types.
@@ -177,10 +181,7 @@ export interface BaseDataSourceOptions {
                * - "redis" means cached values will be stored inside redis. You must provide redis connection options.
                */
               readonly type?:
-                  | "database"
-                  | "redis"
-                  | "ioredis"
-                  | "ioredis/cluster" // todo: add mongodb and other cache providers as well in the future
+                  "database" | "redis" | "ioredis" | "ioredis/cluster" // todo: add mongodb and other cache providers as well in the future
 
               /**
                * Factory function for custom cache providers that implement QueryResultCache.
@@ -260,4 +261,8 @@ export interface BaseDataSourceOptions {
      *
      */
     readonly prepareEntityMetadata?: (meta: EntityMetadata) => unknown
+     * Controls how null/undefined values in where criteria are handled by find
+     * and write methods (update/delete/softDelete/restore). Defaults to "throw".
+     */
+    readonly invalidWhereValuesBehavior?: InvalidFindOptionsWhereBehavior
 }

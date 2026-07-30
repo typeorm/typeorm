@@ -615,8 +615,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                             ) {
                                 const useLegacy = (
                                     this.dataSource.driver as
-                                        | MysqlDriver
-                                        | AuroraMysqlDriver
+                                        MysqlDriver | AuroraMysqlDriver
                                 ).options.legacySpatialSupport
                                 const geomFromText = useLegacy
                                     ? "GeomFromText"
@@ -660,8 +659,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                             ) {
                                 expression = (
                                     this.dataSource.driver as
-                                        | AbstractSqliteDriver
-                                        | ReactNativeDriver
+                                        AbstractSqliteDriver | ReactNativeDriver
                                 ).wrapWithJsonFunction(paramName, column, true)
                             } else {
                                 expression = paramName

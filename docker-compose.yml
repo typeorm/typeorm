@@ -106,6 +106,15 @@ services:
     environment:
       ORACLE_PWD: "oracle"
       ORACLE_SID: "FREE"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "echo 'EXIT' | sqlplus -L typeorm/oracle@localhost:1521/FREEPDB1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     volumes:
       # - oracle-data:/opt/oracle/oradata
       - ./docker/oracle/startup:/opt/oracle/scripts/startup:ro

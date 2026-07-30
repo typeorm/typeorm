@@ -7,8 +7,10 @@ export class RandomGenerator {
      * @returns A version 4 UUID string
      */
     static uuidv4(): string {
+        const crypto = globalThis.crypto as typeof globalThis.crypto | undefined
+
         // Try native crypto.randomUUID() (available in Node.js 19+ and modern browsers)
-        const uuid = globalThis.crypto?.randomUUID?.()
+        const uuid = crypto?.randomUUID?.()
         if (uuid) {
             return uuid
         }
@@ -17,8 +19,8 @@ export class RandomGenerator {
         // Based on RFC 4122 version 4 UUID specification
         const randomBytes = new Uint8Array(16)
 
-        if (globalThis.crypto?.getRandomValues) {
-            globalThis.crypto.getRandomValues(randomBytes)
+        if (crypto?.getRandomValues) {
+            crypto.getRandomValues(randomBytes)
         } else {
             // Fallback for React Native/Hermes and environments without crypto support
             // Hermes (React Native's JavaScript engine) does not provide crypto APIs

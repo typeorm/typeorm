@@ -115,4 +115,40 @@ describe("query builder > count", () => {
                 expect(count).to.be.equal(6, dataSource.options.type)
             }),
         ))
+
+    it("getCount should not switch to distinct when query builder selects non-unique column", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(Test)
+
+                await repo.save({
+                    varcharField: "group-a",
+                    uuidField: "123e4567-e89b-12d3-a456-426614174000",
+                    intField: 1,
+                })
+                await repo.save({
+                    varcharField: "group-a",
+                    uuidField: "123e4567-e89b-12d3-a456-426614174001",
+                    intField: 2,
+                })
+                await repo.save({
+                    varcharField: "group-b",
+                    uuidField: "123e4567-e89b-12d3-a456-426614174002",
+                    intField: 3,
+                })
+
+                const count = await repo
+                    .createQueryBuilder("main")
+                    .select("main.varcharField")
+                    .getCount()
+
+                const [, countFromFindAndCount] = await repo
+                    .createQueryBuilder("main")
+                    .select("main.varcharField")
+                    .getManyAndCount()
+
+                expect(count).to.equal(3)
+                expect(countFromFindAndCount).to.equal(3)
+            }),
+        ))
 })

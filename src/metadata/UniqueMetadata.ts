@@ -48,8 +48,7 @@ export class UniqueMetadata {
      * User specified column names.
      */
     givenColumnNames?:
-        | ((object?: any) => any[] | { [key: string]: number })
-        | string[]
+        ((object?: any) => any[] | { [key: string]: number }) | string[]
 
     /**
      * Final unique constraint name.

@@ -4,10 +4,10 @@ import type {
     PrimitiveCriteria,
     SinglePrimitiveCriteria,
 } from "../common/PrimitiveCriteria"
-import { areUint8ArraysEqual, isUint8Array } from "./Uint8ArrayUtils"
-import { InstanceChecker } from "./InstanceChecker"
+import type { InvalidFindOptionsWhereBehavior } from "../driver/types/InvalidFindOptionsWhereBehavior"
 import { TypeORMError } from "../error"
 import { IsNull } from "../find-options/operator/IsNull"
+import { areUint8ArraysEqual, isUint8Array } from "./Uint8ArrayUtils"
 
 export class OrmUtils {
     // -------------------------------------------------------------------------
@@ -380,7 +380,11 @@ export class OrmUtils {
     }
 
     /**
-     * Checks if given criteria is null or empty.
+     * Checks whether the given criteria is null or wholly empty — `null`,
+     * `undefined`, `""`, an empty array, or an empty plain object. Does not
+     * recurse into array elements, so it is safe on self-referential/cyclic
+     * arrays. Per-element OR-branch emptiness (an array containing an empty
+     * element) is handled where object criteria is validated, not here.
      *
      * @param criteria
      */
@@ -650,28 +654,50 @@ export class OrmUtils {
     }
 
     /**
-     * Recursively validates an object where clause, throwing for null/undefined
-     * based on the provided invalidWhereValuesBehavior config.
+     * Applies invalidWhereValuesBehavior to a plain-object where criteria: for
+     * each own key a null/undefined value is thrown on, skipped, or converted
+     * to IsNull() per the configured behavior. A top-level array (OR list) is
+     * normalized element by element. Anything else — an entity/class instance,
+     * a FindOperator, Date, Buffer, a primitive — is returned untouched.
+     *
+     * When no behavior is configured, both sub-options default to "throw", so a
+     * null/undefined value throws by default — matching the read/find path.
      *
      * @param criteria
      * @param options
-     * @param options.null
-     * @param options.undefined
      * @param path
      */
     static normalizeWhereCriteria(
-        criteria: ObjectLiteral,
-        options?: {
-            null?: "ignore" | "sql-null" | "throw"
-            undefined?: "ignore" | "throw"
-        },
+        criteria: any,
+        options?: InvalidFindOptionsWhereBehavior,
         path?: string,
-    ): ObjectLiteral {
-        if (!options) return criteria
+    ): any {
+        // default to "throw" when unconfigured, matching the read/find path
+        options ??= {}
+
+        // multiple criteria are possible at the top level
+        if (!path && Array.isArray(criteria)) {
+            return criteria.map((criterion, index): ObjectLiteral =>
+                OrmUtils.normalizeWhereCriteria(
+                    criterion,
+                    options,
+                    String(index),
+                ),
+            )
+        }
+
+        // Only iterate a plain object criteria. Anything else — an entity/class
+        // instance, a FindOperator, an array, Date, Buffer, a primitive — is
+        // passed through untouched (its keys are not a bag of column
+        // conditions). Validating those properly would need entity metadata,
+        // which is out of scope here.
+        if (!OrmUtils.isPlainObject(criteria)) {
+            return criteria
+        }
 
         const result: ObjectLiteral = {}
-
         for (const [key, value] of Object.entries(criteria)) {
+            if (key === "__proto__") continue
             const propertyPath = path ? `${path}.${key}` : key
 
             if (value === undefined) {
@@ -682,7 +708,7 @@ export class OrmUtils {
                             `Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
                     )
                 }
-                // "ignore" — skip this key
+                // else: "ignore" — skip this key
             } else if (value === null) {
                 const behavior = options?.null ?? "throw"
                 if (behavior === "throw") {
@@ -694,13 +720,8 @@ export class OrmUtils {
                 } else if (behavior === "sql-null") {
                     result[key] = IsNull()
                 }
-                // "ignore" — skip this key
-            } else if (
-                typeof value === "object" &&
-                !Array.isArray(value) &&
-                !(value instanceof Date) &&
-                !InstanceChecker.isFindOperator(value)
-            ) {
+                // else: "ignore" — skip this key
+            } else if (OrmUtils.isPlainObject(value)) {
                 const nested = OrmUtils.normalizeWhereCriteria(
                     value,
                     options,

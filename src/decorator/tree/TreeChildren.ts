@@ -11,8 +11,7 @@ import type { RelationOptions } from "../options/RelationOptions"
  */
 export function TreeChildren(options?: {
     cascade?:
-        | boolean
-        | ("insert" | "update" | "remove" | "soft-remove" | "recover")[]
+        boolean | ("insert" | "update" | "remove" | "soft-remove" | "recover")[]
 }): PropertyDecorator {
     return function (object: Object, propertyName: string) {
         options ??= {} as RelationOptions
