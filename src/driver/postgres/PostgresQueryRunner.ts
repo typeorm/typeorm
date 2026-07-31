@@ -3745,6 +3745,49 @@ export class PostgresQueryRunner
         const dbIndices: ObjectLiteral[] = await this.query(indicesSql)
         const dbForeignKeys: ObjectLiteral[] = await this.query(foreignKeysSql)
 
+        // Group the flat catalog rows once. Building each table used to re-scan
+        // every column, constraint, foreign key and index array, so the cost grew
+        // as tables x rows. Grouping first makes each lookup O(1).
+        // NUL separates key parts because a Postgres identifier can never contain it.
+        const groupBy = (
+            items: ObjectLiteral[],
+            keyOf: (item: ObjectLiteral) => string,
+        ): Map<string, ObjectLiteral[]> => {
+            const map = new Map<string, ObjectLiteral[]>()
+            for (const item of items) {
+                const key = keyOf(item)
+                const bucket = map.get(key)
+                if (bucket) bucket.push(item)
+                else map.set(key, [item])
+            }
+            return map
+        }
+        const tableKey = (row: ObjectLiteral) =>
+            `${row["table_schema"]}\u0000${row["table_name"]}`
+        // Shared empty result. Consumers only read it, never mutate.
+        const noRows: ObjectLiteral[] = []
+
+        const dbColumnsByTable = groupBy(dbColumns, tableKey)
+        const dbConstraintsByTable = groupBy(dbConstraints, tableKey)
+        const dbConstraintsByColumn = groupBy(
+            dbConstraints,
+            (row) => `${tableKey(row)}\u0000${row["column_name"]}`,
+        )
+        const dbConstraintsByName = groupBy(
+            dbConstraints,
+            (row) => row["constraint_name"],
+        )
+        const dbForeignKeysByTable = groupBy(dbForeignKeys, tableKey)
+        const dbForeignKeysByName = groupBy(
+            dbForeignKeys,
+            (row) => row["constraint_name"],
+        )
+        const dbIndicesByTable = groupBy(dbIndices, tableKey)
+        const dbIndicesByTableAndName = groupBy(
+            dbIndices,
+            (row) => `${tableKey(row)}\u0000${row["constraint_name"]}`,
+        )
+
         // create tables for loaded tables
         return Promise.all(
             dbTables.map(async (dbTable) => {
@@ -3769,27 +3812,14 @@ export class PostgresQueryRunner
 
                 // create columns from the loaded columns
                 table.columns = await Promise.all(
-                    dbColumns
-                        .filter(
-                            (dbColumn) =>
-                                dbColumn["table_name"] ===
-                                    dbTable["table_name"] &&
-                                dbColumn["table_schema"] ===
-                                    dbTable["table_schema"],
-                        )
-                        .map(async (dbColumn) => {
-                            const columnConstraints = dbConstraints.filter(
-                                (dbConstraint) => {
-                                    return (
-                                        dbConstraint["table_name"] ===
-                                            dbColumn["table_name"] &&
-                                        dbConstraint["table_schema"] ===
-                                            dbColumn["table_schema"] &&
-                                        dbConstraint["column_name"] ===
-                                            dbColumn["column_name"]
-                                    )
-                                },
-                            )
+                    (dbColumnsByTable.get(tableKey(dbTable)) ?? noRows).map(
+                        async (dbColumn) => {
+                            const columnConstraints =
+                                dbConstraintsByColumn.get(
+                                    `${tableKey(dbColumn)}\u0000${
+                                        dbColumn["column_name"]
+                                    }`,
+                                ) ?? noRows
 
                             const tableColumn = new TableColumn()
                             tableColumn.name = dbColumn["column_name"]
@@ -4191,29 +4221,26 @@ export class PostgresQueryRunner
                                 tableColumn.collation =
                                     dbColumn["collation_name"]
                             return tableColumn
-                        }),
+                        },
+                    ),
                 )
 
                 // find unique constraints of table, group them by constraint name and build TableUnique.
                 const tableUniqueConstraints = OrmUtils.uniq(
-                    dbConstraints.filter((dbConstraint) => {
-                        return (
-                            dbConstraint["table_name"] ===
-                                dbTable["table_name"] &&
-                            dbConstraint["table_schema"] ===
-                                dbTable["table_schema"] &&
-                            dbConstraint["constraint_type"] === "UNIQUE"
-                        )
-                    }),
+                    (
+                        dbConstraintsByTable.get(tableKey(dbTable)) ?? noRows
+                    ).filter(
+                        (dbConstraint) =>
+                            dbConstraint["constraint_type"] === "UNIQUE",
+                    ),
                     (dbConstraint) => dbConstraint["constraint_name"],
                 )
 
                 table.uniques = tableUniqueConstraints.map((constraint) => {
-                    const uniques = dbConstraints.filter(
-                        (dbC) =>
-                            dbC["constraint_name"] ===
+                    const uniques =
+                        dbConstraintsByName.get(
                             constraint["constraint_name"],
-                    )
+                        ) ?? noRows
                     return new TableUnique({
                         name: constraint["constraint_name"],
                         columnNames: uniques.map((u) => u["column_name"]),
@@ -4225,15 +4252,12 @@ export class PostgresQueryRunner
 
                 // find check constraints of table, group them by constraint name and build TableCheck.
                 const tableCheckConstraints = OrmUtils.uniq(
-                    dbConstraints.filter((dbConstraint) => {
-                        return (
-                            dbConstraint["table_name"] ===
-                                dbTable["table_name"] &&
-                            dbConstraint["table_schema"] ===
-                                dbTable["table_schema"] &&
-                            dbConstraint["constraint_type"] === "CHECK"
-                        )
-                    }),
+                    (
+                        dbConstraintsByTable.get(tableKey(dbTable)) ?? noRows
+                    ).filter(
+                        (dbConstraint) =>
+                            dbConstraint["constraint_type"] === "CHECK",
+                    ),
                     (dbConstraint) => dbConstraint["constraint_name"],
                 )
 
@@ -4255,15 +4279,12 @@ export class PostgresQueryRunner
 
                 // find exclusion constraints of table, group them by constraint name and build TableExclusion.
                 const tableExclusionConstraints = OrmUtils.uniq(
-                    dbConstraints.filter((dbConstraint) => {
-                        return (
-                            dbConstraint["table_name"] ===
-                                dbTable["table_name"] &&
-                            dbConstraint["table_schema"] ===
-                                dbTable["table_schema"] &&
-                            dbConstraint["constraint_type"] === "EXCLUDE"
-                        )
-                    }),
+                    (
+                        dbConstraintsByTable.get(tableKey(dbTable)) ?? noRows
+                    ).filter(
+                        (dbConstraint) =>
+                            dbConstraint["constraint_type"] === "EXCLUDE",
+                    ),
                     (dbConstraint) => dbConstraint["constraint_name"],
                 )
 
@@ -4278,24 +4299,16 @@ export class PostgresQueryRunner
 
                 // find foreign key constraints of table, group them by constraint name and build TableForeignKey.
                 const tableForeignKeyConstraints = OrmUtils.uniq(
-                    dbForeignKeys.filter((dbForeignKey) => {
-                        return (
-                            dbForeignKey["table_name"] ===
-                                dbTable["table_name"] &&
-                            dbForeignKey["table_schema"] ===
-                                dbTable["table_schema"]
-                        )
-                    }),
+                    dbForeignKeysByTable.get(tableKey(dbTable)) ?? noRows,
                     (dbForeignKey) => dbForeignKey["constraint_name"],
                 )
 
                 table.foreignKeys = tableForeignKeyConstraints.map(
                     (dbForeignKey) => {
-                        const foreignKeys = dbForeignKeys.filter(
-                            (dbFk) =>
-                                dbFk["constraint_name"] ===
+                        const foreignKeys =
+                            dbForeignKeysByName.get(
                                 dbForeignKey["constraint_name"],
-                        )
+                            ) ?? noRows
 
                         // if referenced table located in currently used schema, we don't need to concat schema name to table name.
                         const schema = getSchemaFromKey(
@@ -4329,25 +4342,17 @@ export class PostgresQueryRunner
 
                 // find index constraints of table, group them by constraint name and build TableIndex.
                 const tableIndexConstraints = OrmUtils.uniq(
-                    dbIndices.filter((dbIndex) => {
-                        return (
-                            dbIndex["table_name"] === dbTable["table_name"] &&
-                            dbIndex["table_schema"] === dbTable["table_schema"]
-                        )
-                    }),
+                    dbIndicesByTable.get(tableKey(dbTable)) ?? noRows,
                     (dbIndex) => dbIndex["constraint_name"],
                 )
 
                 table.indices = tableIndexConstraints.map((constraint) => {
-                    const indices = dbIndices.filter((index) => {
-                        return (
-                            index["table_schema"] ===
-                                constraint["table_schema"] &&
-                            index["table_name"] === constraint["table_name"] &&
-                            index["constraint_name"] ===
+                    const indices =
+                        dbIndicesByTableAndName.get(
+                            `${tableKey(constraint)}\u0000${
                                 constraint["constraint_name"]
-                        )
-                    })
+                            }`,
+                        ) ?? noRows
                     return new TableIndex(<TableIndexOptions>{
                         table: table,
                         name: constraint["constraint_name"],
