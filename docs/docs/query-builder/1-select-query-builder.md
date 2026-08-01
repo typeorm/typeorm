@@ -967,7 +967,7 @@ const users = await dataSource
     .getMany()
 ```
 
-Optimistic locking works in conjunction with both `@Version` and `@UpdatedDate` decorators.
+Optimistic locking works in conjunction with either the `@VersionColumn` or `@UpdateDateColumn` decorator.
 
 ### Lock tables
 
