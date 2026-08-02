@@ -1,3 +1,4 @@
+import { PlatformTools } from "../../platform/PlatformTools"
 import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { NamedPlaceholdersNotSupportedError } from "../../error/NamedPlaceholdersNotSupportedError"
 import { QueryFailedError } from "../../error/QueryFailedError"
@@ -98,7 +99,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
         await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
         const broadcasterResult = new BroadcasterResult()
-        const queryStartTime = performance.now()
+        const queryStartTime = PlatformTools.performanceNow()
         let statement: any
 
         try {
@@ -120,7 +121,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = performance.now()
+            const queryEndTime = PlatformTools.performanceNow()
             const queryExecutionTime = queryEndTime - queryStartTime
 
             if (

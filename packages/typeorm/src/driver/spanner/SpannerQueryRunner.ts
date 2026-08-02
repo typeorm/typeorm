@@ -4,6 +4,7 @@ import { NamedPlaceholdersNotSupportedError } from "../../error/NamedPlaceholder
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
+import { PlatformTools } from "../../platform/PlatformTools"
 import type { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryResult } from "../../query-runner/QueryResult"
@@ -240,7 +241,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         const broadcasterResult = new BroadcasterResult()
 
         try {
-            const queryStartTime = performance.now()
+            const queryStartTime = PlatformTools.performanceNow()
             let rawResult:
                 | [
                       any[],
@@ -306,7 +307,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = performance.now()
+            const queryEndTime = PlatformTools.performanceNow()
             const queryExecutionTime = queryEndTime - queryStartTime
 
             this.broadcaster.broadcastAfterQueryEvent(
@@ -379,14 +380,14 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         this.driver.dataSource.logger.logQuery(query, parameters, this)
         try {
-            const queryStartTime = performance.now()
+            const queryStartTime = PlatformTools.performanceNow()
             const [operation] =
                 await this.driver.instanceDatabase.updateSchema(query)
             await operation.promise()
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = performance.now()
+            const queryEndTime = PlatformTools.performanceNow()
             const queryExecutionTime = queryEndTime - queryStartTime
             if (
                 maxQueryExecutionTime &&

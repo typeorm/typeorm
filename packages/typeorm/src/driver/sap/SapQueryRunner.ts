@@ -4,6 +4,7 @@ import { QueryFailedError, TypeORMError } from "../../error"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionAlreadyStartedError } from "../../error/TransactionAlreadyStartedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
+import { PlatformTools } from "../../platform/PlatformTools"
 import type { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryLock } from "../../query-runner/QueryLock"
@@ -227,7 +228,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const broadcasterResult = new BroadcasterResult()
 
         try {
-            const queryStartTime = performance.now()
+            const queryStartTime = PlatformTools.performanceNow()
             const isInsertQuery = query.startsWith("INSERT INTO")
 
             if (parameters?.some(Array.isArray)) {
@@ -257,7 +258,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.dataSource.options.maxQueryExecutionTime
-            const queryEndTime = performance.now()
+            const queryEndTime = PlatformTools.performanceNow()
             const queryExecutionTime = queryEndTime - queryStartTime
 
             this.broadcaster.broadcastAfterQueryEvent(

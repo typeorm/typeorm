@@ -4,6 +4,7 @@ import { NamedPlaceholdersNotSupportedError } from "../../error/NamedPlaceholder
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
+import { PlatformTools } from "../../platform/PlatformTools"
 import type { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryLock } from "../../query-runner/QueryLock"
@@ -264,14 +265,15 @@ export class SqlServerQueryRunner
                     }
                 })
             }
-            queryStartTime = performance.now()
+            queryStartTime = PlatformTools.performanceNow()
 
             const raw = await request.query(query).catch((err: Error) => {
                 throw new QueryFailedError(query, parameters, err)
             })
 
             // log slow queries if maxQueryExecution time is set
-            const queryExecutionTime = performance.now() - queryStartTime
+            const queryExecutionTime =
+                PlatformTools.performanceNow() - queryStartTime
 
             this.broadcaster.broadcastAfterQueryEvent(
                 broadcasterResult,
@@ -317,9 +319,10 @@ export class SqlServerQueryRunner
 
             return useStructuredResult ? result : result.raw
         } catch (err) {
-            const queryExecutionTime = queryStartTime
-                ? performance.now() - queryStartTime
-                : undefined
+            const queryExecutionTime =
+                queryStartTime !== undefined
+                    ? PlatformTools.performanceNow() - queryStartTime
+                    : undefined
 
             if (
                 maxQueryExecutionTime &&
