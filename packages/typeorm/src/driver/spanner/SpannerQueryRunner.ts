@@ -240,7 +240,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         const broadcasterResult = new BroadcasterResult()
 
         try {
-            const queryStartTime = Date.now()
+            const queryStartTime = performance.now()
             let rawResult:
                 | [
                       any[],
@@ -306,7 +306,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = Date.now()
+            const queryEndTime = performance.now()
             const queryExecutionTime = queryEndTime - queryStartTime
 
             this.broadcaster.broadcastAfterQueryEvent(
@@ -379,14 +379,14 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         this.driver.dataSource.logger.logQuery(query, parameters, this)
         try {
-            const queryStartTime = Date.now()
+            const queryStartTime = performance.now()
             const [operation] =
                 await this.driver.instanceDatabase.updateSchema(query)
             await operation.promise()
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = Date.now()
+            const queryEndTime = performance.now()
             const queryExecutionTime = queryEndTime - queryStartTime
             if (
                 maxQueryExecutionTime &&

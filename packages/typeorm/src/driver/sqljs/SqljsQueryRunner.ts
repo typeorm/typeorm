@@ -98,7 +98,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
         await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
         const broadcasterResult = new BroadcasterResult()
-        const queryStartTime = Date.now()
+        const queryStartTime = performance.now()
         let statement: any
 
         try {
@@ -120,7 +120,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = Date.now()
+            const queryEndTime = performance.now()
             const queryExecutionTime = queryEndTime - queryStartTime
 
             if (

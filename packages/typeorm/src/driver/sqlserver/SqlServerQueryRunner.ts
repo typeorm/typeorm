@@ -264,14 +264,14 @@ export class SqlServerQueryRunner
                     }
                 })
             }
-            queryStartTime = Date.now()
+            queryStartTime = performance.now()
 
             const raw = await request.query(query).catch((err: Error) => {
                 throw new QueryFailedError(query, parameters, err)
             })
 
             // log slow queries if maxQueryExecution time is set
-            const queryExecutionTime = Date.now() - queryStartTime
+            const queryExecutionTime = performance.now() - queryStartTime
 
             this.broadcaster.broadcastAfterQueryEvent(
                 broadcasterResult,
@@ -318,7 +318,7 @@ export class SqlServerQueryRunner
             return useStructuredResult ? result : result.raw
         } catch (err) {
             const queryExecutionTime = queryStartTime
-                ? Date.now() - queryStartTime
+                ? performance.now() - queryStartTime
                 : undefined
 
             if (

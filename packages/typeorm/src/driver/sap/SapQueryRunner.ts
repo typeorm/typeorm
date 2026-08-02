@@ -227,7 +227,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const broadcasterResult = new BroadcasterResult()
 
         try {
-            const queryStartTime = Date.now()
+            const queryStartTime = performance.now()
             const isInsertQuery = query.startsWith("INSERT INTO")
 
             if (parameters?.some(Array.isArray)) {
@@ -257,7 +257,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.dataSource.options.maxQueryExecutionTime
-            const queryEndTime = Date.now()
+            const queryEndTime = performance.now()
             const queryExecutionTime = queryEndTime - queryStartTime
 
             this.broadcaster.broadcastAfterQueryEvent(

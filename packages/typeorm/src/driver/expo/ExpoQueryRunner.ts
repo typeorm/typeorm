@@ -41,7 +41,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
         this.driver.dataSource.logger.logQuery(query, parameters, this)
         await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
-        const queryStartTime = Date.now()
+        const queryStartTime = performance.now()
 
         const statement = await databaseConnection.prepareAsync(query)
         try {
@@ -49,7 +49,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
 
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = Date.now()
+            const queryEndTime = performance.now()
             const queryExecutionTime = queryEndTime - queryStartTime
 
             this.broadcaster.broadcastAfterQueryEvent(

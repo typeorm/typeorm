@@ -71,7 +71,7 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
                 // log slow queries if maxQueryExecution time is set
                 const maxQueryExecutionTime =
                     this.driver.options.maxQueryExecutionTime
-                const queryEndTime = Date.now()
+                const queryEndTime = performance.now()
                 const queryExecutionTime = queryEndTime - queryStartTime
 
                 if (
@@ -109,7 +109,7 @@ export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
                     ok(result.raw)
                 }
             }
-            const queryStartTime = Date.now()
+            const queryStartTime = performance.now()
 
             if (isInsertQuery) {
                 databaseConnection.execSQL(query, parameters, handler)
