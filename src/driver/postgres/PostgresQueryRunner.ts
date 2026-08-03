@@ -1326,9 +1326,12 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        // Per #3357: length-only changes are handled by ALTER COLUMN TYPE
+        // (added in the precision/scale block below), so remove the length
+        // comparison from this destructive trigger. DROP+ADD is still used
+        // when the underlying type changes.
         if (
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1620,7 +1623,8 @@ export class PostgresQueryRunner
 
             if (
                 newColumn.precision !== oldColumn.precision ||
-                newColumn.scale !== oldColumn.scale
+                newColumn.scale !== oldColumn.scale ||
+                newColumn.length !== oldColumn.length
             ) {
                 upQueries.push(
                     new Query(
