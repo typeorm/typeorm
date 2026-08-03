@@ -2348,11 +2348,13 @@ export class PostgresQueryRunner
 
             // update column collation
             if (newColumn.collation !== oldColumn.collation) {
+                // Use createFullType to preserve length/precision/scale/array modifiers
+                // (per #3357: length-only changes should keep the length constraint)
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE "${
+                        }" TYPE ${this.driver.createFullType(newColumn)} COLLATE "${
                             newColumn.collation
                         }"`,
                     ),
@@ -2366,7 +2368,7 @@ export class PostgresQueryRunner
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE ${oldCollation}`,
+                        }" TYPE ${this.driver.createFullType(newColumn)} COLLATE ${oldCollation}`,
                     ),
                 )
             }
