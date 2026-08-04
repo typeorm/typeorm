@@ -1402,9 +1402,6 @@ export class CockroachQueryRunner
             )
 
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
-            newColumn.isArray !== oldColumn.isArray ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
         ) {
@@ -1658,7 +1655,10 @@ export class CockroachQueryRunner
 
             if (
                 newColumn.precision !== oldColumn.precision ||
-                newColumn.scale !== oldColumn.scale
+                newColumn.scale !== oldColumn.scale ||
+                newColumn.length !== oldColumn.length ||
+                newColumn.type !== oldColumn.type ||
+                newColumn.isArray !== oldColumn.isArray
             ) {
                 upQueries.push(
                     new Query(
