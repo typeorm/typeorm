@@ -1401,7 +1401,14 @@ export class CockroachQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        const oldTypeIsEnum =
+            oldColumn.type === "enum" || oldColumn.type === "simple-enum"
+        const newTypeIsEnum =
+            newColumn.type === "enum" || newColumn.type === "simple-enum"
+
         if (
+            (oldColumn.type !== newColumn.type &&
+                (oldTypeIsEnum || newTypeIsEnum)) ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
         ) {
