@@ -298,7 +298,7 @@ export class CockroachQueryRunner
         await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
         const broadcasterResult = new BroadcasterResult()
-        const queryStartTime = Date.now()
+        const queryStartTime = performance.now()
 
         if (this.isTransactionActive && this.storeQueries) {
             this.queries.push({ query, parameters, useStructuredResult })
@@ -316,7 +316,7 @@ export class CockroachQueryRunner
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = Date.now()
+            const queryEndTime = performance.now()
             const queryExecutionTime = queryEndTime - queryStartTime
             if (
                 maxQueryExecutionTime &&
