@@ -234,6 +234,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.renameColumns()
         await this.changeTableComment()
         await this.createNewTables()
+        await this.dropIndicesAndConstraintsForRemovedColumns()
         await this.dropRemovedColumns()
         await this.addNewColumns()
         await this.updatePrimaryKeys()
@@ -246,7 +247,64 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         await this.createViews()
         await this.createNewViewIndices()
     }
+/**
+ * Drops indices, checks, and unique constraints that involve columns about to be dropped.
+ */
+protected async dropIndicesAndConstraintsForRemovedColumns(): Promise<void> {
+    for (const metadata of this.entityToSyncMetadatas) {
+        const table = this.tables.find(
+            (table) =>
+                this.getTablePath(table) === this.getTablePath(metadata),
+        )
+        if (!table) continue
 
+        const droppedTableColumns = table.columns.filter((tableColumn) => {
+            return !metadata.columns.find(
+                (columnMetadata) =>
+                    !columnMetadata.isVirtualProperty &&
+                    columnMetadata.databaseName === tableColumn.name,
+            )
+        })
+
+        if (droppedTableColumns.length === 0) continue
+        const droppedColumnNames = droppedTableColumns.map((col) => col.name)
+
+        const indicesToDrop = table.indices.filter((index) =>
+            index.columnNames.some((colName) => droppedColumnNames.includes(colName))
+        )
+        for (const index of indicesToDrop) {
+            this.dataSource.logger.logSchemaBuild(
+                `dropping index "${index.name}" from table "${table.name}" because it references dropped columns`,
+            )
+            await this.queryRunner.dropIndex(table, index)
+        }
+
+        const uniquesToDrop = table.uniques.filter((unique) =>
+            unique.columnNames.some((colName) => droppedColumnNames.includes(colName))
+        )
+        if (uniquesToDrop.length > 0) {
+            this.dataSource.logger.logSchemaBuild(
+                `dropping unique constraints from table "${table.name}" because they reference dropped columns`,
+            )
+            await this.queryRunner.dropUniqueConstraints(table, uniquesToDrop)
+        }
+
+        if (
+            !DriverUtils.isMySQLFamily(this.dataSource.driver) &&
+            this.dataSource.driver.options.type !== "aurora-mysql"
+        ) {
+            const checksToDrop = table.checks.filter((check) =>
+                droppedColumnNames.some((colName) => check.expression.includes(colName))
+            )
+            if (checksToDrop.length > 0) {
+                this.dataSource.logger.logSchemaBuild(
+                    `dropping check constraints from table "${table.name}" because they reference dropped columns`,
+                )
+                await this.queryRunner.dropCheckConstraints(table, checksToDrop)
+            }
+        }
+    }
+}
     private getTablePath(
         target: EntityMetadata | Table | View | TableForeignKey | string,
     ): string {
