@@ -831,6 +831,68 @@ describe("query builder > select", () => {
                     expect(posts.length).to.equal(0)
                 }),
             ))
+
+        it("should return empty array when take(0) is used with a join", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await dataSource.getRepository(Post).save([
+                        {
+                            id: "1",
+                            title: "Post 1",
+                            description: "Description 1",
+                            rating: 1,
+                        },
+                        {
+                            id: "2",
+                            title: "Post 2",
+                            description: "Description 2",
+                            rating: 2,
+                        },
+                    ])
+
+                    const posts = await dataSource
+                        .createQueryBuilder(Post, "post")
+                        .leftJoinAndSelect("post.category", "category")
+                        .take(0)
+                        .getMany()
+
+                    expect(posts).to.be.an("array")
+                    expect(posts.length).to.equal(0)
+                }),
+            ))
+
+        it("should not enter the pagination path when skip(0) is used with a join and no take", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await dataSource.getRepository(Post).save([
+                        {
+                            id: "1",
+                            title: "Post 1",
+                            description: "Description 1",
+                            rating: 1,
+                        },
+                        {
+                            id: "2",
+                            title: "Post 2",
+                            description: "Description 2",
+                            rating: 2,
+                        },
+                    ])
+
+                    // Regression: skip(0) with a join and no take() used to be
+                    // treated as "pagination enabled", which builds a subquery
+                    // with OFFSET 0 and no LIMIT — invalid on MySQL-family
+                    // drivers (OffsetWithoutLimitNotSupportedError).
+                    const posts = await dataSource
+                        .createQueryBuilder(Post, "post")
+                        .leftJoinAndSelect("post.category", "category")
+                        .skip(0)
+                        .getMany()
+
+                    expect(posts).to.be.an("array")
+                    expect(posts.length).to.equal(2)
+                }),
+            ))
     })
 
     describe("column order in select statement", () => {
