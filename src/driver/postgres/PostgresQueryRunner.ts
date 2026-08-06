@@ -1326,21 +1326,56 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
-        if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
+        // Determine whether the column change requires a full drop+recreate or can
+        // be handled safely with ALTER COLUMN TYPE. Drop+recreate causes data loss,
+        // so we only use it when the change is truly incompatible:
+        //   - toggling isArray (requires fundamental storage change)
+        //   - adding a new STORED generated column expression
+        // For type or length-only changes, Postgres supports ALTER COLUMN TYPE
+        // with a USING cast, which preserves existing data.
+        const requiresRecreate =
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
                 newColumn.generatedType === "STORED")
-        ) {
-            // To avoid data conversion, we just recreate column
+
+        const typeOrLengthChanged =
+            oldColumn.type !== newColumn.type ||
+            oldColumn.length !== newColumn.length
+
+        if (requiresRecreate) {
+            // Truly incompatible change — must drop and recreate the column.
+            // WARNING: this will cause data loss for the affected column.
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
+        } else if (typeOrLengthChanged) {
+            // Type or length changed but is safe to alter in-place via USING cast.
+            // This preserves all existing column data.
+            const newType = newColumn.length
+                ? `${newColumn.type}(${newColumn.length})`
+                : newColumn.type
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" TYPE ${newType} USING "${oldColumn.name}"::${newType}`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" TYPE ${
+                        oldColumn.length
+                            ? `${oldColumn.type}(${oldColumn.length})`
+                            : oldColumn.type
+                    } USING "${oldColumn.name}"::${
+                        oldColumn.length
+                            ? `${oldColumn.type}(${oldColumn.length})`
+                            : oldColumn.type
+                    }`,
+                ),
+            )
         } else {
             if (oldColumn.name !== newColumn.name) {
                 // rename column
