@@ -1296,6 +1296,14 @@ export class PostgresQueryRunner
         return this.changeColumn(table, oldColumn, newColumn)
     }
 
+    protected getCastTypeName(table: Table, column: TableColumn): string {
+        if (column.type === "enum" || column.type === "simple-enum") {
+            const enumName = this.buildEnumName(table, column)
+            return enumName + (column.isArray ? "[]" : "")
+        }
+        return this.driver.createFullType(column)
+    }
+
     /**
      * Changes a column in the table.
      *
@@ -1326,23 +1334,14 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
-        // Determine whether the column change requires a full drop+recreate or can
-        // be handled safely with ALTER COLUMN TYPE. Drop+recreate causes data loss,
-        // so we only use it when the change is truly incompatible:
-        //   - toggling isArray (requires fundamental storage change)
-        //   - adding a new STORED generated column expression
-        // For type or length-only changes, Postgres supports ALTER COLUMN TYPE
-        // with a USING cast, which preserves existing data.
+        // Determine if change requires a full drop+recreate (e.g., generated columns or array toggling).
+        // Drop+recreate causes data loss, so we only use it when truly incompatible.
         const requiresRecreate =
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
                 newColumn.generatedType === "STORED")
-
-        const typeOrLengthChanged =
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length
 
         if (requiresRecreate) {
             // Truly incompatible change — must drop and recreate the column.
@@ -1352,30 +1351,6 @@ export class PostgresQueryRunner
 
             // update cloned table
             clonedTable = table.clone()
-        } else if (typeOrLengthChanged) {
-            // Type or length changed but is safe to alter in-place via USING cast.
-            // This preserves all existing column data.
-            const newType = newColumn.length
-                ? `${newColumn.type}(${newColumn.length})`
-                : newColumn.type
-            upQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" TYPE ${newType} USING "${oldColumn.name}"::${newType}`,
-                ),
-            )
-            downQueries.push(
-                new Query(
-                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" TYPE ${
-                        oldColumn.length
-                            ? `${oldColumn.type}(${oldColumn.length})`
-                            : oldColumn.type
-                    } USING "${oldColumn.name}"::${
-                        oldColumn.length
-                            ? `${oldColumn.type}(${oldColumn.length})`
-                            : oldColumn.type
-                    }`,
-                ),
-            )
         } else {
             if (oldColumn.name !== newColumn.name) {
                 // rename column
@@ -1654,23 +1629,42 @@ export class PostgresQueryRunner
             }
 
             if (
+                newColumn.type !== oldColumn.type ||
+                newColumn.length !== oldColumn.length ||
                 newColumn.precision !== oldColumn.precision ||
-                newColumn.scale !== oldColumn.scale
+                newColumn.scale !== oldColumn.scale ||
+                newColumn.isArray !== oldColumn.isArray ||
+                newColumn.enum !== oldColumn.enum
             ) {
+                const newCastType = this.getCastTypeName(table, newColumn)
+                const oldCastType = this.getCastTypeName(table, oldColumn)
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                        }" TYPE ${this.driver.createFullType(newColumn)} USING "${newColumn.name}"::${newCastType}`,
                     ),
                 )
                 downQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                        }" TYPE ${this.driver.createFullType(oldColumn)} USING "${newColumn.name}"::${oldCastType}`,
                     ),
                 )
+
+                // update cloned table column
+                const clonedTableColumn = clonedTable.columns.find(
+                    (column) => column.name === newColumn.name,
+                )
+                if (clonedTableColumn) {
+                    clonedTableColumn.type = newColumn.type
+                    clonedTableColumn.length = newColumn.length
+                    clonedTableColumn.precision = newColumn.precision
+                    clonedTableColumn.scale = newColumn.scale
+                    clonedTableColumn.isArray = newColumn.isArray
+                    clonedTableColumn.enum = newColumn.enum
+                }
             }
 
             if (

@@ -269,4 +269,56 @@ describe("query runner > change column", () => {
                 )
             }),
         ))
+
+    it("should preserve data when changing column type or length", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // Testing Postgres specifically for the ALTER COLUMN TYPE USING clause data preservation
+                if (dataSource.driver.options.type !== "postgres") return
+
+                const queryRunner = dataSource.createQueryRunner()
+                let table = await queryRunner.getTable("post")
+
+                // insert some data
+                await queryRunner.query(
+                    `INSERT INTO "post" ("id", "name", "text") VALUES (1, 'test_preserve', 'text')`,
+                )
+
+                const nameColumn = table!.findColumnByName("name")!
+                const changedNameColumn = nameColumn.clone()
+                changedNameColumn.length = "500" // change length
+
+                await queryRunner.changeColumn(
+                    table!,
+                    nameColumn,
+                    changedNameColumn,
+                )
+
+                // verify data is still there
+                const result = await queryRunner.query(
+                    `SELECT "name" FROM "post" WHERE "id" = 1`,
+                )
+                result[0].name.should.be.equal("test_preserve")
+
+                table = await queryRunner.getTable("post")
+
+                // test changing type
+                const changedTypeColumn = changedNameColumn.clone()
+                changedTypeColumn.type = "text"
+                await queryRunner.changeColumn(
+                    table!,
+                    changedNameColumn,
+                    changedTypeColumn,
+                )
+
+                const result2 = await queryRunner.query(
+                    `SELECT "name" FROM "post" WHERE "id" = 1`,
+                )
+                result2[0].name.should.be.equal("test_preserve")
+
+                // clean up
+                await queryRunner.query(`DELETE FROM "post" WHERE "id" = 1`)
+                await queryRunner.release()
+            }),
+        ))
 })
