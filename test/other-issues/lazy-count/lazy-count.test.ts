@@ -156,7 +156,12 @@ describe("other issues > lazy count", () => {
             }),
         ))
 
-    it("skip count query when joining a relation with a take", () =>
+    // A join combined with a take cannot derive the count from the number of
+    // returned entities: pagination is applied through a distinct-id sub-query,
+    // so a single parent owning several joined rows can consume several
+    // paginated rows and hide other parents. The dedicated count query must run.
+    // See #11744.
+    it("run count query when joining a relation with a take", () =>
         Promise.all(
             dataSources.map(async function (connection) {
                 await savePostEntities(connection, 5)
@@ -179,7 +184,7 @@ describe("other issues > lazy count", () => {
                     afterQuery
                         .getCalledQueries()
                         .filter((query) => query.match(/(count|cnt)/i)),
-                ).to.be.empty
+                ).not.to.be.empty
             }),
         ))
 
@@ -210,7 +215,7 @@ describe("other issues > lazy count", () => {
             }),
         ))
 
-    it("skip count query when joining a relation with a take and a skip", () =>
+    it("run count query when joining a relation with a take and a skip", () =>
         Promise.all(
             dataSources.map(async function (connection) {
                 await savePostEntities(connection, 5)
@@ -234,7 +239,7 @@ describe("other issues > lazy count", () => {
                     afterQuery
                         .getCalledQueries()
                         .filter((query) => query.match(/(count|cnt)/i)),
-                ).to.be.empty
+                ).not.to.be.empty
             }),
         ))
 
