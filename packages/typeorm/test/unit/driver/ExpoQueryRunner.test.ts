@@ -31,14 +31,13 @@ describe("ExpoQueryRunner", () => {
         const query = "SELECT ?"
         const parameters = [1, "a"]
 
-        let thrown: any
-        try {
-            await queryRunner.query(query, parameters)
-        } catch (err) {
-            thrown = err
-        }
+        const thrown = await queryRunner.query(query, parameters).then(
+            () => undefined,
+            (err: unknown) => err,
+        )
 
-        expect(thrown).to.be.instanceOf(QueryFailedError)
+        if (!(thrown instanceof QueryFailedError))
+            throw new Error(`expected a QueryFailedError, got ${thrown}`)
         expect(thrown.driverError).to.equal(prepareError)
 
         expect(logQueryError.calledOnce).to.be.true
@@ -83,12 +82,10 @@ describe("ExpoQueryRunner", () => {
 
         const queryRunner = new ExpoQueryRunner(driver)
 
-        let thrown: any
-        try {
-            await queryRunner.query("SELECT 1")
-        } catch (err) {
-            thrown = err
-        }
+        const thrown = await queryRunner.query("SELECT 1").then(
+            () => undefined,
+            (err: unknown) => err,
+        )
 
         expect(thrown).to.be.instanceOf(QueryFailedError)
         expect(finalizeAsync.calledOnce).to.be.true
