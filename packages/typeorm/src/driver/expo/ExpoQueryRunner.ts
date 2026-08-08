@@ -43,8 +43,9 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
 
         const queryStartTime = Date.now()
 
-        const statement = await databaseConnection.prepareAsync(query)
+        let statement: any
         try {
+            statement = await databaseConnection.prepareAsync(query)
             const rawResult = await statement.executeAsync(parameters)
 
             const maxQueryExecutionTime =
@@ -104,7 +105,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
             throw new QueryFailedError(query, parameters, err)
         } finally {
             await broadcasterResult.wait()
-            await statement.finalizeAsync()
+            await statement?.finalizeAsync()
         }
     }
 }
