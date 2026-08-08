@@ -250,7 +250,7 @@ describe("query builder > locking", () => {
     it("should attach dirty read lock statement to every table of a nested join", () => {
         for (const dataSource of dataSources) {
             if (!(dataSource.driver.options.type === "mssql")) {
-                return
+                continue
             }
 
             const sql = dataSource
