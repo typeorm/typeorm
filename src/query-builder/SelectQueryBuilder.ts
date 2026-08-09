@@ -4619,6 +4619,25 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             }
                         }
                     } else {
+                        // A primitive value under a relation key (e.g.
+                        // `findBy(Post, { author: 1 })`) is not a valid
+                        // criterion. The nested object branch above is the
+                        // documented API (`{ author: { id: 1 } }`); a
+                        // primitive would silently produce an inner join with
+                        // no predicate, causing the query to return every row.
+                        // Throw instead of returning wrong data. `true` is the
+                        // documented shorthand for "join this relation", so it
+                        // is allowed to fall through to the join below.
+                        if (
+                            where[key] !== true &&
+                            typeof where[key] !== "object"
+                        ) {
+                            throw new TypeORMError(
+                                `Invalid value encountered in property '${alias}.${key}' of a where condition. ` +
+                                    `To filter by the relation's primary key use the nested form ` +
+                                    `{ ${key}: { id: <value> } }.`,
+                            )
+                        }
                         // const joinAlias = alias + "_" + relation.propertyName;
                         let joinAlias =
                             alias +
