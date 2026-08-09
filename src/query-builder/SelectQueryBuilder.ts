@@ -4632,10 +4632,23 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             where[key] !== true &&
                             typeof where[key] !== "object"
                         ) {
+                            const primaryColumns =
+                                relation.inverseEntityMetadata.primaryColumns
+                            const pkHint =
+                                primaryColumns.length === 1
+                                    ? `{ ${key}: { ${
+                                          primaryColumns[0].propertyName
+                                      }: <value> } }`
+                                    : `{ ${key}: { ${primaryColumns
+                                          .map(
+                                              (column) =>
+                                                  `${column.propertyName}: <value>`,
+                                          )
+                                          .join(", ")} } }`
                             throw new TypeORMError(
                                 `Invalid value encountered in property '${alias}.${key}' of a where condition. ` +
                                     `To filter by the relation's primary key use the nested form ` +
-                                    `{ ${key}: { id: <value> } }.`,
+                                    `${pkHint}.`,
                             )
                         }
                         // const joinAlias = alias + "_" + relation.propertyName;

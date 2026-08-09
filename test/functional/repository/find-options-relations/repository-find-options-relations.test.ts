@@ -12,6 +12,7 @@ import { Post } from "./entity/Post"
 import { Photo } from "./entity/Photo"
 import { Counters } from "./entity/Counters"
 import { EntityPropertyNotFoundError } from "../../../../src/error/EntityPropertyNotFoundError"
+import { TypeORMError } from "../../../../src/error/TypeORMError"
 
 describe("repository > find options > relations", () => {
     // -------------------------------------------------------------------------
@@ -549,6 +550,79 @@ describe("repository > find options > relations", () => {
                     .should.eventually.be.rejectedWith(
                         EntityPropertyNotFoundError,
                     )
+            }),
+        ))
+
+    // regression for https://github.com/typeorm/typeorm/issues/12712
+    it("should throw error when a primitive value is passed for a relation in where", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                const userRepository = dataSource.getRepository(User)
+
+                const user1 = await userRepository.save({ name: "user1" })
+                const user2 = await userRepository.save({ name: "user2" })
+                await postRepository.save([
+                    {
+                        title: "user1-post-1",
+                        user: user1,
+                        counters: { stars: 1, commentCount: 1 },
+                    },
+                    {
+                        title: "user1-post-2",
+                        user: user1,
+                        counters: { stars: 2, commentCount: 2 },
+                    },
+                    {
+                        title: "user2-post-1",
+                        user: user2,
+                        counters: { stars: 3, commentCount: 3 },
+                    },
+                ])
+
+                // documented nested form still filters correctly
+                const nested = await postRepository.findBy({
+                    user: { id: user1.id },
+                })
+                nested
+                    .map((p) => p.title)
+                    .sort()
+                    .should.be.eql(["user1-post-1", "user1-post-2"])
+
+                // primitive under a relation key used to silently generate a
+                // join with no WHERE clause and return every row
+                await postRepository
+                    .findBy({
+                        // @ts-expect-error primitive relation shorthand is invalid
+                        user: user1.id,
+                    })
+                    .should.eventually.be.rejectedWith(TypeORMError)
+                await postRepository
+                    .findOneBy({
+                        // @ts-expect-error primitive relation shorthand is invalid
+                        user: user1.id,
+                    })
+                    .should.eventually.be.rejectedWith(TypeORMError)
+                await postRepository
+                    .countBy({
+                        // @ts-expect-error primitive relation shorthand is invalid
+                        user: user1.id,
+                    })
+                    .should.eventually.be.rejectedWith(TypeORMError)
+                await postRepository
+                    .existsBy({
+                        // @ts-expect-error primitive relation shorthand is invalid
+                        user: user1.id,
+                    })
+                    .should.eventually.be.rejectedWith(TypeORMError)
+
+                // `user: true` join shorthand must keep working: joins the
+                // relation without a predicate, so all 4 posts (1 seeded by
+                // the suite setup + 3 created here) are returned.
+                const joined = await postRepository.findBy({
+                    user: true,
+                })
+                joined.should.have.length(4)
             }),
         ))
 })
