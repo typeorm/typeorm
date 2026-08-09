@@ -4619,18 +4619,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             }
                         }
                     } else {
-                        // A primitive value under a relation key (e.g.
-                        // `findBy(Post, { author: 1 })`) is not a valid
-                        // criterion. The nested object branch above is the
-                        // documented API (`{ author: { id: 1 } }`); a
-                        // primitive would silently produce an inner join with
-                        // no predicate, causing the query to return every row.
-                        // Throw instead of returning wrong data. `true` is the
-                        // documented shorthand for "join this relation", so it
-                        // is allowed to fall through to the join below.
+                        // A primitive (e.g. `findBy(Post, { author: 1 })`)
+                        // would join the relation with no predicate and
+                        // return every row — reject it. Booleans keep the
+                        // pre-existing join shorthand behavior (#12712).
                         if (
-                            where[key] !== true &&
-                            typeof where[key] !== "object"
+                            typeof where[key] !== "object" &&
+                            typeof where[key] !== "boolean"
                         ) {
                             const primaryColumns =
                                 relation.inverseEntityMetadata.primaryColumns

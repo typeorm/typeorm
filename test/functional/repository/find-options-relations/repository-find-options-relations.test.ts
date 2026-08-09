@@ -616,13 +616,18 @@ describe("repository > find options > relations", () => {
                     })
                     .should.eventually.be.rejectedWith(TypeORMError)
 
-                // `user: true` join shorthand must keep working: joins the
-                // relation without a predicate, so all 4 posts (1 seeded by
-                // the suite setup + 3 created here) are returned.
+                // `user: true`/`user: false` join shorthand must keep working
+                // (boolean is part of the FindOptionsWhereProperty type):
+                // joins the relation without a predicate, so all 4 posts
+                // (1 seeded by the suite setup + 3 created here) are returned.
                 const joined = await postRepository.findBy({
                     user: true,
                 })
                 joined.should.have.length(4)
+                const joinedFalse = await postRepository.findBy({
+                    user: false,
+                })
+                joinedFalse.should.have.length(4)
             }),
         ))
 })
