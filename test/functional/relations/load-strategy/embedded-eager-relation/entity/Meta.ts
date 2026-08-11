@@ -1,4 +1,4 @@
-import { ManyToOne } from "../../../../src/decorator/relations/ManyToOne"
+import { ManyToOne } from "../../../../../../src/decorator/relations/ManyToOne"
 import { User } from "./User"
 
 export class Meta {

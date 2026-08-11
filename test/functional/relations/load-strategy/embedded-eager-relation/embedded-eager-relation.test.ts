@@ -1,20 +1,21 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import type { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
+} from "../../../../utils/test-utils"
 import { Image } from "./entity/Image"
 import { Post } from "./entity/Post"
 import { User } from "./entity/User"
 
-describe("github issues > #12774 deepValue() throws when find options omit an embedded that holds an eager relation", () => {
+describe("relations > load-strategy > query > eager relation inside an embedded", () => {
     let dataSources: DataSource[]
 
     before(async () => {
         dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,
