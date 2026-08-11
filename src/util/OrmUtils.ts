@@ -160,16 +160,20 @@ export class OrmUtils {
 
     /**
      * Gets deeper value of object.
+     * Returns undefined when the path runs off the end of the object.
      *
      * @param obj
      * @param path
      */
     public static deepValue(obj: ObjectLiteral, path: string): any {
-        const segments = path.split(".")
-        for (let i = 0, len = segments.length; i < len; i++) {
-            obj = obj[segments[i]]
+        let value: any = obj
+        for (const segment of path.split(".")) {
+            if (value === null || value === undefined) {
+                return undefined
+            }
+            value = value[segment]
         }
-        return obj
+        return value
     }
 
     public static replaceEmptyObjectsWithBooleans(obj: any) {

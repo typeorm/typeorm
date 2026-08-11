@@ -220,6 +220,21 @@ describe(`OrmUtils`, () => {
         })
     })
 
+    describe("deepValue", () => {
+        it("should return the value at the given path", () => {
+            expect(
+                OrmUtils.deepValue({ meta: { owner: true } }, "meta.owner"),
+            ).to.equal(true)
+        })
+
+        it("should return undefined when the path runs off the end of the object", () => {
+            expect(OrmUtils.deepValue({ image: true }, "meta.owner")).to.be
+                .undefined
+            expect(OrmUtils.deepValue({ meta: null }, "meta.owner")).to.be
+                .undefined
+        })
+    })
+
     describe("compare2Objects", () => {
         it("should compare two Map.", () => {
             expect(OrmUtils.deepCompare(new Map(), new Map())).to.equal(true)
