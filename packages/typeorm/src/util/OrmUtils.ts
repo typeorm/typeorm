@@ -234,16 +234,23 @@ export class OrmUtils {
         )
             return false
 
-        // Optimized version for the common case
+        // Optimized version for the common case of a single "id" primary key.
+        // Some drivers (e.g. the MySQL driver for bigint columns) return numeric
+        // ids as strings, so the same identifier can be a string on one side of a
+        // comparison and a number on the other. Compare such values by their
+        // string form so, for example, "1" still matches 1 and a persisted
+        // relation is not mistakenly treated as removed (see #11773).
         if (
-            ((typeof firstId.id === "string" &&
-                typeof secondId.id === "string") ||
-                (typeof firstId.id === "number" &&
-                    typeof secondId.id === "number")) &&
+            (typeof firstId.id === "string" ||
+                typeof firstId.id === "number") &&
+            (typeof secondId.id === "string" ||
+                typeof secondId.id === "number") &&
             Object.keys(firstId).length === 1 &&
             Object.keys(secondId).length === 1
         ) {
-            return firstId.id === secondId.id
+            return typeof firstId.id === typeof secondId.id
+                ? firstId.id === secondId.id
+                : String(firstId.id) === String(secondId.id)
         }
 
         return OrmUtils.deepCompare(firstId, secondId)

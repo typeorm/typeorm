@@ -286,6 +286,47 @@ describe(`OrmUtils`, () => {
         })
     })
 
+    describe("compareIds", () => {
+        it("matches equal single ids of the same primitive type", () => {
+            expect(OrmUtils.compareIds({ id: 1 }, { id: 1 })).to.equal(true)
+            expect(OrmUtils.compareIds({ id: "a" }, { id: "a" })).to.equal(true)
+            expect(OrmUtils.compareIds({ id: 1 }, { id: 2 })).to.equal(false)
+            expect(OrmUtils.compareIds({ id: "a" }, { id: "b" })).to.equal(
+                false,
+            )
+        })
+
+        it("matches a string id against a numeric id when their values are equal", () => {
+            // MySQL and some other drivers return bigint columns as strings, so
+            // the DB-loaded id ("1") and the in-memory id (1) must still compare
+            // as equal — otherwise the relation looks removed and its FK is nulled
+            // (see #11773).
+            expect(OrmUtils.compareIds({ id: "1" }, { id: 1 })).to.equal(true)
+            expect(OrmUtils.compareIds({ id: 1 }, { id: "1" })).to.equal(true)
+            expect(OrmUtils.compareIds({ id: "10" }, { id: 10 })).to.equal(true)
+        })
+
+        it("does not treat unequal string/number ids as the same", () => {
+            expect(OrmUtils.compareIds({ id: "1" }, { id: 2 })).to.equal(false)
+            expect(OrmUtils.compareIds({ id: 2 }, { id: "1" })).to.equal(false)
+        })
+
+        it("returns false when either id map is null or undefined", () => {
+            expect(OrmUtils.compareIds(undefined, { id: 1 })).to.equal(false)
+            expect(OrmUtils.compareIds({ id: 1 }, undefined)).to.equal(false)
+            expect(OrmUtils.compareIds(undefined, undefined)).to.equal(false)
+        })
+
+        it("falls back to deep comparison for composite ids", () => {
+            expect(
+                OrmUtils.compareIds({ a: 1, b: 2 }, { a: 1, b: 2 }),
+            ).to.equal(true)
+            expect(
+                OrmUtils.compareIds({ a: 1, b: 2 }, { a: 1, b: 3 }),
+            ).to.equal(false)
+        })
+    })
+
     describe("normalizeWhereCriteria", () => {
         it("throws on null/undefined by default when no options are provided", () => {
             // unconfigured invalidWhereValuesBehavior defaults to "throw",
