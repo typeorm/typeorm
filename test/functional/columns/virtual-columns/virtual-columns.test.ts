@@ -276,8 +276,8 @@ describe("column > virtual columns", () => {
                     .leftJoin("company.employees", "employee")
                     .leftJoin("employee.timesheets", "timesheet")
                     .where("company.name = :name", { name: companyName })
-                    // we won't be supporting where & order bys with VirtualColumns (you will have to make your subquery a function that gets added to the query builder)
-                    //.andWhere("company.totalEmployeesCount > 2")
+                    .andWhere("company.totalEmployeesCount > 2")
+                    // we won't be supporting order bys with VirtualColumns (you will have to make your subquery a function that gets added to the query builder)
                     //.orderBy({
                     //    "employees.timesheets.id": "DESC",
                     //    //"employees.timesheets.totalActivityHours": "ASC",
@@ -344,6 +344,49 @@ describe("column > virtual columns", () => {
                     totalEmployeesCount: 3,
                     totalReportedHours: 20,
                 })
+            }),
+        ))
+
+    // https://github.com/typeorm/typeorm/issues/11616
+    it("should be able to filter by a virtual column in a WHERE condition", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const companyRepository = dataSource.getRepository(Company)
+
+                const smallCompanyName = "Small Company 4"
+                const bigCompanyName = "Big Company 4"
+                await companyRepository.save([
+                    {
+                        name: smallCompanyName,
+                        employees: [{ name: "Solo 4" }],
+                    },
+                    {
+                        name: bigCompanyName,
+                        employees: [
+                            { name: "Collin 4" },
+                            { name: "John 4" },
+                            { name: "Cory 4" },
+                        ],
+                    },
+                ])
+
+                // Using a virtual column directly in a WHERE clause used to throw,
+                // e.g. `Unknown column 'company.totalEmployeesCount' in 'where clause'`,
+                // because the property name was substituted with the (non-existent)
+                // database column name instead of being expanded into its sub-query.
+                const bigCompanies = await companyRepository
+                    .createQueryBuilder("company")
+                    .where("company.totalEmployeesCount > :count", {
+                        count: 2,
+                    })
+                    .andWhere("company.name IN (:...names)", {
+                        names: [smallCompanyName, bigCompanyName],
+                    })
+                    .getMany()
+
+                expect(bigCompanies.map((c) => c.name)).to.deep.equal([
+                    bigCompanyName,
+                ])
             }),
         ))
 })

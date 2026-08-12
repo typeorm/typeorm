@@ -731,6 +731,14 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      */
     protected replacePropertyNamesForTheWholeQuery(statement: string) {
         const replacements: { [key: string]: { [key: string]: string } } = {}
+        // Virtual columns (`@VirtualColumn`) don't have a real database column to
+        // reference, so instead of replacing them with `alias.databaseName` we need
+        // to replace them with their sub-query, the same way it's done for the
+        // SELECT clause. This allows using virtual columns outside of SELECT too,
+        // e.g. in WHERE, ORDER BY, GROUP BY and HAVING clauses.
+        const virtualColumnReplacements: {
+            [key: string]: { [key: string]: (alias: string) => string }
+        } = {}
 
         for (const alias of this.expressionMap.aliases) {
             if (!alias.hasMetadata) continue
@@ -741,6 +749,9 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
             if (!replacements[replaceAliasNamePrefix]) {
                 replacements[replaceAliasNamePrefix] = {}
+            }
+            if (!virtualColumnReplacements[replaceAliasNamePrefix]) {
+                virtualColumnReplacements[replaceAliasNamePrefix] = {}
             }
 
             // Insert & overwrite the replacements from least to most relevant in our replacements object.
@@ -781,11 +792,21 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             for (const column of alias.metadata.columns) {
                 replacements[replaceAliasNamePrefix][column.propertyName] =
                     column.databaseName
+                if (column.isVirtualProperty && column.query) {
+                    virtualColumnReplacements[replaceAliasNamePrefix][
+                        column.propertyName
+                    ] = column.query
+                }
             }
 
             for (const column of alias.metadata.columns) {
                 replacements[replaceAliasNamePrefix][column.propertyPath] =
                     column.databaseName
+                if (column.isVirtualProperty && column.query) {
+                    virtualColumnReplacements[replaceAliasNamePrefix][
+                        column.propertyPath
+                    ] = column.query
+                }
             }
         }
 
@@ -815,6 +836,17 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         match = matches[0]
                         pre = matches[1]
                         p = matches[3]
+
+                        const virtualColumnQuery =
+                            virtualColumnReplacements[matches[2]][p]
+                        if (virtualColumnQuery) {
+                            const escapedAliasName = this.escape(
+                                matches[2].slice(0, -1),
+                            )
+                            return `${pre}(${virtualColumnQuery(
+                                escapedAliasName,
+                            )})`
+                        }
 
                         if (replacements[matches[2]][p]) {
                             return `${pre}${this.escape(
