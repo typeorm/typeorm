@@ -317,6 +317,29 @@ describe(`OrmUtils`, () => {
             expect(OrmUtils.compareIds(undefined, undefined)).to.equal(false)
         })
 
+        it("does not coerce non-finite numeric ids to match a string", () => {
+            // NaN/Infinity are never valid ids; String(NaN) === "NaN" must not
+            // make them equal to a "NaN"/"Infinity" string via the cross-type path.
+            expect(OrmUtils.compareIds({ id: NaN }, { id: "NaN" })).to.equal(
+                false,
+            )
+            expect(OrmUtils.compareIds({ id: "NaN" }, { id: NaN })).to.equal(
+                false,
+            )
+            expect(
+                OrmUtils.compareIds({ id: Infinity }, { id: "Infinity" }),
+            ).to.equal(false)
+        })
+
+        it("treats a null id as a non-matching identifier", () => {
+            // A null id part is not string/number, so it routes through deep
+            // comparison rather than the single-id fast path.
+            expect(OrmUtils.compareIds({ id: null }, { id: 1 })).to.equal(false)
+            expect(OrmUtils.compareIds({ id: null }, { id: null })).to.equal(
+                true,
+            )
+        })
+
         it("falls back to deep comparison for composite ids", () => {
             expect(
                 OrmUtils.compareIds({ a: 1, b: 2 }, { a: 1, b: 2 }),

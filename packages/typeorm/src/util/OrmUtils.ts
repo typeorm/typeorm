@@ -248,9 +248,17 @@ export class OrmUtils {
             Object.keys(firstId).length === 1 &&
             Object.keys(secondId).length === 1
         ) {
-            return typeof firstId.id === typeof secondId.id
-                ? firstId.id === secondId.id
-                : String(firstId.id) === String(secondId.id)
+            if (typeof firstId.id === typeof secondId.id) {
+                return firstId.id === secondId.id
+            }
+            // Types differ (one string, one number): bridge the driver's
+            // number->string coercion, but only for finite numbers. NaN and
+            // Infinity are never valid ids and must not coerce-match a string
+            // such as "NaN" or "Infinity".
+            const numericId =
+                typeof firstId.id === "number" ? firstId.id : secondId.id
+            if (!Number.isFinite(numericId)) return false
+            return String(firstId.id) === String(secondId.id)
         }
 
         return OrmUtils.deepCompare(firstId, secondId)
