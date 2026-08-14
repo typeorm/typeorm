@@ -122,6 +122,9 @@ export class ManyToManySubjectBuilder {
         let relatedEntities: ObjectLiteral[] = relation.getEntityValue(
             subject.entity!,
         )
+        if (relatedEntities === undefined)
+            // if relation is undefined then it was not loaded - nothing to update
+            return
         // if value set to null its equal if we set it to empty array - all items must be removed from the database
         relatedEntities ??= []
         if (!Array.isArray(relatedEntities)) return

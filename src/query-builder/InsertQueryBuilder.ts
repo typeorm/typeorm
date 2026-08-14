@@ -613,35 +613,37 @@ export class InsertQueryBuilder<
                     } else {
                         query += ` ${conflictTarget} DO UPDATE SET `
 
-                        updatePart.push(
-                            ...this.expressionMap
-                                .mainAlias!.metadata.columns.filter(
-                                    (column) =>
-                                        column.isUpdateDate &&
-                                        !overwrite?.includes(
-                                            column.databaseName,
-                                        ) &&
-                                        !(
-                                            (this.dataSource.driver.options
-                                                .type === "oracle" &&
-                                                this.getValueSets().length >
-                                                    1) ||
-                                            DriverUtils.isSQLiteFamily(
-                                                this.dataSource.driver,
-                                            ) ||
-                                            this.dataSource.driver.options
-                                                .type === "sap" ||
-                                            this.dataSource.driver.options
-                                                .type === "spanner"
-                                        ),
-                                )
-                                .map(
-                                    (column) =>
-                                        `${this.escape(
-                                            column.databaseName,
-                                        )} = DEFAULT`,
-                                ),
-                        )
+                        if (this.expressionMap.mainAlias!.hasMetadata) {
+                            updatePart.push(
+                                ...this.expressionMap
+                                    .mainAlias!.metadata.columns.filter(
+                                        (column) =>
+                                            column.isUpdateDate &&
+                                            !overwrite?.includes(
+                                                column.databaseName,
+                                            ) &&
+                                            !(
+                                                (this.dataSource.driver.options
+                                                    .type === "oracle" &&
+                                                    this.getValueSets().length >
+                                                        1) ||
+                                                DriverUtils.isSQLiteFamily(
+                                                    this.dataSource.driver,
+                                                ) ||
+                                                this.dataSource.driver.options
+                                                    .type === "sap" ||
+                                                this.dataSource.driver.options
+                                                    .type === "spanner"
+                                            ),
+                                    )
+                                    .map(
+                                        (column) =>
+                                            `${this.escape(
+                                                column.databaseName,
+                                            )} = DEFAULT`,
+                                    ),
+                            )
+                        }
 
                         query += updatePart.join(", ")
                     }
