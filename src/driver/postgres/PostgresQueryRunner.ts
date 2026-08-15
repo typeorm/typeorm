@@ -1636,6 +1636,17 @@ export class PostgresQueryRunner
                         }" TYPE ${this.driver.createFullType(oldColumn)}`,
                     ),
                 )
+
+                // update cloned column metadata so the query runner cache
+                // (replaceCachedTable) does not keep stale length/precision/scale
+                const clonedColumn = clonedTable.columns.find(
+                    (column) => column.name === newColumn.name,
+                )
+                if (clonedColumn) {
+                    clonedColumn.length = newColumn.length
+                    clonedColumn.precision = newColumn.precision
+                    clonedColumn.scale = newColumn.scale
+                }
             }
 
             if (

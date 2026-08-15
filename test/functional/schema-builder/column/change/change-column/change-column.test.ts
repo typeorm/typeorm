@@ -470,4 +470,48 @@ describe("schema builder > change column", () => {
                 nameColumn.length = "255"
             }),
         ))
+
+    it("should generate ALTER COLUMN TYPE instead of DROP + ADD when only the column length changes", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // this regression is specific to the Postgres changeColumn implementation
+                if (dataSource.driver.options.type !== "postgres") return
+
+                const postMetadata = dataSource.getMetadata(Post)
+                const nameColumn =
+                    postMetadata.findColumnWithPropertyName("name")!
+
+                // first give the column an explicit length and sync, so the
+                // database stores a bounded varchar(50)
+                nameColumn.length = "50"
+                await dataSource.synchronize()
+
+                // now change only the length, and inspect the generated migration
+                nameColumn.length = "51"
+
+                const sqlInMemory = await dataSource.driver
+                    .createSchemaBuilder()
+                    .log()
+
+                const upSql = sqlInMemory.upQueries
+                    .map((query) => query.query)
+                    .join(" ")
+                const downSql = sqlInMemory.downQueries
+                    .map((query) => query.query)
+                    .join(" ")
+
+                // changing only the column length must not drop and re-create
+                // the column, which would result in data loss (#3357)
+                expect(upSql).not.to.include("DROP COLUMN")
+                expect(upSql).to.include(
+                    'ALTER COLUMN "name" TYPE character varying(51)',
+                )
+                expect(downSql).to.include(
+                    'ALTER COLUMN "name" TYPE character varying(50)',
+                )
+
+                // revert changes
+                nameColumn.length = ""
+            }),
+        ))
 })
