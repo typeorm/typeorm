@@ -5,12 +5,12 @@ import {
     JoinColumn,
     ManyToOne,
     PrimaryGeneratedColumn,
-} from "../../../../src"
+} from "../../../../../src"
 import { Category } from "./Category"
 
 @Index("IDX_12671_custom_covering", ["indexedCategoryId", "note"])
-@Entity("circle_reports")
-export class CircleReport {
+@Entity("reports")
+export class Report {
     @PrimaryGeneratedColumn()
     id: number
 
