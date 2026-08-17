@@ -759,6 +759,21 @@ export class CockroachDriver implements Driver {
             return undefined
         }
 
+        // Must run before the enum branch below: that branch's non-array case
+        // returns `'${defaultValue}'` unconditionally for any enum/simple-enum
+        // column, so a function-typed default would otherwise be
+        // template-literal stringified (calling the function's own toString())
+        // instead of evaluated.
+        if (typeof defaultValue === "function") {
+            const value = defaultValue()
+            if (value.toUpperCase() === "CURRENT_TIMESTAMP") {
+                return "current_timestamp()"
+            } else if (value.toUpperCase() === "CURRENT_DATE") {
+                return "current_date()"
+            }
+            return value
+        }
+
         if (
             (columnMetadata.type === "enum" ||
                 columnMetadata.type === "simple-enum") &&
@@ -789,16 +804,6 @@ export class CockroachDriver implements Driver {
 
         if (typeof defaultValue === "boolean") {
             return defaultValue ? "true" : "false"
-        }
-
-        if (typeof defaultValue === "function") {
-            const value = defaultValue()
-            if (value.toUpperCase() === "CURRENT_TIMESTAMP") {
-                return "current_timestamp()"
-            } else if (value.toUpperCase() === "CURRENT_DATE") {
-                return "current_date()"
-            }
-            return value
         }
 
         if (typeof defaultValue === "string") {

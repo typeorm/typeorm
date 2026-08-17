@@ -1208,6 +1208,17 @@ export class PostgresDriver implements Driver {
             return undefined
         }
 
+        // Must run before the enum/number/string branch below: that branch
+        // matches on columnMetadata.type === "enum" alone, so a function-typed
+        // default on an enum column would otherwise be template-literal
+        // stringified (calling the function's own toString()) instead of
+        // evaluated, regardless of the value's actual type.
+        if (typeof defaultValue === "function") {
+            const value = defaultValue()
+
+            return this.normalizeDatetimeFunction(value)
+        }
+
         if (columnMetadata.isArray && Array.isArray(defaultValue)) {
             return `'{${defaultValue.map((val) => String(val)).join(",")}}'`
         }
@@ -1224,12 +1235,6 @@ export class PostgresDriver implements Driver {
 
         if (typeof defaultValue === "boolean") {
             return defaultValue ? "true" : "false"
-        }
-
-        if (typeof defaultValue === "function") {
-            const value = defaultValue()
-
-            return this.normalizeDatetimeFunction(value)
         }
 
         if (typeof defaultValue === "object") {

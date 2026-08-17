@@ -825,6 +825,15 @@ export class MysqlDriver implements Driver {
             return undefined
         }
 
+        // Must run before the enum/set/string branches below: those match on
+        // columnMetadata.type alone, so a function-typed default would
+        // otherwise be template-literal stringified (calling the function's
+        // own toString()) instead of evaluated.
+        if (typeof defaultValue === "function") {
+            const value = defaultValue()
+            return this.normalizeDatetimeFunction(value)
+        }
+
         if (
             (columnMetadata.type === "enum" ||
                 columnMetadata.type === "simple-enum" ||
@@ -844,11 +853,6 @@ export class MysqlDriver implements Driver {
 
         if (typeof defaultValue === "boolean") {
             return defaultValue ? "1" : "0"
-        }
-
-        if (typeof defaultValue === "function") {
-            const value = defaultValue()
-            return this.normalizeDatetimeFunction(value)
         }
 
         if (defaultValue === undefined) {
