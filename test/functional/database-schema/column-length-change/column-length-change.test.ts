@@ -1,13 +1,13 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import type { DataSource } from "../../../src"
+import type { DataSource } from "../../../../src"
 import {
     createTestingConnections,
     closeTestingConnections,
-} from "../../utils/test-utils"
+} from "../../../utils/test-utils"
 import { User } from "./entity/User"
 
-describe("github issues > #3357 Migration generation drops and creates columns instead of altering resulting in data loss", () => {
+describe("database schema > column length change", () => {
     let dataSources: DataSource[]
 
     before(async () => {
