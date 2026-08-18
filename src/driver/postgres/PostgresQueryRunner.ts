@@ -1328,7 +1328,6 @@ export class PostgresQueryRunner
 
         if (
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1621,6 +1620,29 @@ export class PostgresQueryRunner
             if (
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
+            ) {
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                    ),
+                )
+            }
+
+            // A pure length change (e.g. varchar(50) -> varchar(51)) can be
+            // applied with ALTER COLUMN TYPE, which preserves existing data.
+            // Recreating the column (DROP + ADD) would discard the data.
+            if (
+                newColumn.length !== oldColumn.length &&
+                newColumn.type === oldColumn.type
             ) {
                 upQueries.push(
                     new Query(
