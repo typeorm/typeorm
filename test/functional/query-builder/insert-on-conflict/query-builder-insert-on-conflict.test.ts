@@ -202,6 +202,24 @@ describe("query builder > insert > on conflict", () => {
                     })
             }),
         ))
+    // https://github.com/typeorm/typeorm/issues/11549
+    it("should build orUpdate query when inserting into a raw table without entity metadata", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const builder = dataSource
+                    .createQueryBuilder()
+                    .insert()
+                    .into("raw_upsert_table", ["id", "name"])
+                    .values([{ id: 1, name: "Category 1" }])
+                    .orUpdate(["name"], ["id"])
+
+                const sql = builder.getSql()
+
+                expect(sql).to.include(
+                    `ON CONFLICT ( "id" ) DO UPDATE SET "name" = EXCLUDED."name"`,
+                )
+            }),
+        ))
     it("should perform insertion using partial index and skipping update on no change", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {

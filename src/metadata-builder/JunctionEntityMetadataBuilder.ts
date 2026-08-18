@@ -239,16 +239,14 @@ export class JunctionEntityMetadataBuilder {
                       onDelete:
                           this.dataSource.driver.options.type === "spanner"
                               ? "NO ACTION"
-                              : relation.inverseRelation
-                                ? relation.inverseRelation.onDelete
-                                : "CASCADE",
+                              : (relation.inverseRelation?.onDelete ??
+                                "CASCADE"),
                       onUpdate:
                           this.dataSource.driver.options.type === "oracle" ||
                           this.dataSource.driver.options.type === "spanner"
                               ? "NO ACTION"
-                              : relation.inverseRelation
-                                ? relation.inverseRelation.onUpdate
-                                : "CASCADE",
+                              : (relation.inverseRelation?.onUpdate ??
+                                "CASCADE"),
                       deferrable: relation.inverseRelation
                           ? relation.inverseRelation.deferrable
                           : relation.deferrable,

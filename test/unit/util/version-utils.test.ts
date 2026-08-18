@@ -29,6 +29,12 @@ describe("VersionUtils", () => {
                 false,
             )
             expect(VersionUtils.isGreaterOrEqual("1", "2")).to.equal(false)
+            expect(VersionUtils.isGreaterOrEqual("1.2", "1.2.1")).to.equal(
+                false,
+            )
+            expect(VersionUtils.isGreaterOrEqual("10.0", "10.0.5")).to.equal(
+                false,
+            )
             expect(
                 VersionUtils.isGreaterOrEqual(
                     "2.00.040.00.20190729.1",
