@@ -989,7 +989,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (
             oldColumn.name !== newColumn.name ||
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             oldColumn.isArray !== newColumn.isArray ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
@@ -1019,6 +1018,39 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                         }" TYPE ${this.driver.createFullType(oldColumn)}`,
                     ),
                 )
+            }
+
+            // A pure length change (e.g. varchar(50) -> varchar(51)) can be
+            // applied with ALTER COLUMN TYPE, which preserves existing data.
+            // Recreating the column (DROP + ADD) would discard the data.
+            if (
+                newColumn.length !== oldColumn.length &&
+                newColumn.type === oldColumn.type
+            ) {
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                    ),
+                )
+
+                // keep the cached table schema in sync so subsequent schema
+                // operations in the same QueryRunner don't mis-detect the
+                // column definition and emit redundant follow-up DDL
+                const cachedColumn = clonedTable.columns.find(
+                    (column) => column.name === newColumn.name,
+                )
+                if (cachedColumn) {
+                    cachedColumn.length = newColumn.length
+                }
             }
 
             if (oldColumn.isNullable !== newColumn.isNullable) {

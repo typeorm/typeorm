@@ -1146,7 +1146,6 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
         ) {
@@ -1428,6 +1427,43 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                         )} ${defaultDown} ${nullableDown}`,
                     ),
                 )
+            }
+
+            // A pure length change (e.g. varchar(50) -> varchar(51)) can be
+            // applied with MODIFY, which preserves existing data.
+            // Recreating the column (DROP + ADD) would discard the data.
+            if (
+                newColumn.length !== oldColumn.length &&
+                newColumn.type === oldColumn.type
+            ) {
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} MODIFY ("${
+                            newColumn.name
+                        }" ${this.dataSource.driver.createFullType(
+                            newColumn,
+                        )})`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} MODIFY ("${
+                            oldColumn.name
+                        }" ${this.dataSource.driver.createFullType(
+                            oldColumn,
+                        )})`,
+                    ),
+                )
+
+                // keep the cached table schema in sync so subsequent schema
+                // operations in the same QueryRunner don't mis-detect the
+                // column definition and emit redundant follow-up DDL
+                const cachedColumn = clonedTable.columns.find(
+                    (column) => column.name === newColumn.name,
+                )
+                if (cachedColumn) {
+                    cachedColumn.length = newColumn.length
+                }
             }
 
             if (newColumn.isPrimary !== oldColumn.isPrimary) {
