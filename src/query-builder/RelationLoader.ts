@@ -1,3 +1,10 @@
+
+import { DataSource } from "../data-source/DataSource"
+import { ObjectLiteral } from "../common/ObjectLiteral"
+import { QueryRunner } from "../query-runner/QueryRunner"
+import { RelationMetadata } from "../metadata/RelationMetadata"
+import { EntityMetadata } from "../metadata/EntityMetadata"
+
 import type { DataSource } from "../data-source/DataSource"
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { QueryRunner } from "../query-runner/QueryRunner"
@@ -110,6 +117,9 @@ export class RelationLoader {
                 .from(relation.type, relation.propertyName)
 
         const mainAlias = qb.expressionMap.mainAlias!.name
+
+        this.ensurePrimaryColumnsSelected(qb, qb.expressionMap.mainAlias!.metadata)
+
 
         // For self-referencing relations the entity name already exists
         // as an alias, so we need to generate a unique join alias name.
@@ -231,6 +241,10 @@ export class RelationLoader {
                 )
 
         const aliasName = qb.expressionMap.mainAlias!.name
+        this.ensurePrimaryColumnsSelected(
+            qb,
+            relation.inverseRelation!.entityMetadata,
+        )
 
         if (columns.length === 1) {
             qb.where(
@@ -325,6 +339,7 @@ export class RelationLoader {
                 .from(relation.type, relation.propertyName)
 
         const mainAlias = qb.expressionMap.mainAlias!.name
+        this.ensurePrimaryColumnsSelected(qb, qb.expressionMap.mainAlias!.metadata)
         const joinAlias = relation.junctionEntityMetadata!.tableName
         const joinColumnConditions = relation.joinColumns.map((joinColumn) => {
             return `${joinAlias}.${joinColumn.propertyName} IN (:...${joinColumn.propertyName})`
@@ -386,6 +401,7 @@ export class RelationLoader {
                 .from(relation.type, relation.propertyName)
 
         const mainAlias = qb.expressionMap.mainAlias!.name
+        this.ensurePrimaryColumnsSelected(qb, qb.expressionMap.mainAlias!.metadata)
         const joinAlias = relation.junctionEntityMetadata!.tableName
         const joinColumnConditions = relation.inverseRelation!.joinColumns.map(
             (joinColumn) => {
@@ -421,6 +437,27 @@ export class RelationLoader {
         this.applyEagerRelations(qb, loadEagerRelations)
 
         return qb.getMany()
+    }
+
+    private ensurePrimaryColumnsSelected(
+        qb: SelectQueryBuilder<any>,
+        metadata: EntityMetadata,
+    ) {
+        if (!qb.expressionMap.selects.length) return
+
+        const aliasName = qb.expressionMap.mainAlias?.name
+        if (!aliasName) return
+
+        const selected = new Set(
+            qb.expressionMap.selects.map((select) => select.selection),
+        )
+        if (selected.has(aliasName)) return
+        for (const primaryColumn of metadata.primaryColumns) {
+            const selection = `${aliasName}.${primaryColumn.propertyPath}`
+            if (!selected.has(selection)) {
+                qb.addSelect(selection)
+            }
+        }
     }
 
     /**

@@ -2931,6 +2931,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
               )
             : []
         const allColumns = [...columns, ...nonSelectedPrimaryColumns]
+        const nonSelectedPrimaryColumnsSet = new Set(nonSelectedPrimaryColumns)
         const finalSelects: SelectQuery[] = []
 
         allColumns.forEach((column) => {
@@ -2960,6 +2961,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     })
                 })
             } else {
+                const isAutoAddedPrimary =
+                    nonSelectedPrimaryColumnsSet.has(column)
                 finalSelects.push({
                     selection: selectionPath,
                     aliasName: DriverUtils.buildAlias(
@@ -2969,7 +2972,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         column.databaseName,
                     ),
                     // todo: need to keep in mind that custom selection.aliasName breaks hydrator. fix it later!
-                    virtual: hasMainAlias,
+                    virtual: hasMainAlias || isAutoAddedPrimary,
                 })
             }
         })
