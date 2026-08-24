@@ -510,8 +510,8 @@ describe("schema builder > change column", () => {
                     'ALTER COLUMN "name" TYPE character varying(50)',
                 )
 
-                // revert changes
-                nameColumn.length = ""
+                // revert changes (restore baseline like other tests in this file)
+                nameColumn.length = "255"
             }),
         ))
 })
