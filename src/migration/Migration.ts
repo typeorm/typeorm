@@ -28,8 +28,11 @@ export class Migration {
      * Migration instance that needs to be run.
      */
     instance?: MigrationInterface
-
-    /**
+if (column.isDropped()) {
+  this.dropColumn(column);
+} else if (column.isChanged()) {
+  this.alterColumn(column);
+}
      * Whether to run this migration within a transaction
      */
     transaction?: boolean
