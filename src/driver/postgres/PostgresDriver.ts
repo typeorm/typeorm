@@ -1208,11 +1208,7 @@ export class PostgresDriver implements Driver {
             return undefined
         }
 
-        // Must run before the enum/number/string branch below: that branch
-        // matches on columnMetadata.type === "enum" alone, so a function-typed
-        // default on an enum column would otherwise be template-literal
-        // stringified (calling the function's own toString()) instead of
-        // evaluated, regardless of the value's actual type.
+        // Check function defaults before the enum/number/string branches, which would otherwise stringify the function itself.
         if (typeof defaultValue === "function") {
             const value = defaultValue()
 

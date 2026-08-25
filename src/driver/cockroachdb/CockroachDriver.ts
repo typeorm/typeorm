@@ -759,11 +759,7 @@ export class CockroachDriver implements Driver {
             return undefined
         }
 
-        // Must run before the enum branch below: that branch's non-array case
-        // returns `'${defaultValue}'` unconditionally for any enum/simple-enum
-        // column, so a function-typed default would otherwise be
-        // template-literal stringified (calling the function's own toString())
-        // instead of evaluated.
+        // Check function defaults before the enum branch, which would otherwise stringify the function itself.
         if (typeof defaultValue === "function") {
             const value = defaultValue()
             if (value.toUpperCase() === "CURRENT_TIMESTAMP") {

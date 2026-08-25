@@ -731,6 +731,11 @@ export class AuroraMysqlDriver implements Driver {
             return undefined
         }
 
+        // Check function defaults before the enum/set branches, which would otherwise stringify the function itself.
+        if (typeof defaultValue === "function") {
+            return defaultValue()
+        }
+
         if (
             (columnMetadata.type === "enum" ||
                 columnMetadata.type === "simple-enum") &&
@@ -749,10 +754,6 @@ export class AuroraMysqlDriver implements Driver {
 
         if (typeof defaultValue === "boolean") {
             return defaultValue ? "1" : "0"
-        }
-
-        if (typeof defaultValue === "function") {
-            return defaultValue()
         }
 
         if (typeof defaultValue === "string") {
