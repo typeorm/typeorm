@@ -645,7 +645,7 @@ describe("relations > join strategy", () => {
 
                         // Parent: optionalAuthor must be LEFT JOIN
                         expect(query).to.match(
-                            /LEFT JOIN .?author.? .?post__post_optionalAuthor.?/,
+                            /LEFT JOIN \(.?author.? .?post__post_optionalAuthor.?/,
                         )
 
                         // Child: requiredProfile must ALSO be LEFT JOIN

@@ -209,17 +209,13 @@ describe("transaction > isolation level > cockroachdb", () => {
         const fallbackCases: Array<{
             name: string
             requestedIsolationLevel:
-                | "READ COMMITTED"
-                | "READ UNCOMMITTED"
-                | "REPEATABLE READ"
+                "READ COMMITTED" | "READ UNCOMMITTED" | "REPEATABLE READ"
             settings: {
                 readCommitted: boolean
                 repeatableRead: boolean
             }
             expectedIsolationLevel:
-                | "READ COMMITTED"
-                | "REPEATABLE READ"
-                | "SERIALIZABLE"
+                "READ COMMITTED" | "REPEATABLE READ" | "SERIALIZABLE"
         }> = [
             {
                 name: "READ COMMITTED -> SERIALIZABLE when read committed and repeatable read settings are disabled",

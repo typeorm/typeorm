@@ -2,9 +2,27 @@ import { exec } from "child_process"
 import fs from "fs/promises"
 import gulp from "gulp"
 import rename from "gulp-rename"
-import { promisify } from "util"
 
-const execAsync = promisify(exec)
+async function execAsync(command: string) {
+    return new Promise<void>((resolve, reject) => {
+        exec(command, (error, stdout, stderr) => {
+            if (stderr.trim().length) {
+                console.error(stderr)
+            }
+            if (stdout.trim().length) {
+                console.log(stdout)
+            }
+            if (error) {
+                console.error(
+                    `Command "${command}" failed with exit code ${error.code}.`,
+                )
+                reject(error)
+            } else {
+                resolve()
+            }
+        })
+    })
+}
 
 // -------------------------------------------------------------------------
 // Packaging for browser

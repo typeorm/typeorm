@@ -39,7 +39,7 @@ on:
         options:
           - release
           - master
-          - v0.3
+          - v0
 
 concurrency:
   group: publish-package
@@ -60,7 +60,7 @@ jobs:
               echo 'matrix=[{"target":"release"}]' >> $GITHUB_OUTPUT
               ;;
             schedule)
-              echo 'matrix=[{"ref":"master","tag":"dev","node":"24"},{"ref":"v0.3","tag":"nightly","node":"20"}]' >> $GITHUB_OUTPUT
+              echo 'matrix=[{"ref":"master","tag":"dev","node":"24"},{"ref":"v0","tag":"nightly","node":"20"}]' >> $GITHUB_OUTPUT
               ;;
             workflow_dispatch)
               TARGET="${{ inputs.target }}"
@@ -93,11 +93,11 @@ jobs:
       matrix:
         include: ${{ fromJson(needs.setup.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ matrix.ref || github.ref }}
 
-      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
 
       - name: Check if there are new commits since last publish (nightly) or if it's a release
         id: publishable
@@ -169,23 +169,23 @@ jobs:
         working-directory: build/package
 
       - name: Install @typeorm/codemod dependencies
-        if: steps.publishable.outputs.should_publish == 'true' && matrix.ref != 'v0.3'
+        if: steps.publishable.outputs.should_publish == 'true' && matrix.ref != 'v0'
         run: pnpm install --frozen-lockfile
         working-directory: packages/codemod
 
       - name: Build @typeorm/codemod
-        if: steps.publishable.outputs.should_publish == 'true' && matrix.ref != 'v0.3'
+        if: steps.publishable.outputs.should_publish == 'true' && matrix.ref != 'v0'
         run: pnpm run build
         working-directory: packages/codemod
 
       - name: Set codemod nightly version
-        if: steps.publishable.outputs.should_publish == 'true' && matrix.target != 'release' && matrix.ref != 'v0.3'
+        if: steps.publishable.outputs.should_publish == 'true' && matrix.target != 'release' && matrix.ref != 'v0'
         run: |
           BASE=$(node -p "require('./package.json').version.replace(/-.*/, '')")
           pnpm version "${BASE}-nightly.$(date -u +%Y%m%d)" --no-git-tag-version --allow-same-version
         working-directory: packages/codemod
 
       - name: Publish @typeorm/codemod
-        if: steps.publishable.outputs.should_publish == 'true' && matrix.ref != 'v0.3'
+        if: steps.publishable.outputs.should_publish == 'true' && matrix.ref != 'v0'
         run: pnpm publish --provenance --access public --no-git-checks --tag "${{ steps.publishable.outputs.tag }}"
         working-directory: packages/codemod

@@ -1,4 +1,4 @@
-import { RandomGenerator } from "./RandomGenerator"
+import { PlatformTools } from "../platform/PlatformTools"
 
 /**
  * Converts string into camelCase.
@@ -45,23 +45,6 @@ export function titleCase(str: string): string {
         /\w\S*/g,
         (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase(),
     )
-}
-
-/**
- * Builds abbreviated string from given string;
- *
- * @param str String to be abbreviated.
- * @param abbrLettersCount Number of letters to be used for abbreviation.
- * @returns abbreviated string
- */
-export function abbreviate(str: string, abbrLettersCount: number = 1): string {
-    const words = str
-        .replaceAll(/([a-z\xE0-\xFF])([A-Z\xC0\xDF])/g, "$1 $2")
-        .split(" ")
-    return words.reduce((res, word) => {
-        res += word.slice(0, abbrLettersCount)
-        return res
-    }, "")
 }
 
 export interface IShortenOptions {
@@ -117,15 +100,6 @@ export function shorten(input: string, options: IShortenOptions = {}): string {
     return shortSegments.join(separator)
 }
 
-/**
- * Checks if the current environment is Node.js.
- *
- * @returns `true` if the current environment is Node.js, `false` otherwise.
- */
-function isNode(): boolean {
-    return typeof process !== "undefined" && !!process.versions?.node
-}
-
 interface IHashOptions {
     length?: number
 }
@@ -139,16 +113,7 @@ interface IHashOptions {
  * @returns SHA-1 hex digest
  */
 export function hash(input: string, options: IHashOptions = {}): string {
-    let sha1: string
-    if (isNode()) {
-        // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-        const crypto = require("node:crypto") as typeof import("node:crypto")
-        const hashFunction = crypto.createHash("sha1")
-        hashFunction.update(input, "utf8")
-        sha1 = hashFunction.digest("hex")
-    } else {
-        sha1 = RandomGenerator.sha1(input)
-    }
+    const sha1 = PlatformTools.sha1(input)
 
     if (options.length && options.length > 0) {
         return sha1.slice(0, options.length)

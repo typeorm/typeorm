@@ -143,11 +143,12 @@ export class Category {
 }
 ```
 
-You can specify the closure table name and/or closure table column names by setting optional parameter `options` into `@Tree("closure-table", options)`. `ancestorColumnName` and `descandantColumnName` are callback functions, which receive the primary column's metadata and return the column's name.
+You can specify the closure table name and/or closure table column names by setting optional parameter `options` into `@Tree("closure-table", options)`. `ancestorColumnName` and `descendantColumnName` are callback functions, which receive the primary column's metadata and return the column's name. `closureTableName` is the argument passed to the DataSource's naming strategy's closureJunctionTableName and defaults to parent entity's `tableNameWithoutPrefix`. `closureTableSchema` specifies the schema name where the closure table has to be saved in and defaults to the parent entity's schema (if provided to the parent Entity's decorator options) or the dataSource schema.
 
 ```ts
 @Tree("closure-table", {
-    closureTableName: "category_closure",
+    closureTableName: "category",
+    closureTableSchema: "closures_schema",
     ancestorColumnName: (column) => "ancestor_" + column.propertyName,
     descendantColumnName: (column) => "descendant_" + column.propertyName,
 })

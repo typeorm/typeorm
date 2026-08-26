@@ -33,12 +33,7 @@ export interface CapacitorDataSourceOptions extends BaseDataSourceOptions {
      * The SQLite journal mode (optional)
      */
     readonly journalMode?:
-        | "DELETE"
-        | "TRUNCATE"
-        | "PERSIST"
-        | "MEMORY"
-        | "WAL"
-        | "OFF"
+        "DELETE" | "TRUNCATE" | "PERSIST" | "MEMORY" | "WAL" | "OFF"
 
     readonly poolSize?: never
 }

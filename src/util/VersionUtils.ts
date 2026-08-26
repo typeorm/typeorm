@@ -10,10 +10,13 @@ export class VersionUtils {
         const v1 = parseVersion(version)
         const v2 = parseVersion(targetVersion)
 
-        for (let i = 0; i < v1.length && i < v2.length; i++) {
-            if (v1[i] > v2[i]) {
+        const length = Math.max(v1.length, v2.length)
+        for (let i = 0; i < length; i++) {
+            const a = v1[i] ?? 0
+            const b = v2[i] ?? 0
+            if (a > b) {
                 return true
-            } else if (v1[i] < v2[i]) {
+            } else if (a < b) {
                 return false
             }
         }

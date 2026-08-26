@@ -125,12 +125,10 @@ export class InsertQueryBuilder<
                 this.expressionMap.updateEntity === true &&
                 this.expressionMap.mainAlias!.hasMetadata
             ) {
-                if (
-                    !(
-                        valueSets.length > 1 &&
-                        this.dataSource.driver.options.type === "oracle"
-                    )
-                ) {
+                if (!(
+                    valueSets.length > 1 &&
+                    this.dataSource.driver.options.type === "oracle"
+                )) {
                     this.expressionMap.extraReturningColumns =
                         this.expressionMap.mainAlias!.metadata.getInsertionReturningColumns()
                 }
@@ -261,8 +259,7 @@ export class InsertQueryBuilder<
      */
     values(
         values:
-            | QueryDeepPartialEntity<Entity>
-            | QueryDeepPartialEntity<Entity>[],
+            QueryDeepPartialEntity<Entity> | QueryDeepPartialEntity<Entity>[],
     ): this {
         this.expressionMap.valuesSet = values
         return this
@@ -616,35 +613,37 @@ export class InsertQueryBuilder<
                     } else {
                         query += ` ${conflictTarget} DO UPDATE SET `
 
-                        updatePart.push(
-                            ...this.expressionMap
-                                .mainAlias!.metadata.columns.filter(
-                                    (column) =>
-                                        column.isUpdateDate &&
-                                        !overwrite?.includes(
-                                            column.databaseName,
-                                        ) &&
-                                        !(
-                                            (this.dataSource.driver.options
-                                                .type === "oracle" &&
-                                                this.getValueSets().length >
-                                                    1) ||
-                                            DriverUtils.isSQLiteFamily(
-                                                this.dataSource.driver,
-                                            ) ||
-                                            this.dataSource.driver.options
-                                                .type === "sap" ||
-                                            this.dataSource.driver.options
-                                                .type === "spanner"
-                                        ),
-                                )
-                                .map(
-                                    (column) =>
-                                        `${this.escape(
-                                            column.databaseName,
-                                        )} = DEFAULT`,
-                                ),
-                        )
+                        if (this.expressionMap.mainAlias!.hasMetadata) {
+                            updatePart.push(
+                                ...this.expressionMap
+                                    .mainAlias!.metadata.columns.filter(
+                                        (column) =>
+                                            column.isUpdateDate &&
+                                            !overwrite?.includes(
+                                                column.databaseName,
+                                            ) &&
+                                            !(
+                                                (this.dataSource.driver.options
+                                                    .type === "oracle" &&
+                                                    this.getValueSets().length >
+                                                        1) ||
+                                                DriverUtils.isSQLiteFamily(
+                                                    this.dataSource.driver,
+                                                ) ||
+                                                this.dataSource.driver.options
+                                                    .type === "sap" ||
+                                                this.dataSource.driver.options
+                                                    .type === "spanner"
+                                            ),
+                                    )
+                                    .map(
+                                        (column) =>
+                                            `${this.escape(
+                                                column.databaseName,
+                                            )} = DEFAULT`,
+                                    ),
+                            )
+                        }
 
                         query += updatePart.join(", ")
                     }

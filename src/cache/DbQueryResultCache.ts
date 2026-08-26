@@ -142,57 +142,68 @@ export class DbQueryResultCache implements QueryResultCache {
      * @param options
      * @param queryRunner
      */
-    getFromCache(
+    async getFromCache(
         options: QueryResultCacheOptions,
         queryRunner?: QueryRunner,
     ): Promise<QueryResultCacheOptions | undefined> {
-        queryRunner = this.getQueryRunner(queryRunner)
-        const qb = this.dataSource
-            .createQueryBuilder(queryRunner)
-            .select()
-            .from(this.queryResultCacheTable, "cache")
+        const _queryRunner: QueryRunner = queryRunner ?? this.getQueryRunner()
+        try {
+            const qb = this.dataSource
+                .createQueryBuilder(_queryRunner)
+                .select()
+                .from(this.queryResultCacheTable, "cache")
 
-        if (options.identifier) {
-            return qb
-                .where(
-                    `${qb.escape("cache")}.${qb.escape(
-                        "identifier",
-                    )} = :identifier`,
-                )
-                .setParameters({
-                    identifier:
-                        this.dataSource.driver.options.type === "mssql"
-                            ? new MssqlParameter(options.identifier, "nvarchar")
-                            : options.identifier,
-                })
-                .cache(false) // disable cache to avoid infinite loops when cache is alwaysEnable
-                .getRawOne()
-        } else if (options.query) {
-            if (this.dataSource.driver.options.type === "oracle") {
-                return qb
+            if (options.identifier) {
+                return await qb
                     .where(
-                        `dbms_lob.compare(${qb.escape("cache")}.${qb.escape(
-                            "query",
-                        )}, :query) = 0`,
-                        { query: options.query },
+                        `${qb.escape("cache")}.${qb.escape(
+                            "identifier",
+                        )} = :identifier`,
                     )
+                    .setParameters({
+                        identifier:
+                            this.dataSource.driver.options.type === "mssql"
+                                ? new MssqlParameter(
+                                      options.identifier,
+                                      "nvarchar",
+                                  )
+                                : options.identifier,
+                    })
+                    .cache(false) // disable cache to avoid infinite loops when cache is alwaysEnable
+                    .getRawOne()
+            } else if (options.query) {
+                if (this.dataSource.driver.options.type === "oracle") {
+                    return await qb
+                        .where(
+                            `dbms_lob.compare(${qb.escape("cache")}.${qb.escape(
+                                "query",
+                            )}, :query) = 0`,
+                            { query: options.query },
+                        )
+                        .cache(false) // disable cache to avoid infinite loops when cache is alwaysEnable
+                        .getRawOne()
+                }
+
+                return await qb
+                    .where(
+                        `${qb.escape("cache")}.${qb.escape("query")} = :query`,
+                    )
+                    .setParameters({
+                        query:
+                            this.dataSource.driver.options.type === "mssql"
+                                ? new MssqlParameter(options.query, "nvarchar")
+                                : options.query,
+                    })
                     .cache(false) // disable cache to avoid infinite loops when cache is alwaysEnable
                     .getRawOne()
             }
 
-            return qb
-                .where(`${qb.escape("cache")}.${qb.escape("query")} = :query`)
-                .setParameters({
-                    query:
-                        this.dataSource.driver.options.type === "mssql"
-                            ? new MssqlParameter(options.query, "nvarchar")
-                            : options.query,
-                })
-                .cache(false) // disable cache to avoid infinite loops when cache is alwaysEnable
-                .getRawOne()
+            return undefined
+        } finally {
+            if (!queryRunner) {
+                await _queryRunner.release()
+            }
         }
-
-        return Promise.resolve(undefined)
     }
 
     /**
@@ -305,10 +316,15 @@ export class DbQueryResultCache implements QueryResultCache {
      *
      * @param queryRunner
      */
-    async clear(queryRunner: QueryRunner): Promise<void> {
-        return this.getQueryRunner(queryRunner).clearTable(
-            this.queryResultCacheTable,
-        )
+    async clear(queryRunner?: QueryRunner): Promise<void> {
+        const _queryRunner: QueryRunner = queryRunner ?? this.getQueryRunner()
+        try {
+            return await _queryRunner.clearTable(this.queryResultCacheTable)
+        } finally {
+            if (!queryRunner) {
+                await _queryRunner.release()
+            }
+        }
     }
 
     /**

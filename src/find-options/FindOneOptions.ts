@@ -76,8 +76,7 @@ export interface FindOneOptions<Entity = any> {
      * If array of strings is given then loads only relation ids of the given properties.
      */
     loadRelationIds?:
-        | boolean
-        | { relations?: string[]; disableMixedMap?: boolean } // todo: extract options into separate interface, reuse
+        boolean | { relations?: string[]; disableMixedMap?: boolean } // todo: extract options into separate interface, reuse
 
     /**
      * Indicates if eager relations should be loaded or not.

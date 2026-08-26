@@ -15,7 +15,7 @@ export class Post {
     @Column()
     title: string
 
-    @Column({ nullable: true, type: "varchar" })
+    @Column({ nullable: true, type: String })
     text: string | null
 
     @ManyToOne(() => Category, { nullable: true })
