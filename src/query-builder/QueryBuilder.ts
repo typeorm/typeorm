@@ -1757,6 +1757,20 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         }
     }
 
+    /**
+     * Rejects a `;` in sort/group expressions to prevent SQL injection.
+     *
+     * @param value - the value to validate
+     * @param context - the query builder method name for the error message
+     */
+    protected assertNoSemicolon(value: string, context: string): void {
+        if (value.includes(";")) {
+            throw new TypeORMError(
+                `Semicolons are not allowed in ${context} to prevent SQL injection.`,
+            )
+        }
+    }
+
     protected normalizeNumber(num: any) {
         if (typeof num === "number" || num === undefined || num === null)
             return num

@@ -262,6 +262,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * @param distinctOn
      */
     distinctOn(distinctOn: string[]): this {
+        for (const columnName of distinctOn) {
+            this.assertNoSemicolon(columnName, "distinctOn")
+        }
         this.expressionMap.selectDistinctOn = distinctOn
         return this
     }
@@ -2319,20 +2322,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     }
 
     /**
-     * Validates that a DISTINCT ON expression is a column name or an
-     * entity property path (dot separated identifiers). Arbitrary SQL
-     * expressions are rejected to prevent SQL injection.
-     *
-     * @param columnName - column name or property path to validate
-     */
-    protected validateDistinctOnExpression(columnName: string): void {
-        if (!/^[A-Za-z0-9_$]+(\.[A-Za-z0-9_$]+)*$/.test(columnName))
-            throw new TypeORMError(
-                `Invalid DISTINCT ON expression "${columnName}". Only column names and property paths are allowed.`,
-            )
-    }
-
-    /**
      * Builds a single DISTINCT ON column expression. Entity property paths
      * are resolved to their database column names and every identifier is
      * escaped, so client-controlled values cannot inject arbitrary SQL.
@@ -2343,7 +2332,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     protected buildDistinctOnExpression(columnName: string): string {
         // Resolve an exact registered alias prefix first. Alias names are
         // unrestricted strings and are safely escaped, so they are not
-        // subject to the stricter identifier validation below.
+        // subject to any character restrictions.
         const alias = this.expressionMap.aliases.find((alias) =>
             columnName.startsWith(alias.name + "."),
         )
@@ -2383,9 +2372,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (column) return this.escape(column.databaseName)
         }
 
-        // Unknown identifier: reject non-identifier characters and escape.
-        this.validateDistinctOnExpression(columnName)
-        return this.escape(columnName)
+        // Unknown identifier: escape it so it cannot execute as raw SQL.
+        return columnName
+            .split(".")
+            .map((part) => this.escape(part))
+            .join(".")
     }
 
     /**
