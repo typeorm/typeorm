@@ -4,7 +4,7 @@ import { NamedPlaceholdersNotSupportedError } from "../../error/NamedPlaceholder
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
-import { PlatformTools } from "../../platform/PlatformTools"
+import { DateUtils } from "../../util/DateUtils"
 import type { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryLock } from "../../query-runner/QueryLock"
@@ -265,7 +265,7 @@ export class SqlServerQueryRunner
                     }
                 })
             }
-            queryStartTime = PlatformTools.performanceNow()
+            queryStartTime = DateUtils.performanceNow()
 
             const raw = await request.query(query).catch((err: Error) => {
                 throw new QueryFailedError(query, parameters, err)
@@ -273,7 +273,7 @@ export class SqlServerQueryRunner
 
             // log slow queries if maxQueryExecution time is set
             const queryExecutionTime =
-                PlatformTools.performanceNow() - queryStartTime
+                DateUtils.performanceNow() - queryStartTime
 
             this.broadcaster.broadcastAfterQueryEvent(
                 broadcasterResult,
@@ -321,7 +321,7 @@ export class SqlServerQueryRunner
         } catch (err) {
             const queryExecutionTime =
                 queryStartTime !== undefined
-                    ? PlatformTools.performanceNow() - queryStartTime
+                    ? DateUtils.performanceNow() - queryStartTime
                     : undefined
 
             if (

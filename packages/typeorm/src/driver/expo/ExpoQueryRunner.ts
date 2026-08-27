@@ -1,4 +1,4 @@
-import { PlatformTools } from "../../platform/PlatformTools"
+import { DateUtils } from "../../util/DateUtils"
 import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { NamedPlaceholdersNotSupportedError } from "../../error"
 import { QueryFailedError } from "../../error/QueryFailedError"
@@ -42,7 +42,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
         this.driver.dataSource.logger.logQuery(query, parameters, this)
         await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
-        const queryStartTime = PlatformTools.performanceNow()
+        const queryStartTime = DateUtils.performanceNow()
 
         const statement = await databaseConnection.prepareAsync(query)
         try {
@@ -50,7 +50,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
 
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = PlatformTools.performanceNow()
+            const queryEndTime = DateUtils.performanceNow()
             const queryExecutionTime = queryEndTime - queryStartTime
 
             this.broadcaster.broadcastAfterQueryEvent(

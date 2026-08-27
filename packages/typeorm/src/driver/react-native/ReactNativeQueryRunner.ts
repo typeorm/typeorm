@@ -1,4 +1,4 @@
-import { PlatformTools } from "../../platform/PlatformTools"
+import { DateUtils } from "../../util/DateUtils"
 import { NamedPlaceholdersNotSupportedError } from "../../error/NamedPlaceholdersNotSupportedError"
 import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { QueryFailedError } from "../../error/QueryFailedError"
@@ -67,7 +67,7 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
 
         const broadcasterResult = new BroadcasterResult()
 
-        const queryStartTime = PlatformTools.performanceNow()
+        const queryStartTime = DateUtils.performanceNow()
 
         return new Promise(async (ok, fail) => {
             try {
@@ -78,7 +78,7 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
                         // log slow queries if maxQueryExecution time is set
                         const maxQueryExecutionTime =
                             this.driver.options.maxQueryExecutionTime
-                        const queryEndTime = PlatformTools.performanceNow()
+                        const queryEndTime = DateUtils.performanceNow()
                         const queryExecutionTime = queryEndTime - queryStartTime
                         this.broadcaster.broadcastAfterQueryEvent(
                             broadcasterResult,

@@ -31,22 +31,6 @@ export class PlatformTools {
     }
 
     /**
-     * @returns a timestamp in milliseconds suitable for measuring elapsed time.
-     *
-     * Prefers the monotonic, higher-resolution `performance.now()` where the
-     * runtime provides it, and falls back to `Date.now()` where it does not.
-     * Only ever use the returned value to compute a duration: its time origin
-     * is not the Unix epoch.
-     */
-    static performanceNow(): number {
-        const globalVariable = PlatformTools.getGlobalVariable()
-        if (typeof globalVariable?.performance?.now === "function") {
-            return globalVariable.performance.now()
-        }
-        return Date.now()
-    }
-
-    /**
      * Loads ("require"-s) given file or package.
      * This operation is only supported on the NodeJS platform
      *
