@@ -262,6 +262,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * @param distinctOn
      */
     distinctOn(distinctOn: string[]): this {
+        for (const columnName of distinctOn) {
+            this.validateDistinctOnExpression(columnName)
+        }
         this.expressionMap.selectDistinctOn = distinctOn
         return this
     }
@@ -2306,7 +2309,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             DriverUtils.isPostgresFamily(driver) &&
             selectDistinctOn.length > 0
         ) {
-            const selectDistinctOnMap = selectDistinctOn.join(", ")
+            const selectDistinctOnMap = selectDistinctOn
+                .map((columnName) => this.buildDistinctOnExpression(columnName))
+                .join(", ")
 
             select = `SELECT DISTINCT ON (${selectDistinctOnMap}) `
         } else if (selectDistinct) {
@@ -2314,6 +2319,64 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         }
 
         return select
+    }
+
+    /**
+     * Validates that a DISTINCT ON expression is a column name or an
+     * entity property path (dot separated identifiers). Arbitrary SQL
+     * expressions are rejected to prevent SQL injection.
+     *
+     * @param columnName - column name or property path to validate
+     */
+    protected validateDistinctOnExpression(columnName: string): void {
+        if (!/^[A-Za-z0-9_$]+(\.[A-Za-z0-9_$]+)*$/.test(columnName))
+            throw new TypeORMError(
+                `Invalid DISTINCT ON expression "${columnName}". Only column names and property paths are allowed.`,
+            )
+    }
+
+    /**
+     * Builds a single DISTINCT ON column expression. Entity property paths
+     * are resolved to their database column names and every identifier is
+     * escaped, so client-controlled values cannot inject arbitrary SQL.
+     *
+     * @param columnName - column name or property path to build
+     * @returns escaped DISTINCT ON column expression
+     */
+    protected buildDistinctOnExpression(columnName: string): string {
+        this.validateDistinctOnExpression(columnName)
+
+        const parts = columnName.split(".")
+        const aliasName = parts[0]
+
+        if (parts.length === 1) {
+            const alias = this.expressionMap.mainAlias
+            if (alias?.hasMetadata) {
+                const column =
+                    alias.metadata.findColumnWithPropertyPath(columnName)
+                if (column) return this.escape(column.databaseName)
+            }
+            return this.escape(columnName)
+        }
+
+        const alias = this.expressionMap.aliases.find(
+            (alias) => alias.name === aliasName,
+        )
+        if (alias?.hasMetadata) {
+            const propertyPath = parts.slice(1).join(".")
+            const column =
+                alias.metadata.findColumnWithPropertyPath(propertyPath)
+            if (column)
+                return (
+                    this.escape(alias.name) +
+                    "." +
+                    this.escape(column.databaseName)
+                )
+        }
+
+        // Alias without metadata (e.g. subquery) or an unknown property path:
+        // escape each identifier segment so nothing is interpolated verbatim.
+        return parts.map((part) => this.escape(part)).join(".")
     }
 
     /**
