@@ -730,7 +730,11 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * @param statement
      */
     protected replacePropertyNamesForTheWholeQuery(statement: string) {
-        const replacements: { [key: string]: { [key: string]: string } } = {}
+        const replacements: {
+            [key: string]: {
+                [key: string]: { expression: string; isVirtual?: boolean }
+            }
+        } = {}
 
         for (const alias of this.expressionMap.aliases) {
             if (!alias.hasMetadata) continue
@@ -741,6 +745,33 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
             if (!replacements[replaceAliasNamePrefix]) {
                 replacements[replaceAliasNamePrefix] = {}
+            }
+
+            const columnReplacements = new Map<
+                ColumnMetadata,
+                { expression: string; isVirtual?: boolean }
+            >()
+            const buildColumnReplacement = (column: ColumnMetadata) => {
+                const replacement = columnReplacements.get(column)
+                if (replacement) {
+                    return replacement
+                }
+
+                let columnReplacement: {
+                    expression: string
+                    isVirtual?: boolean
+                }
+                if (column.isVirtualProperty && column.query) {
+                    columnReplacement = {
+                        expression: `(${column.query(this.escape(alias.name))})`,
+                        isVirtual: true,
+                    }
+                } else {
+                    columnReplacement = { expression: column.databaseName }
+                }
+
+                columnReplacements.set(column, columnReplacement)
+                return columnReplacement
             }
 
             // Insert & overwrite the replacements from least to most relevant in our replacements object.
@@ -756,7 +787,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 if (relation.joinColumns.length > 0)
                     replacements[replaceAliasNamePrefix][
                         relation.propertyPath
-                    ] = relation.joinColumns[0].databaseName
+                    ] = { expression: relation.joinColumns[0].databaseName }
             }
 
             for (const relation of alias.metadata.relations) {
@@ -768,24 +799,25 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     const propertyKey = `${relation.propertyPath}.${
                         joinColumn.referencedColumn!.propertyPath
                     }`
-                    replacements[replaceAliasNamePrefix][propertyKey] =
-                        joinColumn.databaseName
+                    replacements[replaceAliasNamePrefix][propertyKey] = {
+                        expression: joinColumn.databaseName,
+                    }
                 }
             }
 
             for (const column of alias.metadata.columns) {
                 replacements[replaceAliasNamePrefix][column.databaseName] =
-                    column.databaseName
+                    buildColumnReplacement(column)
             }
 
             for (const column of alias.metadata.columns) {
                 replacements[replaceAliasNamePrefix][column.propertyName] =
-                    column.databaseName
+                    buildColumnReplacement(column)
             }
 
             for (const column of alias.metadata.columns) {
                 replacements[replaceAliasNamePrefix][column.propertyPath] =
-                    column.databaseName
+                    buildColumnReplacement(column)
             }
         }
 
@@ -816,18 +848,26 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         pre = matches[1]
                         p = matches[3]
 
-                        if (replacements[matches[2]][p]) {
+                        const replacement = replacements[matches[2]][p]
+                        if (replacement) {
+                            if (replacement.isVirtual) {
+                                return `${pre}${replacement.expression}`
+                            }
                             return `${pre}${this.escape(
                                 matches[2].slice(0, -1),
-                            )}.${this.escape(replacements[matches[2]][p])}`
+                            )}.${this.escape(replacement.expression)}`
                         }
                     } else {
                         match = matches[0]
                         pre = matches[1]
                         p = matches[2]
 
-                        if (replacements[""][p]) {
-                            return `${pre}${this.escape(replacements[""][p])}`
+                        const replacement = replacements[""][p]
+                        if (replacement) {
+                            if (replacement.isVirtual) {
+                                return `${pre}${replacement.expression}`
+                            }
+                            return `${pre}${this.escape(replacement.expression)}`
                         }
                     }
                     return match
