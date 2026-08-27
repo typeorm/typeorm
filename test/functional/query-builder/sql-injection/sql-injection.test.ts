@@ -599,6 +599,22 @@ describe("query builder > sql injection", () => {
             }
         })
 
+        it("should resolve relation property paths to the join column", () => {
+            for (const dataSource of dataSources) {
+                if (!DriverUtils.isPostgresFamily(dataSource.driver)) {
+                    continue
+                }
+
+                const sql = dataSource
+                    .createQueryBuilder(Post, "post")
+                    .distinctOn(["post.category.id"])
+                    .getSql()
+
+                expect(sql).to.contain('DISTINCT ON ("post"."categoryId")')
+                expect(sql).to.not.contain('"post"."category"."id"')
+            }
+        })
+
         it("should reject semicolons in distinct on to prevent statement stacking", () => {
             for (const dataSource of dataSources) {
                 if (!DriverUtils.isPostgresFamily(dataSource.driver)) {

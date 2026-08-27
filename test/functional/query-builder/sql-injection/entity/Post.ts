@@ -1,4 +1,11 @@
-import { Column, Entity, PrimaryColumn } from "../../../../../src"
+import {
+    Column,
+    Entity,
+    JoinColumn,
+    ManyToOne,
+    PrimaryColumn,
+} from "../../../../../src"
+import { Category } from "./Category"
 
 @Entity()
 export class Post {
@@ -16,4 +23,8 @@ export class Post {
 
     @Column()
     tag: string
+
+    @ManyToOne(() => Category)
+    @JoinColumn({ name: "categoryId" })
+    category: Category | null
 }

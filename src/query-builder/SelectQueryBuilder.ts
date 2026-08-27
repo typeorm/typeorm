@@ -32,6 +32,7 @@ import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { OrmUtils } from "../util/OrmUtils"
+import type { Alias } from "./Alias"
 import type { Brackets } from "./Brackets"
 import type { JoinAttributeTree } from "./JoinAttribute"
 import { JoinAttribute } from "./JoinAttribute"
@@ -2340,8 +2341,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         if (alias) {
             const propertyPath = columnName.slice(alias.name.length + 1)
             if (alias.hasMetadata) {
-                const column =
-                    alias.metadata.findColumnWithPropertyPath(propertyPath)
+                const column = this.resolvePropertyPathColumn(
+                    alias,
+                    propertyPath,
+                )
                 if (column)
                     return (
                         this.escape(alias.name) +
@@ -2365,10 +2368,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         // Bare column name: resolve it against the main alias, if possible.
         if (this.expressionMap.mainAlias?.hasMetadata) {
-            const column =
-                this.expressionMap.mainAlias.metadata.findColumnWithPropertyPath(
-                    columnName,
-                )
+            const column = this.resolvePropertyPathColumn(
+                this.expressionMap.mainAlias,
+                columnName,
+            )
             if (column) return this.escape(column.databaseName)
         }
 
@@ -2377,6 +2380,36 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             .split(".")
             .map((part) => this.escape(part))
             .join(".")
+    }
+
+    /**
+     * Resolves an entity property path to its column metadata. In addition
+     * to direct columns and exact relation paths, this handles relation
+     * paths referencing a column of the related entity (e.g. "category.id"),
+     * which map to the relation's join column.
+     *
+     * @param alias - alias whose metadata owns the property path
+     * @param propertyPath - property path to resolve
+     * @returns the column metadata, or undefined if the path is unknown
+     */
+    protected resolvePropertyPathColumn(
+        alias: Alias,
+        propertyPath: string,
+    ): ColumnMetadata | undefined {
+        for (const relation of alias.metadata.relations) {
+            const allColumns = [
+                ...relation.joinColumns,
+                ...relation.inverseJoinColumns,
+            ]
+            for (const joinColumn of allColumns) {
+                const propertyKey = `${relation.propertyPath}.${
+                    joinColumn.referencedColumn!.propertyPath
+                }`
+                if (propertyKey === propertyPath) return joinColumn
+            }
+        }
+
+        return alias.metadata.findColumnWithPropertyPath(propertyPath)
     }
 
     /**

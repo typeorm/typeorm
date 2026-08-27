@@ -1758,7 +1758,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Rejects a `;` in sort/group expressions to prevent SQL injection.
+     * Rejects a `;` in raw string inputs to prevent SQL statement stacking.
      *
      * @param value - the value to validate
      * @param context - the query builder method name for the error message
