@@ -127,7 +127,8 @@ export class RawSqlResultsToEntityTransformer {
             (key) => key in (rawResults[0] ?? {}),
         )
 
-        for (const rawResult of rawResults) {
+        for (let rowIndex = 0; rowIndex < rawResults.length; rowIndex++) {
+            const rawResult = rawResults[rowIndex]
             let id: string
 
             if (primaryKeysSelected) {
@@ -150,7 +151,6 @@ export class RawSqlResultsToEntityTransformer {
             } else {
                 // Fallback: use row index when primary keys are not available
                 // This ensures each row gets its own group for proper entity mapping
-                const rowIndex = rawResults.indexOf(rawResult)
                 id = `row_${rowIndex}`
             }
 
