@@ -2331,9 +2331,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * @returns escaped DISTINCT ON column expression
      */
     protected buildDistinctOnExpression(columnName: string): string {
-        // Resolve an exact registered alias prefix first. Alias names are
-        // unrestricted strings and are safely escaped, so they are not
-        // subject to any character restrictions.
         const alias = this.expressionMap.aliases.find((alias) =>
             columnName.startsWith(alias.name + "."),
         )
@@ -2353,9 +2350,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     )
             }
 
-            // Alias without metadata (e.g. subquery) or an unknown property
-            // path: escape every identifier segment so nothing is
-            // interpolated verbatim.
             return (
                 this.escape(alias.name) +
                 "." +
@@ -2366,7 +2360,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             )
         }
 
-        // Bare column name: resolve it against the main alias, if possible.
         if (this.expressionMap.mainAlias?.hasMetadata) {
             const column = this.resolvePropertyPathColumn(
                 this.expressionMap.mainAlias,
@@ -2375,7 +2368,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             if (column) return this.escape(column.databaseName)
         }
 
-        // Unknown identifier: escape it so it cannot execute as raw SQL.
         return columnName
             .split(".")
             .map((part) => this.escape(part))
@@ -2386,7 +2378,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * Resolves an entity property path to its column metadata. In addition
      * to direct columns and exact relation paths, this handles relation
      * paths referencing a column of the related entity (e.g. "category.id"),
-     * which map to the relation's join column.
+     * which map to the relation's join column, and physical database column
+     * names that contain dots (e.g. "profile.name").
      *
      * @param alias - alias whose metadata owns the property path
      * @param propertyPath - property path to resolve
@@ -2409,7 +2402,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             }
         }
 
-        return alias.metadata.findColumnWithPropertyPath(propertyPath)
+        return (
+            alias.metadata.findColumnWithPropertyPath(propertyPath) ??
+            alias.metadata.columns.find(
+                (column) => column.databaseName === propertyPath,
+            )
+        )
     }
 
     /**

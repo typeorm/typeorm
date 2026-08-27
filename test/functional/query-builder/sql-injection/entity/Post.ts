@@ -24,6 +24,9 @@ export class Post {
     @Column()
     tag: string
 
+    @Column({ name: "profile.name", type: "varchar", nullable: true })
+    profileName: string | null
+
     @ManyToOne(() => Category)
     @JoinColumn({ name: "categoryId" })
     category: Category | null

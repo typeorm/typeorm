@@ -615,6 +615,22 @@ describe("query builder > sql injection", () => {
             }
         })
 
+        it("should keep dotted physical column names intact", () => {
+            for (const dataSource of dataSources) {
+                if (!DriverUtils.isPostgresFamily(dataSource.driver)) {
+                    continue
+                }
+
+                const sql = dataSource
+                    .createQueryBuilder(Post, "post")
+                    .distinctOn(["post.profile.name"])
+                    .getSql()
+
+                expect(sql).to.contain('DISTINCT ON ("post"."profile.name")')
+                expect(sql).to.not.contain('"post"."profile"."name"')
+            }
+        })
+
         it("should reject semicolons in distinct on to prevent statement stacking", () => {
             for (const dataSource of dataSources) {
                 if (!DriverUtils.isPostgresFamily(dataSource.driver)) {
