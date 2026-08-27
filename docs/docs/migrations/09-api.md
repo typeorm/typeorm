@@ -329,6 +329,11 @@ changeColumn(table: Table|string, oldColumn: TableColumn|string, newColumn: Tabl
 
 Changes a column in the table.
 
+When only the column type or length changes, the migration uses `ALTER COLUMN` (or equivalent) to
+modify the column in place, preserving existing data. Columns that change array type, generated
+type, or expression still require drop-and-recreate. Other property changes (name, nullable,
+default, unique, primary key) are applied alongside type/length changes in a single call.
+
 ---
 
 ```ts

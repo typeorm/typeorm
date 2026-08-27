@@ -888,17 +888,49 @@ export class AuroraMysqlQueryRunner
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             oldColumn.generatedType !== newColumn.generatedType
         ) {
+            // Recreate column only for incompatible changes (generated type/strategy)
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
         } else {
-            if (newColumn.name !== oldColumn.name) {
+            let typeOrLengthChanged = false
+            if (
+                oldColumn.type !== newColumn.type ||
+                (newColumn.length !== undefined &&
+                    oldColumn.length !== newColumn.length)
+            ) {
+                typeOrLengthChanged = true
+                // Use ALTER TABLE CHANGE for type/length changes to preserve data
+                // CHANGE can handle both rename and type change in one statement
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                            oldColumn.name
+                        }\` \`${newColumn.name}\` ${this.buildCreateColumnSql(
+                            newColumn,
+                            true,
+                            true,
+                        )}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} CHANGE \`${
+                            newColumn.name
+                        }\` \`${oldColumn.name}\` ${this.buildCreateColumnSql(
+                            oldColumn,
+                            true,
+                            true,
+                        )}`,
+                    ),
+                )
+            }
+
+            if (newColumn.name !== oldColumn.name && !typeOrLengthChanged) {
                 // We don't change any column properties, just rename it.
                 upQueries.push(
                     new Query(
