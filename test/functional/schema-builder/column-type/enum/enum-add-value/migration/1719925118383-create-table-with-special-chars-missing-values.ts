@@ -8,7 +8,7 @@ export class CreateTableWithSpecialCharsMissingValues1719925118383 implements Mi
             `CREATE TYPE "public"."foo_with_special_chars_bar_enum" AS ENUM('simple', 'user''s choice')`,
         )
         await queryRunner.query(
-            `CREATE TABLE "foo_with_special_chars" ("id" SERIAL NOT NULL, "bar" "public"."foo_with_special_chars_bar_enum" NOT NULL, CONSTRAINT "PK_foo_with_special_chars" PRIMARY KEY ("id"))`,
+            `CREATE TABLE "foo_with_special_chars" ("id" SERIAL NOT NULL, "bar" "public"."foo_with_special_chars_bar_enum" NOT NULL, CONSTRAINT "PK_35eddff30b8b5c41f4855494166" PRIMARY KEY ("id"))`,
         )
     }
 

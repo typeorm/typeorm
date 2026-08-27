@@ -379,6 +379,17 @@ export interface QueryRunner extends AsyncDisposable {
     ): Promise<void>
 
     /**
+     * Renames a primary key constraint in place, without dropping and recreating it.
+     * Optional — implementations vary by dialect: Postgres and CockroachDB emit
+     * `ALTER TABLE … RENAME CONSTRAINT`; other drivers may not implement this.
+     */
+    renamePrimaryKey?(
+        table: Table | string,
+        oldName: string,
+        newName: string,
+    ): Promise<void>
+
+    /**
      * Creates a new unique constraint.
      */
     createUniqueConstraint(
@@ -410,6 +421,16 @@ export interface QueryRunner extends AsyncDisposable {
         table: Table | string,
         uniqueConstraints: TableUnique[],
         ifExists?: boolean,
+    ): Promise<void>
+
+    /**
+     * Renames a unique constraint in place, without dropping and recreating it.
+     * Optional — implementations vary by dialect.
+     */
+    renameUniqueConstraint?(
+        table: Table | string,
+        uniqueOrName: TableUnique | string,
+        newName: string,
     ): Promise<void>
 
     /**
@@ -447,6 +468,16 @@ export interface QueryRunner extends AsyncDisposable {
     ): Promise<void>
 
     /**
+     * Renames a check constraint in place, without dropping and recreating it.
+     * Optional — implementations vary by dialect.
+     */
+    renameCheckConstraint?(
+        table: Table | string,
+        checkOrName: TableCheck | string,
+        newName: string,
+    ): Promise<void>
+
+    /**
      * Creates a new exclusion constraint.
      */
     createExclusionConstraint(
@@ -478,6 +509,16 @@ export interface QueryRunner extends AsyncDisposable {
         table: Table | string,
         exclusionConstraints: TableExclusion[],
         ifExists?: boolean,
+    ): Promise<void>
+
+    /**
+     * Renames an exclusion constraint in place, without dropping and recreating it.
+     * Optional — exclusion constraints are Postgres-only.
+     */
+    renameExclusionConstraint?(
+        table: Table | string,
+        exclusionOrName: TableExclusion | string,
+        newName: string,
     ): Promise<void>
 
     /**
@@ -515,6 +556,16 @@ export interface QueryRunner extends AsyncDisposable {
     ): Promise<void>
 
     /**
+     * Renames a foreign key constraint in place, without dropping and recreating it.
+     * Optional — implementations vary by dialect.
+     */
+    renameForeignKey?(
+        table: Table | string,
+        foreignKeyOrName: TableForeignKey | string,
+        newName: string,
+    ): Promise<void>
+
+    /**
      * Creates a new index.
      */
     createIndex(table: Table | string, index: TableIndex): Promise<void>
@@ -540,6 +591,16 @@ export interface QueryRunner extends AsyncDisposable {
         table: Table | string,
         indices: TableIndex[],
         ifExists?: boolean,
+    ): Promise<void>
+
+    /**
+     * Renames an index in place, without dropping and recreating it.
+     * Optional — implementations vary by dialect (e.g. older SQLite cannot rename indexes).
+     */
+    renameIndex?(
+        table: Table | string,
+        indexOrName: TableIndex | string,
+        newName: string,
     ): Promise<void>
 
     /**

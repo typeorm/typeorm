@@ -2460,6 +2460,36 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
+     * Renames an index in place via `ALTER TABLE … RENAME INDEX` (MySQL ≥ 5.7,
+     * MariaDB ≥ 10.5).
+     *
+     * @param tableOrName
+     * @param indexOrName
+     * @param newName
+     */
+    async renameIndex(
+        tableOrName: Table | string,
+        indexOrName: TableIndex | string,
+        newName: string,
+    ): Promise<void> {
+        const table = InstanceChecker.isTable(tableOrName)
+            ? tableOrName
+            : await this.getCachedTable(tableOrName)
+        const index = InstanceChecker.isTableIndex(indexOrName)
+            ? indexOrName
+            : table.indices.find((i) => i.name === indexOrName)
+        if (!index?.name) {
+            throw new TypeORMError(
+                `Supplied index was not found in table ${table.name}`,
+            )
+        }
+
+        const { up, down } = this.renameIndexSql(table, index.name, newName)
+        await this.executeQueries(up, down)
+        index.name = newName
+    }
+
+    /**
      * Clears all table contents.
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      *
@@ -3489,6 +3519,33 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 table,
             )} DROP FOREIGN KEY \`${foreignKeyName}\``,
         )
+    }
+
+    /**
+     * Builds up/down queries that rename an index in place via the native
+     * `ALTER TABLE … RENAME INDEX` syntax (MySQL ≥ 5.7, MariaDB ≥ 10.5). Unlike
+     * constraints, indexes support a true rename and no drop+add fallback is
+     * needed.
+     *
+     * @param table
+     * @param oldName
+     * @param newName
+     * @returns Reversible up/down query pair.
+     */
+    protected renameIndexSql(
+        table: Table,
+        oldName: string,
+        newName: string,
+    ): { up: Query; down: Query } {
+        const escaped = this.escapePath(table)
+        return {
+            up: new Query(
+                `ALTER TABLE ${escaped} RENAME INDEX \`${oldName}\` TO \`${newName}\``,
+            ),
+            down: new Query(
+                `ALTER TABLE ${escaped} RENAME INDEX \`${newName}\` TO \`${oldName}\``,
+            ),
+        }
     }
 
     /**

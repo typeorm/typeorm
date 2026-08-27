@@ -753,6 +753,7 @@ export class DataSource {
                 (metadata) => metadata.tableType !== "view",
             ),
             this.driver,
+            this.logger,
         )
 
         // set current data source to the entities

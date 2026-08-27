@@ -9,6 +9,13 @@ import { NoConnectionOptionError } from "../error/NoConnectionOptionError"
 import { InitializedRelationError } from "../error/InitializedRelationError"
 import { TypeORMError } from "../error"
 import { DriverUtils } from "../driver/DriverUtils"
+import type { Logger } from "../logger/Logger"
+import {
+    checkMetadataSignature,
+    exclusionMetadataSignature,
+    indexMetadataSignature,
+    uniqueMetadataSignature,
+} from "../schema-builder/util/constraintSignature"
 
 /// todo: add check if there are multiple tables with the same name
 /// todo: add checks when generated column / table names are too long for the specific driver
@@ -40,13 +47,23 @@ export class EntityMetadataValidator {
      *
      * @param entityMetadatas
      * @param driver
+     * @param logger Optional logger for non-fatal advisory warnings (e.g.
+     *     duplicate-structure constraint detection). Callers without a
+     *     logger get the error-level validation only.
      */
-    validateMany(entityMetadatas: EntityMetadata[], driver: Driver) {
+    validateMany(
+        entityMetadatas: EntityMetadata[],
+        driver: Driver,
+        logger?: Logger,
+    ) {
         entityMetadatas.forEach((entityMetadata) =>
             this.validate(entityMetadata, entityMetadatas, driver),
         )
         this.validateDependencies(entityMetadatas)
         this.validateEagerRelations(entityMetadatas)
+        if (logger) {
+            this.warnDuplicateConstraints(entityMetadatas, logger)
+        }
     }
 
     /**
@@ -294,6 +311,79 @@ export class EntityMetadataValidator {
         } catch (err) {
             throw new CircularRelationsError(
                 err.toString().replace("Error: Dependency Cycle Found: ", ""),
+            )
+        }
+    }
+
+    /**
+     * Emits a logger warning for each entity whose own indices / unique /
+     * check / exclusion constraint declarations contain two or more entries
+     * with an identical structural signature. Duplicate declarations produce
+     * redundant DDL and are almost always accidental (e.g. an inherited
+     * `@Index` re-declared on a subclass).
+     *
+     * Advisory only — never throws. Signatures ignore names and match the
+     * same shape the schema-builder uses for its rename reconciliation, so
+     * duplicates detected here are the same duplicates that make reconciler
+     * pairing ambiguous.
+     *
+     * @param entityMetadatas
+     * @param logger
+     */
+    protected warnDuplicateConstraints(
+        entityMetadatas: EntityMetadata[],
+        logger: Logger,
+    ) {
+        const warnGroups = <T extends { name: string }>(
+            entityName: string,
+            family: string,
+            items: T[],
+            sig: (item: T) => string,
+        ) => {
+            const groups = new Map<string, T[]>()
+            for (const item of items) {
+                const key = sig(item)
+                const bucket = groups.get(key)
+                if (bucket) bucket.push(item)
+                else groups.set(key, [item])
+            }
+            for (const bucket of groups.values()) {
+                if (bucket.length < 2) continue
+                const names = bucket
+                    .map((item) => item.name ?? "<unnamed>")
+                    .join(", ")
+                logger.log(
+                    "warn",
+                    `Entity "${entityName}" declares ${bucket.length} structurally identical ${family}: ${names}. ` +
+                        `Duplicates emit redundant DDL and may confuse schema-builder rename reconciliation — remove all but one.`,
+                )
+            }
+        }
+
+        for (const entityMetadata of entityMetadatas) {
+            warnGroups(
+                entityMetadata.name,
+                "indexes",
+                entityMetadata.indices,
+                indexMetadataSignature,
+            )
+            warnGroups(
+                entityMetadata.name,
+                "unique constraints",
+                entityMetadata.uniques,
+                uniqueMetadataSignature,
+            )
+            warnGroups(
+                entityMetadata.name,
+                "check constraints",
+                entityMetadata.checks,
+                checkMetadataSignature,
+            )
+            warnGroups(
+                entityMetadata.name,
+                "exclusion constraints",
+                entityMetadata.exclusions,
+                exclusionMetadataSignature,
             )
         }
     }
