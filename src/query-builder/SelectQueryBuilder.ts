@@ -2576,9 +2576,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             tableName +
             " " +
             this.escape(alias) +
+            this.createTableLockExpression() +
             childJoins +
             postfix +
-            this.createTableLockExpression() +
             (condition ? " ON " + condition : "")
         )
     }
