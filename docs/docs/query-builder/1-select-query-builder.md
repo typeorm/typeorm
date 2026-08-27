@@ -508,7 +508,9 @@ If you use `.orderBy` more than once you'll override all previous `ORDER BY` exp
 ## Adding `DISTINCT ON` expression (Postgres only)
 
 When using both distinct-on with an order-by expression, the distinct-on expression must match the leftmost order-by.
-The distinct-on expressions are interpreted using the same rules as order-by. Please note that, using distinct-on without an order-by expression means that the first row of each set is unpredictable.
+Each distinct-on expression must be a column name or an entity property path such as `user.id`.
+Arbitrary SQL expressions are not allowed and throw an error.
+Please note that, using distinct-on without an order-by expression means that the first row of each set is unpredictable.
 
 Adding a `DISTINCT ON` expression is easy as:
 

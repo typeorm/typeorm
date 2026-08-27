@@ -583,19 +583,35 @@ describe("query builder > sql injection", () => {
             }
         })
 
-        it("should reject SQL injection payloads in distinct on", () => {
+        it("should support registered aliases containing special characters", () => {
+            for (const dataSource of dataSources) {
+                if (!DriverUtils.isPostgresFamily(dataSource.driver)) {
+                    continue
+                }
+
+                const sql = dataSource
+                    .createQueryBuilder()
+                    .from(Post, "post-item")
+                    .distinctOn(["post-item.name"])
+                    .getSql()
+
+                expect(sql).to.contain('DISTINCT ON ("post-item"."name")')
+            }
+        })
+
+        it("should reject unknown SQL injection payloads in distinct on", () => {
             for (const dataSource of dataSources) {
                 if (!DriverUtils.isPostgresFamily(dataSource.driver)) {
                     continue
                 }
 
                 for (const malicious of [
-                    "post.id); DROP TABLE post; --",
-                    "post.name OR 1=1",
                     "(SELECT pg_sleep(5))",
-                    "post.name, (SELECT password FROM users)",
+                    "id); DROP TABLE post; --",
                     "' UNION SELECT * FROM post --",
-                    'post."name"',
+                    "name OR 1=1",
+                    "name, (SELECT password FROM users)",
+                    '"name"',
                 ]) {
                     expect(() =>
                         dataSource
@@ -607,6 +623,26 @@ describe("query builder > sql injection", () => {
             }
         })
 
+        it("should escape injection payloads that carry a registered alias prefix", () => {
+            for (const dataSource of dataSources) {
+                if (!DriverUtils.isPostgresFamily(dataSource.driver)) {
+                    continue
+                }
+
+                const sql = dataSource
+                    .createQueryBuilder(Post, "post")
+                    .distinctOn(["post.id); DROP TABLE post; --"])
+                    .getSql()
+
+                expect(sql).to.contain(
+                    'DISTINCT ON ("post"."id); DROP TABLE post; --")',
+                )
+                expect(sql).to.not.contain(
+                    "DISTINCT ON (post.id); DROP TABLE post; --",
+                )
+            }
+        })
+
         it("should not interpolate a raw malicious payload into the generated SQL", async () => {
             for (const dataSource of dataSources) {
                 if (!DriverUtils.isPostgresFamily(dataSource.driver)) {
@@ -614,12 +650,16 @@ describe("query builder > sql injection", () => {
                 }
 
                 const payload = "post.id); DROP TABLE post; --"
-                expect(() =>
-                    dataSource
-                        .createQueryBuilder(Post, "post")
-                        .distinctOn([payload])
-                        .getSql(),
-                ).to.throw()
+                const sql = dataSource
+                    .createQueryBuilder(Post, "post")
+                    .distinctOn([payload])
+                    .getSql()
+
+                // The payload may only appear inside an escaped identifier.
+                expect(sql).to.contain('"post"."id); DROP TABLE post; --"')
+                expect(sql).to.not.contain(
+                    "DISTINCT ON (post.id); DROP TABLE post; --",
+                )
 
                 await verifyIntegrity(dataSource)()
             }

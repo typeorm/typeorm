@@ -262,9 +262,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * @param distinctOn
      */
     distinctOn(distinctOn: string[]): this {
-        for (const columnName of distinctOn) {
-            this.validateDistinctOnExpression(columnName)
-        }
         this.expressionMap.selectDistinctOn = distinctOn
         return this
     }
@@ -2344,39 +2341,51 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * @returns escaped DISTINCT ON column expression
      */
     protected buildDistinctOnExpression(columnName: string): string {
-        this.validateDistinctOnExpression(columnName)
-
-        const parts = columnName.split(".")
-        const aliasName = parts[0]
-
-        if (parts.length === 1) {
-            const alias = this.expressionMap.mainAlias
-            if (alias?.hasMetadata) {
-                const column =
-                    alias.metadata.findColumnWithPropertyPath(columnName)
-                if (column) return this.escape(column.databaseName)
-            }
-            return this.escape(columnName)
-        }
-
-        const alias = this.expressionMap.aliases.find(
-            (alias) => alias.name === aliasName,
+        // Resolve an exact registered alias prefix first. Alias names are
+        // unrestricted strings and are safely escaped, so they are not
+        // subject to the stricter identifier validation below.
+        const alias = this.expressionMap.aliases.find((alias) =>
+            columnName.startsWith(alias.name + "."),
         )
-        if (alias?.hasMetadata) {
-            const propertyPath = parts.slice(1).join(".")
-            const column =
-                alias.metadata.findColumnWithPropertyPath(propertyPath)
-            if (column)
-                return (
-                    this.escape(alias.name) +
-                    "." +
-                    this.escape(column.databaseName)
-                )
+
+        if (alias) {
+            const propertyPath = columnName.slice(alias.name.length + 1)
+            if (alias.hasMetadata) {
+                const column =
+                    alias.metadata.findColumnWithPropertyPath(propertyPath)
+                if (column)
+                    return (
+                        this.escape(alias.name) +
+                        "." +
+                        this.escape(column.databaseName)
+                    )
+            }
+
+            // Alias without metadata (e.g. subquery) or an unknown property
+            // path: escape every identifier segment so nothing is
+            // interpolated verbatim.
+            return (
+                this.escape(alias.name) +
+                "." +
+                propertyPath
+                    .split(".")
+                    .map((part) => this.escape(part))
+                    .join(".")
+            )
         }
 
-        // Alias without metadata (e.g. subquery) or an unknown property path:
-        // escape each identifier segment so nothing is interpolated verbatim.
-        return parts.map((part) => this.escape(part)).join(".")
+        // Bare column name: resolve it against the main alias, if possible.
+        if (this.expressionMap.mainAlias?.hasMetadata) {
+            const column =
+                this.expressionMap.mainAlias.metadata.findColumnWithPropertyPath(
+                    columnName,
+                )
+            if (column) return this.escape(column.databaseName)
+        }
+
+        // Unknown identifier: reject non-identifier characters and escape.
+        this.validateDistinctOnExpression(columnName)
+        return this.escape(columnName)
     }
 
     /**
