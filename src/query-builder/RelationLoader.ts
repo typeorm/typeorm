@@ -467,6 +467,8 @@ export class RelationLoader {
         const dataIndex = "__" + relation.propertyName + "__" // in what property of the entity loaded data will be stored
         const promiseIndex = "__promise_" + relation.propertyName + "__" // in what property of the entity loading promise will be stored
         const resolveIndex = "__has_" + relation.propertyName + "__" // indicates if relation data already was loaded or not, we need this flag if loaded data is empty
+        const embeddedOwnerIndex = "__" + relation.entityMetadata.name + "__" // in what property of the entity its embedded entity will store reference to the main entity
+        const queryRunnerIndex = "__queryRunner__"
 
         const setData = (entity: ObjectLiteral, value: any) => {
             entity[dataIndex] = value
@@ -502,9 +504,23 @@ export class RelationLoader {
                     // if related data is loading then return a promise relationLoader loads it
                     return this[promiseIndex]
 
+                const entityForLoad =
+                    relation.embeddedMetadata && this[embeddedOwnerIndex]
+                        ? this[embeddedOwnerIndex]
+                        : this
+                const queryRunnerForLoad = [
+                    queryRunner,
+                    entityForLoad[queryRunnerIndex],
+                    this[queryRunnerIndex],
+                ].find(
+                    (candidateQueryRunner) =>
+                        candidateQueryRunner &&
+                        candidateQueryRunner.isReleased !== true,
+                )
+
                 // nothing is loaded yet, load relation data and save it in the model once they are loaded
                 const loader = relationLoader
-                    .load(relation, this, queryRunner)
+                    .load(relation, entityForLoad, queryRunnerForLoad)
                     .then((result) =>
                         relation.isOneToOne || relation.isManyToOne
                             ? result.length === 0

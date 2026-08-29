@@ -448,6 +448,7 @@ export class RelationMetadata {
                 entity,
             )
 
+            if (!embeddedObject) return undefined
             if (this.isLazy) {
                 if (
                     embeddedObject["__" + this.propertyName + "__"] !==
@@ -455,26 +456,47 @@ export class RelationMetadata {
                 )
                     return embeddedObject["__" + this.propertyName + "__"]
 
-                if (getLazyRelationsPromiseValue === true)
-                    return embeddedObject[this.propertyName]
+                if (
+                    getLazyRelationsPromiseValue === true &&
+                    embeddedObject &&
+                    Object.hasOwn(embeddedObject, this.propertyName)
+                ) {
+                    const embeddedObjectPromise =
+                        Object.getOwnPropertyDescriptor(
+                            embeddedObject,
+                            this.propertyName,
+                        )
+                    if (
+                        embeddedObjectPromise &&
+                        "value" in embeddedObjectPromise
+                    )
+                        return embeddedObjectPromise.value
+                }
 
                 return undefined
             }
-            return embeddedObject
-                ? embeddedObject[
-                      this.isLazy
-                          ? "__" + this.propertyName + "__"
-                          : this.propertyName
-                  ]
-                : undefined
+            return embeddedObject[
+                this.isLazy
+                    ? "__" + this.propertyName + "__"
+                    : this.propertyName
+            ]
         } else {
             // no embeds - no problems. Simply return column name by property name of the entity
             if (this.isLazy) {
                 if (entity["__" + this.propertyName + "__"] !== undefined)
                     return entity["__" + this.propertyName + "__"]
 
-                if (getLazyRelationsPromiseValue === true)
-                    return entity[this.propertyName]
+                if (
+                    getLazyRelationsPromiseValue === true &&
+                    Object.hasOwn(entity, this.propertyName)
+                ) {
+                    const objectPromise = Object.getOwnPropertyDescriptor(
+                        entity,
+                        this.propertyName,
+                    )
+                    if (objectPromise && "value" in objectPromise)
+                        return objectPromise.value
+                }
 
                 return undefined
             }
@@ -498,6 +520,9 @@ export class RelationMetadata {
 
         if (this.embeddedMetadata) {
             // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
+            const embeddedOwnerIndex =
+                "__" + this.embeddedMetadata.entityMetadata.targetName + "__"
+
             const extractEmbeddedColumnValue = (
                 embeddedMetadatas: EmbeddedMetadata[],
                 map: ObjectLiteral,
@@ -509,11 +534,50 @@ export class RelationMetadata {
                 if (embeddedMetadata) {
                     map[embeddedMetadata.propertyName] ??=
                         embeddedMetadata.create()
+                    const embeddedValue = map[embeddedMetadata.propertyName]
+                    const embeddedOwnerEntity =
+                        map[embeddedOwnerIndex] ?? entity
+                    if (embeddedValue && ObjectUtils.isObject(embeddedValue)) {
+                        const embeddedOwnerDescriptor =
+                            Object.getOwnPropertyDescriptor(
+                                embeddedValue,
+                                embeddedOwnerIndex,
+                            )
+                        if (
+                            !embeddedOwnerDescriptor ||
+                            embeddedOwnerDescriptor.value !==
+                                embeddedOwnerEntity
+                        ) {
+                            Object.defineProperty(
+                                embeddedValue,
+                                embeddedOwnerIndex,
+                                {
+                                    value: embeddedOwnerEntity,
+                                    writable: true,
+                                    configurable: true,
+                                },
+                            )
+                        }
+                    }
+                    if (embeddedValue && ObjectUtils.isObject(embeddedValue)) {
+                        embeddedMetadata.relations
+                            .filter((relation) => relation.isLazy)
+                            .forEach((relation) => {
+                                if (
+                                    !Object.hasOwn(
+                                        embeddedValue,
+                                        relation.propertyName,
+                                    )
+                                ) {
+                                    this.entityMetadata.dataSource.relationLoader.enableLazyLoad(
+                                        relation,
+                                        embeddedValue,
+                                    )
+                                }
+                            })
+                    }
 
-                    extractEmbeddedColumnValue(
-                        embeddedMetadatas,
-                        map[embeddedMetadata.propertyName],
-                    )
+                    extractEmbeddedColumnValue(embeddedMetadatas, embeddedValue)
                     return map
                 }
                 map[propertyName] = value

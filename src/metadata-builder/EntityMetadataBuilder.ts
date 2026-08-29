@@ -401,9 +401,12 @@ export class EntityMetadataBuilder {
                 entityMetadata.relations
                     .filter((relation) => relation.isLazy)
                     .forEach((relation) => {
+                        const target = relation.embeddedMetadata
+                            ? relation.embeddedMetadata.type
+                            : entityMetadata.target
                         this.dataSource.relationLoader.enableLazyLoad(
                             relation,
-                            (entityMetadata.target as Function).prototype,
+                            (target as Function).prototype,
                         )
                     })
             })
