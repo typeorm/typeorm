@@ -176,6 +176,8 @@ await repository.updateAll(
 
 When an upsert operation results in an update (due to a conflict), special columns like `@UpdateDateColumn` and `@VersionColumn` are automatically updated to their current values.
 
+> **Note for drivers without `RETURNING` support (e.g. MySQL):** When a no-op upsert occurs (the incoming values are identical to those already in the database), the underlying driver returns `insertId=0`. In this case TypeORM cannot determine the entity's primary key from the insert result, so the re-fetch of generated/default column values is skipped for that entity and its entry in `InsertResult.identifiers` will be an empty object (`{}`).
+
 Columns marked with `update: false` or defined as computed generated columns (via `asExpression`/`generatedType`) are **never** included in the update set on conflict. If all non-conflict columns are excluded by these rules (i.e. there are no updatable columns), the upsert degrades to an insert-or-ignore operation and the existing row is left completely unchanged. On databases that support conflict targets (e.g. PostgreSQL, CockroachDB), this is scoped to the specified conflict columns; on MySQL-family databases, `INSERT IGNORE` is used which applies to all unique constraints.
 
 ```typescript
