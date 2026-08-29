@@ -76,6 +76,21 @@ export class ObjectUtils {
     }
 
     /**
+     * Serializes parameters to a JSON string, handling bigint values and circular references.
+     *
+     * @param parameters
+     */
+    static stringifyParams(parameters: any): string {
+        try {
+            return JSON.stringify(parameters, (_key, value) =>
+                typeof value === "bigint" ? value.toString() : value,
+            )
+        } catch {
+            return "[unserializable parameters]"
+        }
+    }
+
+    /**
      * Converts MixedList<T> to strictly an array of its T items.
      *
      * @param list
