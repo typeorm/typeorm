@@ -1,7 +1,7 @@
 import { TypeORMError } from "./TypeORMError"
 
 export class PrimaryColumnCannotBeNullableError extends TypeORMError {
-    constructor(object: Object, propertyName: string) {
+    constructor(object: object, propertyName: string) {
         super(
             `Primary column ${
                 (<any>object.constructor).name

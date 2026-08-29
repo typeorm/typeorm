@@ -13,7 +13,7 @@ import type { RelationOptions } from "../options/RelationOptions"
 export function TreeParent(options?: {
     onDelete?: OnDeleteType
 }): PropertyDecorator {
-    return function (object: Object, propertyName: string) {
+    return function (object: object, propertyName: string) {
         options ??= {} as RelationOptions
 
         // now try to determine it its lazy relation

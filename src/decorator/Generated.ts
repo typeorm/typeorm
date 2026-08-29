@@ -15,7 +15,7 @@ import type { GeneratedMetadataArgs } from "../metadata-args/GeneratedMetadataAr
 export function Generated(
     strategy: "increment" | "uuid" | "rowid" = "increment",
 ): PropertyDecorator {
-    return function (object: Object, propertyName: string) {
+    return function (object: object, propertyName: string) {
         getMetadataArgsStorage().generations.push({
             target: object.constructor,
             propertyName: propertyName,

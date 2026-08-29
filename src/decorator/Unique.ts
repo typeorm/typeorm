@@ -93,7 +93,7 @@ export function Unique(
             : maybeOptions
 
     return function (
-        clsOrObject: Function | Object,
+        clsOrObject: Function | object,
         propertyName?: string | symbol,
     ) {
         let columns = fields

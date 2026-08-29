@@ -54,7 +54,7 @@ export function ManyToOne<T>(
         inverseSideProperty = inverseSideOrOptions as any
     }
 
-    return function (object: Object, propertyName: string) {
+    return function (object: object, propertyName: string) {
         options ??= {} as RelationOptions
 
         // Now try to determine if it is a lazy relation.

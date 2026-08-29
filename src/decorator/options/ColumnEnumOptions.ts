@@ -5,7 +5,7 @@ export interface ColumnEnumOptions {
     /**
      * Array of possible enumerated values.
      */
-    enum?: any[] | Object
+    enum?: any[] | object
     /**
      * Exact name of enum
      */

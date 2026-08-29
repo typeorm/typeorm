@@ -17,7 +17,7 @@ export function OneToMany<T>(
     inverseSide: string | ((object: T) => any),
     options?: RelationOptions,
 ): PropertyDecorator {
-    return function (object: Object, propertyName: string) {
+    return function (object: object, propertyName: string) {
         options ??= {} as RelationOptions
 
         // Now try to determine if it is a lazy relation.

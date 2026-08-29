@@ -143,7 +143,7 @@ export function Index(
             : maybeOptions
 
     return function (
-        clsOrObject: Function | Object,
+        clsOrObject: Function | object,
         propertyName?: string | symbol,
     ) {
         getMetadataArgsStorage().indices.push({

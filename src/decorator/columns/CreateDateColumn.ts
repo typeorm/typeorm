@@ -10,7 +10,7 @@ import type { ColumnOptions } from "../options/ColumnOptions"
  * @param options
  */
 export function CreateDateColumn(options?: ColumnOptions): PropertyDecorator {
-    return function (object: Object, propertyName: string) {
+    return function (object: object, propertyName: string) {
         getMetadataArgsStorage().columns.push({
             target: object.constructor,
             propertyName: propertyName,
