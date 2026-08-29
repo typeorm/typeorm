@@ -12,7 +12,9 @@ enum FooEnumWithSpecialChars {
 
 @Entity()
 export class FooWithSpecialChars {
-    @PrimaryGeneratedColumn()
+    @PrimaryGeneratedColumn({
+        primaryKeyConstraintName: "PK_foo_with_special_chars",
+    })
     id: number
 
     @Column({
