@@ -2,6 +2,8 @@ import { format } from "@sqltools/formatter/lib/sqlFormatter"
 import ansi from "ansis"
 import path from "path"
 import process from "process"
+
+import { DefaultCliArgumentsBuilder } from "./common/default-cli-arguments-builder"
 import type yargs from "yargs"
 import type { DataSource } from "../data-source"
 import { PlatformTools } from "../platform/PlatformTools"
@@ -17,17 +19,12 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
         "Generates a new migration file with sql needs to be executed to update schema."
 
     builder(args: yargs.Argv) {
-        return args
+        return new DefaultCliArgumentsBuilder(args)
+            .addDataSourceOption()
+            .builder()
             .positional("path", {
                 type: "string",
                 describe: "Path of the migration file",
-                demandOption: true,
-            })
-            .option("dataSource", {
-                alias: "d",
-                type: "string",
-                describe:
-                    "Path to the file where your DataSource instance is defined.",
                 demandOption: true,
             })
             .option("p", {
