@@ -61,6 +61,28 @@ export class EntityMetadataValidator {
         allEntityMetadatas: EntityMetadata[],
         driver: Driver,
     ) {
+        // check if strict mode is supported by the driver
+        if (entityMetadata.strict && !DriverUtils.isSQLiteFamily(driver)) {
+            throw new TypeORMError(
+                `Entity ${entityMetadata.name} is marked as 'strict', ` +
+                    `but 'strict' mode is only supported for SQLite-based drivers.`,
+            )
+        }
+
+        // check if sqlite `any` type is used only with strict mode
+        if (DriverUtils.isSQLiteFamily(driver) && !entityMetadata.strict) {
+            const anyColumn = entityMetadata.columns.find(
+                (column) => !column.isVirtualProperty && column.type === "any",
+            )
+
+            if (anyColumn) {
+                throw new TypeORMError(
+                    `Column "${anyColumn.propertyName}" of Entity "${entityMetadata.name}" uses SQLite "any" type, ` +
+                        `but the entity is not marked as strict. Set "strict: true" in @Entity options to use type "any".`,
+                )
+            }
+        }
+
         // check if table metadata has an id
         if (!entityMetadata.primaryColumns.length && !entityMetadata.isJunction)
             throw new MissingPrimaryColumnError(entityMetadata)

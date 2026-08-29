@@ -14,6 +14,7 @@ import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DateUtils } from "../../util/DateUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
+import { isUint8Array } from "../../util/Uint8ArrayUtils"
 import type { Driver } from "../Driver"
 import { DriverUtils } from "../DriverUtils"
 import type { ColumnType } from "../types/ColumnTypes"
@@ -141,6 +142,7 @@ export abstract class AbstractSqliteDriver implements Driver {
         "nchar",
         "native character",
         "nvarchar",
+        "nvarchar2",
         "text",
         "clob",
         "text",
@@ -158,6 +160,7 @@ export abstract class AbstractSqliteDriver implements Driver {
         "datetime",
         "json",
         "jsonb",
+        "any",
     ]
 
     /**
@@ -175,6 +178,7 @@ export abstract class AbstractSqliteDriver implements Driver {
         "nchar",
         "native character",
         "nvarchar",
+        "nvarchar2",
         "text",
         "blob",
         "clob",
@@ -386,6 +390,21 @@ export abstract class AbstractSqliteDriver implements Driver {
             return DateUtils.simpleArrayToString(value)
         } else if (columnMetadata.type === "simple-enum") {
             return DateUtils.simpleEnumToString(value)
+        } else if (columnMetadata.type === "any") {
+            if (typeof value === "boolean") {
+                return value === true ? 1 : 0
+            }
+
+            if (
+                typeof value === "number" ||
+                typeof value === "string" ||
+                typeof value === "bigint" ||
+                isUint8Array(value)
+            ) {
+                return value
+            }
+
+            return DateUtils.simpleJsonToString(value)
         }
 
         return value
@@ -456,6 +475,19 @@ export abstract class AbstractSqliteDriver implements Driver {
             columnMetadata.type === "simple-json"
         ) {
             value = DateUtils.stringToSimpleJson(value)
+        } else if (columnMetadata.type === "any") {
+            if (
+                typeof value === "string" &&
+                (value.startsWith("{") ||
+                    value.startsWith("[") ||
+                    value.startsWith('"'))
+            ) {
+                try {
+                    value = DateUtils.stringToSimpleJson(value)
+                } catch {
+                    // Keep raw string if not valid JSON.
+                }
+            }
         } else if (columnMetadata.type === "simple-array") {
             value = DateUtils.stringToSimpleArray(value)
         } else if (columnMetadata.type === "simple-enum") {
@@ -1021,6 +1053,55 @@ export abstract class AbstractSqliteDriver implements Driver {
             return jsonb ? `jsonb(${value})` : `json(${value})`
         }
         return value
+    }
+
+    /**
+     * Converts column type to strict-compatible type for SQLite strict mode.
+     * SQLite strict mode only allows: INT, INTEGER, REAL, TEXT, BLOB, ANY
+     *
+     * @param columnType
+     */
+    convertToStrictType(columnType: string): string {
+        const type = columnType.toLowerCase().trim()
+
+        switch (type) {
+            case "int":
+            case "integer":
+            case "tinyint":
+            case "smallint":
+            case "mediumint":
+            case "bigint":
+            case "unsigned big int":
+            case "int2":
+            case "int8":
+            case "boolean":
+                return "integer"
+            case "text":
+            case "character":
+            case "varchar":
+            case "varying character":
+            case "nchar":
+            case "native character":
+            case "nvarchar":
+            case "nvarchar2":
+            case "clob":
+            case "datetime":
+            case "date":
+            case "time":
+            case "json":
+                return "text"
+            case "real":
+            case "double":
+            case "double precision":
+            case "float":
+            case "numeric":
+            case "decimal":
+                return "real"
+            case "blob":
+                return "blob"
+            default:
+                return "any"
+        }
     }
 
     // -------------------------------------------------------------------------
