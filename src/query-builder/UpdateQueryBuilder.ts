@@ -562,11 +562,15 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                             typeof value === "object" &&
                             !(value instanceof Date) &&
                             value !== null &&
-                            !isUint8Array(value)
+                            !Buffer.isBuffer(value) &&
+                            (!column.transformer ||
+                                value.constructor === Object)
                         ) {
                             value =
                                 column.referencedColumn.getEntityValue(value)
-                        } else if (!(typeof value === "function")) {
+                        }
+
+                        if (!(typeof value === "function")) {
                             value =
                                 this.dataSource.driver.preparePersistentValue(
                                     value,
