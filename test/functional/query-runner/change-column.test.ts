@@ -105,6 +105,38 @@ describe("query runner > change column", () => {
             }),
         ))
 
+    it("should alter a varchar column length instead of dropping and recreating it (postgres)", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (dataSource.driver.options.type !== "postgres") return
+
+                const queryRunner = dataSource.createQueryRunner()
+                const table = await queryRunner.getTable("post")
+
+                const nameColumn = table!.findColumnByName("name")!
+                const changedNameColumn = nameColumn.clone()
+                changedNameColumn.length = "500"
+
+                queryRunner.enableSqlMemory()
+                await queryRunner.changeColumn(
+                    table!,
+                    nameColumn,
+                    changedNameColumn,
+                )
+                const { upQueries } = queryRunner.getMemorySql()
+                queryRunner.disableSqlMemory()
+
+                const upSql = upQueries.map((query) => query.query).join("\n")
+
+                expect(upSql).to.contain("ALTER TABLE")
+                expect(upSql).to.contain("ALTER COLUMN")
+                expect(upSql).to.contain("TYPE")
+                expect(upSql).to.not.contain("DROP COLUMN")
+
+                await queryRunner.release()
+            }),
+        ))
+
     it("should correctly change column 'isGenerated' property and revert change", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {

@@ -1328,6 +1328,11 @@ export class PostgresQueryRunner
 
         if (
             oldColumn.type !== newColumn.type ||
+            // vector/halfvec length is the dimension (element count) — changing it
+            // requires a recreate because ALTER COLUMN ... TYPE can't coerce the
+            // existing rows to a different element count.
+            ((oldColumn.type === "vector" || oldColumn.type === "halfvec") &&
+                oldColumn.length !== newColumn.length) ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1618,7 +1623,9 @@ export class PostgresQueryRunner
             }
 
             if (
-                newColumn.length !== oldColumn.length ||
+                (newColumn.length !== oldColumn.length &&
+                    newColumn.type !== "vector" &&
+                    newColumn.type !== "halfvec") ||
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {
