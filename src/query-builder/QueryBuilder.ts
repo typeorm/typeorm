@@ -50,6 +50,18 @@ import { escapeRegExp } from "../util/escapeRegExp"
 const WRITE_QUERY_TYPES = ["update", "delete", "soft-delete", "restore"]
 
 /**
+ * Describes how a property name referenced in a raw SQL string (e.g. a `.where()`
+ * expression) should be rewritten. Regular columns are rewritten to
+ * `<escaped alias>.<escaped database name>`; virtual columns are rewritten to
+ * their defining query, wrapped in parentheses, since they have no database column.
+ */
+type PropertyNameReplacement = {
+    escapedAliasName: string
+    databaseName: string
+    virtualColumnQuery?: (alias: string) => string
+}
+
+/**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
 export abstract class QueryBuilder<Entity extends ObjectLiteral> {
@@ -730,7 +742,9 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * @param statement
      */
     protected replacePropertyNamesForTheWholeQuery(statement: string) {
-        const replacements: { [key: string]: { [key: string]: string } } = {}
+        const replacements: {
+            [key: string]: { [key: string]: PropertyNameReplacement }
+        } = {}
 
         for (const alias of this.expressionMap.aliases) {
             if (!alias.hasMetadata) continue
@@ -742,6 +756,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             if (!replacements[replaceAliasNamePrefix]) {
                 replacements[replaceAliasNamePrefix] = {}
             }
+
+            const escapedAliasName = this.escape(alias.name)
 
             // Insert & overwrite the replacements from least to most relevant in our replacements object.
             // To do this we iterate and overwrite in the order of relevance.
@@ -756,7 +772,10 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 if (relation.joinColumns.length > 0)
                     replacements[replaceAliasNamePrefix][
                         relation.propertyPath
-                    ] = relation.joinColumns[0].databaseName
+                    ] = {
+                        escapedAliasName,
+                        databaseName: relation.joinColumns[0].databaseName,
+                    }
             }
 
             for (const relation of alias.metadata.relations) {
@@ -768,24 +787,41 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     const propertyKey = `${relation.propertyPath}.${
                         joinColumn.referencedColumn!.propertyPath
                     }`
-                    replacements[replaceAliasNamePrefix][propertyKey] =
-                        joinColumn.databaseName
+                    replacements[replaceAliasNamePrefix][propertyKey] = {
+                        escapedAliasName,
+                        databaseName: joinColumn.databaseName,
+                    }
                 }
             }
 
             for (const column of alias.metadata.columns) {
-                replacements[replaceAliasNamePrefix][column.databaseName] =
-                    column.databaseName
+                replacements[replaceAliasNamePrefix][column.databaseName] = {
+                    escapedAliasName,
+                    databaseName: column.databaseName,
+                    virtualColumnQuery: column.isVirtualProperty
+                        ? column.query
+                        : undefined,
+                }
             }
 
             for (const column of alias.metadata.columns) {
-                replacements[replaceAliasNamePrefix][column.propertyName] =
-                    column.databaseName
+                replacements[replaceAliasNamePrefix][column.propertyName] = {
+                    escapedAliasName,
+                    databaseName: column.databaseName,
+                    virtualColumnQuery: column.isVirtualProperty
+                        ? column.query
+                        : undefined,
+                }
             }
 
             for (const column of alias.metadata.columns) {
-                replacements[replaceAliasNamePrefix][column.propertyPath] =
-                    column.databaseName
+                replacements[replaceAliasNamePrefix][column.propertyPath] = {
+                    escapedAliasName,
+                    databaseName: column.databaseName,
+                    virtualColumnQuery: column.isVirtualProperty
+                        ? column.query
+                        : undefined,
+                }
             }
         }
 
@@ -816,18 +852,32 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         pre = matches[1]
                         p = matches[3]
 
-                        if (replacements[matches[2]][p]) {
-                            return `${pre}${this.escape(
-                                matches[2].slice(0, -1),
-                            )}.${this.escape(replacements[matches[2]][p])}`
+                        const replacement = replacements[matches[2]][p]
+                        if (replacement) {
+                            if (replacement.virtualColumnQuery) {
+                                return `${pre}(${replacement.virtualColumnQuery(
+                                    replacement.escapedAliasName,
+                                )})`
+                            }
+                            return `${pre}${
+                                replacement.escapedAliasName
+                            }.${this.escape(replacement.databaseName)}`
                         }
                     } else {
                         match = matches[0]
                         pre = matches[1]
                         p = matches[2]
 
-                        if (replacements[""][p]) {
-                            return `${pre}${this.escape(replacements[""][p])}`
+                        const replacement = replacements[""][p]
+                        if (replacement) {
+                            if (replacement.virtualColumnQuery) {
+                                return `${pre}(${replacement.virtualColumnQuery(
+                                    replacement.escapedAliasName,
+                                )})`
+                            }
+                            return `${pre}${this.escape(
+                                replacement.databaseName,
+                            )}`
                         }
                     }
                     return match

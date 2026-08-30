@@ -89,6 +89,20 @@ describe("column > virtual columns", () => {
             expect(query1).to.equal(expectedQuery)
         }))
 
+    it("should generate expected sql for a virtual column referenced in a where clause", () =>
+        dataSources.map((dataSource) => {
+            const query = dataSource
+                .createQueryBuilder(Company, "Company")
+                .where("Company.totalEmployeesCount > :count", { count: 2 })
+                .getSql()
+
+            let expectedFragment = `(SELECT COUNT("name") FROM "employees" WHERE "companyName" = "Company"."name") >`
+            if (DriverUtils.isMySQLFamily(dataSource.driver)) {
+                expectedFragment = expectedFragment.replaceAll('"', "`")
+            }
+            expect(query).to.include(expectedFragment)
+        }))
+
     it("should generate expected sub-select & nested-subselect statement", () =>
         dataSources.map((dataSource) => {
             const findOptions: FindManyOptions<Company> = {
@@ -276,12 +290,9 @@ describe("column > virtual columns", () => {
                     .leftJoin("company.employees", "employee")
                     .leftJoin("employee.timesheets", "timesheet")
                     .where("company.name = :name", { name: companyName })
-                    // we won't be supporting where & order bys with VirtualColumns (you will have to make your subquery a function that gets added to the query builder)
-                    //.andWhere("company.totalEmployeesCount > 2")
-                    //.orderBy({
-                    //    "employees.timesheets.id": "DESC",
-                    //    //"employees.timesheets.totalActivityHours": "ASC",
-                    //})
+                    .andWhere("company.totalEmployeesCount > :count", {
+                        count: 2,
+                    })
                     .getOneOrFail()
 
                 const foundEmployee = companyQueryData.employees.find(
@@ -289,6 +300,41 @@ describe("column > virtual columns", () => {
                 )!
                 const [foundEmployeeTimeSheet] = foundEmployee.timesheets
                 expect(foundEmployeeTimeSheet.totalActivityHours).to.equal(9)
+            }),
+        ))
+
+    it("should be able to filter rows using a virtual column in a where clause", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const companyRepository = dataSource.getRepository(Company)
+
+                const bigCompanyName = "Big Company"
+                const smallCompanyName = "Small Company"
+                await companyRepository.save([
+                    companyRepository.create({
+                        name: bigCompanyName,
+                        employees: [
+                            { name: "Alice" },
+                            { name: "Bob" },
+                            { name: "Carol" },
+                        ],
+                    }),
+                    companyRepository.create({
+                        name: smallCompanyName,
+                        employees: [{ name: "Dave" }],
+                    }),
+                ])
+
+                const bigCompanyNames = await dataSource
+                    .createQueryBuilder(Company, "company")
+                    .where("company.totalEmployeesCount > :count", {
+                        count: 2,
+                    })
+                    .getMany()
+                    .then((companies) => companies.map((c) => c.name))
+
+                expect(bigCompanyNames).to.include(bigCompanyName)
+                expect(bigCompanyNames).to.not.include(smallCompanyName)
             }),
         ))
 
