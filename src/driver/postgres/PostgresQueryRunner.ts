@@ -1327,15 +1327,13 @@ export class PostgresQueryRunner
             )
 
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
                 newColumn.generatedType === "STORED")
         ) {
-            // To avoid data conversion, we just recreate column
+            // To avoid data conversion for unsupported column modifications, we recreate column
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
@@ -1619,6 +1617,8 @@ export class PostgresQueryRunner
             }
 
             if (
+                newColumn.type !== oldColumn.type ||
+                newColumn.length !== oldColumn.length ||
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {

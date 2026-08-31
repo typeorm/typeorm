@@ -988,8 +988,6 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         if (
             oldColumn.name !== newColumn.name ||
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             oldColumn.isArray !== newColumn.isArray ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
@@ -1002,6 +1000,8 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             clonedTable = table.clone()
         } else {
             if (
+                newColumn.type !== oldColumn.type ||
+                newColumn.length !== oldColumn.length ||
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {
