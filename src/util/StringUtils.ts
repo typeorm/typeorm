@@ -9,6 +9,10 @@ import { PlatformTools } from "../platform/PlatformTools"
  * @see http://stackoverflow.com/questions/2970525/converting-any-string-into-camel-case
  */
 export function camelCase(str: string, firstCapital: boolean = false): string {
+    // Drop leading separators first. Otherwise the `[\s-_](\w)` branch below consumes one
+    // and upper-cases the character after it, so "_id" would come back as "Id" even though
+    // firstCapital is false - and a second pass would keep changing the result.
+    str = str.replace(/^[\s\-_]+/, "")
     if (firstCapital) str = " " + str
     return str.replaceAll(/^([A-Z])|[\s-_](\w)/g, function (match, p1, p2) {
         if (p2) return p2.toUpperCase()
