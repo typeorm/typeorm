@@ -9,6 +9,7 @@ import type { DataSource } from "../../../../src/data-source/DataSource"
 import { User } from "./entity/User"
 import { LimitOnUpdateNotSupportedError } from "../../../../src/error/LimitOnUpdateNotSupportedError"
 import { Photo } from "./entity/Photo"
+import { AliasedPost } from "./entity/AliasedPost"
 import { UpdateValuesMissingError } from "../../../../src/error/UpdateValuesMissingError"
 import { EntityPropertyNotFoundError } from "../../../../src/error/EntityPropertyNotFoundError"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
@@ -293,7 +294,7 @@ describe("query builder > update", () => {
         }
     })
 
-    it("should add an explicit alias on postgres/cockroachdb", () =>
+    it("should add an explicit alias on postgres family", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 if (!DriverUtils.isPostgresFamily(dataSource.driver)) return
@@ -339,6 +340,80 @@ describe("query builder > update", () => {
                     .getRepository(User)
                     .findOneBy({ name: "Brad Porter" })
                 expect(loadedUser3).to.exist
+            }),
+        ))
+
+    it("should not add an alias when the entity's table name differs from its target name and no alias was given explicitly", () => {
+        for (const dataSource of dataSources) {
+            if (!DriverUtils.isPostgresFamily(dataSource.driver)) continue
+
+            const sqlFromEntity = dataSource
+                .createQueryBuilder()
+                .update(AliasedPost)
+                .set({ title: "Updated" })
+                .where("title = :title", { title: "Hello" })
+                .getSql()
+
+            expect(sqlFromEntity).to.not.contain(" AS ")
+
+            const sqlFromRepository = dataSource
+                .getRepository(AliasedPost)
+                .createQueryBuilder()
+                .update()
+                .set({ title: "Updated" })
+                .where("title = :title", { title: "Hello" })
+                .getSql()
+
+            expect(sqlFromRepository).to.not.contain(" AS ")
+        }
+    })
+
+    it("should add an explicit alias when the entity's table name differs from its target name on postgres family", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (!DriverUtils.isPostgresFamily(dataSource.driver)) return
+
+                const post1 = new AliasedPost()
+                post1.title = "Hello"
+                const post2 = new AliasedPost()
+                post2.title = "World"
+                await dataSource.manager.save([post1, post2])
+
+                const queryBuilder = dataSource
+                    .getRepository(AliasedPost)
+                    .createQueryBuilder("p")
+                    .update()
+                    .set({ title: "Updated Hello" })
+                    .where("p.title = :title", { title: "Hello" })
+
+                expect(queryBuilder.getSql()).to.contain('AS "p"')
+
+                await queryBuilder.execute()
+
+                const loadedPost1 = await dataSource
+                    .getRepository(AliasedPost)
+                    .findOneBy({ title: "Updated Hello" })
+                expect(loadedPost1).to.exist
+
+                const loadedPost2 = await dataSource
+                    .getRepository(AliasedPost)
+                    .findOneBy({ title: "World" })
+                expect(loadedPost2).to.exist
+
+                const queryBuilderFromEntity = dataSource
+                    .createQueryBuilder(AliasedPost, "p")
+                    .update()
+                    .set({ title: "Updated World" })
+                    .where("p.title = :title", { title: "World" })
+
+                expect(queryBuilderFromEntity.getSql()).to.contain('AS "p"')
+
+                await queryBuilderFromEntity.execute()
+
+                const loadedPost3 = await dataSource
+                    .getRepository(AliasedPost)
+                    .findOneBy({ title: "Updated World" })
+                expect(loadedPost3).to.exist
             }),
         ))
 

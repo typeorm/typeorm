@@ -412,6 +412,7 @@ export class QueryExpressionMap {
         metadata?: EntityMetadata
     }): Alias {
         let aliasName = options.name
+        const isExplicit = !!aliasName
         if (!aliasName && options.tablePath) aliasName = options.tablePath
         if (!aliasName && typeof options.target === "function")
             aliasName = options.target.name
@@ -420,6 +421,7 @@ export class QueryExpressionMap {
 
         const alias = new Alias()
         alias.type = options.type
+        alias.isExplicit = isExplicit
         if (aliasName) alias.name = aliasName
         if (options.metadata) alias.metadata = options.metadata
         if (options.target && !alias.hasMetadata)

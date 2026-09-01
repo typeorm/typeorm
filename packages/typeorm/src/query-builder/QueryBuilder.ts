@@ -732,8 +732,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         const alias = this.expressionMap.mainAlias
         if (
             !alias ||
-            alias.name === alias.tablePath ||
-            (alias.hasMetadata && alias.name === alias.metadata.targetName) ||
+            !alias.isExplicit ||
             !DriverUtils.isPostgresFamily(this.dataSource.driver)
         )
             return ""

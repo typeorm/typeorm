@@ -8,6 +8,7 @@ import {
 import type { DataSource } from "../../../../src/data-source/DataSource"
 import { User } from "./entity/User"
 import { Photo } from "./entity/Photo"
+import { AliasedPost } from "./entity/AliasedPost"
 import { EntityPropertyNotFoundError } from "../../../../src/error/EntityPropertyNotFoundError"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
@@ -205,7 +206,7 @@ describe("query builder > delete", () => {
         }
     })
 
-    it("should add an explicit alias on postgres/cockroachdb", () =>
+    it("should add an explicit alias on postgres family", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 if (!DriverUtils.isPostgresFamily(dataSource.driver)) return
@@ -270,6 +271,78 @@ describe("query builder > delete", () => {
                     .getRepository(User)
                     .findOneBy({ name: "Brad Porter" })
                 expect(loadedUser4).to.not.exist
+            }),
+        ))
+
+    it("should not add an alias when the entity's table name differs from its target name and no alias was given explicitly", () => {
+        for (const dataSource of dataSources) {
+            if (!DriverUtils.isPostgresFamily(dataSource.driver)) continue
+
+            const sqlFromEntity = dataSource
+                .createQueryBuilder()
+                .delete()
+                .from(AliasedPost)
+                .where("title = :title", { title: "Hello" })
+                .getSql()
+
+            expect(sqlFromEntity).to.not.contain(" AS ")
+
+            const sqlFromRepository = dataSource
+                .getRepository(AliasedPost)
+                .createQueryBuilder()
+                .delete()
+                .where("title = :title", { title: "Hello" })
+                .getSql()
+
+            expect(sqlFromRepository).to.not.contain(" AS ")
+        }
+    })
+
+    it("should add an explicit alias when the entity's table name differs from its target name on postgres family", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (!DriverUtils.isPostgresFamily(dataSource.driver)) return
+
+                const post1 = new AliasedPost()
+                post1.title = "Hello"
+                const post2 = new AliasedPost()
+                post2.title = "World"
+                await dataSource.manager.save([post1, post2])
+
+                const queryBuilder = dataSource
+                    .createQueryBuilder()
+                    .delete()
+                    .from(AliasedPost, "p")
+                    .where("p.title = :title", { title: "Hello" })
+
+                expect(queryBuilder.getSql()).to.contain('AS "p"')
+
+                await queryBuilder.execute()
+
+                const loadedPost1 = await dataSource
+                    .getRepository(AliasedPost)
+                    .findOneBy({ title: "Hello" })
+                expect(loadedPost1).to.not.exist
+
+                const loadedPost2 = await dataSource
+                    .getRepository(AliasedPost)
+                    .findOneBy({ title: "World" })
+                expect(loadedPost2).to.exist
+
+                const queryBuilderFromRepository = dataSource
+                    .getRepository(AliasedPost)
+                    .createQueryBuilder("p")
+                    .delete()
+                    .where("p.title = :title", { title: "World" })
+
+                expect(queryBuilderFromRepository.getSql()).to.contain('AS "p"')
+
+                await queryBuilderFromRepository.execute()
+
+                const loadedPost3 = await dataSource
+                    .getRepository(AliasedPost)
+                    .findOneBy({ title: "World" })
+                expect(loadedPost3).to.not.exist
             }),
         ))
 

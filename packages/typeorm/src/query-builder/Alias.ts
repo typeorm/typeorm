@@ -10,6 +10,12 @@ export class Alias {
     name: string
 
     /**
+     * Indicates whether this alias' name was explicitly provided by the caller,
+     * as opposed to being inferred from the entity metadata or table path.
+     */
+    isExplicit: boolean = false
+
+    /**
      * Table on which this alias is applied.
      * Used only for aliases which select custom tables.
      */
