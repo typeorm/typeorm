@@ -732,13 +732,16 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
         }
 
         // get a table name and all column database names
+        const aliasExpression = this.createDeleteUpdateAliasExpression()
         const whereExpression = this.createWhereExpression()
         const returningExpression = this.createReturningExpression("update")
 
         if (returningExpression === "") {
             return `UPDATE ${this.getTableName(
                 this.getMainTableName(),
-            )} SET ${updateColumnAndValues.join(", ")}${whereExpression}` // todo: how do we replace aliases in where to nothing?
+            )}${aliasExpression} SET ${updateColumnAndValues.join(
+                ", ",
+            )}${whereExpression}` // todo: how do we replace other aliases in where to nothing?
         }
         if (this.dataSource.driver.options.type === "mssql") {
             return `UPDATE ${this.getTableName(
@@ -757,7 +760,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
 
         return `UPDATE ${this.getTableName(
             this.getMainTableName(),
-        )} SET ${updateColumnAndValues.join(
+        )}${aliasExpression} SET ${updateColumnAndValues.join(
             ", ",
         )}${whereExpression} RETURNING ${returningExpression}`
     }

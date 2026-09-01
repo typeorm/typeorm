@@ -10,6 +10,7 @@ import type { SoftDeleteQueryBuilder } from "./SoftDeleteQueryBuilder"
 import type { InsertQueryBuilder } from "./InsertQueryBuilder"
 import type { RelationQueryBuilder } from "./RelationQueryBuilder"
 import type { EntityTarget } from "../common/EntityTarget"
+import { DriverUtils } from "../driver/DriverUtils"
 import type { Alias } from "./Alias"
 import { Brackets } from "./Brackets"
 import type { QueryDeepPartialEntity } from "./QueryPartialEntity"
@@ -722,6 +723,22 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 subQuery: subquery,
             })
         }
+    }
+
+    /**
+     * Builds the ` AS "alias"` fragment for a DELETE/UPDATE statement's target table.
+     */
+    protected createDeleteUpdateAliasExpression(): string {
+        const alias = this.expressionMap.mainAlias
+        if (
+            !alias ||
+            alias.name === alias.tablePath ||
+            (alias.hasMetadata && alias.name === alias.metadata.targetName) ||
+            !DriverUtils.isPostgresFamily(this.dataSource.driver)
+        )
+            return ""
+
+        return ` AS ${this.escape(alias.name)}`
     }
 
     /**

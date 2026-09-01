@@ -302,11 +302,12 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
      */
     protected createDeleteExpression() {
         const tableName = this.getTableName(this.getMainTableName())
+        const aliasExpression = this.createDeleteUpdateAliasExpression()
         const whereExpression = this.createWhereExpression()
         const returningExpression = this.createReturningExpression("delete")
 
         if (returningExpression === "") {
-            return `DELETE FROM ${tableName}${whereExpression}`
+            return `DELETE FROM ${tableName}${aliasExpression}${whereExpression}`
         }
         if (this.dataSource.driver.options.type === "mssql") {
             return `DELETE FROM ${tableName} OUTPUT ${returningExpression}${whereExpression}`
@@ -314,6 +315,6 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
         if (this.dataSource.driver.options.type === "spanner") {
             return `DELETE FROM ${tableName}${whereExpression} THEN RETURN ${returningExpression}`
         }
-        return `DELETE FROM ${tableName}${whereExpression} RETURNING ${returningExpression}`
+        return `DELETE FROM ${tableName}${aliasExpression}${whereExpression} RETURNING ${returningExpression}`
     }
 }
