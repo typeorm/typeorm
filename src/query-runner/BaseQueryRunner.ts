@@ -1,4 +1,5 @@
 import type { PostgresDataSourceOptions } from "../driver/postgres/PostgresDataSourceOptions"
+import type { PostgresJsDataSourceOptions } from "../driver/postgres/PostgresJsDataSourceOptions"
 import { Query } from "../driver/Query"
 import { SqlInMemory } from "../driver/SqlInMemory"
 import type { SqlServerDataSourceOptions } from "../driver/sqlserver/SqlServerDataSourceOptions"
@@ -413,7 +414,9 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     protected getTypeormMetadataTableName(): string {
         const options = <
-            SqlServerDataSourceOptions | PostgresDataSourceOptions
+            | SqlServerDataSourceOptions
+            | PostgresDataSourceOptions
+            | PostgresJsDataSourceOptions
         >this.dataSource.driver.options
         return this.dataSource.driver.buildTableName(
             this.dataSource.metadataTableName,
