@@ -14,6 +14,7 @@ import { PostMultiplePrimaryKeys } from "./entity/PostMultiplePrimaryKeys"
 import { PostComplex } from "./entity/PostComplex"
 import { PostEmbedded } from "./entity/PostEmbedded"
 import { PostContent } from "./entity/PostContent"
+import { PostWithEmbeddedRelation } from "./entity/PostWithEmbeddedRelation"
 
 describe("persistence > entity updation", () => {
     let dataSources: DataSource[]
@@ -160,6 +161,28 @@ describe("persistence > entity updation", () => {
                 )
                 expect(savedPost.updateDate.getTime()).to.be.equal(
                     createDateBefore.getTime(),
+                )
+            }),
+        ))
+
+    it("should not throw when saving an unchanged entity with a null relation referencing an embedded primary column", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // MongoDB does not support the ManyToOne relation used by PostWithEmbeddedRelation
+                if (dataSource.driver.options.type === "mongodb") return
+
+                const post = new PostWithEmbeddedRelation()
+                post.title = "Hello Post"
+                post.complex = null
+                await dataSource.manager.save(post)
+
+                // resaving must not throw even though the related entity's
+                // primary key lives inside an embedded column
+                await dataSource.manager.save(post)
+
+                await dataSource.manager.findOneByOrFail(
+                    PostWithEmbeddedRelation,
+                    { id: post.id },
                 )
             }),
         ))
