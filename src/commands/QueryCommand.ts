@@ -1,6 +1,7 @@
 import ansi from "ansis"
 import path from "path"
 import process from "process"
+import { inspect } from "node:util"
 import type yargs from "yargs"
 import type { DataSource } from "../data-source/DataSource"
 import { PlatformTools } from "../platform/PlatformTools"
@@ -47,22 +48,51 @@ export class QueryCommand implements yargs.CommandModule {
             // create a query runner and execute query using it
             queryRunner = dataSource.createQueryRunner()
             const query = args.query as string
-            console.log(
-                ansi.green`Running query: ` + PlatformTools.highlightSql(query),
-            )
+
+            if (
+                !CommandUtils.logDataSourceMessage(dataSource, query, "query")
+            ) {
+                console.log(
+                    ansi.green`Running query: ` +
+                        PlatformTools.highlightSql(query),
+                )
+            }
+
             const queryResult = await queryRunner.query(query)
 
             if (typeof queryResult === "undefined") {
-                console.log(
-                    ansi.green`Query has been executed. No result was returned.`,
-                )
+                if (
+                    !CommandUtils.logDataSourceMessage(
+                        dataSource,
+                        "Query has been executed. No result was returned.",
+                        "info",
+                    )
+                ) {
+                    console.log(
+                        ansi.green`Query has been executed. No result was returned.`,
+                    )
+                }
             } else {
-                console.log(ansi.green`Query has been executed. Result: `)
-                console.dir(queryResult, {
+                const queryResultString = inspect(queryResult, {
                     breakLength: Infinity,
                     compact: false,
                     depth: null,
                 })
+
+                if (
+                    !CommandUtils.logDataSourceMessage(
+                        dataSource,
+                        `Query has been executed. Result:\n${queryResultString}`,
+                        "info",
+                    )
+                ) {
+                    console.log(ansi.green`Query has been executed. Result: `)
+                    console.dir(queryResult, {
+                        breakLength: Infinity,
+                        compact: false,
+                        depth: null,
+                    })
+                }
             }
 
             await queryRunner.release()

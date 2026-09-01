@@ -40,9 +40,17 @@ export class SchemaDropCommand implements yargs.CommandModule {
             await dataSource.dropDatabase()
             await dataSource.destroy()
 
-            console.log(
-                ansi.green`Database schema has been successfully dropped.`,
-            )
+            if (
+                !CommandUtils.logDataSourceMessage(
+                    dataSource,
+                    "Database schema has been successfully dropped.",
+                    "schema-build",
+                )
+            ) {
+                console.log(
+                    ansi.green`Database schema has been successfully dropped.`,
+                )
+            }
         } catch (err) {
             PlatformTools.logCmdErr("Error during schema drop:", err)
 
