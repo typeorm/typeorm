@@ -13,6 +13,7 @@ import { expect } from "chai"
 import { PostMultiplePrimaryKeys } from "./entity/PostMultiplePrimaryKeys"
 import { PostComplex } from "./entity/PostComplex"
 import { PostEmbedded } from "./entity/PostEmbedded"
+import { PostContent } from "./entity/PostContent"
 
 describe("persistence > entity updation", () => {
     let dataSources: DataSource[]
@@ -128,6 +129,38 @@ describe("persistence > entity updation", () => {
                 loadedPost.embed.updateDate.should.be.instanceof(Date)
                 loadedPost.embed.version.should.be.equal(1)
                 loadedPost.text.should.be.equal("Hello Complexity")
+            }),
+        ))
+
+    it("should not modify updateDate when saving an unchanged entity with nullable relation already null", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // MongoDB does not support the ManyToOne relation used by PostContent
+                if (dataSource.driver.options.type === "mongodb") return
+
+                const post = new PostContent()
+                post.body = "Hello Post Content"
+                post.relatedPost = null
+                await dataSource.manager.save(post)
+
+                const updateDateBefore = post.updateDate
+                const createDateBefore = post.createDate
+
+                await new Promise((resolve) => setTimeout(resolve, 100))
+
+                await dataSource.manager.save(post)
+
+                const savedPost = await dataSource.manager.findOneOrFail(
+                    PostContent,
+                    { where: { id: post.id } },
+                )
+
+                expect(savedPost.updateDate.getTime()).to.be.equal(
+                    updateDateBefore.getTime(),
+                )
+                expect(savedPost.updateDate.getTime()).to.be.equal(
+                    createDateBefore.getTime(),
+                )
             }),
         ))
 })
