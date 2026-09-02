@@ -98,10 +98,15 @@ const user = await repository.preload(partialUser)
   It saves all given entities in a single transaction (in the case of entity, manager is not transactional).
   Also supports partial updating since all undefined properties are skipped.
   Returns the saved entity/entities.
+  Accepts an optional [`SaveOptions`](#additional-options) object as the last argument to control transaction, chunking, reloading, and other persistence behaviour — including `skipExistingRecordCheck` to skip the existence SELECT for insertable entities, which is useful for bulk-insert scenarios.
 
 ```typescript
 await repository.save(user)
 await repository.save([category1, category2, category3])
+
+// performance optimisation: skip the SELECT that checks whether each insertable
+// entity already exists when you know all entities are new
+await repository.save(newUsers, { skipExistingRecordCheck: true })
 ```
 
 - `remove` - Removes a given entity or array of entities.
@@ -524,11 +529,16 @@ Optional `SaveOptions` can be passed as parameter for `save`.
 - `transaction`: boolean - By default transactions are enabled and all queries in persistence operation are wrapped into the transaction. You can disable this behaviour by setting `{ transaction: false }` in the persistence options.
 - `chunk`: number - Breaks save execution into multiple groups of chunks. For example, if you want to save 100.000 objects but you have issues with saving them, you can break them into 10 groups of 10.000 objects (by setting `{ chunk: 10000 }`) and save each group separately. This option is needed to perform very big insertions when you have issues with underlying driver parameter number limitation.
 - `reload`: boolean - Flag to determine whether the entity that is being persisted should be reloaded during the persistence operation. It will work only on databases which do not support RETURNING / OUTPUT statement. Enabled by default.
+- `skipExistingRecordCheck`: boolean - When set to `true`, skips the SELECT query that TypeORM normally issues to determine whether each insertable entity already exists in the database, treating those entities as new and always issuing an INSERT. Relations that are cascade-update-only (i.e. `cascade: ['update']` without `cascade: ['insert']`) are not affected and still perform their normal existence check. Use this as a performance optimization for bulk-insert scenarios where you are certain none of the directly saved entities exist yet. Disabled by default.
 
 Example:
 
 ```typescript
+// break a large batch into chunks
 userRepository.save(users, { chunk: 1000 })
+
+// skip existence check for guaranteed-new entities (bulk insert optimisation)
+userRepository.save(newUsers, { skipExistingRecordCheck: true })
 ```
 
 Optional `RemoveOptions` can be passed as parameter for `remove` and `delete`.
