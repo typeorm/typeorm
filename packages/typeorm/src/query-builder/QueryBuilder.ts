@@ -730,7 +730,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Builds the ` AS "alias"` fragment for a DELETE/UPDATE statement's target table.
+     * Builds the ` "alias"` fragment for a DELETE/UPDATE statement's target table.
      */
     protected createDeleteUpdateAliasExpression(): string {
         const alias = this.expressionMap.mainAlias
@@ -741,7 +741,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         )
             return ""
 
-        return ` AS ${this.escape(alias.name)}`
+        return ` ${this.escape(alias.name)}`
     }
 
     /**

@@ -224,7 +224,7 @@ describe("query builder > delete", () => {
                     .from(User, "u")
                     .where("u.name = :name", { name: "Alex Messer" })
 
-                expect(queryBuilder.getSql()).to.contain('AS "u"')
+                expect(queryBuilder.getSql()).to.contain('"user" "u"')
 
                 await queryBuilder.execute()
 
@@ -244,7 +244,9 @@ describe("query builder > delete", () => {
                     .delete()
                     .where("u.name = :name", { name: "Dima Zotov" })
 
-                expect(queryBuilderFromRepository.getSql()).to.contain('AS "u"')
+                expect(queryBuilderFromRepository.getSql()).to.contain(
+                    '"user" "u"',
+                )
 
                 await queryBuilderFromRepository.execute()
 
@@ -263,7 +265,7 @@ describe("query builder > delete", () => {
                     .where("u.name = :name", { name: "Brad Porter" })
 
                 expect(queryBuilderFromEntityAlias.getSql()).to.contain(
-                    'AS "u"',
+                    '"user" "u"',
                 )
 
                 await queryBuilderFromEntityAlias.execute()
@@ -370,7 +372,7 @@ describe("query builder > delete", () => {
                     .from(AliasedPost, "p")
                     .where("p.title = :title", { title: "Hello" })
 
-                expect(queryBuilder.getSql()).to.contain('AS "p"')
+                expect(queryBuilder.getSql()).to.contain('"post_table" "p"')
 
                 await queryBuilder.execute()
 
@@ -390,7 +392,9 @@ describe("query builder > delete", () => {
                     .delete()
                     .where("p.title = :title", { title: "World" })
 
-                expect(queryBuilderFromRepository.getSql()).to.contain('AS "p"')
+                expect(queryBuilderFromRepository.getSql()).to.contain(
+                    '"post_table" "p"',
+                )
 
                 await queryBuilderFromRepository.execute()
 

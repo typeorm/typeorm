@@ -313,7 +313,7 @@ describe("query builder > update", () => {
                     .set({ name: "Muhammad Mirzoev" })
                     .where("u.name = :name", { name: "Alex Messer" })
 
-                expect(queryBuilder.getSql()).to.contain('AS "u"')
+                expect(queryBuilder.getSql()).to.contain('"user" "u"')
 
                 await queryBuilder.execute()
 
@@ -333,7 +333,7 @@ describe("query builder > update", () => {
                     .set({ name: "Brad Porter" })
                     .where("u.name = :name", { name: "Dima Zotov" })
 
-                expect(queryBuilderFromEntity.getSql()).to.contain('AS "u"')
+                expect(queryBuilderFromEntity.getSql()).to.contain('"user" "u"')
 
                 await queryBuilderFromEntity.execute()
 
@@ -443,7 +443,7 @@ describe("query builder > update", () => {
                     .set({ title: "Updated Hello" })
                     .where("p.title = :title", { title: "Hello" })
 
-                expect(queryBuilder.getSql()).to.contain('AS "p"')
+                expect(queryBuilder.getSql()).to.contain('"post_table" "p"')
 
                 await queryBuilder.execute()
 
@@ -463,7 +463,9 @@ describe("query builder > update", () => {
                     .set({ title: "Updated World" })
                     .where("p.title = :title", { title: "World" })
 
-                expect(queryBuilderFromEntity.getSql()).to.contain('AS "p"')
+                expect(queryBuilderFromEntity.getSql()).to.contain(
+                    '"post_table" "p"',
+                )
 
                 await queryBuilderFromEntity.execute()
 
