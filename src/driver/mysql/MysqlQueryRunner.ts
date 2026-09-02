@@ -214,14 +214,14 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             enableQueryTimeout && maxQueryExecutionTime
                 ? { sql: query, timeout: maxQueryExecutionTime }
                 : query
-        const queryStartTime = Date.now()
+        const queryStartTime = performance.now()
 
         try {
             const [raw] = await databaseConnection
                 .promise()
                 .query(queryPayload, parameters)
 
-            const queryExecutionTime = Date.now() - queryStartTime
+            const queryExecutionTime = performance.now() - queryStartTime
 
             if (
                 maxQueryExecutionTime &&
@@ -260,7 +260,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             return useStructuredResult ? result : result.raw
         } catch (err) {
-            const queryExecutionTime = Date.now() - queryStartTime
+            const queryExecutionTime = performance.now() - queryStartTime
 
             if (
                 maxQueryExecutionTime &&
