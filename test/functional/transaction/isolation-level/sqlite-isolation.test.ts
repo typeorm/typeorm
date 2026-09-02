@@ -37,7 +37,7 @@ describe("transaction > isolation level > sqlite", () => {
         before(async () => {
             dataSources = await createTestingConnections({
                 entities: [__dirname + "/entity/*{.js,.ts}"],
-                enabledDrivers: ["better-sqlite3", "sqljs"],
+                enabledDrivers: ["better-sqlite3", "bun-sqlite", "sqljs"],
             })
         })
         beforeEach(() => reloadTestingDatabases(dataSources))
@@ -123,7 +123,11 @@ describe("transaction > isolation level > sqlite", () => {
                     // DDL failures under non-default isolation
                     const setup = await createTestingConnections({
                         entities: [__dirname + "/entity/*{.js,.ts}"],
-                        enabledDrivers: ["better-sqlite3", "sqljs"],
+                        enabledDrivers: [
+                            "better-sqlite3",
+                            "bun-sqlite",
+                            "sqljs",
+                        ],
                         schemaCreate: true,
                         dropSchema: true,
                     })
@@ -131,7 +135,11 @@ describe("transaction > isolation level > sqlite", () => {
 
                     dataSources = await createTestingConnections({
                         entities: [__dirname + "/entity/*{.js,.ts}"],
-                        enabledDrivers: ["better-sqlite3", "sqljs"],
+                        enabledDrivers: [
+                            "better-sqlite3",
+                            "bun-sqlite",
+                            "sqljs",
+                        ],
                         driverSpecific: {
                             isolationLevel,
                         },

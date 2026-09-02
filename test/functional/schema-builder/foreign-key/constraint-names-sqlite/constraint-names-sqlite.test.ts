@@ -22,7 +22,7 @@ describe("schema builder > foreign key > constraint names sqlite", () => {
         before(async () => {
             dataSources = await createTestingConnections({
                 entities: [Author, Post],
-                enabledDrivers: ["better-sqlite3"],
+                enabledDrivers: ["better-sqlite3", "bun-sqlite"],
                 migrations: [
                     CreatePostTable1656926770819,
                     CreateAuthorTable1656939116999,
@@ -53,7 +53,7 @@ describe("schema builder > foreign key > constraint names sqlite", () => {
         before(async () => {
             dataSources = await createTestingConnections({
                 entities: [User],
-                enabledDrivers: ["better-sqlite3"],
+                enabledDrivers: ["better-sqlite3", "bun-sqlite"],
                 migrations: [
                     CreateUserTable1657066872930,
                     CreateUniqueConstraintToUser1657067039714,
@@ -83,7 +83,7 @@ describe("schema builder > foreign key > constraint names sqlite", () => {
         before(async () => {
             dataSources = await createTestingConnections({
                 entities: [CheckedUser],
-                enabledDrivers: ["better-sqlite3"],
+                enabledDrivers: ["better-sqlite3", "bun-sqlite"],
                 migrations: [
                     CreateCheckedUserTable1657067039715,
                     CreateCheckConstraintToUser1657067039716,

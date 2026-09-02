@@ -11,7 +11,7 @@ describe("indices > index types > sqlite", () => {
     it("Should throw an error if index type is set and sqlite does not support index types", async () => {
         const connections = await createTestingConnections({
             entities: [User3],
-            enabledDrivers: ["better-sqlite3"],
+            enabledDrivers: ["better-sqlite3", "bun-sqlite"],
             schemaCreate: true,
         })
 
@@ -22,7 +22,7 @@ describe("indices > index types > sqlite", () => {
             await expect(
                 createTestingConnections({
                     entities: [User2],
-                    enabledDrivers: ["better-sqlite3"],
+                    enabledDrivers: ["better-sqlite3", "bun-sqlite"],
                     schemaCreate: true,
                 }),
             ).to.be.rejectedWith(TypeORMError)

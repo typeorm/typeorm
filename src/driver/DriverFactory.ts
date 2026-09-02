@@ -3,6 +3,7 @@ import { MissingDriverError } from "../error/MissingDriverError"
 import { AuroraMysqlDriver } from "./aurora-mysql/AuroraMysqlDriver"
 import { AuroraPostgresDriver } from "./aurora-postgres/AuroraPostgresDriver"
 import { BetterSqlite3Driver } from "./better-sqlite3/BetterSqlite3Driver"
+import { BunSqliteDriver } from "./bun-sqlite/BunSqliteDriver"
 import { CapacitorDriver } from "./capacitor/CapacitorDriver"
 import { CockroachDriver } from "./cockroachdb/CockroachDriver"
 import { CordovaDriver } from "./cordova/CordovaDriver"
@@ -38,6 +39,8 @@ export class DriverFactory {
                 return new AuroraPostgresDriver(dataSource)
             case "better-sqlite3":
                 return new BetterSqlite3Driver(dataSource)
+            case "bun-sqlite":
+                return new BunSqliteDriver(dataSource)
             case "capacitor":
                 return new CapacitorDriver(dataSource)
             case "cockroachdb":
@@ -73,6 +76,7 @@ export class DriverFactory {
                     "aurora-mysql",
                     "aurora-postgres",
                     "better-sqlite3",
+                    "bun-sqlite",
                     "capacitor",
                     "cockroachdb",
                     "cordova",

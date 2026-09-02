@@ -29,6 +29,7 @@ export class InitCommand implements yargs.CommandModule {
                     "mysql",
                     "mariadb",
                     "better-sqlite3",
+                    "bun-sqlite",
                     "mssql",
                     "oracle",
                     "mongodb",
@@ -80,7 +81,8 @@ export class InitCommand implements yargs.CommandModule {
             )
             await CommandUtils.createFile(
                 basePath + "/README.md",
-                InitCommand.getReadmeTemplate({ docker: isDocker }),
+                InitCommand.getReadmeTemplate({ docker: isDocker, database }),
+
                 false,
             )
             await CommandUtils.createFile(
@@ -191,6 +193,13 @@ export class InitCommand implements yargs.CommandModule {
             case "better-sqlite3":
                 dbSettings = [
                     'type: "better-sqlite3"',
+                    'database: "database.sqlite"',
+                ]
+                break
+
+            case "bun-sqlite":
+                dbSettings = [
+                    'type: "bun-sqlite"',
                     'database: "database.sqlite"',
                 ]
                 break
@@ -629,6 +638,9 @@ AppDataSource.initialize().then(async () => {
             case "better-sqlite3":
                 throw new TypeORMError(`SQLite does not require docker`)
 
+            case "bun-sqlite":
+                throw new TypeORMError(`SQLite does not require docker`)
+
             case "oracle":
                 throw new TypeORMError(
                     `You cannot initialize a project with docker for Oracle driver yet.`,
@@ -677,12 +689,19 @@ AppDataSource.initialize().then(async () => {
      * @param options
      * @param options.docker
      */
-    protected static getReadmeTemplate(options: { docker: boolean }): string {
+    protected static getReadmeTemplate(options: {
+        docker: boolean
+        database?: string
+    }): string {
+        const isBun = options.database === "bun-sqlite"
+        const installCmd = isBun ? "bun install" : "npm i"
+        const startCmd = isBun ? "bun start" : "npm start"
+
         let template = `# Awesome Project Build with TypeORM
 
 Steps to run this project:
 
-1. Run \`npm i\` command
+1. Run \`${installCmd}\` command
 `
 
         if (options.docker) {
@@ -693,7 +712,7 @@ Steps to run this project:
 `
         }
 
-        template += `3. Run \`npm start\` command
+        template += `3. Run \`${startCmd}\` command
 `
         return template
     }
@@ -749,6 +768,9 @@ Steps to run this project:
                 packageJson.dependencies["better-sqlite3"] =
                     ourPackageJson.devDependencies["better-sqlite3"]
                 break
+            case "bun-sqlite":
+                // bun:sqlite is a built-in Bun module — no npm dependency needed
+                break
             case "oracle":
                 packageJson.dependencies["oracledb"] =
                     ourPackageJson.devDependencies.oracledb
@@ -774,7 +796,12 @@ Steps to run this project:
 
         packageJson.scripts ??= {}
 
-        if (projectIsEsm)
+        if (database === "bun-sqlite") {
+            Object.assign(packageJson.scripts, {
+                start: "bun src/index.ts",
+                typeorm: "bunx typeorm",
+            })
+        } else if (projectIsEsm)
             Object.assign(packageJson.scripts, {
                 start: /*(docker ? "docker-compose up && " : "") + */ "node --loader ts-node/esm src/index.ts",
                 typeorm: "typeorm-ts-node-esm",

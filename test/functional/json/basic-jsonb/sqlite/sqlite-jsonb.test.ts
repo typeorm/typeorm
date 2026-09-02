@@ -13,7 +13,7 @@ describe("jsonb type > sqlite", () => {
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.ts,.js}"],
-            enabledDrivers: ["sqljs", "better-sqlite3"],
+            enabledDrivers: ["sqljs", "better-sqlite3", "bun-sqlite"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
