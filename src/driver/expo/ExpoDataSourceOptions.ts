@@ -1,9 +1,9 @@
-import type { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
+import type { AbstractSqliteDataSourceOptions } from "../sqlite-abstract/AbstractSqliteDataSourceOptions"
 
 /**
  * Expo SQLite-specific connection options.
  */
-export interface ExpoDataSourceOptions extends BaseDataSourceOptions {
+export interface ExpoDataSourceOptions extends AbstractSqliteDataSourceOptions {
     /**
      * Database type.
      */

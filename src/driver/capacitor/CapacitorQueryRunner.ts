@@ -31,7 +31,9 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
      * Called before migrations are run.
      */
     async beforeMigration(): Promise<void> {
-        await this.query(`PRAGMA foreign_keys = OFF`)
+        if (!this.driver.options.preserveForeignKeysDuringMigrations) {
+            await this.query(`PRAGMA foreign_keys = OFF`)
+        }
     }
 
     /**
