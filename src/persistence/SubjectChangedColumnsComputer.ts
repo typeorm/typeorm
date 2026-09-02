@@ -261,13 +261,27 @@ export class SubjectChangedColumnsComputer {
                 // if relation entity is just a relation id set (for example post.tag = 1)
                 // then we create an id map from it to make a proper comparision
                 let relatedEntityRelationIdMap: ObjectLiteral = relatedEntity
-                if (
-                    relatedEntityRelationIdMap !== null &&
-                    ObjectUtils.isObject(relatedEntityRelationIdMap)
-                )
+
+                if (relatedEntityRelationIdMap === null) {
+                    // a null relation means all referenced ids are null, including embedded ones
+                    const joinColumns = relation.isOwning
+                        ? relation.joinColumns
+                        : relation.inverseRelation!.joinColumns
+                    relatedEntityRelationIdMap = joinColumns.reduce(
+                        (map, joinColumn) =>
+                            OrmUtils.mergeDeep(
+                                map,
+                                joinColumn.referencedColumn!.createValueMap(
+                                    null,
+                                ),
+                            ),
+                        {} as ObjectLiteral,
+                    )
+                } else if (ObjectUtils.isObject(relatedEntityRelationIdMap)) {
                     relatedEntityRelationIdMap = relation.getRelationIdMap(
                         relatedEntityRelationIdMap,
                     )!
+                }
 
                 // get database related entity. Since loadRelationIds are used on databaseEntity
                 // related entity will contain only its relation ids
