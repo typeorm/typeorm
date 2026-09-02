@@ -73,4 +73,13 @@ export interface CockroachDataSourceOptions
      * Max number of transaction retries in case of 40001 error.
      */
     readonly maxTransactionRetries?: number
+
+    /**
+     * Session variables applied to every pooled connection via
+     * `set_config(<key>, <value>, false)` — equivalent to `SET key TO 'value'`.
+     *
+     * Variable names must be valid identifiers; an invalid name throws during
+     * connection setup.
+     */
+    readonly sessionVariables?: Record<string, any>
 }

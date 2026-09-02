@@ -27,6 +27,7 @@ import type { ReplicationMode } from "../types/ReplicationMode"
 import type { ReturningType } from "../types/ReturningType"
 import type { IsolationLevel } from "../types/IsolationLevel"
 import type { UpsertType } from "../types/UpsertType"
+import { PostgresUtils } from "../postgres/PostgresUtils"
 import type { CockroachConnectionCredentialsOptions } from "./CockroachConnectionCredentialsOptions"
 import type { CockroachDataSourceOptions } from "./CockroachDataSourceOptions"
 import { CockroachQueryRunner } from "./CockroachQueryRunner"
@@ -1188,6 +1189,11 @@ export class CockroachDriver implements Driver {
             options.extra ?? {},
         )
 
+        // Validate and build the session-variables handler before allocating the
+        // pool, so invalid configuration fails without leaking pool resources.
+        const sessionVariablesHandler =
+            PostgresUtils.buildSessionVariablesHandler(options.sessionVariables)
+
         // create a connection pool
         const pool = new this.postgres.Pool(connectionOptions)
         const { logger } = this.dataSource
@@ -1204,11 +1210,26 @@ export class CockroachDriver implements Driver {
         pool.on("error", poolErrorHandler)
 
         return new Promise((ok, fail) => {
-            pool.connect((err: any, connection: any, release: Function) => {
-                if (err) return fail(err)
-                release()
-                ok(pool)
-            })
+            pool.connect(
+                async (err: any, connection: any, release: Function) => {
+                    if (err) return fail(err)
+
+                    if (sessionVariablesHandler) {
+                        try {
+                            await sessionVariablesHandler(connection)
+                        } catch (sessionVariablesError) {
+                            release(sessionVariablesError)
+                            return fail(sessionVariablesError)
+                        }
+                        pool.on("connect", (c: any) =>
+                            sessionVariablesHandler(c).catch(poolErrorHandler),
+                        )
+                    }
+
+                    release()
+                    ok(pool)
+                },
+            )
         })
     }
 

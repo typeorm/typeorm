@@ -33,6 +33,7 @@ import type { UpsertType } from "../types/UpsertType"
 import type { PostgresConnectionCredentialsOptions } from "./PostgresConnectionCredentialsOptions"
 import type { PostgresDataSourceOptions } from "./PostgresDataSourceOptions"
 import { PostgresQueryRunner } from "./PostgresQueryRunner"
+import { PostgresUtils } from "./PostgresUtils"
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -1770,6 +1771,11 @@ export class PostgresDriver implements Driver {
             }
         }
 
+        // Validate and build the session-variables handler before allocating the
+        // pool, so invalid configuration fails without leaking pool resources.
+        const sessionVariablesHandler =
+            PostgresUtils.buildSessionVariablesHandler(options.sessionVariables)
+
         // create a connection pool
         const pool = new this.postgres.Pool(connectionOptions)
 
@@ -1785,27 +1791,41 @@ export class PostgresDriver implements Driver {
         pool.on("error", poolErrorHandler)
 
         return new Promise((ok, fail) => {
-            pool.connect((err: any, connection: any, release: Function) => {
-                if (err) return fail(err)
+            pool.connect(
+                async (err: any, connection: any, release: Function) => {
+                    if (err) return fail(err)
 
-                if (options.logNotifications) {
-                    connection.on("notice", (msg: any) => {
-                        if (msg) {
-                            this.dataSource.logger.log("info", msg.message)
+                    if (sessionVariablesHandler) {
+                        try {
+                            await sessionVariablesHandler(connection)
+                        } catch (sessionVariablesError) {
+                            release(sessionVariablesError)
+                            return fail(sessionVariablesError)
                         }
-                    })
-                    connection.on("notification", (msg: any) => {
-                        if (msg) {
-                            this.dataSource.logger.log(
-                                "info",
-                                `Received NOTIFY on channel ${msg.channel}: ${msg.payload}.`,
-                            )
-                        }
-                    })
-                }
-                release()
-                ok(pool)
-            })
+                        pool.on("connect", (c: any) =>
+                            sessionVariablesHandler(c).catch(poolErrorHandler),
+                        )
+                    }
+
+                    if (options.logNotifications) {
+                        connection.on("notice", (msg: any) => {
+                            if (msg) {
+                                this.dataSource.logger.log("info", msg.message)
+                            }
+                        })
+                        connection.on("notification", (msg: any) => {
+                            if (msg) {
+                                this.dataSource.logger.log(
+                                    "info",
+                                    `Received NOTIFY on channel ${msg.channel}: ${msg.payload}.`,
+                                )
+                            }
+                        })
+                    }
+                    release()
+                    ok(pool)
+                },
+            )
         })
     }
 
