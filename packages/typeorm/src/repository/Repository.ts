@@ -83,18 +83,15 @@ export class Repository<Entity extends ObjectLiteral> {
         alias?: string,
         queryRunner?: QueryRunner,
     ): SelectQueryBuilder<Entity> {
-        if (alias) {
-            return this.manager.createQueryBuilder<Entity>(
-                this.metadata.target as any,
-                alias,
-                queryRunner ?? this.queryRunner,
-            )
+        const queryBuilder = this.manager.createQueryBuilder<Entity>(
+            this.metadata.target as any,
+            alias ?? this.metadata.targetName,
+            queryRunner ?? this.queryRunner,
+        )
+        if (!alias) {
+            ;(queryBuilder as any).expressionMap.mainAlias.isExplicit = false
         }
-
-        return this.manager
-            .createQueryBuilder(queryRunner ?? this.queryRunner)
-            .select()
-            .from(this.metadata.target as any, undefined as any)
+        return queryBuilder
     }
 
     /**
