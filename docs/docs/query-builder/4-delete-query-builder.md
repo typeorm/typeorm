@@ -16,6 +16,28 @@ await myDataSource
 
 This is the most efficient way in terms of performance to delete entities from your database.
 
+## `Delete` with an alias
+
+On the PostgreSQL family (Postgres, CockroachDB) you can pass an alias when creating the query
+builder, and use it in `where()`:
+
+```typescript
+await myDataSource
+    .createQueryBuilder(User, "user")
+    .delete()
+    .where("user.id = :id", { id: 1 })
+    .execute()
+```
+
+Which will produce the following SQL query:
+
+```sql
+DELETE FROM users user WHERE user.id = 1
+```
+
+On other database drivers `DELETE` doesn't support aliases, so `where()` conditions must stay
+unqualified (e.g. `"id = :id"`).
+
 ## `Soft-Delete`
 
 Applying Soft Delete to QueryBuilder
