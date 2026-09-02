@@ -807,10 +807,22 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 replacements[replaceAliasNamePrefix][column.propertyPath] =
                     column.databaseName
             }
+
+            // UPDATE/DELETE also accept unqualified conditions once aliased.
+            if (
+                replaceAliasNamePrefix &&
+                ["update", "delete"].includes(this.expressionMap.queryType)
+            ) {
+                replacements[""] ??= replacements[replaceAliasNamePrefix]
+            }
         }
 
         const replacementKeys = Object.keys(replacements)
+        // Non-empty prefixes first: regex alternation is greedy left-to-right,
+        // and an empty alternative would otherwise always win.
         const replaceAliasNamePrefixes = replacementKeys
+            .filter((key) => key !== "")
+            .concat(replacementKeys.includes("") ? [""] : [])
             .map((key) => escapeRegExp(key))
             .join("|")
 
@@ -822,7 +834,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         // followed by our prefix, e.g. 'tablename.' or ''
                         `${
                             replaceAliasNamePrefixes
-                                ? "(" + replaceAliasNamePrefixes + ")"
+                                ? "(" + replaceAliasNamePrefixes + ")?" // optional, else unprefixed names wouldn't match at all
                                 : ""
                         }([^ =(),]+)` + // a possible property name: sequence of anything but ' =(),'
                         // terminated by ' =),' or end of line
@@ -836,10 +848,13 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         pre = matches[1]
                         p = matches[3]
 
-                        if (replacements[matches[2]][p]) {
+                        if (matches[2] && replacements[matches[2]]?.[p]) {
                             return `${pre}${this.escape(
                                 matches[2].slice(0, -1),
                             )}.${this.escape(replacements[matches[2]][p])}`
+                        }
+                        if (!matches[2] && replacements[""]?.[p]) {
+                            return `${pre}${this.escape(replacements[""][p])}`
                         }
                     } else {
                         match = matches[0]
