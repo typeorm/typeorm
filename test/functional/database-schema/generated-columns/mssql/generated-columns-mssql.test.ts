@@ -7,6 +7,7 @@ import {
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 import { expect } from "chai"
+import { MetadataTableType } from "../../../../../src/driver/types/MetadataTableType"
 
 describe("database schema > generated columns > mssql", () => {
     let dataSources: DataSource[]
@@ -14,7 +15,7 @@ describe("database schema > generated columns > mssql", () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["mssql"],
-            schemaCreate: true,
+            schemaCreate: false,
             dropSchema: true,
         })
     })
@@ -36,7 +37,7 @@ describe("database schema > generated columns > mssql", () => {
     it("should create table with generated columns", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                const queryRunner = dataSource.createQueryRunner()
+                await using queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 const virtualFullName =
                     table!.findColumnByName("virtualFullName")!
@@ -64,14 +65,34 @@ describe("database schema > generated columns > mssql", () => {
                     `HashBytes('MD5',coalesce("firstName",'0'))`,
                 )
 
-                await queryRunner.release()
+                const humanTable = (await queryRunner.getTable(
+                    "test_database.test_schema.human",
+                ))!
+                const nameCol = humanTable.findColumnByName("name")!
+                nameCol.asExpression!.should.be.equal(
+                    `"firstName" + ' ' + "lastName"`,
+                )
+                nameCol.generatedType!.should.be.equal("STORED")
+
+                const metadataRecords = await queryRunner.query(
+                    `SELECT * FROM "typeorm_metadata" WHERE "table" = 'human' AND "schema" = 'test_schema' AND "database" = 'test_database'`,
+                )
+                metadataRecords.length.should.be.equal(1)
+                metadataRecords[0].should.be.eql({
+                    database: humanTable.database,
+                    schema: humanTable.schema,
+                    name: "name",
+                    table: "human",
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    value: `"firstName" + ' ' + "lastName"`,
+                })
             }),
         ))
 
     it("should add generated column and revert add", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                const queryRunner = dataSource.createQueryRunner()
+                await using queryRunner = dataSource.createQueryRunner()
 
                 let table = await queryRunner.getTable("post")
 
@@ -122,15 +143,13 @@ describe("database schema > generated columns > mssql", () => {
                     `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" IN ('storedColumn', 'virtualColumn')`,
                 )
                 metadataRecords.length.should.be.equal(0)
-
-                await queryRunner.release()
             }),
         ))
 
     it("should drop generated column and revert drop", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                const queryRunner = dataSource.createQueryRunner()
+                await using queryRunner = dataSource.createQueryRunner()
 
                 let table = await queryRunner.getTable("post")
                 await queryRunner.dropColumn(table!, "storedFullName")
@@ -168,15 +187,13 @@ describe("database schema > generated columns > mssql", () => {
                 virtualFullName!.asExpression!.should.be.equal(
                     `concat("firstName",' ',"lastName")`,
                 )
-
-                await queryRunner.release()
             }),
         ))
 
     it("should change generated column and revert change", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                const queryRunner = dataSource.createQueryRunner()
+                await using queryRunner = dataSource.createQueryRunner()
 
                 let table = await queryRunner.getTable("post")
 
@@ -229,15 +246,122 @@ describe("database schema > generated columns > mssql", () => {
                 name.asExpression!.should.be.equal(
                     `"firstName" + ' ' + "lastName"`,
                 )
+            }),
+        ))
 
-                await queryRunner.release()
+    // todo: enable after fixing issue with renaming generated columns in MSSQL
+    it.skip("should rename generated column metadata row and revert rename", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await using queryRunner = dataSource.createQueryRunner()
+
+                let table = await queryRunner.getTable("post")
+                await queryRunner.renameColumn(
+                    table!,
+                    "storedFullName",
+                    "storedFullNameRenamed",
+                )
+
+                table = await queryRunner.getTable("post")
+
+                const oldColumn = table!.findColumnByName("storedFullName")
+                expect(oldColumn).to.be.undefined
+
+                const renamedColumn = table!.findColumnByName(
+                    "storedFullNameRenamed",
+                )
+                expect(renamedColumn!.asExpression).to.be.equal(
+                    `CONCAT("firstName",' ',"lastName")`,
+                )
+
+                const oldMetadataRecords = await queryRunner.query(
+                    `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" = 'storedFullName'`,
+                )
+                oldMetadataRecords.length.should.be.equal(0)
+
+                const renamedMetadataRecords = await queryRunner.query(
+                    `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" = 'storedFullNameRenamed'`,
+                )
+                renamedMetadataRecords.length.should.be.equal(1)
+
+                // revert changes
+                await queryRunner.executeMemoryDownSql()
+
+                table = await queryRunner.getTable("post")
+
+                const revertedColumn = table!.findColumnByName("storedFullName")
+                expect(revertedColumn!.asExpression).to.be.equal(
+                    `CONCAT("firstName",' ',"lastName")`,
+                )
+                expect(table!.findColumnByName("storedFullNameRenamed")).to.be
+                    .undefined
+
+                const revertedMetadataRecords = await queryRunner.query(
+                    `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" = 'storedFullName'`,
+                )
+                revertedMetadataRecords.length.should.be.equal(1)
+
+                const revertedRenamedMetadataRecords = await queryRunner.query(
+                    `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" = 'storedFullNameRenamed'`,
+                )
+                revertedRenamedMetadataRecords.length.should.be.equal(0)
+            }),
+        ))
+
+    it("should rename table with generated columns and revert rename", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await using queryRunner = dataSource.createQueryRunner()
+
+                let table = await queryRunner.getTable("post")
+                await queryRunner.renameTable(table!, "postRenamed")
+
+                table = await queryRunner.getTable("postRenamed")
+
+                const storedFullName = table!.findColumnByName("storedFullName")
+                expect(storedFullName!.asExpression).to.be.equal(
+                    `CONCAT("firstName",' ',"lastName")`,
+                )
+
+                const name = table!.findColumnByName("name")
+                expect(name!.asExpression).to.be.equal(
+                    `"firstName" + ' ' + "lastName"`,
+                )
+
+                // check if generated column records exist in typeorm_metadata table with new table name
+                const metadataRecords = await queryRunner.query(
+                    `SELECT * FROM "typeorm_metadata" WHERE "table" = 'postRenamed' AND "name" IN ('storedFullName', 'name')`,
+                )
+                expect(metadataRecords.length).to.be.equal(2)
+
+                // revert changes
+                await queryRunner.executeMemoryDownSql()
+
+                table = await queryRunner.getTable("post")
+
+                const revertedFullName =
+                    table!.findColumnByName("storedFullName")
+                expect(revertedFullName!.asExpression).to.be.equal(
+                    `CONCAT("firstName",' ',"lastName")`,
+                )
+
+                const revertedName = table!.findColumnByName("name")
+                expect(revertedName!.asExpression).to.be.equal(
+                    `"firstName" + ' ' + "lastName"`,
+                )
+
+                // check if generated column records exist in typeorm_metadata table with old table name
+                const revertedMetadataRecords = await queryRunner.query(
+                    `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" IN ('storedFullName', 'name')`,
+                )
+                expect(revertedMetadataRecords.length).to.be.equal(2)
             }),
         ))
 
     it("should remove data from 'typeorm_metadata' when table dropped", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                const queryRunner = dataSource.createQueryRunner()
+                await using queryRunner = dataSource.createQueryRunner()
                 const table = await queryRunner.getTable("post")
                 const generatedColumns = table!.columns.filter(
                     (it) => it.generatedType,
@@ -258,8 +382,6 @@ describe("database schema > generated columns > mssql", () => {
                     `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post'`,
                 )
                 metadataRecords.length.should.be.equal(generatedColumns.length)
-
-                await queryRunner.release()
             }),
         ))
 })
