@@ -147,6 +147,9 @@ export class PlainObjectToDatabaseEntityTransformer {
                             targetWithIds.target as any,
                         )
                         .createQueryBuilder()
+                        // preload loads the entity and everything related to it,
+                        // so its eager relations must be loaded as well
+                        .setFindOptions({ loadEagerRelations: true })
                         .whereInIds(targetWithIds.ids)
                         .getMany()
                 }
@@ -167,12 +170,26 @@ export class PlainObjectToDatabaseEntityTransformer {
                 loadMapItem.relation.isManyToMany ||
                 loadMapItem.relation.isOneToMany
             ) {
-                loadMapItem.parentLoadMapItem.entity[
-                    loadMapItem.relation.propertyName
-                ] ??= []
-                loadMapItem.parentLoadMapItem.entity[
-                    loadMapItem.relation.propertyName
-                ].push(loadMapItem.entity)
+                const relatedEntities: ObjectLiteral[] =
+                    (loadMapItem.parentLoadMapItem.entity[
+                        loadMapItem.relation.propertyName
+                    ] ??= [])
+
+                // eagerly loaded relations are already in the array, replace them
+                // instead of pushing a duplicate - the load map is linked against
+                // the entity it holds
+                const relation = loadMapItem.relation
+                const loadedIndex = relatedEntities.findIndex((relatedEntity) =>
+                    relation.inverseEntityMetadata.compareEntities(
+                        relatedEntity,
+                        loadMapItem.entity!,
+                    ),
+                )
+                if (loadedIndex === -1) {
+                    relatedEntities.push(loadMapItem.entity)
+                } else {
+                    relatedEntities[loadedIndex] = loadMapItem.entity
+                }
             } else {
                 loadMapItem.parentLoadMapItem.entity[
                     loadMapItem.relation.propertyName

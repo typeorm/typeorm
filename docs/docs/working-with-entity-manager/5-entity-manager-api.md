@@ -125,6 +125,9 @@ manager.merge(User, user, { firstName: "Timber" }, { lastName: "Saw" }) // same 
   and returns the new entity. The new entity is actually loaded from the database entity with all properties
   replaced from the new object.
 
+    > "Everything related to it" means the eager relations of the entity, plus the relations
+    > present in the given object. Non-eager relations that are not part of the given object are not loaded.
+
 ```typescript
 const partialUser = {
     id: 1,

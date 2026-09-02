@@ -79,6 +79,9 @@ repository.merge(user, { firstName: "Timber" }, { lastName: "Saw" }) // same as 
 
     > Note that given entity-like object must have an entity id / primary key to find entity by. Returns undefined if entity with given id was not found.
 
+    > "Everything related to it" means the eager relations of the entity, plus the relations
+    > present in the given object. Non-eager relations that are not part of the given object are not loaded.
+
 ```typescript
 const partialUser = {
     id: 1,
