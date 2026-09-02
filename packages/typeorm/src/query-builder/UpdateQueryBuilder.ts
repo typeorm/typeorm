@@ -40,7 +40,8 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
         queryRunner?: QueryRunner,
     ) {
         super(connectionOrQueryBuilder as any, queryRunner)
-        this.expressionMap.aliasNamePrefixingEnabled = false
+        this.expressionMap.queryType = "update"
+        this.expressionMap.updateAliasNamePrefixingForWriteQuery()
     }
 
     // -------------------------------------------------------------------------

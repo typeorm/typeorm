@@ -9,4 +9,7 @@ export class User {
 
     @Column()
     name: string
+
+    @Column({ name: "team_id", nullable: true })
+    team: number
 }

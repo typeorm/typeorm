@@ -9,6 +9,7 @@ import type { DataSource } from "../../../../src/data-source/DataSource"
 import { User } from "./entity/User"
 import { Photo } from "./entity/Photo"
 import { AliasedPost } from "./entity/AliasedPost"
+import { Student } from "./entity/Student"
 import { EntityPropertyNotFoundError } from "../../../../src/error/EntityPropertyNotFoundError"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
@@ -271,6 +272,60 @@ describe("query builder > delete", () => {
                     .getRepository(User)
                     .findOneBy({ name: "Brad Porter" })
                 expect(loadedUser4).to.not.exist
+            }),
+        ))
+
+    it("should translate an alias-qualified where condition to its database column name on postgres family", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (!DriverUtils.isPostgresFamily(dataSource.driver)) return
+
+                const user1 = new User()
+                user1.name = "Alex Messer"
+                user1.team = 1
+                await dataSource.manager.save(user1)
+
+                const queryBuilder = dataSource
+                    .getRepository(User)
+                    .createQueryBuilder("tc")
+                    .delete()
+                    .where("tc.team = :team", { team: 1 })
+
+                expect(queryBuilder.getSql()).to.not.contain("tc.team")
+
+                await queryBuilder.execute()
+
+                const loadedUser = await dataSource
+                    .getRepository(User)
+                    .findOneBy({ name: "Alex Messer" })
+                expect(loadedUser).to.not.exist
+            }),
+        ))
+
+    it("should qualify the discriminator column with an explicit alias on postgres family", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (!DriverUtils.isPostgresFamily(dataSource.driver)) return
+
+                const student = new Student()
+                student.name = "Alex Messer"
+                student.faculty = "Economics"
+                await dataSource.manager.save(student)
+
+                const queryBuilder = dataSource
+                    .getRepository(Student)
+                    .createQueryBuilder("s")
+                    .delete()
+                    .where("name = :name", { name: "Alex Messer" })
+
+                expect(queryBuilder.getSql()).to.contain('"s"."type"')
+
+                await queryBuilder.execute()
+
+                const loadedStudent = await dataSource
+                    .getRepository(Student)
+                    .findOneBy({ name: "Alex Messer" })
+                expect(loadedStudent).to.not.exist
             }),
         ))
 

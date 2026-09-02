@@ -27,7 +27,8 @@ export class DeleteQueryBuilder<Entity extends ObjectLiteral>
         queryRunner?: QueryRunner,
     ) {
         super(connectionOrQueryBuilder as any, queryRunner)
-        this.expressionMap.aliasNamePrefixingEnabled = false
+        this.expressionMap.queryType = "delete"
+        this.expressionMap.updateAliasNamePrefixingForWriteQuery()
     }
 
     // -------------------------------------------------------------------------

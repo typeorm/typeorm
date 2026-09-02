@@ -282,15 +282,18 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             ? entityOrTableNameUpdateSet.options.name
             : entityOrTableNameUpdateSet
 
+        this.expressionMap.queryType = "update"
+
         if (
             typeof entityOrTableNameUpdateSet === "function" ||
             typeof entityOrTableNameUpdateSet === "string"
         ) {
             const mainAlias = this.createFromAlias(entityOrTableNameUpdateSet)
             this.expressionMap.setMainAlias(mainAlias)
+        } else {
+            this.expressionMap.updateAliasNamePrefixingForWriteQuery()
         }
 
-        this.expressionMap.queryType = "update"
         this.expressionMap.valuesSet = updateSet
 
         if (InstanceChecker.isUpdateQueryBuilder(this)) return this as any
@@ -303,6 +306,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      */
     delete(): DeleteQueryBuilder<Entity> {
         this.expressionMap.queryType = "delete"
+        this.expressionMap.updateAliasNamePrefixingForWriteQuery()
 
         if (InstanceChecker.isDeleteQueryBuilder(this)) return this as any
 
