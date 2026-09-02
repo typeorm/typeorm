@@ -4,6 +4,7 @@ import path from "path"
 import { strict as assert } from "assert"
 import sinon from "sinon"
 import fsAsync from "fs"
+import Module from "module"
 
 import { importOrRequireFile } from "../../../src/util/ImportUtils"
 
@@ -179,6 +180,81 @@ describe("ImportUtils.importOrRequireFile", () => {
         expect(exports.test).to.be.eq(6)
 
         await fs.rm(testDir, { recursive: true, force: true })
+    })
+
+    it("should fall back to import when the CommonJS loader cannot parse the file", async () => {
+        // Vite based runners such as Vitest transform TypeScript for `import()` but leave
+        // `require` on the plain CommonJS loader, which throws a SyntaxError on it.
+        // https://github.com/typeorm/typeorm/issues/11570
+        const testDir = path.join(__dirname, "testRequireFallsBackToImport")
+        const srcDir = path.join(testDir, "src")
+
+        const packageJsonPath = path.join(testDir, "package.json")
+        const jsFilePath = path.join(srcDir, "file.js")
+        const jsFileContent = `
+            export default function test() {}
+            export const number = 6;
+        `
+
+        await fs.rm(testDir, { recursive: true, force: true })
+        await fs.mkdir(srcDir, { recursive: true })
+        await fs.writeFile(packageJsonPath, JSON.stringify({}), "utf8")
+        await fs.writeFile(jsFilePath, jsFileContent, "utf8")
+
+        const extensions = (Module as any)._extensions
+        const originalLoader = extensions[".js"]
+        extensions[".js"] = (module: any, filename: string) => {
+            if (filename === jsFilePath)
+                throw new SyntaxError("Invalid or unexpected token")
+
+            return originalLoader(module, filename)
+        }
+
+        try {
+            const [exports, moduleType] = await importOrRequireFile(jsFilePath)
+
+            expect(moduleType).to.be.eq("esm")
+            expect(exports.default).to.be.a("function")
+            expect(exports.number).to.be.eq(6)
+        } finally {
+            extensions[".js"] = originalLoader
+            await fs.rm(testDir, { recursive: true, force: true })
+        }
+    })
+
+    it("should keep the require error when importing does not help either", async () => {
+        const testDir = path.join(__dirname, "testRequireErrorIsKept")
+        const srcDir = path.join(testDir, "src")
+
+        const packageJsonPath = path.join(testDir, "package.json")
+        const jsFilePath = path.join(srcDir, "file.js")
+
+        await fs.rm(testDir, { recursive: true, force: true })
+        await fs.mkdir(srcDir, { recursive: true })
+        await fs.writeFile(packageJsonPath, JSON.stringify({}), "utf8")
+        await fs.writeFile(jsFilePath, "export const = 6", "utf8")
+
+        const extensions = (Module as any)._extensions
+        const originalLoader = extensions[".js"]
+        extensions[".js"] = (module: any, filename: string) => {
+            if (filename === jsFilePath)
+                throw new SyntaxError("error thrown while requiring")
+
+            return originalLoader(module, filename)
+        }
+
+        try {
+            await importOrRequireFile(jsFilePath)
+            expect.fail("importOrRequireFile should have thrown")
+        } catch (error) {
+            expect(error).to.be.instanceOf(SyntaxError)
+            expect((error as SyntaxError).message).to.be.eq(
+                "error thrown while requiring",
+            )
+        } finally {
+            extensions[".js"] = originalLoader
+            await fs.rm(testDir, { recursive: true, force: true })
+        }
     })
 
     it("Should use cache to find package.json", async () => {

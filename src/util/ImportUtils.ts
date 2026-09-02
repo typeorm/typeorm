@@ -26,10 +26,31 @@ export async function importOrRequireFile(
         return [require(filePath), "commonjs"]
     }
 
+    // Vite based runners such as Vitest transform TypeScript for `import()` but leave
+    // `require` on the plain CommonJS loader, which cannot parse it. Retry with
+    // `import()` when requiring fails to parse the file, and keep the original error
+    // when that does not help either, so genuine syntax errors stay readable.
+    const tryToRequireOrImport = async (): Promise<
+        [any, "esm" | "commonjs"]
+    > => {
+        try {
+            return tryToRequire()
+        } catch (error) {
+            if (!(error instanceof SyntaxError)) throw error
+
+            try {
+                return await tryToImport()
+            } catch {
+                throw error
+            }
+        }
+    }
+
     const extension = filePath.slice(filePath.lastIndexOf(".") + ".".length)
 
     if (extension === "mjs" || extension === "mts") return tryToImport()
-    else if (extension === "cjs" || extension === "cts") return tryToRequire()
+    else if (extension === "cjs" || extension === "cts")
+        return tryToRequireOrImport()
     else if (extension === "js" || extension === "ts") {
         const packageJson = await getNearestPackageJson(filePath)
 
@@ -37,8 +58,8 @@ export async function importOrRequireFile(
             const isModule = (packageJson as any)?.type === "module"
 
             if (isModule) return tryToImport()
-            else return tryToRequire()
-        } else return tryToRequire()
+            else return tryToRequireOrImport()
+        } else return tryToRequireOrImport()
     }
 
     return tryToRequire()
