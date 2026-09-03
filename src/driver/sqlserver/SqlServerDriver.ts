@@ -24,8 +24,14 @@ import type { DataTypeDefaults } from "../types/DataTypeDefaults"
 import type { IsolationLevel } from "../types/IsolationLevel"
 import { validateIsolationLevel } from "../validate-isolation-level"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
-import type { ReplicationMode } from "../types/ReplicationMode"
-import type { ReturningType } from "../types/ReturningType"
+import {
+    createReplicationPools,
+    getReplicationPrimary,
+} from "../types/ReplicationConfig"
+import {
+    normalizeReplicationMode,
+    type ReplicationMode,
+} from "../types/ReplicationMode"
 import type { UpsertType } from "../types/UpsertType"
 import { MssqlParameter } from "./MssqlParameter"
 import type { SqlServerConnectionCredentialsOptions } from "./SqlServerConnectionCredentialsOptions"
@@ -299,7 +305,7 @@ export class SqlServerDriver implements Driver {
 
         this.database = DriverUtils.buildDriverOptions(
             this.options.replication
-                ? this.options.replication.master
+                ? getReplicationPrimary(this.options.replication)
                 : this.options,
         ).database
         this.schema = DriverUtils.buildDriverOptions(this.options).schema
@@ -325,15 +331,13 @@ export class SqlServerDriver implements Driver {
      */
     async connect(): Promise<void> {
         if (this.options.replication) {
-            this.slaves = await Promise.all(
-                this.options.replication.slaves.map((slave) => {
-                    return this.createPool(this.options, slave)
-                }),
-            )
-            this.master = await this.createPool(
+            const pools = await createReplicationPools(
                 this.options,
-                this.options.replication.master,
+                this.options.replication,
+                (options, credentials) => this.createPool(options, credentials),
             )
+            this.slaves = pools.slaves
+            this.master = pools.master
         } else {
             this.master = await this.createPool(this.options, this.options)
         }
@@ -395,7 +399,7 @@ export class SqlServerDriver implements Driver {
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
-        return new SqlServerQueryRunner(this, mode)
+        return new SqlServerQueryRunner(this, normalizeReplicationMode(mode))
     }
 
     /**
