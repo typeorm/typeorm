@@ -2306,7 +2306,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             DriverUtils.isPostgresFamily(driver) &&
             selectDistinctOn.length > 0
         ) {
-            const selectDistinctOnMap = selectDistinctOn.join(", ")
+            const selectDistinctOnMap = selectDistinctOn
+                .map((column) =>
+                    column
+                        .split(".")
+                        .map((part) => this.escape(part))
+                        .join("."),
+                )
+                .join(", ")
 
             select = `SELECT DISTINCT ON (${selectDistinctOnMap}) `
         } else if (selectDistinct) {
