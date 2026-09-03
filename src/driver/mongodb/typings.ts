@@ -12,7 +12,7 @@ import type {
     TLSSocketOptions,
 } from "tls"
 import { EventEmitter, Readable, Writable } from "../../platform/PlatformTools"
-import {
+import type {
     BSONRegExp,
     BSONSymbol,
     BSONType,
@@ -35,7 +35,7 @@ import {
     deserialize,
     serialize,
 } from "./bson.typings"
-export * as BSON from "./bson.typings"
+export type * as BSON from "./bson.typings"
 
 /** @public */
 export declare type Abortable = {
