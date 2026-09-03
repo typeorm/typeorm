@@ -205,6 +205,15 @@ describe("query builder > distinct on", () => {
                     .getSql()
 
                 expect(sql2).to.contain('DISTINCT ON ("tenant.user"."id")')
+
+                const sql3 = dataSource.manager
+                    .createQueryBuilder()
+                    .select()
+                    .from("raw_table", "raw")
+                    .distinctOn(["raw.column"])
+                    .getSql()
+
+                expect(sql3).to.contain('DISTINCT ON ("raw"."column")')
             }),
         ))
 })

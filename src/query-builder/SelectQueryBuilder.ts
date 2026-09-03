@@ -2313,12 +2313,15 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
                     if (
                         replaced !== columnName &&
-                        /^("[^"]+"\.)*"[^"]+"$/.test(replaced)
+                        /^\.*$/.test(replaced.replace(/"(""|[^"])*"/g, ""))
                     ) {
                         return replaced
                     }
 
-                    return this.escape(columnName)
+                    return columnName
+                        .split(".")
+                        .map((part) => this.escape(part))
+                        .join(".")
                 })
                 .join(", ")
 
