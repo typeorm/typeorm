@@ -2307,9 +2307,53 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             selectDistinctOn.length > 0
         ) {
             const selectDistinctOnMap = selectDistinctOn
-                .map((column) =>
-                    this.resolveDistinctOnColumn(column),
-                )
+                .map((columnName) => {
+                    if (/[;'"\\]|--/.test(columnName)) {
+                        throw new TypeORMError(
+                            `Unsafe distinct-on value "${columnName}".`,
+                        )
+                    }
+
+                    const selectionByAlias = this.expressionMap.selects.find(
+                        (s) => s.aliasName === columnName,
+                    )
+                    if (selectionByAlias) {
+                        return this.escape(columnName)
+                    }
+
+                    const selection = this.expressionMap.selects.find(
+                        (s) => s.selection === columnName,
+                    )
+                    if (
+                        selection &&
+                        !selection.aliasName &&
+                        columnName.indexOf(".") !== -1
+                    ) {
+                        const criteriaParts = columnName.split(".")
+                        const aliasName = criteriaParts[0]
+                        const propertyPath = criteriaParts.slice(1).join(".")
+                        const alias = this.expressionMap.aliases.find(
+                            (alias) => alias.name === aliasName,
+                        )
+                        if (alias?.hasMetadata) {
+                            const column =
+                                alias.metadata.findColumnWithPropertyPath(
+                                    propertyPath,
+                                )
+                            if (column) {
+                                const orderAlias = DriverUtils.buildAlias(
+                                    this.dataSource.driver,
+                                    undefined,
+                                    aliasName,
+                                    column.databaseName,
+                                )
+                                return this.escape(orderAlias)
+                            }
+                        }
+                    }
+
+                    return columnName
+                })
                 .join(", ")
 
             select = `SELECT DISTINCT ON (${selectDistinctOnMap}) `
@@ -2318,74 +2362,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         }
 
         return select
-    }
-
-    /**
-     * Resolves a single distinctOn column reference ("alias.property" or
-     * plain column name) to its escaped, database-level representation.
-     *
-     * When the value matches a known alias and property path from the
-     * query's expression map it is mapped through entity metadata (the
-     * same way `replacePropertyNamesForTheWholeQuery` resolves names)
-     * so that custom column names (e.g. `@Column({ name: "author_name" })`)
-     * are respected.
-     *
-     * Values that do not match any alias are escaped segment-by-segment
-     * as raw identifiers so that injection payloads are neutralised.
-     */
-    protected resolveDistinctOnColumn(column: string): string {
-        const dotIndex = column.indexOf(".")
-        if (dotIndex !== -1) {
-            const aliasName = column.substring(0, dotIndex)
-            const propertyPath = column.substring(dotIndex + 1)
-
-            // Look up the alias in the query expression map.
-            const alias = this.expressionMap.aliases.find(
-                (a) => a.name === aliasName && a.hasMetadata,
-            )
-
-            if (alias) {
-                const metadata = alias.metadata
-
-                // Try to find a matching column through the metadata,
-                // checking propertyPath, propertyName, then databaseName
-                // (same priority order as replacePropertyNamesForTheWholeQuery).
-                const matchedColumn =
-                    metadata.columns.find(
-                        (c) => c.propertyPath === propertyPath,
-                    ) ||
-                    metadata.columns.find(
-                        (c) => c.propertyName === propertyPath,
-                    ) ||
-                    metadata.columns.find(
-                        (c) => c.databaseName === propertyPath,
-                    )
-
-                if (matchedColumn) {
-                    return `${this.escape(aliasName)}.${this.escape(
-                        matchedColumn.databaseName,
-                    )}`
-                }
-
-                // Check relation join columns.
-                for (const relation of metadata.relations) {
-                    if (
-                        relation.propertyPath === propertyPath &&
-                        relation.joinColumns.length > 0
-                    ) {
-                        return `${this.escape(aliasName)}.${this.escape(
-                            relation.joinColumns[0].databaseName,
-                        )}`
-                    }
-                }
-            }
-        }
-
-        // Fallback: escape each dot-separated segment as a raw identifier.
-        return column
-            .split(".")
-            .map((part) => this.escape(part))
-            .join(".")
     }
 
     /**

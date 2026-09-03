@@ -6,6 +6,7 @@ import {
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import type { DataSource } from "../../../../src/data-source/DataSource"
+import { TypeORMError } from "../../../../src/error/TypeORMError"
 import { Category } from "./entity/Category"
 import { User } from "./entity/User"
 import { Post } from "./entity/Post"
@@ -172,20 +173,17 @@ describe("query builder > distinct on", () => {
             }),
         ))
 
-    it("should escape unsafe values passed to distinctOn", () =>
+    it("should throw error when unsafe values are passed to distinctOn (issue #12805)", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                const sql = dataSource.manager
-                    .createQueryBuilder(Post, "post")
-                    .distinctOn([
-                        "post.author), (SELECT 1 WHERE 1=1)--",
-                    ])
-                    .getSql()
-
-                // The injection payload should be escaped as a quoted
-                // identifier, not interpolated as raw SQL.
-                expect(sql).to.not.contain("SELECT 1 WHERE 1=1")
-                expect(sql).to.contain("DISTINCT ON")
+                expect(() =>
+                    dataSource.manager
+                        .createQueryBuilder(Post, "post")
+                        .distinctOn([
+                            "post.author), (SELECT 1 WHERE 1=1)--",
+                        ])
+                        .getSql(),
+                ).to.throw(TypeORMError)
             }),
         ))
 })
