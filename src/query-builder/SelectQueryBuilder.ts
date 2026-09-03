@@ -2308,51 +2308,17 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         ) {
             const selectDistinctOnMap = selectDistinctOn
                 .map((columnName) => {
-                    if (/[;'"\\]|--/.test(columnName)) {
-                        throw new TypeORMError(
-                            `Unsafe distinct-on value "${columnName}".`,
-                        )
-                    }
+                    const replaced =
+                        this.replacePropertyNamesForTheWholeQuery(columnName)
 
-                    const selectionByAlias = this.expressionMap.selects.find(
-                        (s) => s.aliasName === columnName,
-                    )
-                    if (selectionByAlias) {
-                        return this.escape(columnName)
-                    }
-
-                    const selection = this.expressionMap.selects.find(
-                        (s) => s.selection === columnName,
-                    )
                     if (
-                        selection &&
-                        !selection.aliasName &&
-                        columnName.indexOf(".") !== -1
+                        replaced !== columnName &&
+                        /^("[^"]+"\.)*"[^"]+"$/.test(replaced)
                     ) {
-                        const criteriaParts = columnName.split(".")
-                        const aliasName = criteriaParts[0]
-                        const propertyPath = criteriaParts.slice(1).join(".")
-                        const alias = this.expressionMap.aliases.find(
-                            (alias) => alias.name === aliasName,
-                        )
-                        if (alias?.hasMetadata) {
-                            const column =
-                                alias.metadata.findColumnWithPropertyPath(
-                                    propertyPath,
-                                )
-                            if (column) {
-                                const orderAlias = DriverUtils.buildAlias(
-                                    this.dataSource.driver,
-                                    undefined,
-                                    aliasName,
-                                    column.databaseName,
-                                )
-                                return this.escape(orderAlias)
-                            }
-                        }
+                        return replaced
                     }
 
-                    return columnName
+                    return this.escape(columnName)
                 })
                 .join(", ")
 

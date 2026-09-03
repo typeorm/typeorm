@@ -173,17 +173,19 @@ describe("query builder > distinct on", () => {
             }),
         ))
 
-    it("should throw error when unsafe values are passed to distinctOn (issue #12805)", () =>
+    it("should escape unsafe values passed to distinctOn (issue #12805)", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                expect(() =>
-                    dataSource.manager
-                        .createQueryBuilder(Post, "post")
-                        .distinctOn([
-                            "post.author), (SELECT 1 WHERE 1=1)--",
-                        ])
-                        .getSql(),
-                ).to.throw(TypeORMError)
+                const sql = dataSource.manager
+                    .createQueryBuilder(Post, "post")
+                    .distinctOn([
+                        "post.author), (SELECT 1 WHERE 1=1)--",
+                    ])
+                    .getSql()
+
+                expect(sql).to.contain(
+                    'SELECT DISTINCT ON ("post.author), (SELECT 1 WHERE 1=1)--")',
+                )
             }),
         ))
 })
