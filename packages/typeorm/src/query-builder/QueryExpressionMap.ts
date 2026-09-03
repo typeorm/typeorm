@@ -429,6 +429,7 @@ export class QueryExpressionMap {
 
     /**
      * Removes alias from expression map.
+     *
      * @param alias
      */
     removeAlias(alias?: Alias) {

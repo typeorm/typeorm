@@ -358,13 +358,11 @@ describe("query builder > update", () => {
                         "Charis Orozco",
                     ])
                 } catch (error) {
-                    if (
-                        !(
-                            DriverUtils.isPostgresFamily(dataSource.driver) ||
-                            DriverUtils.isSQLiteFamily(dataSource.driver) ||
-                            dataSource.driver.options.type === "mssql"
-                        )
-                    ) {
+                    if (!(
+                        DriverUtils.isPostgresFamily(dataSource.driver) ||
+                        DriverUtils.isSQLiteFamily(dataSource.driver) ||
+                        dataSource.driver.options.type === "mssql"
+                    )) {
                         expect(error).instanceOf(FromOnUpdateNotSupportedError)
                     } else {
                         throw error
@@ -409,13 +407,11 @@ describe("query builder > update", () => {
                     expect(users[0].likesCount).to.equal(5) // Alice — updated
                     expect(users[1].likesCount).to.equal(0) // Bob   — must NOT be updated
                 } catch (error) {
-                    if (
-                        !(
-                            DriverUtils.isPostgresFamily(dataSource.driver) ||
-                            DriverUtils.isSQLiteFamily(dataSource.driver) ||
-                            dataSource.driver.options.type === "mssql"
-                        )
-                    ) {
+                    if (!(
+                        DriverUtils.isPostgresFamily(dataSource.driver) ||
+                        DriverUtils.isSQLiteFamily(dataSource.driver) ||
+                        dataSource.driver.options.type === "mssql"
+                    )) {
                         expect(error).instanceOf(FromOnUpdateNotSupportedError)
                     } else {
                         throw error
@@ -471,13 +467,72 @@ describe("query builder > update", () => {
                         "Charis Orozco",
                     ])
                 } catch (error) {
-                    if (
-                        !(
-                            DriverUtils.isPostgresFamily(dataSource.driver) ||
-                            DriverUtils.isSQLiteFamily(dataSource.driver) ||
-                            dataSource.driver.options.type === "mssql"
-                        )
-                    ) {
+                    if (!(
+                        DriverUtils.isPostgresFamily(dataSource.driver) ||
+                        DriverUtils.isSQLiteFamily(dataSource.driver) ||
+                        dataSource.driver.options.type === "mssql"
+                    )) {
+                        expect(error).instanceOf(FromOnUpdateNotSupportedError)
+                    } else {
+                        throw error
+                    }
+                }
+            }),
+        ))
+
+    it("should perform update with parameterized from subquery correctly", async () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const alex = new User()
+                alex.name = "Alex"
+
+                const bob = new User()
+                bob.name = "Bob"
+
+                await dataSource.manager.save([alex, bob])
+
+                const alexMap = new UserNameMap()
+                alexMap.oldName = "Alex"
+                alexMap.newName = "Alexander"
+
+                const bobMap = new UserNameMap()
+                bobMap.oldName = "Bob"
+                bobMap.newName = "Robert"
+
+                await dataSource.manager.save([alexMap, bobMap])
+
+                try {
+                    await dataSource
+                        .createQueryBuilder()
+                        .update(User)
+                        .set({ name: () => 'um."newName"' })
+                        .from((qb) => {
+                            return qb
+                                .select(['um0."newName"', 'um0."oldName"'])
+                                .from(UserNameMap, "um0")
+                                .where('um0."oldName" = :oldName', {
+                                    oldName: "Alex",
+                                })
+                        }, "um")
+                        .where('name = um."oldName"')
+                        .execute()
+
+                    const res = await dataSource.getRepository(User).find({
+                        order: {
+                            id: "ASC",
+                        },
+                    })
+
+                    expect(res.map((user) => user.name)).to.be.deep.equal([
+                        "Alexander",
+                        "Bob",
+                    ])
+                } catch (error) {
+                    if (!(
+                        DriverUtils.isPostgresFamily(dataSource.driver) ||
+                        DriverUtils.isSQLiteFamily(dataSource.driver) ||
+                        dataSource.driver.options.type === "mssql"
+                    )) {
                         expect(error).instanceOf(FromOnUpdateNotSupportedError)
                     } else {
                         throw error

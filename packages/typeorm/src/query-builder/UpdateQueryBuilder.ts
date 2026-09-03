@@ -18,8 +18,9 @@ import { TypeORMError } from "../error"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
 import type { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
 import { DriverUtils } from "../driver/DriverUtils"
-import { EntityTarget } from "../common/EntityTarget"
+import type { EntityTarget } from "../common/EntityTarget"
 import { FromOnUpdateNotSupportedError } from "../error/FromOnUpdateNotSupportedError"
+import type { SelectQueryBuilder } from "./SelectQueryBuilder"
 import { isUint8Array } from "../util/Uint8ArrayUtils"
 import type { AbstractSqliteDriver } from "../driver/sqlite-abstract/AbstractSqliteDriver"
 import type { ReactNativeDriver } from "../driver/react-native/ReactNativeDriver"
@@ -215,6 +216,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Specifies additional FROMs for update query.
+     *
      * @param entityTarget
      * @param aliasName
      */
@@ -224,13 +226,13 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
             | ((qb: SelectQueryBuilder<any>) => SelectQueryBuilder<any>),
         aliasName: string,
     ): this {
-        if (!this.connection.driver.isUpdateFromSqlSupported()) {
+        if (!this.dataSource.driver.isUpdateFromSqlSupported()) {
             throw new FromOnUpdateNotSupportedError()
         }
 
         if (
             typeof entityTarget === "function" &&
-            !this.connection.hasMetadata(entityTarget)
+            !this.dataSource.hasMetadata(entityTarget)
         ) {
             const selectQb = this.createSubQueryBuilder()
             const subQueryBuilder = (
@@ -248,6 +250,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Specifies additional FROMs for update query.
+     *
      * @param entityTarget
      * @param aliasName
      */
@@ -786,7 +789,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                 (alias) =>
                     this.expressionMap.mainAlias !== alias &&
                     alias.type === "from" &&
-                    (alias.tablePath || alias.subQuery),
+                    (alias.tablePath ?? alias.subQuery),
             )
             .map((alias) => {
                 if (alias.subQuery)
@@ -801,7 +804,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
 
         if (
             froms.length &&
-            !this.connection.driver.isUpdateFromSqlSupported()
+            !this.dataSource.driver.isUpdateFromSqlSupported()
         ) {
             throw new FromOnUpdateNotSupportedError()
         }
