@@ -187,4 +187,25 @@ describe("query builder > distinct on", () => {
                 )
             }),
         ))
+
+    it("should correctly handle relation property paths and dotted aliases in distinctOn", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const sql1 = dataSource.manager
+                    .createQueryBuilder(Post, "post")
+                    .leftJoin("post.category", "post.category")
+                    .distinctOn(["post.category.id"])
+                    .getSql()
+
+                expect(sql1).to.contain('DISTINCT ON ("post"."categoryId")')
+
+                const sql2 = dataSource.manager
+                    .createQueryBuilder(Post, "tenant.user")
+                    .distinctOn(["tenant.user.id"])
+                    .getSql()
+
+                expect(sql2).to.contain('DISTINCT ON ("tenant.user"."id")')
+            }),
+        ))
 })
+
