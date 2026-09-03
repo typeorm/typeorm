@@ -6,7 +6,6 @@ import {
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import type { DataSource } from "../../../../src/data-source/DataSource"
-import { TypeORMError } from "../../../../src/error/TypeORMError"
 import { Category } from "./entity/Category"
 import { User } from "./entity/User"
 import { Post } from "./entity/Post"
