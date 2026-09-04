@@ -1,13 +1,12 @@
-import "reflect-metadata"
 import { expect } from "chai"
 import type { DataSource } from "../../../src"
+import { DriverUtils } from "../../../src/driver/DriverUtils"
 import { Table, TableColumn, TableUnique } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../utils/test-utils"
-import { DriverUtils } from "../../../src/driver/DriverUtils"
 
 describe("query runner > drop unique constraint", () => {
     let dataSources: DataSource[]
@@ -21,8 +20,6 @@ describe("query runner > drop unique constraint", () => {
                 "oracle",
                 "cockroachdb",
             ], // mysql and sap does not supports unique constraints
-            schemaCreate: true,
-            dropSchema: true,
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
@@ -58,7 +55,6 @@ describe("query runner > drop unique constraint", () => {
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const queryRunner = dataSource.createQueryRunner()
-                await queryRunner.connect()
 
                 try {
                     // Create a test table for unique constraints
@@ -191,6 +187,124 @@ describe("query runner > drop unique constraint", () => {
                     true,
                 )
                 await queryRunner.release()
+            }),
+        ))
+
+    it("should handle dropping unique constraint without a name (with getTable round-trip)", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                try {
+                    await queryRunner.createTable(
+                        new Table({
+                            name: "test_drop_unnamed_unique",
+                            columns: [
+                                new TableColumn({
+                                    name: "id",
+                                    type: DriverUtils.isSQLiteFamily(
+                                        dataSource.driver,
+                                    )
+                                        ? "integer"
+                                        : "int",
+                                    isPrimary: true,
+                                    isGenerated: true,
+                                    generationStrategy: "increment",
+                                }),
+                                new TableColumn({
+                                    name: "unique_col_1",
+                                    type: "varchar",
+                                    length: "100",
+                                    isNullable: true,
+                                }),
+                            ],
+                        }),
+                        true,
+                    )
+
+                    await queryRunner.createUniqueConstraint(
+                        "test_drop_unnamed_unique",
+                        new TableUnique({
+                            columnNames: ["unique_col_1"],
+                        }),
+                    )
+
+                    const table = await queryRunner.getTable(
+                        "test_drop_unnamed_unique",
+                    )
+
+                    const testUniqueConstraints = table!.uniques
+                    expect(testUniqueConstraints).to.have.length(1)
+
+                    await queryRunner.dropUniqueConstraint(
+                        "test_drop_unnamed_unique",
+                        new TableUnique({
+                            columnNames: ["unique_col_1"],
+                        }),
+                    )
+
+                    const finalTable = await queryRunner.getTable(
+                        "test_drop_unnamed_unique",
+                    )
+
+                    const remainingTestUniqueConstraints = finalTable!.uniques
+
+                    expect(remainingTestUniqueConstraints).to.have.length(0)
+                } finally {
+                    await queryRunner.release()
+                }
+            }),
+        ))
+
+    it("should drop an unnamed unique constraint using the in-memory cache without getTable round-trip", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                try {
+                    await queryRunner.createTable(
+                        new Table({
+                            name: "test_cached_unnamed_unique",
+                            columns: [
+                                new TableColumn({
+                                    name: "id",
+                                    type: "integer",
+                                    isPrimary: true,
+                                    isGenerated: true,
+                                    generationStrategy: "increment",
+                                }),
+                                new TableColumn({
+                                    name: "unique_col",
+                                    type: "varchar",
+                                    length: "100",
+                                    isNullable: true,
+                                }),
+                            ],
+                        }),
+                        true,
+                    )
+
+                    const unnamed = new TableUnique({
+                        columnNames: ["unique_col"],
+                    })
+                    await queryRunner.createUniqueConstraint(
+                        "test_cached_unnamed_unique",
+                        unnamed,
+                    )
+
+                    expect(unnamed.name).to.be.a("string")
+
+                    await queryRunner.dropUniqueConstraint(
+                        "test_cached_unnamed_unique",
+                        unnamed,
+                    )
+
+                    const finalTable = await queryRunner.getTable(
+                        "test_cached_unnamed_unique",
+                    )
+
+                    expect(finalTable!.uniques).to.have.length(0)
+                } finally {
+                    await queryRunner.release()
+                }
             }),
         ))
 })
