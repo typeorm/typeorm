@@ -1346,48 +1346,20 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
-        // Determine if we can use ALTER COLUMN ... TYPE instead of DROP+ADD.
-        // DROP+ADD causes data loss and should only be used when the type change
-        // is fundamentally incompatible (enum changes, stored generated column changes,
-        // or type name changes like int→varchar).
-        const oldBaseType = this.driver.normalizeType({
-            type: oldColumn.type,
-            length: oldColumn.length,
-            precision: oldColumn.precision,
-            scale: oldColumn.scale,
-            isArray: oldColumn.isArray,
-        })
-        const newBaseType = this.driver.normalizeType({
-            type: newColumn.type,
-            length: newColumn.length,
-            precision: newColumn.precision,
-            scale: newColumn.scale,
-            isArray: newColumn.isArray,
-        })
+        const oldBaseType = this.driver.normalizeType(oldColumn as any)
+        const newBaseType = this.driver.normalizeType(newColumn as any)
         const typeChangeRequiresRecreation =
-            oldBaseType !== newBaseType || // fundamentally different types
-            newColumn.isArray !== oldColumn.isArray || // array wrapper changed
+            oldBaseType !== newBaseType ||
+            newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
-                newColumn.generatedType === "STORED") || // becoming stored generated
+                newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
-                newColumn.generatedType === "STORED") || // stored generated expression changed
-            (oldColumn.type === "enum" ||
-                newColumn.type === "enum" ||
-                oldColumn.type === "simple-enum" ||
-                newColumn.type === "simple-enum") && // enum changes need special handling
-            (oldColumn.type !== newColumn.type || // enum type changed
-                oldColumn.enumName !== newColumn.enumName ||
-                !OrmUtils.isArraysEqual(
-                    oldColumn.enum ?? [],
-                    newColumn.enum ?? [],
-                )) // enum values changed
+                newColumn.generatedType === "STORED")
 
         if (typeChangeRequiresRecreation) {
-            // To avoid data conversion issues with incompatible types, recreate column
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
-            // update cloned table
             clonedTable = table.clone()
         } else {
             if (oldColumn.name !== newColumn.name) {
