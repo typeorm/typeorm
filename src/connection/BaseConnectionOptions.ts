@@ -115,6 +115,15 @@ export interface BaseConnectionOptions {
     readonly entitySkipConstructor?: boolean;
 
     /**
+     * Forces `skip`/`take` on a query with joins to always go through the
+     * DISTINCT-ids subquery, even when every join is many-to-one / one-to-one
+     * and a plain LIMIT/OFFSET would return the same page. That subquery sorts
+     * the whole filtered set on every page, so this is off by default; it is an
+     * escape hatch for rolling the direct pagination back without a deploy.
+     */
+    readonly distinctPagination?: boolean;
+
+    /**
      * Extra connection options to be passed to the underlying driver.
      *
      * todo: deprecate this and move all database-specific types into hts own connection options object.
