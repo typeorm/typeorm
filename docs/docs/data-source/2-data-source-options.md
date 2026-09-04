@@ -91,6 +91,24 @@ Different RDBMS-es have their own specific options.
 
     Learn more about [Null and Undefined Handling](./5-null-and-undefined-handling.md).
 
+- `prepareEntityMetadata` - An optional hook called for each `EntityMetadata` instance after it is
+  built by TypeORM's internal metadata builder, but before it is assigned to the data source.
+  Use it to mutate column types, constraints, or any other metadata property on a per-datasource
+  basis without touching the global metadata storage (which would affect all data sources).
+  Supports both synchronous and async functions. If the hook throws or rejects, initialization
+  is aborted with a `PrepareEntityMetadataError` that identifies the failing entity.
+
+    Example:
+
+    ```typescript
+    // Remap SQL Server `bit` columns to `boolean` for a SQLite test datasource
+    prepareEntityMetadata(meta) {
+        meta.columns
+            .filter(c => c.type === "bit")
+            .forEach(c => { c.type = "boolean" })
+    }
+    ```
+
 ## Data Source Options example
 
 Here is a small example of data source options for mysql:

@@ -6,6 +6,10 @@ import type { InvalidFindOptionsWhereBehavior } from "../driver/types/InvalidFin
 import type { IsolationLevel } from "../driver/types/IsolationLevel"
 import type { EntitySchema } from "../entity-schema/EntitySchema"
 import type { Logger } from "../logger/Logger"
+import type { DataSource } from "../data-source/DataSource"
+import type { QueryResultCache } from "../cache/QueryResultCache"
+import type { MixedList } from "../common/MixedList"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
 import type { LoggerOptions } from "../logger/LoggerOptions"
 import type { NamingStrategyInterface } from "../naming-strategy/NamingStrategyInterface"
 
@@ -219,6 +223,44 @@ export interface BaseDataSourceOptions {
     readonly isolateWhereStatements?: boolean
 
     /**
+     * Controls how null and undefined values are handled in find operations.
+     */
+    readonly invalidWhereValuesBehavior?: {
+        /**
+         * How to handle null values in where conditions.
+         * - 'ignore': Skip null properties
+         * - 'sql-null': Transform null to SQL NULL
+         * - 'throw': Throw an error when null is encountered (default)
+         */
+        readonly null?: "ignore" | "sql-null" | "throw"
+
+        /**
+         * How to handle undefined values in where conditions.
+         * - 'ignore': Skip undefined properties
+         * - 'throw': Throw an error when undefined is encountered (default)
+         */
+        readonly undefined?: "ignore" | "throw"
+    }
+
+    /**
+     * An optional hook called for each {@link EntityMetadata} instance after it
+     * is built by TypeORM's internal {@link ConnectionMetadataBuilder}, but
+     * before it is assigned to the data source and validated.
+     *
+     * Use this to mutate column types, constraints, or any other metadata
+     * property on a per-datasource basis without touching the global
+     * {@link MetadataArgsStorage} (which would affect all data sources).
+     *
+     * @example
+     * // Map SQL Server's `bit` columns to `boolean` for a SQLite test datasource
+     * prepareEntityMetadata(meta) {
+     *     meta.columns
+     *         .filter(c => c.type === 'bit')
+     *         .forEach(c => c.type = 'boolean');
+     * }
+     *
+     */
+    readonly prepareEntityMetadata?: (meta: EntityMetadata) => unknown
      * Controls how null/undefined values in where criteria are handled by find
      * and write methods (update/delete/softDelete/restore). Defaults to "throw".
      */
