@@ -269,4 +269,61 @@ describe("query runner > change column", () => {
                 )
             }),
         ))
+
+    // https://github.com/typeorm/typeorm/issues/3357
+    it("should not lose data or skip other pending changes when only widening a Postgres varchar column's length", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (dataSource.driver.options.type !== "postgres") return
+
+                const queryRunner = dataSource.createQueryRunner()
+                let table = await queryRunner.getTable("post")
+
+                // a column with an explicit length, isolated from the other
+                // columns on "post" so this test does not depend on schema
+                // changes made by other tests in this file
+                const extraColumn = new TableColumn({
+                    name: "extra",
+                    type: "character varying",
+                    length: "50",
+                    isNullable: false,
+                })
+                await queryRunner.addColumn(table!, extraColumn)
+
+                await queryRunner.query(
+                    `INSERT INTO "post"("id", "version", "name", "text", "tag", "extra") VALUES (1, 1, 'n', 't', 'tg', 'existing value')`,
+                )
+
+                table = await queryRunner.getTable("post")
+                const oldExtraColumn = table!.findColumnByName("extra")!
+
+                // widen the length AND change other properties in the same
+                // call, mirroring how a single entity change is applied -
+                // all of it must take effect, not just the length change
+                const widenedColumn = oldExtraColumn.clone()
+                widenedColumn.length = "150"
+                widenedColumn.isNullable = true
+                widenedColumn.default = "'fallback'"
+                widenedColumn.comment = "widened field"
+                await queryRunner.changeColumn(
+                    table!,
+                    oldExtraColumn,
+                    widenedColumn,
+                )
+
+                table = await queryRunner.getTable("post")
+                const changedColumn = table!.findColumnByName("extra")!
+                changedColumn.length!.should.be.equal("150")
+                changedColumn.isNullable.should.be.true
+                expect(changedColumn.default).to.exist
+                changedColumn.comment!.should.be.equal("widened field")
+
+                const rows = await queryRunner.query(
+                    `SELECT "extra" FROM "post" WHERE "id" = 1`,
+                )
+                rows[0].extra.should.be.equal("existing value")
+
+                await queryRunner.release()
+            }),
+        ))
 })
