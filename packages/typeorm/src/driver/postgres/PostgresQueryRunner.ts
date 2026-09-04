@@ -1297,6 +1297,39 @@ export class PostgresQueryRunner
     }
 
     /**
+     * Checks whether a column's `length` can grow from `oldColumn` to
+     * `newColumn` using a plain `ALTER COLUMN ... TYPE` statement instead of
+     * a destructive drop-and-recreate.
+     *
+     * This is only safe for the character-string types Postgres can widen
+     * in place (`varchar`/`character varying`/`char`/`character`) and only
+     * when the new length is greater than or equal to the old one -
+     * narrowing can truncate existing data and must still go through the
+     * drop-and-recreate path.
+     *
+     * @param oldColumn
+     * @param newColumn
+     */
+    protected isSafeColumnLengthIncrease(
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+    ): boolean {
+        const lengthChangeableTypes = [
+            "character varying",
+            "varchar",
+            "character",
+            "char",
+        ]
+        if (!lengthChangeableTypes.includes(newColumn.type)) return false
+
+        const oldLength = parseInt(oldColumn.length, 10)
+        const newLength = parseInt(newColumn.length, 10)
+        if (isNaN(oldLength) || isNaN(newLength)) return false
+
+        return newLength >= oldLength
+    }
+
+    /**
      * Changes a column in the table.
      *
      * @param tableOrName
@@ -1328,7 +1361,8 @@ export class PostgresQueryRunner
 
         if (
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
+            (oldColumn.length !== newColumn.length &&
+                !this.isSafeColumnLengthIncrease(oldColumn, newColumn)) ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1616,6 +1650,28 @@ export class PostgresQueryRunner
                     clonedTable.columns.indexOf(oldTableColumn!)
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
+            }
+
+            if (oldColumn.length !== newColumn.length) {
+                // Widen the column in place instead of dropping and
+                // recreating it (safety already checked above), so any
+                // other changes on this same column (default, nullable,
+                // comment, etc. below) are still applied instead of being
+                // silently skipped.
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            newColumn.name
+                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                    ),
+                )
             }
 
             if (
