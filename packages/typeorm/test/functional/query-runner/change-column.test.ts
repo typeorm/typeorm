@@ -326,4 +326,136 @@ describe("query runner > change column", () => {
                 await queryRunner.release()
             }),
         ))
+
+    // https://github.com/typeorm/typeorm/issues/3357
+    it("should not lose data when widening a Postgres varchar column to unbounded", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (dataSource.driver.options.type !== "postgres") return
+
+                const queryRunner = dataSource.createQueryRunner()
+                let table = await queryRunner.getTable("post")
+
+                const boundedColumn = new TableColumn({
+                    name: "unbounded_target",
+                    type: "character varying",
+                    length: "50",
+                    isNullable: false,
+                })
+                await queryRunner.addColumn(table!, boundedColumn)
+
+                await queryRunner.query(
+                    `INSERT INTO "post"("id", "version", "name", "text", "tag", "unbounded_target") VALUES (2, 1, 'n', 't', 'tg', 'existing value')`,
+                )
+
+                table = await queryRunner.getTable("post")
+                const oldColumn = table!.findColumnByName("unbounded_target")!
+
+                const unboundedColumn = oldColumn.clone()
+                unboundedColumn.length = ""
+                await queryRunner.changeColumn(
+                    table!,
+                    oldColumn,
+                    unboundedColumn,
+                )
+
+                table = await queryRunner.getTable("post")
+                const changedColumn =
+                    table!.findColumnByName("unbounded_target")!
+                expect(changedColumn.length).to.be.oneOf([undefined, ""])
+
+                const rows = await queryRunner.query(
+                    `SELECT "unbounded_target" FROM "post" WHERE "id" = 2`,
+                )
+                rows[0].unbounded_target.should.be.equal("existing value")
+
+                await queryRunner.release()
+            }),
+        ))
+
+    // https://github.com/typeorm/typeorm/issues/3357
+    it("should not drop the widened length when also changing collation on a Postgres varchar column", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (dataSource.driver.options.type !== "postgres") return
+
+                const queryRunner = dataSource.createQueryRunner()
+                let table = await queryRunner.getTable("post")
+
+                const collatedColumn = new TableColumn({
+                    name: "collated_target",
+                    type: "character varying",
+                    length: "50",
+                    collation: "POSIX",
+                    isNullable: false,
+                })
+                await queryRunner.addColumn(table!, collatedColumn)
+
+                table = await queryRunner.getTable("post")
+                const oldColumn = table!.findColumnByName("collated_target")!
+
+                const changedColumn = oldColumn.clone()
+                changedColumn.length = "150"
+                changedColumn.collation = "C"
+                await queryRunner.changeColumn(table!, oldColumn, changedColumn)
+
+                table = await queryRunner.getTable("post")
+                const resultColumn = table!.findColumnByName("collated_target")!
+                resultColumn.length!.should.be.equal("150")
+                resultColumn.collation!.should.be.equal("C")
+
+                await queryRunner.release()
+            }),
+        ))
+
+    // https://github.com/typeorm/typeorm/issues/3357
+    it("should recreate rather than in-place alter a stored generated Postgres column when widening its length", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const isPostgres = dataSource.driver.options.type === "postgres"
+                if (!isPostgres) return
+                if (
+                    !(dataSource.driver as PostgresDriver)
+                        .isGeneratedColumnsSupported
+                )
+                    return
+
+                const queryRunner = dataSource.createQueryRunner()
+
+                await createTypeormMetadataTable(dataSource.driver, queryRunner)
+
+                let table = await queryRunner.getTable("post")
+
+                let generatedColumn = new TableColumn({
+                    name: "generated_widen",
+                    type: "varchar",
+                    length: "50",
+                    generatedType: "STORED",
+                    asExpression: "text || tag",
+                })
+                await queryRunner.addColumn(table!, generatedColumn)
+
+                table = await queryRunner.getTable("post")
+                generatedColumn = table!.findColumnByName("generated_widen")!
+
+                const widenedGeneratedColumn = generatedColumn.clone()
+                widenedGeneratedColumn.length = "100"
+
+                // this must not throw - Postgres rejects `ALTER COLUMN ... TYPE`
+                // on stored generated columns, so widening must go through
+                // drop-and-recreate instead of the in-place path
+                await queryRunner.changeColumn(
+                    table!,
+                    generatedColumn,
+                    widenedGeneratedColumn,
+                )
+
+                table = await queryRunner.getTable("post")
+                const resultColumn = table!.findColumnByName("generated_widen")!
+                resultColumn.length!.should.be.equal("100")
+                resultColumn.generatedType!.should.be.equal("STORED")
+
+                await queryRunner.release()
+            }),
+        ))
 })
