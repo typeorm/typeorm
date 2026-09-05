@@ -72,7 +72,8 @@ npm run typeorm migration:run -- -d src/data-source.ts
 
 The loader transpiles TypeScript at runtime. Keep a separate `tsc --noEmit` check.
 
-- Legacy TypeORM decorators require `experimentalDecorators` and `emitDecoratorMetadata` in `tsconfig.json`.
+- Legacy TypeORM decorators require `experimentalDecorators` in `tsconfig.json`.
+- TypeORM infers a column type from metadata when the column has no explicit type. Enable `emitDecoratorMetadata` when using that inference.
 - Load `reflect-metadata` before importing decorated entities.
 - Types that require inference can produce `Object` metadata. Set an explicit column type when that metadata is required.
 
