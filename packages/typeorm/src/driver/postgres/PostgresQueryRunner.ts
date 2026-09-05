@@ -1305,7 +1305,13 @@ export class PostgresQueryRunner
      * in place (`varchar`/`character varying`/`char`/`character`) and only
      * when the new length is greater than or equal to the old one -
      * narrowing can truncate existing data and must still go through the
-     * drop-and-recreate path.
+     * drop-and-recreate path. Stored generated columns are excluded because
+     * Postgres does not allow `ALTER COLUMN ... TYPE` on them.
+     *
+     * An empty `length` represents an unbounded varchar/char, which is
+     * always a safe widening target from any bounded length; conversely,
+     * going from unbounded to a bounded length is a narrowing and is never
+     * considered safe here.
      *
      * @param oldColumn
      * @param newColumn
@@ -1321,6 +1327,10 @@ export class PostgresQueryRunner
             "char",
         ]
         if (!lengthChangeableTypes.includes(newColumn.type)) return false
+        if (oldColumn.generatedType === "STORED") return false
+
+        if (!newColumn.length) return !!oldColumn.length
+        if (!oldColumn.length) return false
 
         const oldLength = parseInt(oldColumn.length, 10)
         const newLength = parseInt(newColumn.length, 10)
@@ -2404,9 +2414,9 @@ export class PostgresQueryRunner
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE "${
-                            newColumn.collation
-                        }"`,
+                        }" TYPE ${this.driver.createFullType(
+                            newColumn,
+                        )} COLLATE "${newColumn.collation}"`,
                     ),
                 )
 
@@ -2418,7 +2428,9 @@ export class PostgresQueryRunner
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE ${oldCollation}`,
+                        }" TYPE ${this.driver.createFullType(
+                            oldColumn,
+                        )} COLLATE ${oldCollation}`,
                     ),
                 )
             }
