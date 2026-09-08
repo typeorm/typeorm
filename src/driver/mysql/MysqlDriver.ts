@@ -380,6 +380,33 @@ export class MysqlDriver implements Driver {
             this.poolCluster = this.mysql.createPoolCluster(
                 this.options.replication,
             )
+            const failures = new Map<string, number>()
+            this.poolCluster.on("offline", (nodeIdentifier: string) => {
+                const failedAt = failures.get(nodeIdentifier) ?? Date.now()
+                failures.set(nodeIdentifier, failedAt)
+                this.dataSource.logger.log(
+                    "warn",
+                    `MySQL PoolCluster node temporarily excluded: ${nodeIdentifier} (${nodeIdentifier === "MASTER" ? "master" : "slave"}), failedAt=${new Date(failedAt).toISOString()}`,
+                )
+            })
+            this.poolCluster.on("online", (nodeIdentifier: string) => {
+                const failedAt = failures.get(nodeIdentifier)
+                if (failedAt === undefined) return
+
+                const recoveredAt = Date.now()
+                failures.delete(nodeIdentifier)
+                this.dataSource.logger.log(
+                    "info",
+                    `MySQL PoolCluster node recovered: ${nodeIdentifier} (${nodeIdentifier === "MASTER" ? "master" : "slave"}), failedAt=${new Date(failedAt).toISOString()}, recoveredAt=${new Date(recoveredAt).toISOString()}, downtimeMs=${recoveredAt - failedAt}`,
+                )
+            })
+            this.poolCluster.on("remove", (nodeIdentifier: string) => {
+                failures.delete(nodeIdentifier)
+                this.dataSource.logger.log(
+                    "warn",
+                    `MySQL PoolCluster node removed: ${nodeIdentifier} (${nodeIdentifier === "MASTER" ? "master" : "slave"})`,
+                )
+            })
             this.options.replication.slaves.forEach((slave, index) => {
                 this.poolCluster.add(
                     "SLAVE" + index,
