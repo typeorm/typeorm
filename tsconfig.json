@@ -19,7 +19,8 @@
     "strictPropertyInitialization": false,
     "stripInternal": true,
     "useDefineForClassFields": false,
-    "useUnknownInCatchVariables": false
+    "useUnknownInCatchVariables": false,
+    "types": ["node"]
   },
   "exclude": [
     "build",
