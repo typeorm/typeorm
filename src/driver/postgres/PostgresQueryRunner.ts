@@ -603,7 +603,9 @@ export class PostgresQueryRunner
         // if table have column with generated type, we must add the expression to the metadata table
         const generatedColumns = table.columns.filter(
             (column) =>
-                column.generatedType === "STORED" && column.asExpression,
+                (column.generatedType === "STORED" ||
+                    column.generatedType === "VIRTUAL") &&
+                column.asExpression,
         )
         for (const column of generatedColumns) {
             const tableNameWithSchema = (
@@ -1195,7 +1197,11 @@ export class PostgresQueryRunner
             )
         }
 
-        if (column.generatedType === "STORED" && column.asExpression) {
+        if (
+            (column.generatedType === "STORED" ||
+                column.generatedType === "VIRTUAL") &&
+            column.asExpression
+        ) {
             const tableNameWithSchema = (
                 await this.getTableNameWithSchema(table.name)
             ).split(".")
@@ -1332,8 +1338,15 @@ export class PostgresQueryRunner
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
+            (!oldColumn.generatedType &&
+                newColumn.generatedType === "VIRTUAL") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
-                newColumn.generatedType === "STORED")
+                newColumn.generatedType === "STORED") ||
+            (oldColumn.asExpression !== newColumn.asExpression &&
+                newColumn.generatedType === "VIRTUAL") ||
+            (oldColumn.generatedType !== newColumn.generatedType &&
+                oldColumn.generatedType !== undefined &&
+                newColumn.generatedType !== undefined)
         ) {
             // To avoid data conversion, we just recreate column
             await this.dropColumn(table, oldColumn)
@@ -2655,7 +2668,10 @@ export class PostgresQueryRunner
             }
         }
 
-        if (column.generatedType === "STORED") {
+        if (
+            column.generatedType === "STORED" ||
+            column.generatedType === "VIRTUAL"
+        ) {
             const tableNameWithSchema = (
                 await this.getTableNameWithSchema(table.name)
             ).split(".")
@@ -3666,7 +3682,8 @@ export class PostgresQueryRunner
             .join(" OR ")
         const columnsSql =
             `SELECT columns.*, pg_catalog.col_description((quote_ident(table_catalog) || '.' || quote_ident(table_schema) || '.' || quote_ident(table_name))::regclass::oid, ordinal_position) AS description, ` +
-            `('"' || "udt_schema" || '"."' || "udt_name" || '"')::"regtype"::text AS "regtype", pg_catalog.format_type("col_attr"."atttypid", "col_attr"."atttypmod") AS "format_type" ` +
+            `('"' || "udt_schema" || '"."' || "udt_name" || '"')::"regtype"::text AS "regtype", pg_catalog.format_type("col_attr"."atttypid", "col_attr"."atttypmod") AS "format_type", ` +
+            `"col_attr"."attstorage" AS "attstorage" ` +
             `FROM "information_schema"."columns" ` +
             `LEFT JOIN "pg_catalog"."pg_attribute" AS "col_attr" ON "col_attr"."attname" = "columns"."column_name" ` +
             `AND "col_attr"."attrelid" = ( ` +
@@ -4159,8 +4176,19 @@ export class PostgresQueryRunner
                                 dbColumn["is_generated"] === "ALWAYS" &&
                                 dbColumn["generation_expression"]
                             ) {
-                                // In postgres there is no VIRTUAL generated column type
-                                tableColumn.generatedType = "STORED"
+                                // PostgreSQL 18+ supports VIRTUAL generated columns
+                                // Check pg_attribute.attstorage: 'x' = external (VIRTUAL), 'm' = main (STORED)
+                                if (
+                                    VersionUtils.isGreaterOrEqual(
+                                        this.driver.version,
+                                        "18.0",
+                                    ) &&
+                                    dbColumn["attstorage"] === "x"
+                                ) {
+                                    tableColumn.generatedType = "VIRTUAL"
+                                } else {
+                                    tableColumn.generatedType = "STORED"
+                                }
                                 // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
                                 const asExpressionQuery =
                                     this.selectTypeormMetadataSql({
@@ -5190,9 +5218,17 @@ export class PostgresQueryRunner
             c += " " + this.dataSource.driver.createFullType(column)
         }
 
-        // Postgres only supports the stored generated column type
+        // Postgres supports STORED (all versions) and VIRTUAL (PostgreSQL 18+)
         if (column.generatedType === "STORED" && column.asExpression) {
             c += ` GENERATED ALWAYS AS (${column.asExpression}) STORED`
+        } else if (column.generatedType === "VIRTUAL" && column.asExpression) {
+            if (VersionUtils.isGreaterOrEqual(this.driver.version, "18.0")) {
+                c += ` GENERATED ALWAYS AS (${column.asExpression}) VIRTUAL`
+            } else {
+                throw new TypeORMError(
+                    `VIRTUAL generated columns are only supported in PostgreSQL 18.0 and above. Current version: ${this.driver.version}`,
+                )
+            }
         }
 
         if (column.charset) c += ' CHARACTER SET "' + column.charset + '"'
