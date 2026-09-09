@@ -8,19 +8,31 @@ TypeORM is a TypeScript-based Object-Relational Mapping (ORM) library that suppo
 
 ## Architecture & Structure
 
+### Repository layout
+
+This is a pnpm workspace. Every published package lives under `packages/`:
+
+- **`packages/typeorm/`** - the `typeorm` package itself
+- **`packages/codemod/`** - `@typeorm/codemod`
+- **`packages/legacy-naming-strategies/`** - `@typeorm/legacy-naming-strategies`
+
+The repository root holds the workspace config, the shared tooling and the
+documentation site. It is not a published package. The `pnpm run` commands below
+work from the root and delegate to `packages/typeorm`.
+
 ### Core Components
 
-- **`src/data-source/`** - DataSource (formerly Connection) management
-- **`src/entity-manager/`** - Entity management and operations
-- **`src/repository/`** - Repository pattern implementation
-- **`src/query-builder/`** - SQL query building
-- **`src/decorator/`** - TypeScript decorators for entities, columns, relations
-- **`src/driver/`** - Database-specific drivers
-- **`src/metadata/`** - Entity metadata management
-- **`src/schema-builder/`** - Schema creation and migration
-- **`src/migration/`** - Database migration system
-- **`src/subscriber/`** - Event subscriber system
-- **`src/persistence/`** - Entity persistence logic
+- **`packages/typeorm/src/data-source/`** - DataSource (formerly Connection) management
+- **`packages/typeorm/src/entity-manager/`** - Entity management and operations
+- **`packages/typeorm/src/repository/`** - Repository pattern implementation
+- **`packages/typeorm/src/query-builder/`** - SQL query building
+- **`packages/typeorm/src/decorator/`** - TypeScript decorators for entities, columns, relations
+- **`packages/typeorm/src/driver/`** - Database-specific drivers
+- **`packages/typeorm/src/metadata/`** - Entity metadata management
+- **`packages/typeorm/src/schema-builder/`** - Schema creation and migration
+- **`packages/typeorm/src/migration/`** - Database migration system
+- **`packages/typeorm/src/subscriber/`** - Event subscriber system
+- **`packages/typeorm/src/persistence/`** - Entity persistence logic
 
 ### Design Patterns
 
@@ -64,12 +76,12 @@ TypeORM is a TypeScript-based Object-Relational Mapping (ORM) library that suppo
 
 ### Test Structure
 
-Tests are organized in `test/` directory:
+Tests are organized in `packages/typeorm/test/` directory:
 
-- **`test/functional/`** - Feature and integration tests organized by functionality (preferred)
-- **`test/github-issues/`** - Tests for specific GitHub issues
-- **`test/unit/`** - Unit tests for individual components
-- **`test/utils/`** - Test utilities and helpers
+- **`packages/typeorm/test/functional/`** - Feature and integration tests organized by functionality (preferred)
+- **`packages/typeorm/test/github-issues/`** - Tests for specific GitHub issues
+- **`packages/typeorm/test/unit/`** - Unit tests for individual components
+- **`packages/typeorm/test/utils/`** - Test utilities and helpers
 
 **Note**: Prefer writing functional tests over per-issue tests.
 
@@ -110,7 +122,7 @@ describe("description of functionality", () => {
 ```
 
 2. **Test Configuration**:
-    - Tests run against multiple databases (as configured in `ormconfig.json`)
+    - Tests run against multiple databases (as configured in `packages/typeorm/ormconfig.json`)
     - Each test should work across all supported databases unless database-specific
     - Place entity files in `./entity/` relative to test file for automatic loading
     - Use `Promise.all(dataSources.map(...))` pattern to test against all databases
@@ -133,14 +145,14 @@ describe("description of functionality", () => {
 When writing code or tests:
 
 - Ensure compatibility across all supported databases
-- Use driver-specific code only in `src/driver/` directory
+- Use driver-specific code only in `packages/typeorm/src/driver/` directory
 - Test database-agnostic code against multiple databases
 - Use `DataSource.options.type` to check database type when needed
 - Be aware of SQL dialect differences (LIMIT vs TOP, etc.)
 
 ### Driver Implementation
 
-Each driver in `src/driver/` implements common interfaces:
+Each driver in `packages/typeorm/src/driver/` implements common interfaces:
 
 - Connection management
 - Query execution
@@ -154,23 +166,23 @@ Each driver in `src/driver/` implements common interfaces:
 
 1. Create entities in appropriate test directory
 2. Write tests first (TDD approach encouraged)
-3. Implement feature in `src/`
+3. Implement feature in `packages/typeorm/src/`
 4. Ensure tests pass across all databases
 5. Update documentation if public API changes
 6. Follow commit message conventions
 
 ### Adding a New Decorator
 
-1. Create decorator file in `src/decorator/`
-2. Create metadata args in `src/metadata-args/`
-3. Update metadata builder in `src/metadata-builder/`
-4. Export from `src/index.ts`
+1. Create decorator file in `packages/typeorm/src/decorator/`
+2. Create metadata args in `packages/typeorm/src/metadata-args/`
+3. Update metadata builder in `packages/typeorm/src/metadata-builder/`
+4. Export from `packages/typeorm/src/index.ts`
 5. Add comprehensive tests
 6. Update TypeScript type definitions if needed
 
 ### Working with Migrations
 
-- Migrations are in `src/migration/`
+- Migrations are in `packages/typeorm/src/migration/`
 - Migration files should be timestamped
 - Support both up and down migrations
 - Test migrations against all supported databases
@@ -180,9 +192,9 @@ Each driver in `src/driver/` implements common interfaces:
 
 ### Commands
 
-- **Build**: `pnpm run compile` - Compiles TypeScript to `build/compiled/`
-- **Package**: `pnpm run package` - Creates distribution in `build/package/`
-- **Pack**: `pnpm pack` - Creates `.tgz` file in `build/`
+- **Build**: `pnpm run compile` - Compiles TypeScript to `packages/typeorm/build/compiled/`
+- **Package**: `pnpm run package` - Creates distribution in `packages/typeorm/build/package/`
+- **Pack**: `pnpm pack` - Creates `.tgz` file in `packages/typeorm/build/`
 - **Test**: `pnpm run test` - Compile and run all tests
 - **Lint**: `pnpm run lint` - Run ESLint
 - **Format**: `pnpm run format` - Run Prettier
@@ -191,8 +203,8 @@ Each driver in `src/driver/` implements common interfaces:
 ### Development Setup
 
 1. Install dependencies: `pnpm install`
-2. Copy config: `cp ormconfig.sample.json ormconfig.json`
-3. Configure database connections in `ormconfig.json`
+2. Copy config: `cd packages/typeorm && cp ormconfig.sample.json ormconfig.json`
+3. Configure database connections in `packages/typeorm/ormconfig.json`
 4. Optionally use Docker: `docker compose up` for database services
 
 ### Pre-commit Hooks
