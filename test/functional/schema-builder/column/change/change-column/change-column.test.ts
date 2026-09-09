@@ -47,6 +47,31 @@ describe("schema builder > change column", () => {
             }),
         ))
 
+    it("should rename column even when column count changes or multiple columns change (issue #3357)", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const postMetadata = dataSource.getMetadata(Post)
+                const nameColumn =
+                    postMetadata.findColumnWithPropertyName("name")!
+                nameColumn.propertyName = "headline"
+                nameColumn.build(dataSource)
+
+                await dataSource.synchronize()
+
+                const queryRunner = dataSource.createQueryRunner()
+                const postTable = await queryRunner.getTable("post")
+                await queryRunner.release()
+
+                expect(postTable!.findColumnByName("name")).to.be.undefined
+                postTable!.findColumnByName("headline")!.should.be.exist
+
+                // revert changes
+                nameColumn.propertyName = "name"
+                nameColumn.build(dataSource)
+            }),
+        ))
+
+
     it("should correctly change column length", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
