@@ -1401,10 +1401,14 @@ export class CockroachQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        const oldTypeIsEnum =
+            oldColumn.type === "enum" || oldColumn.type === "simple-enum"
+        const newTypeIsEnum =
+            newColumn.type === "enum" || newColumn.type === "simple-enum"
+
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
-            newColumn.isArray !== oldColumn.isArray ||
+            (oldColumn.type !== newColumn.type &&
+                (oldTypeIsEnum || newTypeIsEnum)) ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
         ) {
@@ -1658,7 +1662,10 @@ export class CockroachQueryRunner
 
             if (
                 newColumn.precision !== oldColumn.precision ||
-                newColumn.scale !== oldColumn.scale
+                newColumn.scale !== oldColumn.scale ||
+                newColumn.length !== oldColumn.length ||
+                newColumn.type !== oldColumn.type ||
+                newColumn.isArray !== oldColumn.isArray
             ) {
                 upQueries.push(
                     new Query(

@@ -1326,10 +1326,14 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        const oldTypeIsEnum =
+            oldColumn.type === "enum" || oldColumn.type === "simple-enum"
+        const newTypeIsEnum =
+            newColumn.type === "enum" || newColumn.type === "simple-enum"
+
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
-            newColumn.isArray !== oldColumn.isArray ||
+            (oldColumn.type !== newColumn.type &&
+                (oldTypeIsEnum || newTypeIsEnum)) ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
@@ -1620,7 +1624,10 @@ export class PostgresQueryRunner
 
             if (
                 newColumn.precision !== oldColumn.precision ||
-                newColumn.scale !== oldColumn.scale
+                newColumn.scale !== oldColumn.scale ||
+                newColumn.length !== oldColumn.length ||
+                newColumn.type !== oldColumn.type ||
+                newColumn.isArray !== oldColumn.isArray
             ) {
                 upQueries.push(
                     new Query(
@@ -2348,7 +2355,7 @@ export class PostgresQueryRunner
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE "${
+                        }" TYPE ${this.driver.createFullType(newColumn)} COLLATE "${
                             newColumn.collation
                         }"`,
                     ),
@@ -2362,7 +2369,7 @@ export class PostgresQueryRunner
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE ${oldCollation}`,
+                        }" TYPE ${this.driver.createFullType(oldColumn)} COLLATE ${oldCollation}`,
                     ),
                 )
             }
