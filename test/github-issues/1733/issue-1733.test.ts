@@ -34,11 +34,20 @@ describe("github issues > #1733 Postgresql driver does not detect/support varyin
                 column1.length = "500"
                 column2.length = ""
 
+                await connection.getRepository(Post).save({
+                    name: "keeps existing value",
+                    name2: "keeps existing value too",
+                })
+
                 await connection.synchronize()
 
                 table = await queryRunner.getTable("post")
                 table!.findColumnByName("name")!.length.should.be.equal("500")
                 table!.findColumnByName("name2")!.length.should.be.empty
+                const savedPost = await connection
+                    .getRepository(Post)
+                    .findOneByOrFail({ name: "keeps existing value" })
+                savedPost.name2.should.be.equal("keeps existing value too")
 
                 column1.length = ""
                 column2.length = "255"

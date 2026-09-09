@@ -1,4 +1,5 @@
 import "reflect-metadata"
+import { expect } from "chai"
 import { Post } from "./entity/Post"
 import type { DataSource } from "../../../../../src/data-source/DataSource"
 import {
@@ -34,6 +35,63 @@ describe("database schema > column collation > postgres", () => {
                 table!
                     .findColumnByName("name")!
                     .collation!.should.be.equal("en_US")
+                table!.findColumnByName("name")!.length!.should.be.equal("50")
+            }),
+        ))
+
+    it("should keep column length when changing collation", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const metadata = dataSource.getMetadata(Post)
+                const columnMetadata =
+                    metadata.findColumnWithPropertyName("name")!
+                const originalCollation = columnMetadata.collation
+
+                try {
+                    columnMetadata.collation = "C"
+
+                    await dataSource.synchronize(false)
+
+                    const queryRunner = dataSource.createQueryRunner()
+                    const table = await queryRunner.getTable("post")
+                    await queryRunner.release()
+
+                    table!
+                        .findColumnByName("name")!
+                        .length!.should.be.equal("50")
+                    table!
+                        .findColumnByName("name")!
+                        .collation!.should.be.equal("C")
+                } finally {
+                    columnMetadata.collation = originalCollation
+                }
+            }),
+        ))
+
+    it("should keep column length when removing collation", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const metadata = dataSource.getMetadata(Post)
+                const columnMetadata =
+                    metadata.findColumnWithPropertyName("name")!
+                const originalCollation = columnMetadata.collation
+
+                try {
+                    columnMetadata.collation = undefined
+
+                    await dataSource.synchronize(false)
+
+                    const queryRunner = dataSource.createQueryRunner()
+                    const table = await queryRunner.getTable("post")
+                    await queryRunner.release()
+
+                    const column = table!.findColumnByName("name")!
+
+                    column.length!.should.be.equal("50")
+                    expect(column.collation).to.not.exist
+                } finally {
+                    columnMetadata.collation = originalCollation
+                }
             }),
         ))
 })

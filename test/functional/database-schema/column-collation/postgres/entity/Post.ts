@@ -7,6 +7,6 @@ export class Post {
     @PrimaryColumn()
     id: number
 
-    @Column({ collation: "en_US" })
+    @Column({ collation: "en_US", length: 50 })
     name: string
 }

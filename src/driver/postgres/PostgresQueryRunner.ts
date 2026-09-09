@@ -1328,7 +1328,6 @@ export class PostgresQueryRunner
 
         if (
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1618,10 +1617,18 @@ export class PostgresQueryRunner
                 oldColumn.name = newColumn.name
             }
 
-            if (
+            const columnTypeChanged =
+                (newColumn.length ?? "") !== (oldColumn.length ?? "") ||
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
-            ) {
+            const columnSpatialTypeChanged =
+                (newColumn.spatialFeatureType ?? "").toLowerCase() !==
+                    (oldColumn.spatialFeatureType ?? "").toLowerCase() ||
+                newColumn.srid !== oldColumn.srid
+            const columnCollationChanged =
+                newColumn.collation !== oldColumn.collation
+
+            if (columnTypeChanged && !columnCollationChanged) {
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
@@ -2321,11 +2328,7 @@ export class PostgresQueryRunner
                 }
             }
 
-            if (
-                (newColumn.spatialFeatureType ?? "").toLowerCase() !==
-                    (oldColumn.spatialFeatureType ?? "").toLowerCase() ||
-                newColumn.srid !== oldColumn.srid
-            ) {
+            if (columnSpatialTypeChanged && !columnCollationChanged) {
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
@@ -2343,14 +2346,18 @@ export class PostgresQueryRunner
             }
 
             // update column collation
-            if (newColumn.collation !== oldColumn.collation) {
+            if (columnCollationChanged) {
+                const newCollation = newColumn.collation
+                    ? `"${newColumn.collation}"`
+                    : `pg_catalog."default"` // if there's no new collation, use default
+
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE "${
-                            newColumn.collation
-                        }"`,
+                        }" TYPE ${this.driver.createFullType(
+                            newColumn,
+                        )} COLLATE ${newCollation}`,
                     ),
                 )
 
@@ -2362,7 +2369,9 @@ export class PostgresQueryRunner
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${newColumn.type} COLLATE ${oldCollation}`,
+                        }" TYPE ${this.driver.createFullType(
+                            oldColumn,
+                        )} COLLATE ${oldCollation}`,
                     ),
                 )
             }

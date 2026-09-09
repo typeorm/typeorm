@@ -52,6 +52,14 @@ describe("database schema > column length > postgres", () => {
                 metadata.findColumnWithPropertyName("character")!.length = "100"
                 metadata.findColumnWithPropertyName("char")!.length = "100"
 
+                await dataSource.getRepository(Post).save({
+                    id: 1,
+                    characterVarying: "keeps character varying value",
+                    varchar: "keeps varchar value",
+                    character: "keeps character value",
+                    char: "keeps char value",
+                })
+
                 await dataSource.synchronize(false)
 
                 const queryRunner = dataSource.createQueryRunner()
@@ -70,6 +78,14 @@ describe("database schema > column length > postgres", () => {
                 expect(table!.findColumnByName("char")!.length).to.be.equal(
                     "100",
                 )
+
+                const savedPost = await dataSource
+                    .getRepository(Post)
+                    .findOneByOrFail({ id: 1 })
+                expect(savedPost.characterVarying).to.be.equal(
+                    "keeps character varying value",
+                )
+                expect(savedPost.varchar).to.be.equal("keeps varchar value")
             }),
         ))
 })
