@@ -24,7 +24,7 @@ jobs:
           filters: |
             package-json: &package-json
               - package.json
-              - package-lock.json
+              - pnpm-lock.yaml
               - pnpm-workspace.yaml
 
             ci: &ci
@@ -62,6 +62,7 @@ jobs:
               - packages/codemod/**/*
 
             codemod:
+              - pnpm-lock.yaml
               - packages/codemod/**/*
 
             legacy-naming-strategies:
