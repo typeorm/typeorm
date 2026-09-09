@@ -24,7 +24,7 @@ importers:
         specifier: ^1.7.2
         version: 1.7.2
       ioredis:
-        specifier: ^5.0.4
+        specifier: '^5.0.4 || ^6.0.0'
         version: 5.11.1
       pg-native:
         specifier: ^3.0.0
