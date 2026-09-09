@@ -106,6 +106,10 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-node
+      # `@typeorm/legacy-naming-strategies` is type-checked against `typeorm`,
+      # which resolves to ./build/package via publishConfig.directory, so the
+      # core package has to exist before it can be linted.
+      - run: pnpm run package
       - run: pnpm run lint
 
   tests-linux:
