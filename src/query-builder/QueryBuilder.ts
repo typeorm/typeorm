@@ -10,6 +10,7 @@ import type { SoftDeleteQueryBuilder } from "./SoftDeleteQueryBuilder"
 import type { InsertQueryBuilder } from "./InsertQueryBuilder"
 import type { RelationQueryBuilder } from "./RelationQueryBuilder"
 import type { EntityTarget } from "../common/EntityTarget"
+import { DriverUtils } from "../driver/DriverUtils"
 import type { Alias } from "./Alias"
 import { Brackets } from "./Brackets"
 import type { QueryDeepPartialEntity } from "./QueryPartialEntity"
@@ -281,15 +282,18 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             ? entityOrTableNameUpdateSet.options.name
             : entityOrTableNameUpdateSet
 
+        this.expressionMap.queryType = "update"
+
         if (
             typeof entityOrTableNameUpdateSet === "function" ||
             typeof entityOrTableNameUpdateSet === "string"
         ) {
             const mainAlias = this.createFromAlias(entityOrTableNameUpdateSet)
             this.expressionMap.setMainAlias(mainAlias)
+        } else {
+            this.expressionMap.updateAliasNamePrefixingForWriteQuery()
         }
 
-        this.expressionMap.queryType = "update"
         this.expressionMap.valuesSet = updateSet
 
         if (InstanceChecker.isUpdateQueryBuilder(this)) return this as any
@@ -302,6 +306,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      */
     delete(): DeleteQueryBuilder<Entity> {
         this.expressionMap.queryType = "delete"
+        this.expressionMap.updateAliasNamePrefixingForWriteQuery()
 
         if (InstanceChecker.isDeleteQueryBuilder(this)) return this as any
 
@@ -725,6 +730,21 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     }
 
     /**
+     * Builds the ` "alias"` fragment for a DELETE/UPDATE statement's target table.
+     */
+    protected createDeleteUpdateAliasExpression(): string {
+        const alias = this.expressionMap.mainAlias
+        if (
+            !alias ||
+            !alias.isExplicit ||
+            !DriverUtils.isPostgresFamily(this.dataSource.driver)
+        )
+            return ""
+
+        return ` ${this.escape(alias.name)}`
+    }
+
+    /**
      * Replaces all entity's propertyName to name in the given SQL string.
      *
      * @param statement
@@ -787,10 +807,22 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 replacements[replaceAliasNamePrefix][column.propertyPath] =
                     column.databaseName
             }
+
+            // UPDATE/DELETE also accept unqualified conditions once aliased.
+            if (
+                replaceAliasNamePrefix &&
+                ["update", "delete"].includes(this.expressionMap.queryType)
+            ) {
+                replacements[""] ??= replacements[replaceAliasNamePrefix]
+            }
         }
 
         const replacementKeys = Object.keys(replacements)
+        // Non-empty prefixes first: regex alternation is greedy left-to-right,
+        // and an empty alternative would otherwise always win.
         const replaceAliasNamePrefixes = replacementKeys
+            .filter((key) => key !== "")
+            .concat(replacementKeys.includes("") ? [""] : [])
             .map((key) => escapeRegExp(key))
             .join("|")
 
@@ -802,7 +834,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         // followed by our prefix, e.g. 'tablename.' or ''
                         `${
                             replaceAliasNamePrefixes
-                                ? "(" + replaceAliasNamePrefixes + ")"
+                                ? "(" + replaceAliasNamePrefixes + ")?" // optional, else unprefixed names wouldn't match at all
                                 : ""
                         }([^ =(),]+)` + // a possible property name: sequence of anything but ' =(),'
                         // terminated by ' =),' or end of line
@@ -816,10 +848,13 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         pre = matches[1]
                         p = matches[3]
 
-                        if (replacements[matches[2]][p]) {
+                        if (matches[2] && replacements[matches[2]]?.[p]) {
                             return `${pre}${this.escape(
                                 matches[2].slice(0, -1),
                             )}.${this.escape(replacements[matches[2]][p])}`
+                        }
+                        if (!matches[2] && replacements[""]?.[p]) {
+                            return `${pre}${this.escape(replacements[""][p])}`
                         }
                     } else {
                         match = matches[0]

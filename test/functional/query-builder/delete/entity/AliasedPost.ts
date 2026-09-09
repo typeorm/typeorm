@@ -2,17 +2,16 @@ import { Entity } from "../../../../../src/decorator/entity/Entity"
 import { PrimaryGeneratedColumn } from "../../../../../src/decorator/columns/PrimaryGeneratedColumn"
 import { Column } from "../../../../../src/decorator/columns/Column"
 
-@Entity()
-export class User {
+/**
+ * Target name ("AliasedPost") intentionally differs from the physical table
+ * name ("post_table") to exercise DELETE/UPDATE alias handling when the two
+ * cannot be conflated.
+ */
+@Entity("post_table")
+export class AliasedPost {
     @PrimaryGeneratedColumn()
     id: number
 
     @Column()
-    name: string
-
-    @Column()
-    likesCount: number = 0
-
-    @Column({ name: "team_id", nullable: true })
-    team: number
+    title: string
 }

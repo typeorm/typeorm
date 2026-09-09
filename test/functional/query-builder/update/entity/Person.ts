@@ -1,18 +1,14 @@
+import { Column } from "../../../../../src/decorator/columns/Column"
 import { Entity } from "../../../../../src/decorator/entity/Entity"
 import { PrimaryGeneratedColumn } from "../../../../../src/decorator/columns/PrimaryGeneratedColumn"
-import { Column } from "../../../../../src/decorator/columns/Column"
+import { TableInheritance } from "../../../../../src/decorator/entity/TableInheritance"
 
 @Entity()
-export class User {
+@TableInheritance({ column: { name: "type", type: String } })
+export class Person {
     @PrimaryGeneratedColumn()
     id: number
 
     @Column()
     name: string
-
-    @Column()
-    likesCount: number = 0
-
-    @Column({ name: "team_id", nullable: true })
-    team: number
 }

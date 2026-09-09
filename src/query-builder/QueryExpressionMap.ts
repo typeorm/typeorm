@@ -1,6 +1,7 @@
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { DataSource } from "../data-source/DataSource"
 import type { CockroachDataSourceOptions } from "../driver/cockroachdb/CockroachDataSourceOptions"
+import { DriverUtils } from "../driver/DriverUtils"
 import type { UpsertType } from "../driver/types/UpsertType"
 import { TypeORMError } from "../error"
 import type { OrderByCondition } from "../find-options/OrderByCondition"
@@ -388,8 +389,23 @@ export class QueryExpressionMap {
 
         // set new main alias
         this.mainAlias = alias
+        this.updateAliasNamePrefixingForWriteQuery()
 
         return alias
+    }
+
+    /**
+     * Re-enables alias prefixing for UPDATE/DELETE only when an explicit
+     * alias will be emitted (postgres family). Call after either the main
+     * alias or the query type changes, since either may be set first.
+     */
+    updateAliasNamePrefixingForWriteQuery(): void {
+        if (this.queryType !== "update" && this.queryType !== "delete") return
+
+        this.aliasNamePrefixingEnabled = !!(
+            this.mainAlias?.isExplicit &&
+            DriverUtils.isPostgresFamily(this.dataSource.driver)
+        )
     }
 
     /**
@@ -412,6 +428,7 @@ export class QueryExpressionMap {
         metadata?: EntityMetadata
     }): Alias {
         let aliasName = options.name
+        const isExplicit = !!aliasName
         if (!aliasName && options.tablePath) aliasName = options.tablePath
         if (!aliasName && typeof options.target === "function")
             aliasName = options.target.name
@@ -420,6 +437,7 @@ export class QueryExpressionMap {
 
         const alias = new Alias()
         alias.type = options.type
+        alias.isExplicit = isExplicit
         if (aliasName) alias.name = aliasName
         if (options.metadata) alias.metadata = options.metadata
         if (options.target && !alias.hasMetadata)
