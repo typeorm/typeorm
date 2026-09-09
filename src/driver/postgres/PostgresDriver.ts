@@ -1488,8 +1488,12 @@ export class PostgresDriver implements Driver {
                 tableColumn.type !== this.normalizeType(columnMetadata) ||
                 tableColumn.length !== columnMetadata.length ||
                 tableColumn.isArray !== columnMetadata.isArray ||
-                tableColumn.precision !== columnMetadata.precision ||
-                (columnMetadata.scale !== undefined &&
+                (this.withPrecisionColumnTypes.indexOf(columnMetadata.type) !==
+                    -1 &&
+                    tableColumn.precision !== columnMetadata.precision) ||
+                (this.withScaleColumnTypes.indexOf(columnMetadata.type) !==
+                    -1 &&
+                    columnMetadata.scale !== undefined &&
                     tableColumn.scale !== columnMetadata.scale) ||
                 tableColumn.comment !==
                     this.escapeComment(columnMetadata.comment) ||

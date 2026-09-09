@@ -1619,8 +1619,14 @@ export class PostgresQueryRunner
             }
 
             if (
-                newColumn.precision !== oldColumn.precision ||
-                newColumn.scale !== oldColumn.scale
+                (this.driver.withPrecisionColumnTypes.indexOf(
+                    newColumn.type as ColumnType,
+                ) !== -1 &&
+                    newColumn.precision !== oldColumn.precision) ||
+                (this.driver.withScaleColumnTypes.indexOf(
+                    newColumn.type as ColumnType,
+                ) !== -1 &&
+                    newColumn.scale !== oldColumn.scale)
             ) {
                 upQueries.push(
                     new Query(
