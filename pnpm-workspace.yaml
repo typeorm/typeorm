@@ -1,0 +1,8 @@
+# The `typeorm` package itself lives at the repository root and is the workspace
+# root, so it is not listed here. Use `pnpm -r --include-workspace-root` to run a
+# script across the root package as well as the ones below.
+#
+# `docs` is deliberately excluded: it is a Docusaurus site with a large, unrelated
+# dependency tree, and it is built by its own workflow.
+packages:
+    - "packages/*"

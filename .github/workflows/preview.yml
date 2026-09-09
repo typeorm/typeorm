@@ -61,11 +61,6 @@ jobs:
           echo "PACKAGES=./build/package" >> "$GITHUB_ENV"
 
       # @typeorm/codemod
-      - name: install codemod
-        if: contains(needs.detect-changes.outputs.changes, 'codemod')
-        run: pnpm install --frozen-lockfile
-        working-directory: packages/codemod
-
       - name: build codemod
         if: contains(needs.detect-changes.outputs.changes, 'codemod')
         run: |

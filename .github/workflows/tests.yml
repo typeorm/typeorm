@@ -104,8 +104,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-node
       - run: pnpm run lint
-      - run: pnpm install --frozen-lockfile
-        working-directory: packages/codemod
       - run: pnpm run lint
         working-directory: packages/codemod
 
@@ -136,8 +134,6 @@ jobs:
         with:
           fetch-depth: 0 # SonarQube needs full history for blame and PR diffing against master
       - uses: ./.github/actions/setup-node
-        with:
-          working-directory: packages/codemod
       - run: pnpm exec c8 pnpm test
         working-directory: packages/codemod
       - uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8.2.1
@@ -156,8 +152,6 @@ jobs:
         with:
           fetch-depth: 0 # SonarQube needs full history for blame and PR diffing against master
       - uses: ./.github/actions/setup-node
-        with:
-          working-directory: packages/legacy-naming-strategies
       - run: pnpm exec c8 pnpm test
         working-directory: packages/legacy-naming-strategies
       - uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8.2.1
