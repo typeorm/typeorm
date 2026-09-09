@@ -104,7 +104,15 @@ async function copyPackageFile() {
     )
     delete pkg.devEngines
     delete pkg.packageManager
-    delete pkg.publishConfig
+    // `directory` points at the build output so the workspace packages can link
+    // to it during development. It must not follow the manifest into the
+    // published package, where it would point at a directory that is not there.
+    if (pkg.publishConfig) {
+        delete pkg.publishConfig.directory
+        if (Object.keys(pkg.publishConfig).length === 0) {
+            delete pkg.publishConfig
+        }
+    }
     delete pkg.pnpm
     delete pkg.scripts
 

@@ -231,8 +231,7 @@
     }
   },
   "publishConfig": {
-    "directory": "build/package",
-    "linkDirectory": true
+    "directory": "build/package"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
