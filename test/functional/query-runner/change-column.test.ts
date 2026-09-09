@@ -9,6 +9,7 @@ import {
 import { TableColumn } from "../../../src"
 import type { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
+import { Post } from "./entity/Post"
 
 describe("query runner > change column", () => {
     let dataSources: DataSource[]
@@ -267,6 +268,73 @@ describe("query runner > change column", () => {
                 generatedColumn!.asExpression!.should.be.equals(
                     "text || tag || name",
                 )
+            }),
+        ))
+
+    // See: https://github.com/typeorm/typeorm/issues/3357
+    it("should preserve data when changing column length", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // CockroachDB and Spanner do not support all ALTER COLUMN operations
+                // SqlServer and SAP use drop+add for length changes, which destroys data
+                if (
+                    dataSource.driver.options.type === "cockroachdb" ||
+                    dataSource.driver.options.type === "spanner" ||
+                    dataSource.driver.options.type === "mssql" ||
+                    dataSource.driver.options.type === "sap"
+                )
+                    return
+
+                const queryRunner = dataSource.createQueryRunner()
+                const postRepository = dataSource.getRepository(Post)
+
+                try {
+                    // Insert test data using repository for cross-driver compatibility
+                    const testPost = new Post()
+                    testPost.id = 999
+                    testPost.version = 1
+                    testPost.name = "preserved data value"
+                    testPost.text = "some text"
+                    testPost.tag = "tag1"
+                    await postRepository.save(testPost)
+
+                    // Verify data was inserted
+                    let savedPost = await postRepository.findOneBy({ id: 999 })
+                    expect(savedPost!.name).to.equal("preserved data value")
+
+                    // Change column length (increase from default to 500)
+                    let table = await queryRunner.getTable("post")
+                    const nameColumn = table!.findColumnByName("name")!
+                    const changedNameColumn = nameColumn.clone()
+                    changedNameColumn.length = "500"
+                    await queryRunner.changeColumn(
+                        table!,
+                        nameColumn,
+                        changedNameColumn,
+                    )
+
+                    // Verify data is preserved after length change
+                    savedPost = await postRepository.findOneBy({ id: 999 })
+                    expect(savedPost!.name).to.equal("preserved data value")
+
+                    // Revert the length change and verify data is still preserved
+                    table = await queryRunner.getTable("post")
+                    const currentColumn = table!.findColumnByName("name")!
+                    const revertedColumn = currentColumn.clone()
+                    revertedColumn.length = nameColumn.length
+                    await queryRunner.changeColumn(
+                        table!,
+                        currentColumn,
+                        revertedColumn,
+                    )
+
+                    savedPost = await postRepository.findOneBy({ id: 999 })
+                    expect(savedPost!.name).to.equal("preserved data value")
+                } finally {
+                    // Clean up - guaranteed even if test fails
+                    await postRepository.delete(999)
+                    await queryRunner.release()
+                }
             }),
         ))
 })

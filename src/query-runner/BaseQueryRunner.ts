@@ -623,7 +623,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
 
     /**
      * Checks if at least one of column properties was changed.
-     * Does not checks column type, length and autoincrement, because these properties changes separately.
+     * Does not check column type and autoincrement, because these properties change separately. Length, precision, and scale are checked here since they can now be altered without dropping and recreating the column.
      *
      * @param oldColumn
      * @param newColumn
@@ -641,6 +641,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
         return (
             oldColumn.charset !== newColumn.charset ||
             oldColumn.collation !== newColumn.collation ||
+            oldColumn.length !== newColumn.length ||
             oldColumn.precision !== newColumn.precision ||
             oldColumn.scale !== newColumn.scale ||
             oldColumn.unsigned !== newColumn.unsigned || // MySQL only
