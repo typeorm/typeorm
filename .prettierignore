@@ -1,4 +1,5 @@
 build/
+dist/
 coverage/
 extra/
 src/driver/mongodb/typings.ts
