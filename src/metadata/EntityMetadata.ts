@@ -588,13 +588,17 @@ export class EntityMetadata {
             ret[this.dataSource.options.typename] = this.targetName
         }
 
-        this.lazyRelations.forEach((relation) =>
-            this.dataSource.relationLoader.enableLazyLoad(
-                relation,
-                ret,
-                queryRunner,
-            ),
-        )
+        // guarded because create() runs once per hydrated entity, and the callback
+        // would otherwise be allocated for every entity of every non-lazy metadata
+        if (this.lazyRelations.length > 0) {
+            this.lazyRelations.forEach((relation) =>
+                this.dataSource.relationLoader.enableLazyLoad(
+                    relation,
+                    ret,
+                    queryRunner,
+                ),
+            )
+        }
         return ret
     }
 

@@ -860,32 +860,16 @@ export class ColumnMetadata {
      */
     setEntityValue(entity: ObjectLiteral, value: any): void {
         if (this.embeddedMetadata) {
-            // first step - we extract all parent properties of the entity relative to this column, e.g. [data, information, counters]
-            const extractEmbeddedColumnValue = (
-                embeddedMetadatas: EmbeddedMetadata[],
-                map: ObjectLiteral,
-            ): any => {
-                // if (!object[embeddedMetadata.propertyName])
-                //     object[embeddedMetadata.propertyName] = embeddedMetadata.create();
-
-                const embeddedMetadata = embeddedMetadatas.shift()
-                if (embeddedMetadata) {
-                    map[embeddedMetadata.propertyName] ??=
-                        embeddedMetadata.create()
-
-                    extractEmbeddedColumnValue(
-                        embeddedMetadatas,
-                        map[embeddedMetadata.propertyName],
-                    )
-                    return map
-                }
-                map[this.propertyName] = value
-                return map
+            // walk down all parent properties of the entity relative to this column,
+            // e.g. [data, information, counters], creating the embeds on the way
+            const embeddedMetadatas = this.embeddedMetadata.embeddedMetadataTree
+            let map = entity
+            for (let i = 0; i < embeddedMetadatas.length; i++) {
+                const propertyName = embeddedMetadatas[i].propertyName
+                map = map[propertyName] ??= embeddedMetadatas[i].create()
             }
-            return extractEmbeddedColumnValue(
-                [...this.embeddedMetadata.embeddedMetadataTree],
-                entity,
-            )
+            map[this.propertyName] = value
+            return
         } else {
             // we write a deep object in this entity only if the column is virtual
             // because if its not virtual it means the user defined a real column for this relation
