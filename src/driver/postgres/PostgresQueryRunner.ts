@@ -1296,6 +1296,14 @@ export class PostgresQueryRunner
         return this.changeColumn(table, oldColumn, newColumn)
     }
 
+    protected getCastTypeName(table: Table, column: TableColumn): string {
+        if (column.type === "enum" || column.type === "simple-enum") {
+            const enumName = this.buildEnumName(table, column)
+            return enumName + (column.isArray ? "[]" : "")
+        }
+        return this.driver.createFullType(column)
+    }
+
     /**
      * Changes a column in the table.
      *
@@ -1326,16 +1334,18 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
-        if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
+        // Determine if change requires a full drop+recreate (e.g., generated columns or array toggling).
+        // Drop+recreate causes data loss, so we only use it when truly incompatible.
+        const requiresRecreate =
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
                 newColumn.generatedType === "STORED")
-        ) {
-            // To avoid data conversion, we just recreate column
+
+        if (requiresRecreate) {
+            // Truly incompatible change — must drop and recreate the column.
+            // WARNING: this will cause data loss for the affected column.
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
@@ -1619,23 +1629,42 @@ export class PostgresQueryRunner
             }
 
             if (
+                newColumn.type !== oldColumn.type ||
+                newColumn.length !== oldColumn.length ||
                 newColumn.precision !== oldColumn.precision ||
-                newColumn.scale !== oldColumn.scale
+                newColumn.scale !== oldColumn.scale ||
+                newColumn.isArray !== oldColumn.isArray ||
+                newColumn.enum !== oldColumn.enum
             ) {
+                const newCastType = this.getCastTypeName(table, newColumn)
+                const oldCastType = this.getCastTypeName(table, oldColumn)
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                        }" TYPE ${this.driver.createFullType(newColumn)} USING "${newColumn.name}"::${newCastType}`,
                     ),
                 )
                 downQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                        }" TYPE ${this.driver.createFullType(oldColumn)} USING "${newColumn.name}"::${oldCastType}`,
                     ),
                 )
+
+                // update cloned table column
+                const clonedTableColumn = clonedTable.columns.find(
+                    (column) => column.name === newColumn.name,
+                )
+                if (clonedTableColumn) {
+                    clonedTableColumn.type = newColumn.type
+                    clonedTableColumn.length = newColumn.length
+                    clonedTableColumn.precision = newColumn.precision
+                    clonedTableColumn.scale = newColumn.scale
+                    clonedTableColumn.isArray = newColumn.isArray
+                    clonedTableColumn.enum = newColumn.enum
+                }
             }
 
             if (
