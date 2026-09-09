@@ -9,6 +9,7 @@ type PredicateOperator =
     | "notEqual"
     | "ilike"
     | "like"
+    | "regexp"
     | "between"
     | "in"
     | "any"

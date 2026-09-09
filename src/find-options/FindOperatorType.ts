@@ -14,6 +14,7 @@ export type FindOperatorType =
     | "isNull"
     | "ilike"
     | "like"
+    | "regexp"
     | "raw"
     | "arrayContains"
     | "arrayContainedBy"
