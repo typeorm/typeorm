@@ -1326,22 +1326,72 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        // Determine if we need to recreate the column or can use ALTER COLUMN TYPE
+        // Fix for issue #3357: PostgreSQL supports ALTER COLUMN TYPE for compatible type changes
+        // (e.g. varchar length changes) without data loss, avoiding unnecessary DROP+ADD.
+        const typeChanged = oldColumn.type !== newColumn.type
+        const lengthChanged = oldColumn.length !== newColumn.length
+        const arrayChanged = newColumn.isArray !== oldColumn.isArray
+        const generatedStoredAdded =
+            !oldColumn.generatedType && newColumn.generatedType === "STORED"
+        const generatedExpressionChanged =
+            oldColumn.asExpression !== newColumn.asExpression &&
+            newColumn.generatedType === "STORED"
+
+        // PostgreSQL can ALTER column type for these compatible types without data loss
+        const typeCompatibleForAlter = [
+            "character varying",
+            "varchar",
+            "character",
+            "char",
+            "text",
+            "numeric",
+            "decimal",
+        ]
+        const supportsAlterColumnType =
+            !typeChanged &&
+            typeCompatibleForAlter.includes(oldColumn.type)
+
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
-            newColumn.isArray !== oldColumn.isArray ||
-            (!oldColumn.generatedType &&
-                newColumn.generatedType === "STORED") ||
-            (oldColumn.asExpression !== newColumn.asExpression &&
-                newColumn.generatedType === "STORED")
+            (typeChanged && !supportsAlterColumnType) ||
+            arrayChanged ||
+            generatedStoredAdded ||
+            generatedExpressionChanged
         ) {
+            // Recreate column when type is incompatible or array/generated changes are made
             // To avoid data conversion, we just recreate column
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
+        } else if (lengthChanged && supportsAlterColumnType) {
+            // For compatible types (varchar, char, numeric), use ALTER COLUMN TYPE
+            // to change the length without dropping the column (preventing data loss)
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                        newColumn.name
+                    }" TYPE ${this.driver.createFullType(newColumn)}`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                        newColumn.name
+                    }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                ),
+            )
+
+            // update cloned table column
+            const clonedColumn = clonedTable.columns.find(
+                (col) => col.name === oldColumn.name,
+            )
+            if (clonedColumn) {
+                clonedColumn.length = newColumn.length
+            }
         } else {
+
             if (oldColumn.name !== newColumn.name) {
                 // rename column
                 upQueries.push(
