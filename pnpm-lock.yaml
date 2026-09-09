@@ -201,6 +201,7 @@ importers:
       typescript-eslint:
         specifier: ^8.69.0
         version: 8.69.0(eslint@10.9.1)(typescript@5.9.3)
+    publishDirectory: build/package
 
   packages/codemod:
     dependencies:
@@ -305,8 +306,8 @@ importers:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@20.19.43)(typescript@5.9.3)
       typeorm:
-        specifier: 1.1.1
-        version: 1.1.1(@google-cloud/spanner@8.11.0)(@sap/hana-client@2.29.27)(better-sqlite3@12.11.1)(ioredis@5.11.1)(mongodb@7.6.0)(mssql@12.7.0)(mysql2@3.22.6(@types/node@20.19.43))(oracledb@7.0.1)(pg-native@3.9.0)(pg-query-stream@4.17.0(pg@8.23.0(pg-native@3.9.0)))(pg@8.23.0(pg-native@3.9.0))(redis@6.2.1(@opentelemetry/api@1.9.1))(sql.js@1.14.2)(ts-node@10.9.2(@types/node@20.19.43)(typescript@5.9.3))(typeorm-aurora-data-api-driver@3.0.2(@aws-sdk/client-rds-data@3.1123.0))
+        specifier: workspace:*
+        version: link:../../build/package
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -3961,58 +3962,6 @@ packages:
     engines: {node: '>=6.0.0'}
     peerDependencies:
       '@aws-sdk/client-rds-data': ^3.490.0
-
-  typeorm@1.1.1:
-    resolution: {integrity: sha512-og9mG4Lwlvj6MfvYd8yRCzXy73gETtwgTKQ/ISLYvEOpJPy4IrjU/89HK4ZAFmRIbEg1hkIk04v8phTrxfgPmQ==}
-    engines: {node: ^20.19.0 || ^22.13.0 || >=24.11.0}
-    hasBin: true
-    peerDependencies:
-      '@google-cloud/spanner': ^8.0.0
-      '@sap/hana-client': ^2.14.22
-      better-sqlite3: ^12.0.0
-      ioredis: ^5.0.4
-      mongodb: ^7.0.0
-      mssql: ^12.0.0
-      mysql2: ^3.15.3
-      oracledb: ^6.3.0 || ^7.0.0
-      pg: ^8.5.1
-      pg-native: ^3.0.0
-      pg-query-stream: ^4.0.0
-      redis: ^5.0.0 || ^6.0.0
-      sql.js: ^1.4.0
-      ts-node: ^10.9.2
-      typeorm-aurora-data-api-driver: ^3.0.0
-    peerDependenciesMeta:
-      '@google-cloud/spanner':
-        optional: true
-      '@sap/hana-client':
-        optional: true
-      better-sqlite3:
-        optional: true
-      ioredis:
-        optional: true
-      mongodb:
-        optional: true
-      mssql:
-        optional: true
-      mysql2:
-        optional: true
-      oracledb:
-        optional: true
-      pg:
-        optional: true
-      pg-native:
-        optional: true
-      pg-query-stream:
-        optional: true
-      redis:
-        optional: true
-      sql.js:
-        optional: true
-      ts-node:
-        optional: true
-      typeorm-aurora-data-api-driver:
-        optional: true
 
   typescript-eslint@8.69.0:
     resolution: {integrity: sha512-B3MltX0VqjUBNEe3b3sSuiRbfa6XrfHFtBiPamjT5AsW/dfq+y+bc0wyuS9DxAS1LyzCxRp2+rxzpLUvqM2BvA==}
@@ -8362,38 +8311,6 @@ snapshots:
     dependencies:
       '@aws-sdk/client-rds-data': 3.1123.0
       sqlstring: 2.3.3
-
-  typeorm@1.1.1(@google-cloud/spanner@8.11.0)(@sap/hana-client@2.29.27)(better-sqlite3@12.11.1)(ioredis@5.11.1)(mongodb@7.6.0)(mssql@12.7.0)(mysql2@3.22.6(@types/node@20.19.43))(oracledb@7.0.1)(pg-native@3.9.0)(pg-query-stream@4.17.0(pg@8.23.0(pg-native@3.9.0)))(pg@8.23.0(pg-native@3.9.0))(redis@6.2.1(@opentelemetry/api@1.9.1))(sql.js@1.14.2)(ts-node@10.9.2(@types/node@20.19.43)(typescript@5.9.3))(typeorm-aurora-data-api-driver@3.0.2(@aws-sdk/client-rds-data@3.1123.0)):
-    dependencies:
-      '@sqltools/formatter': 1.2.5
-      ansis: 4.3.1
-      dayjs: 1.11.23
-      debug: 4.4.3(supports-color@8.1.1)
-      dedent: 1.7.2
-      reflect-metadata: 0.2.2
-      sql-highlight: 6.1.0
-      tinyglobby: 0.2.17
-      tslib: 2.8.1
-      yargs: 18.1.0
-    optionalDependencies:
-      '@google-cloud/spanner': 8.11.0
-      '@sap/hana-client': 2.29.27
-      better-sqlite3: 12.11.1
-      ioredis: 5.11.1
-      mongodb: 7.6.0
-      mssql: 12.7.0
-      mysql2: 3.22.6(@types/node@20.19.43)
-      oracledb: 7.0.1
-      pg: 8.23.0(pg-native@3.9.0)
-      pg-native: 3.9.0
-      pg-query-stream: 4.17.0(pg@8.23.0(pg-native@3.9.0))
-      redis: 6.2.1(@opentelemetry/api@1.9.1)
-      sql.js: 1.14.2
-      ts-node: 10.9.2(@types/node@20.19.43)(typescript@5.9.3)
-      typeorm-aurora-data-api-driver: 3.0.2(@aws-sdk/client-rds-data@3.1123.0)
-    transitivePeerDependencies:
-      - babel-plugin-macros
-      - supports-color
 
   typescript-eslint@8.69.0(eslint@10.9.1)(typescript@5.9.3):
     dependencies:

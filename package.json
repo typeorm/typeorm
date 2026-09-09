@@ -230,6 +230,10 @@
       "onFail": "error"
     }
   },
+  "publishConfig": {
+    "directory": "build/package",
+    "linkDirectory": true
+  },
   "pnpm": {
     "onlyBuiltDependencies": [
       "better-sqlite3"

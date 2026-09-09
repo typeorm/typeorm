@@ -104,6 +104,7 @@ async function copyPackageFile() {
     )
     delete pkg.devEngines
     delete pkg.packageManager
+    delete pkg.publishConfig
     delete pkg.pnpm
     delete pkg.scripts
 
