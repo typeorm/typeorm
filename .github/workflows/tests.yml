@@ -25,6 +25,7 @@ jobs:
             package-json: &package-json
               - package.json
               - package-lock.json
+              - pnpm-workspace.yaml
 
             ci: &ci
               - .github/**/*
@@ -64,6 +65,7 @@ jobs:
               - packages/codemod/**/*
 
             legacy-naming-strategies:
+              - *src
               - packages/legacy-naming-strategies/**/*
 
   docs:
@@ -152,6 +154,9 @@ jobs:
         with:
           fetch-depth: 0 # SonarQube needs full history for blame and PR diffing against master
       - uses: ./.github/actions/setup-node
+      # `typeorm` resolves to ./build/package via publishConfig.directory,
+      # so the core package has to exist before these tests can run.
+      - run: pnpm run package
       - run: pnpm exec c8 pnpm test
         working-directory: packages/legacy-naming-strategies
       - uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8.2.1
