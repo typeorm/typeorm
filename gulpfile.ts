@@ -126,6 +126,12 @@ function copyReadme() {
     return gulp.src("./README.md").pipe(gulp.dest("./build/package"))
 }
 
+// pnpm copies a LICENSE from the workspace root when the packed directory has
+// none. Copy it here instead, so the published files do not depend on that.
+function copyLicense() {
+    return gulp.src("./LICENSE").pipe(gulp.dest("./build/package"))
+}
+
 // -------------------------------------------------------------------------
 // Tasks
 // -------------------------------------------------------------------------
@@ -140,6 +146,7 @@ gulp.task(
             nodeCreateEsmIndex,
             copyPackageFile,
             copyReadme,
+            copyLicense,
             browserCopyShims,
         ),
     ),
