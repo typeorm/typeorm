@@ -1,0 +1,330 @@
+import type { TableColumn } from "../schema-builder/table/TableColumn"
+
+/*
+Note: The examples below show concrete "safe ALTER" scenarios for reference.
+They illustrate which type changes are considered safe by `isSafeAlter()`.
+
+Strings (widening only)
+-----------------------
+- CHAR → VARCHAR (same or larger length)
+- NCHAR → NVARCHAR (same or larger length)
+- VARCHAR → VARCHAR (larger length)
+- NVARCHAR2 widening (Oracle)
+- VARCHAR → TEXT / NTEXT / CLOB (capacity widening to text-like)
+
+Numerics (widening precision/width)
+-----------------------------------
+- Integer ranks up: TINYINT → SMALLINT → INT → BIGINT
+- Decimal/NUMERIC widening (precision and/or scale increase)
+- Unparameterized → parameterized (e.g., DECIMAL → DECIMAL(10,2))
+- Float/real/double widening:
+  FLOAT → DOUBLE
+  REAL → DOUBLE
+  FLOAT ↔ REAL (treated as equivalent)
+
+Temporals
+---------
+- Same type with changed parameters (e.g., TIME(3) → TIME(6))
+- Widening from DATE → TIMESTAMP or DATETIME/DATETIME2/DATETIMEOFFSET
+- Widening within datetime family:
+  DATETIME → TIMESTAMP / DATETIME2 / DATETIMEOFFSET
+  DATETIME2 → DATETIMEOFFSET
+*/
+/**
+ *
+ * @param oldColumn
+ * @param newColumn
+ */
+export function isSafeAlter(
+    oldColumn: TableColumn,
+    newColumn: TableColumn,
+): boolean {
+    const norm = (t: unknown): string =>
+        String(t ?? "")
+            .toLowerCase()
+            .replaceAll(/\s+/g, " ")
+            .trim()
+
+    // Canonicalize engine-specific synonyms to family-friendly base names
+    const alias = (t: string): string => {
+        const map: Record<string, string> = {
+            // Postgres
+            "character varying": "varchar",
+            character: "char",
+            "double precision": "double",
+            "timestamp without time zone": "timestamp",
+            "timestamp with time zone": "timestamptz",
+            "time without time zone": "time",
+            "time with time zone": "timetz",
+            bytea: "bytea",
+
+            // Oracle
+            nvarchar2: "nvarchar2",
+            varchar2: "varchar2",
+            real: "real",
+            "long raw": "long raw",
+            // (keep binary_* as-is; we treat them explicitly later)
+            // binary_float: "binary_float",
+            // binary_double: "binary_double",
+
+            // MySQL-ish
+            mediumtext: "text",
+            longtext: "longtext",
+
+            // SQL Server
+            uniqueidentifier: "uuid",
+            image: "image",
+
+            // Short integer synonyms (PG)
+            int2: "smallint",
+            int4: "int",
+            int8: "bigint",
+
+            // Float synonyms (PG)
+            float4: "real",
+            float8: "double",
+        }
+        return map[t] ?? t
+    }
+
+    const base = (t: string) => t.replace(/[ \t]*\([^)]*\)[ \t]*$/, "") // NOSONAR - input is internal type string
+    const paramsFromType = (t: string) => {
+        const m = t.match(/\(([^)]+)\)/) // NOSONAR - input is internal type string
+        return m
+            ? m[1]
+                  .split(",")
+                  .map((s) => Number.parseInt(s.trim(), 10))
+                  .filter((n) => !Number.isNaN(n))
+            : []
+    }
+
+    // Prefer TableColumn.length when params aren’t inline
+    const lengthFromCol = (c: TableColumn) => {
+        const n = Number.parseInt(String(c.length ?? ""), 10)
+        return Number.isFinite(n) ? n : undefined
+    }
+
+    // --- normalize inputs ----------------------------------------------------
+    const oldRaw0 = norm(String(oldColumn.type ?? ""))
+    const newRaw0 = norm(String(newColumn.type ?? ""))
+
+    const oldRaw = alias(oldRaw0)
+    const newRaw = alias(newRaw0)
+
+    const oldType = base(oldRaw)
+    const newType = base(newRaw)
+
+    // --- families ------------------------------------------------------------
+    const STR = new Set([
+        "varchar",
+        "nvarchar",
+        "char",
+        "nchar",
+        "text",
+        "ntext",
+        "string",
+        "clob",
+        "json",
+        "xml",
+        "varchar2",
+        "nvarchar2",
+        "alphanum",
+        "shorttext",
+        "longtext",
+    ])
+    const NUM = new Set([
+        "int",
+        "integer",
+        "bigint",
+        "smallint",
+        "tinyint",
+        "decimal",
+        "numeric",
+        "number",
+        "float",
+        "real",
+        "double",
+        "binary_double",
+        "binary_float",
+    ])
+    const BOOL = new Set(["bit", "bool", "boolean"])
+    const TMP = new Set([
+        "date",
+        "datetime",
+        "datetime2",
+        "datetimeoffset",
+        "timestamp",
+        "timestamptz",
+        "time",
+        "timetz",
+    ])
+    const ENUM = new Set(["enum", "set"])
+    const UUID = new Set(["uuid", "uniqueidentifier"])
+    const BIN = new Set([
+        "binary",
+        "varbinary",
+        "blob",
+        "bytea",
+        "image",
+        "longblob",
+        "raw",
+        "long raw",
+    ])
+
+    if (BOOL.has(oldType) || BOOL.has(newType)) return false
+    if (ENUM.has(oldType) || ENUM.has(newType)) return false
+    if (UUID.has(oldType) || UUID.has(newType)) return false
+    if (BIN.has(oldType) || BIN.has(newType)) return false
+
+    // No effective change in type string
+    if (oldRaw === newRaw) return true
+
+    const sameFamily =
+        (STR.has(oldType) && STR.has(newType)) ||
+        (NUM.has(oldType) && NUM.has(newType)) ||
+        (TMP.has(oldType) && TMP.has(newType))
+
+    // reject cross-family alters we’re not calling “safe”
+    if (!sameFamily) return false
+
+    // --- STRING safe cases ---------------------------------------------------
+    if (STR.has(oldType) && STR.has(newType)) {
+        const isCharish = (t: string) =>
+            t === "char" || t === "nchar" || t.endsWith("char")
+        const isVarcharish = (t: string) => t.includes("varchar")
+        const isUnicode = (t: string) => t.startsWith("n")
+        const textLikes = new Set(["text", "ntext", "clob"])
+
+        const oldP = paramsFromType(oldRaw)
+        const newP = paramsFromType(newRaw)
+        const oldLen = oldP[0] ?? lengthFromCol(oldColumn)
+        const newLen = newP[0] ?? lengthFromCol(newColumn)
+
+        // CHAR(N) -> VARCHAR(M) with M >= N (or unknown lengths: assume widening)
+        if (isCharish(oldType) && isVarcharish(newType)) {
+            // Reject char <-> nchar and char <-> nvarchar as unsafe (different encodings)
+            if (isUnicode(oldType) !== isUnicode(newType)) return false
+            if (oldLen === undefined || newLen === undefined) return true
+            return newLen >= oldLen
+        }
+
+        // CHAR(N) -> CHAR(M) with M >= N (or unknown lengths: assume widening)
+        if (isCharish(oldType) && isCharish(newType)) {
+            // Reject char <-> nchar as unsafe (different encodings)
+            if (isUnicode(oldType) !== isUnicode(newType)) return false
+            if (oldLen === undefined || newLen === undefined) return true
+            return newLen >= oldLen
+        }
+
+        // VARCHAR(N) -> VARCHAR(M) with M >= N (or unknown lengths: assume widening)
+        if (isVarcharish(oldType) && isVarcharish(newType)) {
+            // Reject varchar <-> nvarchar as unsafe (different encodings)
+            if (isUnicode(oldType) !== isUnicode(newType)) return false
+            if (oldLen === undefined || newLen === undefined) return true
+            return newLen >= oldLen
+        }
+
+        // VARCHAR(*) -> TEXT/NTEXT/CLOB (capacity-widening)
+        if (isVarcharish(oldType) && textLikes.has(newType)) return true
+
+        return false
+    }
+
+    // --- NUMERIC safe cases --------------------------------------------------
+    if (NUM.has(oldType) && NUM.has(newType)) {
+        // integer widths: tinyint/smallint -> int/integer -> bigint
+        const rank: Record<string, number> = {
+            tinyint: 1,
+            smallint: 2,
+            int: 3,
+            integer: 3,
+            bigint: 4,
+        }
+        const or = rank[oldType] ?? 0
+        const nr = rank[newType] ?? 0
+        if (or && nr) return nr >= or // e.g., INT -> BIGINT
+
+        // decimal/numeric widening: increasing precision and/or scale
+        const isDec = (t: string) =>
+            t === "decimal" || t === "numeric" || t === "number"
+        if (isDec(oldType) && isDec(newType)) {
+            const [op, os] = (() => {
+                const p = paramsFromType(oldRaw)
+                return [p[0], p[1]] as const
+            })()
+            const [np, ns] = (() => {
+                const p = paramsFromType(newRaw)
+                return [p[0], p[1]] as const
+            })()
+            // unparameterized -> parameterized: treat as widening
+            if (op === undefined || np === undefined) return true
+            if (np > op) return true
+            if (np === op && (ns ?? 0) >= (os ?? 0)) return true
+            return false
+        }
+
+        // float/real/double family (including Oracle binary_*):
+        //   FLOAT ↔ REAL (equivalent)
+        //   REAL/FLOAT/BINARY_FLOAT -> DOUBLE/BINARY_DOUBLE (widening)
+        const floatRank: Record<string, number> = {
+            real: 1,
+            float: 1,
+            binary_float: 1,
+            double: 2,
+            binary_double: 2,
+        }
+        const of = floatRank[oldType] ?? 0
+        const nf = floatRank[newType] ?? 0
+        if (of && nf) {
+            // allow widening or same-rank (e.g. FLOAT -> REAL or REAL -> FLOAT)
+            return nf >= of
+        }
+
+        return false
+    }
+
+    // --- TEMPORAL safe cases -------------------------------------------------
+    if (TMP.has(oldType) && TMP.has(newType)) {
+        if (oldType === newType) return true
+
+        // widening: DATE -> TIMESTAMP/DATETIME*
+        if (
+            oldType === "date" &&
+            (newType === "timestamp" || newType.startsWith("datetime"))
+        ) {
+            return true
+        }
+
+        // widening within datetime family:
+        // DATETIME* -> TIMESTAMP/DATETIME*
+        if (
+            oldType.startsWith("datetime") &&
+            (newType === "timestamp" || newType.startsWith("datetime"))
+        ) {
+            return true
+        }
+
+        return false
+    }
+
+    return false
+}
+
+/**
+ *
+ * @param length
+ */
+export function normalizeColumnLength(
+    length: string | number | null | undefined,
+): number | undefined {
+    if (length === null || length === undefined || length === "") {
+        return undefined
+    }
+
+    const parsed =
+        typeof length === "number"
+            ? length
+            : Number.parseInt(String(length), 10)
+
+    return Number.isFinite(parsed) ? parsed : undefined
+}

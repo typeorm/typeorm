@@ -29,6 +29,7 @@ import { validateIsolationLevel } from "../validate-isolation-level"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { CockroachDriver } from "./CockroachDriver"
+import { isSafeAlter } from "../../query-runner/BaseQueryRunnerHelper"
 
 /**
  * Runs queries on a single postgres database connection.
@@ -124,7 +125,9 @@ export class CockroachQueryRunner
                     }
                     this.databaseConnection.on("error", onErrorCallback)
 
-                    return this.databaseConnection
+                    return this.enableExperimentalAlterColumnType(
+                        this.databaseConnection,
+                    )
                 })
         } else {
             // master
@@ -145,7 +148,9 @@ export class CockroachQueryRunner
                     }
                     this.databaseConnection.on("error", onErrorCallback)
 
-                    return this.databaseConnection
+                    return this.enableExperimentalAlterColumnType(
+                        this.databaseConnection,
+                    )
                 })
         }
 
@@ -174,6 +179,207 @@ export class CockroachQueryRunner
         if (index !== -1) {
             this.driver.connectedQueryRunners.splice(index, 1)
         }
+    }
+
+    /**
+     * Handles length-only fast path changes for CockroachDB.
+     * Returns true if change was handled.
+     *
+     */
+    private alterColumnLength(
+        table: Table,
+        clonedTable: Table,
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+        upQueries: Query[],
+        downQueries: Query[],
+    ): boolean {
+        const parseLen = (v?: string | number | null) =>
+            v != null && String(v).trim() !== ""
+                ? Number.parseInt(String(v), 10)
+                : undefined
+
+        const oldLen = parseLen(oldColumn.length)
+        const newLen = parseLen(newColumn.length)
+
+        // Length change never implies a rename; guard identifier
+        const colName = newColumn?.name ?? oldColumn?.name
+        const qCol = `"${colName}"`
+
+        const isStringType =
+            /^(varchar|character varying|text|char|character)$/i.test(
+                String(newColumn?.type ?? ""),
+            )
+
+        const typeNew = this.driver.createFullType(newColumn)
+        const typeOld = this.driver.createFullType(oldColumn)
+
+        // Are we shrinking? (new length is defined and < old, or old was unspecified)
+        const shrinking =
+            isStringType &&
+            newLen !== undefined &&
+            (oldLen === undefined || newLen < oldLen)
+
+        if (isStringType && shrinking) {
+            // --- UP (shrink): Cockroach requires USING with substring to ensure safe cast
+            // newLen is defined in this branch
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(
+                        table,
+                    )} ALTER COLUMN ${qCol} SET DATA TYPE ${typeNew} USING substring(${qCol} FROM 1 FOR ${newLen})`,
+                ),
+            )
+
+            // --- DOWN (revert): only add USING if oldLen existed; otherwise no USING
+            const usingOld =
+                oldLen === undefined
+                    ? ""
+                    : ` USING substring(${qCol} FROM 1 FOR ${oldLen})`
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(
+                        table,
+                    )} ALTER COLUMN ${qCol} SET DATA TYPE ${typeOld}${usingOld}`,
+                ),
+            )
+        } else {
+            // Widening or non-string types: plain SET DATA TYPE both directions
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(
+                        table,
+                    )} ALTER COLUMN ${qCol} SET DATA TYPE ${typeNew}`,
+                ),
+            )
+
+            // For DOWN, if going back to a **shorter** varchar and oldLen is known,
+            // mirror WITH USING to guarantee safe cast; else plain SET DATA TYPE.
+            const needsUsingOld =
+                isStringType &&
+                oldLen !== undefined &&
+                (newLen === undefined || oldLen < newLen)
+            const usingOld = needsUsingOld
+                ? ` USING substring(${qCol} FROM 1 FOR ${oldLen})`
+                : ""
+
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(
+                        table,
+                    )} ALTER COLUMN ${qCol} SET DATA TYPE ${typeOld}${usingOld}`,
+                ),
+            )
+        }
+
+        // Update cloned metadata and STOP falling through
+        const clonedCol = clonedTable?.columns?.find?.(
+            (c: TableColumn) => c.name === colName,
+        )
+        if (clonedCol) clonedCol.length = newColumn.length
+
+        return true
+    }
+
+    /**
+     * Handles safe ALTER COLUMN changes for CockroachDB.
+     * Returns true if change was handled.
+     *
+     */
+    private async alterColumnType(
+        table: Table,
+        clonedTable: Table,
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+        upQueries: Query[],
+        downQueries: Query[],
+    ): Promise<boolean> {
+        // Skip generated/computed/identity columns
+        if (oldColumn.asExpression || newColumn.asExpression) return false
+        if (oldColumn.generatedIdentity || newColumn.generatedIdentity)
+            return false
+
+        if (!isSafeAlter(oldColumn, newColumn)) return false
+
+        const tableSql = this.escapePath(table)
+        const colName = String(oldColumn.name)
+        const q = (i: string) => `"${i.replaceAll('"', '""')}"`
+
+        const buildColumnType = (column: TableColumn): string => {
+            const t = String(column.type ?? "").toLowerCase()
+            const len = column.length
+                ? Number.parseInt(String(column.length), 10)
+                : undefined
+            const prec = column.precision
+            const scale = column.scale
+
+            const withLen = (base: string) => (len ? `${base}(${len})` : base)
+            const withPS = (base: string) => {
+                if (prec == null) return base
+                if (scale == null) return `${base}(${prec})`
+                return `${base}(${prec},${scale})`
+            }
+            const withTimePrec = (base: string) =>
+                prec == null ? base : `${base}(${prec})`
+
+            // strings
+            if (t === "varchar" || t === "character varying")
+                return withLen("varchar")
+            if (t === "char" || t === "character") return withLen("char")
+            if (t === "string" || t === "text") return "string"
+
+            // numerics
+            if (t === "decimal" || t === "numeric" || t === "number")
+                return withPS("decimal")
+            if (t === "int" || t === "integer" || t === "int4") return "int"
+            if (t === "bigint" || t === "int8") return "bigint"
+            if (t === "smallint" || t === "int2") return "smallint"
+            if (t === "real" || t === "float4") return "real"
+            if (t === "double" || t === "double precision" || t === "float8")
+                return "double precision"
+            if (t === "float") return "double precision"
+
+            // temporals
+            if (t === "timestamp" || t === "timestamp without time zone")
+                return withTimePrec("timestamp")
+            if (t === "timestamptz" || t === "timestamp with time zone")
+                return withTimePrec("timestamptz")
+            if (t === "time" || t === "time without time zone")
+                return withTimePrec("time")
+            if (t === "timetz" || t === "time with time zone")
+                return withTimePrec("timetz")
+            if (t === "date") return "date"
+
+            // bytes / other common
+            if (t === "bytea" || t === "bytes") return "bytes"
+
+            // fallback: return raw type
+            return t
+        }
+
+        const newType = buildColumnType(newColumn)
+        const oldType = buildColumnType(oldColumn)
+
+        const upSql = `ALTER TABLE ${tableSql} ALTER COLUMN ${q(
+            colName,
+        )} SET DATA TYPE ${newType}`
+        const downSql = `ALTER TABLE ${tableSql} ALTER COLUMN ${q(
+            colName,
+        )} SET DATA TYPE ${oldType}`
+
+        upQueries.push(new Query(upSql))
+        downQueries.push(new Query(downSql))
+
+        // Update clonedTable to reflect the new column definition to avoid false drift detection
+        const tableColumn = clonedTable.columns.find(
+            (column) => column.name === oldColumn.name,
+        )
+        if (tableColumn) {
+            const index = clonedTable.columns.indexOf(tableColumn)
+            clonedTable.columns[index] = newColumn
+        }
+
+        return true
     }
 
     /**
@@ -274,6 +480,38 @@ export class CockroachQueryRunner
         this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
+    }
+
+    /**
+     * Called before migrations are run.
+     * Enables experimental alter column type support in CockroachDB.
+     */
+    async beforeMigration(): Promise<void> {
+        // enable experimental alter column type support (we need it to alter enum types)
+        await this.query(
+            "SET enable_experimental_alter_column_type_general = true",
+        )
+    }
+
+    /**
+     * Called after migrations are run.
+     * Resets experimental alter column type support in CockroachDB.
+     */
+    async afterMigration(): Promise<void> {
+        // reset experimental alter column type support
+        await this.query(
+            "SET enable_experimental_alter_column_type_general = false",
+        )
+    }
+
+    protected async enableExperimentalAlterColumnType(
+        connection: any,
+    ): Promise<any> {
+        await connection.query(
+            "SET enable_experimental_alter_column_type_general = true",
+        )
+
+        return connection
     }
 
     /**
@@ -1402,9 +1640,9 @@ export class CockroachQueryRunner
             )
 
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
-            newColumn.isArray !== oldColumn.isArray ||
+            (oldColumn.type !== newColumn.type &&
+                !isSafeAlter(oldColumn, newColumn)) ||
+            oldColumn.isArray !== newColumn.isArray ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
         ) {
@@ -1415,6 +1653,9 @@ export class CockroachQueryRunner
             // update cloned table
             clonedTable = table.clone()
         } else {
+            // Track whether a rename occurred to avoid conflicting with fast paths
+            let columnRenamed = false
+
             if (oldColumn.name !== newColumn.name) {
                 // rename column
                 upQueries.push(
@@ -1654,6 +1895,35 @@ export class CockroachQueryRunner
                     clonedTable.columns.indexOf(oldTableColumn!)
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
+                columnRenamed = true
+            }
+
+            if (oldColumn.type !== newColumn.type) {
+                await this.alterColumnType(
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                )
+            }
+
+            if (
+                !columnRenamed &&
+                oldColumn?.type === newColumn?.type &&
+                oldColumn?.length !== newColumn?.length &&
+                !newColumn?.isArray &&
+                !oldColumn?.isArray
+            ) {
+                this.alterColumnLength(
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                )
             }
 
             if (
@@ -3022,7 +3292,6 @@ export class CockroachQueryRunner
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      *
      * @param tableName
-     * @param options
      * @param options.cascade
      */
     async clearTable(

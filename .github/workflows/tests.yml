@@ -1,8 +1,12 @@
 name: Tests
 on:
   push:
+    # Original temporary-disabled config:
+    # branches:
+    #   - master
     branches:
       - master
+      - fix-migration
   pull_request:
   merge_group:
 

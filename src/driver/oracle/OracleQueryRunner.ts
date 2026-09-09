@@ -25,6 +25,10 @@ import type { IsolationLevel } from "../types/IsolationLevel"
 import { validateIsolationLevel } from "../validate-isolation-level"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
+import {
+    isSafeAlter,
+    normalizeColumnLength,
+} from "../../query-runner/BaseQueryRunnerHelper"
 import type { OracleDriver } from "./OracleDriver"
 
 /**
@@ -1135,6 +1139,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             : table.columns.find(
                   (column) => column.name === oldTableColumnOrName,
               )
+
         if (!oldColumn)
             throw new TypeORMError(
                 `Column "${oldTableColumnOrName}" was not found in the ${this.escapePath(
@@ -1145,8 +1150,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
+            (oldColumn.type !== newColumn.type &&
+                !this.canAlterColumnTypeInPlace(oldColumn, newColumn)) ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
         ) {
@@ -1158,6 +1163,9 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             // update cloned table
             clonedTable = table.clone()
         } else {
+            // Track whether a rename occurred to avoid conflicting with fast paths
+            let columnRenamed = false
+
             if (newColumn.name !== oldColumn.name) {
                 // rename column
                 upQueries.push(
@@ -1368,6 +1376,48 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                     clonedTable.columns.indexOf(oldTableColumn!)
                 ].name = newColumn.name
                 oldColumn.name = newColumn.name
+                columnRenamed = true
+            }
+            if (oldColumn.type !== newColumn.type) {
+                const handled = await this.alterColumnType(
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                )
+                if (handled) {
+                    // Update clonedTable so replaceCachedTable reflects the new type,
+                    // preventing a stale cache that would cause the next synchronize()
+                    // to falsely detect the column as removed.
+                    const clonedCol = clonedTable.columns.find(
+                        (c) => c.name === oldColumn.name,
+                    )
+                    if (clonedCol) {
+                        clonedCol.type = newColumn.type
+                        clonedCol.length = newColumn.length
+                    }
+                }
+            } else if (
+                !columnRenamed &&
+                oldColumn?.type === newColumn?.type &&
+                oldColumn?.length !== newColumn?.length &&
+                // ensure *only* the length changed – everything else must be identical
+                oldColumn?.isNullable === newColumn?.isNullable &&
+                oldColumn?.default === newColumn?.default &&
+                oldColumn?.name === newColumn?.name &&
+                oldColumn?.isPrimary === newColumn?.isPrimary &&
+                oldColumn?.isUnique === newColumn?.isUnique
+            ) {
+                this.alterColumnLength(
+                    table,
+                    clonedTable,
+                    oldColumn,
+                    newColumn,
+                    upQueries,
+                    downQueries,
+                )
             }
 
             if (this.isColumnChanged(oldColumn, newColumn, true)) {
@@ -2391,7 +2441,6 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Note: this operation uses SQL's TRUNCATE query which cannot be reverted in transactions.
      *
      * @param tableName
-     * @param options
      * @param options.cascade
      */
     async clearTable(
@@ -2545,7 +2594,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 return `("C"."OWNER" = '${OWNER}' AND "C"."TABLE_NAME" = '${TABLE_NAME}')`
             })
             .join(" OR ")
-        const columnsSql = `SELECT * FROM "ALL_TAB_COLS" "C" WHERE (${columnsCondition})`
+        const columnsSql = `SELECT * FROM "ALL_TAB_COLS" "C" WHERE (${columnsCondition}) AND NOT ("C"."HIDDEN_COLUMN" = 'YES' AND "C"."VIRTUAL_COLUMN" = 'NO')`
 
         const indicesSql =
             `SELECT "C"."INDEX_NAME", "C"."OWNER", "C"."TABLE_NAME", "C"."UNIQUENESS", ` +
@@ -3407,6 +3456,182 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         return `"${tableName}"`
+    }
+
+    /**
+     * Handles length-only fast path changes for Oracle.
+     * Returns true if change was handled.
+     *
+     */
+    private alterColumnLength(
+        table: Table,
+        clonedTable: Table,
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+        upQueries: Query[],
+        downQueries: Query[],
+    ): boolean {
+        const oldLen = normalizeColumnLength(oldColumn.length)
+        const newLen = normalizeColumnLength(newColumn.length)
+        const col: string = String(oldColumn.name)
+
+        if (oldLen && newLen && newLen < oldLen) {
+            // shrink: avoid ORA-01441 by truncating first
+            upQueries.push(
+                new Query(
+                    `UPDATE ${this.escapePath(
+                        table,
+                    )} SET "${col}" = SUBSTR("${col}", 1, ${newLen}) WHERE LENGTH("${col}") > ${newLen}`,
+                ),
+            )
+        }
+
+        // IMPORTANT: since nullability didn't change, don't mention it here.
+        // This prevents ORA-01442 when combined with other generated statements.
+        upQueries.push(
+            new Query(
+                `ALTER TABLE ${this.escapePath(
+                    table,
+                )} MODIFY ("${col}" ${this.driver.createFullType(newColumn)})`,
+            ),
+        )
+
+        downQueries.push(
+            new Query(
+                `ALTER TABLE ${this.escapePath(
+                    table,
+                )} MODIFY ("${col}" ${this.driver.createFullType(oldColumn)})`,
+            ),
+        )
+
+        // Keep in-memory cloned metadata in sync to avoid later re-diffs.
+        const clonedCol = clonedTable?.columns?.find?.(
+            (c: TableColumn) => c.name === col,
+        )
+        if (clonedCol) clonedCol.length = newColumn.length
+
+        return true
+    }
+
+    /**
+     * Handles safe ALTER COLUMN changes for Oracle.
+     * Returns true if change was handled.
+     *
+     */
+    private async alterColumnType(
+        table: Table,
+        clonedTable: Table,
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+        upQueries: Query[],
+        downQueries: Query[],
+    ): Promise<boolean> {
+        // Skip generated/computed/identity columns (Oracle won't freely MODIFY these)
+        if (oldColumn.asExpression || newColumn.asExpression) return false
+        if (oldColumn.generatedIdentity || newColumn.generatedIdentity)
+            return false
+
+        // Only proceed when caller says this change is safely widening
+        if (!this.canAlterColumnTypeInPlace(oldColumn, newColumn)) return false
+
+        const tableSql = this.escapePath(table)
+        const colName = String(oldColumn.name)
+        const q = (i: string) => `"${i.replaceAll('"', '""')}"`
+
+        // Oracle TIMESTAMP precision must be between 0 and 9. Clamp to avoid ORA-30088.
+        const clampTs = (col: TableColumn) => {
+            const t = String(col.type ?? "").toLowerCase()
+            if (t === "timestamp" || t.startsWith("timestamp")) {
+                const p = col.precision
+                if (p == null) col.precision = 6
+                else col.precision = Math.max(0, Math.min(9, Number(p)))
+            }
+        }
+        clampTs(newColumn)
+        clampTs(oldColumn)
+
+        // Build full definitions
+        const newDef = this.buildCreateColumnSql(newColumn)
+        const oldDef = this.buildCreateColumnSql(oldColumn)
+
+        // Strip the leading `"colname" ` so we can inject the identifier only once
+        const stripLeadingName = (def: string) => def.replace(/^"[^"]+"\s+/, "")
+
+        const newDefSansName = stripLeadingName(newDef)
+        const oldDefSansName = stripLeadingName(oldDef)
+
+        // When nullability hasn't changed, avoid specifying NULL/NOT NULL in MODIFY.
+        // This prevents ORA-01442 ("column to be modified to NOT NULL is already NOT NULL")
+        // for safe widening changes.
+        let finalNewDef = newDefSansName
+        let finalOldDef = oldDefSansName
+
+        if (oldColumn.isNullable === newColumn.isNullable) {
+            const stripNullability = (def: string) => {
+                const upper = def.toUpperCase()
+
+                if (upper.endsWith(" NOT NULL")) {
+                    return def.slice(0, -" NOT NULL".length)
+                }
+
+                if (upper.endsWith(" NULL")) {
+                    return def.slice(0, -" NULL".length)
+                }
+
+                return def
+            }
+
+            finalNewDef = stripNullability(finalNewDef)
+            finalOldDef = stripNullability(finalOldDef)
+        }
+
+        // Correct: name only once
+        const upSql = `ALTER TABLE ${tableSql} MODIFY (${q(
+            colName,
+        )} ${finalNewDef})`
+        const downSql = `ALTER TABLE ${tableSql} MODIFY (${q(
+            colName,
+        )} ${finalOldDef})`
+
+        upQueries.push(new Query(upSql))
+        downQueries.push(new Query(downSql))
+        return true
+    }
+
+    /**
+     * Oracle rejects populated float-family rewrites such as FLOAT/BINARY_FLOAT
+     * -> BINARY_DOUBLE with ORA-01439, so only a subset of generic "safe alter"
+     * changes can use in-place MODIFY here.
+     */
+    private canAlterColumnTypeInPlace(
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+    ): boolean {
+        if (!isSafeAlter(oldColumn, newColumn)) return false
+
+        const normalize = (type: TableColumn["type"]) =>
+            String(type ?? "")
+                .toLowerCase()
+                .replaceAll(/\s+/g, " ")
+                .trim()
+
+        const floatFamily = new Set([
+            "float",
+            "real",
+            "double",
+            "double precision",
+            "binary_float",
+            "binary_double",
+        ])
+
+        const oldType = normalize(oldColumn.type)
+        const newType = normalize(newColumn.type)
+
+        if (floatFamily.has(oldType) && floatFamily.has(newType)) {
+            return false
+        }
+
+        return true
     }
 
     /**
