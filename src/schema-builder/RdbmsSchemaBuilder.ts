@@ -342,12 +342,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                     })
                 })
 
-            if (
-                renamedMetadataColumns.length === 0 ||
-                renamedMetadataColumns.length > 1
-            )
-                continue
-
             const renamedTableColumns = table.columns.filter((tableColumn) => {
                 return !metadata.columns.find((column) => {
                     return (
@@ -363,22 +357,21 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             })
 
             if (
-                renamedTableColumns.length === 0 ||
-                renamedTableColumns.length > 1
+                renamedMetadataColumns.length === 0 ||
+                renamedMetadataColumns.length !== renamedTableColumns.length
             )
                 continue
 
-            const renamedColumn = renamedTableColumns[0].clone()
-            renamedColumn.name = renamedMetadataColumns[0].databaseName
+            for (let i = 0; i < renamedTableColumns.length; i++) {
+                const oldCol = renamedTableColumns[i]
+                const newCol = oldCol.clone()
+                newCol.name = renamedMetadataColumns[i].databaseName
 
-            this.dataSource.logger.logSchemaBuild(
-                `renaming column "${renamedTableColumns[0].name}" in "${table.name}" to "${renamedColumn.name}"`,
-            )
-            await this.queryRunner.renameColumn(
-                table,
-                renamedTableColumns[0],
-                renamedColumn,
-            )
+                this.dataSource.logger.logSchemaBuild(
+                    `renaming column "${oldCol.name}" in "${table.name}" to "${newCol.name}"`,
+                )
+                await this.queryRunner.renameColumn(table, oldCol, newCol)
+            }
         }
     }
 
