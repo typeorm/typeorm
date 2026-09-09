@@ -105,6 +105,14 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             await this.executeSchemaSyncOperationsInProperOrder()
 
+            // Surface warnings from refused column changes
+            const memorySql = this.queryRunner.getMemorySql()
+            if (memorySql.warnings?.length) {
+                for (const warning of memorySql.warnings) {
+                    this.dataSource.logger.logSchemaBuild(`WARNING: ${warning}`)
+                }
+            }
+
             // if cache is enabled then perform cache-synchronization as well
             if (this.dataSource.queryResultCache)
                 await this.dataSource.queryResultCache.synchronize(

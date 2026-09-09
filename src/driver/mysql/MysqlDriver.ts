@@ -212,6 +212,48 @@ export class MysqlDriver implements Driver {
     ]
 
     /**
+     * Integer types ordered by storage capacity (smallest to largest).
+     */
+    intHierarchy: ColumnType[] = [
+        "tinyint",
+        "smallint",
+        "mediumint",
+        "int",
+        "bigint",
+    ]
+
+    /**
+     * Text types ordered by max storage capacity.
+     */
+    textHierarchy: ColumnType[] = ["tinytext", "text", "mediumtext", "longtext"]
+
+    /**
+     * Blob types ordered by max storage capacity.
+     */
+    blobHierarchy: ColumnType[] = ["tinyblob", "blob", "mediumblob", "longblob"]
+
+    /**
+     * Temporal types that support fractional-second precision (0–6).
+     */
+    temporalPrecisionTypes: ColumnType[] = ["datetime", "timestamp", "time"]
+
+    /**
+     * Min/max ranges for each integer type (signed and unsigned).
+     */
+    intRanges: Record<string, [bigint, bigint]> = {
+        tinyint: [-128n, 127n],
+        "tinyint unsigned": [0n, 255n],
+        smallint: [-32768n, 32767n],
+        "smallint unsigned": [0n, 65535n],
+        mediumint: [-8388608n, 8388607n],
+        "mediumint unsigned": [0n, 16777215n],
+        int: [-2147483648n, 2147483647n],
+        "int unsigned": [0n, 4294967295n],
+        bigint: [-9223372036854775808n, 9223372036854775807n],
+        "bigint unsigned": [0n, 18446744073709551615n],
+    }
+
+    /**
      * Gets list of column data types that support length by a driver.
      */
     withLengthColumnTypes: ColumnType[] = [

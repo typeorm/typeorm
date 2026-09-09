@@ -186,4 +186,14 @@ export interface ColumnOptions extends ColumnCommonOptions {
      *
      */
     utc?: boolean
+
+    /**
+     * Strategy for handling column type/length changes during migration generation.
+     * MySQL and MariaDB only.
+     *
+     * - "auto": ALTER for widen/no-change, DROP+ADD for narrow/incompatible (deterministic, no live queries)
+     * - "alter": always ALTER (may truncate or fail at DB level)
+     * - "drop-add": always DROP+ADD (default, data loss)
+     */
+    changeStrategy?: "auto" | "alter" | "drop-add"
 }
