@@ -747,8 +747,14 @@ export abstract class AbstractSqliteDriver implements Driver {
      *
      * @param column
      */
-    getColumnLength(column: ColumnMetadata): string {
-        return column.length ? column.length.toString() : ""
+    getColumnLength(column: ColumnMetadata | TableColumn): string {
+        const normalizedType = this.normalizeType(
+            column as ColumnMetadata,
+        ).toLowerCase() as ColumnType
+        return column.length &&
+            this.withLengthColumnTypes.includes(normalizedType)
+            ? column.length.toString()
+            : ""
     }
 
     /**
@@ -761,8 +767,9 @@ export abstract class AbstractSqliteDriver implements Driver {
         if (column.enum) {
             return "varchar"
         }
-        if (column.length) {
-            type += "(" + column.length + ")"
+        const length = this.getColumnLength(column)
+        if (length) {
+            type += "(" + length + ")"
         } else if (
             column.precision !== null &&
             column.precision !== undefined &&
@@ -947,7 +954,7 @@ export abstract class AbstractSqliteDriver implements Driver {
             const isColumnChanged =
                 tableColumn.name !== columnMetadata.databaseName ||
                 tableColumn.type !== this.normalizeType(columnMetadata) ||
-                tableColumn.length !== columnMetadata.length ||
+                tableColumn.length !== this.getColumnLength(columnMetadata) ||
                 tableColumn.precision !== columnMetadata.precision ||
                 tableColumn.scale !== columnMetadata.scale ||
                 !this.defaultEqual(columnMetadata, tableColumn) ||

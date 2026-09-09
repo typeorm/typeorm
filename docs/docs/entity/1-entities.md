@@ -431,6 +431,7 @@ List of available options in `ColumnOptions`:
   You can change it by specifying your own name.
 
 - `length: number` - Column type's length. For example if you want to create `varchar(150)` type you specify column type and length options.
+  The option is ignored when the selected driver does not support a length for the normalized column type.
 - `onUpdate: string` - `ON UPDATE` trigger. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/timestamp-initialization.html).
 - `nullable: boolean` - Makes column `NULL` or `NOT NULL` in the database. By default column is `nullable: false`.
 - `update: boolean` - Indicates if column value is updated by "save" operation. If false, you'll be able to write this value only when you first time insert the object. Default value is `true`.

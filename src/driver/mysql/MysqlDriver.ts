@@ -878,7 +878,14 @@ export class MysqlDriver implements Driver {
      * @param column
      */
     getColumnLength(column: ColumnMetadata | TableColumn): string {
-        if (column.length) return column.length.toString()
+        const normalizedType = this.normalizeType(
+            column as ColumnMetadata,
+        ).toLowerCase() as ColumnType
+        if (
+            column.length &&
+            this.withLengthColumnTypes.includes(normalizedType)
+        )
+            return column.length.toString()
 
         /**
          * fix https://github.com/typeorm/typeorm/issues/1139
@@ -886,7 +893,8 @@ export class MysqlDriver implements Driver {
          */
         if (
             column.generationStrategy === "uuid" &&
-            !this.uuidColumnTypeSuported
+            !this.uuidColumnTypeSuported &&
+            this.withLengthColumnTypes.includes(normalizedType)
         )
             return "36"
 

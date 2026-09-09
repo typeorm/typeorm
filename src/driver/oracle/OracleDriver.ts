@@ -740,7 +740,14 @@ export class OracleDriver implements Driver {
      * @param column
      */
     getColumnLength(column: ColumnMetadata | TableColumn): string {
-        if (column.length) return column.length.toString()
+        const normalizedType = this.normalizeType(
+            column as ColumnMetadata,
+        ).toLowerCase() as ColumnType
+        if (
+            column.length &&
+            this.withLengthColumnTypes.includes(normalizedType)
+        )
+            return column.length.toString()
 
         switch (column.type) {
             case String:

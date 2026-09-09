@@ -764,9 +764,20 @@ export class SapDriver implements Driver {
      * @param column
      */
     getColumnLength(column: ColumnMetadata | TableColumn): string {
-        if (column.length) return column.length.toString()
+        const normalizedType = this.normalizeType(
+            column as ColumnMetadata,
+        ).toLowerCase() as ColumnType
+        if (
+            column.length &&
+            this.withLengthColumnTypes.includes(normalizedType)
+        )
+            return column.length.toString()
 
-        if (column.generationStrategy === "uuid") return "36"
+        if (
+            column.generationStrategy === "uuid" &&
+            this.withLengthColumnTypes.includes(normalizedType)
+        )
+            return "36"
 
         switch (column.type) {
             case "varchar":

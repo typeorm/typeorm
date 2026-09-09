@@ -119,7 +119,7 @@ describe("github issues > #8832 Add uuid, inet4 and inet6 types for mariadb", ()
             }),
         ))
 
-    it("should throw error if mariadb uuid is supported and length is provided to property", async () =>
+    it("should ignore length if a native mariadb type does not support it", async () =>
         Promise.all(
             dataSources.map(async (connection) => {
                 // version supports all the new types
@@ -142,7 +142,7 @@ describe("github issues > #8832 Add uuid, inet4 and inet6 types for mariadb", ()
                             entityMetadatas,
                             connection.driver,
                         ),
-                    ).to.throw(Error)
+                    ).to.not.throw()
                 })
             }),
         ))

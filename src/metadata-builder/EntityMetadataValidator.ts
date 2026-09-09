@@ -132,13 +132,16 @@ export class EntityMetadataValidator {
                             normalizedColumn,
                             driver.options.type,
                         )
-                    if (
-                        column.length &&
-                        !driver.withLengthColumnTypes.includes(normalizedColumn)
-                    )
-                        throw new TypeORMError(
-                            `Column ${column.propertyName} of Entity ${entityMetadata.name} does not support length property.`,
-                        )
+                    // a length carried by a type that accepts none is ignored
+                    // rather than rejected. One entity definition is expected
+                    // to run on several drivers, and whether a type takes a
+                    // length is a property of the driver, not of the entity:
+                    // `uuid` normalizes to `varchar` on mysql, where a length
+                    // applies, and stays a native type on postgres, where it
+                    // does not. Rejecting made such a column undefinable. The
+                    // length is now ignored consistently: not rendered by
+                    // createFullType, and not reported by getColumnLength, so
+                    // it can neither reach the DDL nor register as a change.
                     if (
                         column.type === "enum" &&
                         !column.enum &&

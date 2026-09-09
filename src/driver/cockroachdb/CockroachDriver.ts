@@ -909,7 +909,18 @@ export class CockroachDriver implements Driver {
      * @param column
      */
     getColumnLength(column: ColumnMetadata): string {
-        return column.length ? column.length.toString() : ""
+        if (!column.length) return ""
+
+        // a length is only reported for the types that accept one. Reporting it
+        // for a type that takes none would compare the declared length against
+        // the nothing the database reports back for such a column, so the
+        // column would read as changed on every synchronization.
+        const normalizedType = this.normalizeType(
+            column,
+        ).toLowerCase() as ColumnType
+        if (this.withLengthColumnTypes.indexOf(normalizedType) === -1) return ""
+
+        return column.length.toString()
     }
 
     /**
@@ -919,8 +930,15 @@ export class CockroachDriver implements Driver {
      */
     createFullType(column: TableColumn): string {
         let type = column.type
+        const normalizedType = column.type.toLowerCase() as ColumnType
 
-        if (column.length) {
+        // a length is only rendered for the types that accept one, so a
+        // length carried by a type that takes none (uuid, for instance)
+        // cannot produce an unparsable type such as "uuid(36)"
+        if (
+            column.length &&
+            this.withLengthColumnTypes.indexOf(normalizedType) !== -1
+        ) {
             type += "(" + column.length + ")"
         } else if (
             column.precision !== null &&
@@ -1038,7 +1056,7 @@ export class CockroachDriver implements Driver {
             return (
                 tableColumn.name !== columnMetadata.databaseName ||
                 tableColumn.type !== this.normalizeType(columnMetadata) ||
-                tableColumn.length !== columnMetadata.length ||
+                tableColumn.length !== this.getColumnLength(columnMetadata) ||
                 tableColumn.isArray !== columnMetadata.isArray ||
                 tableColumn.precision !== columnMetadata.precision ||
                 (columnMetadata.scale !== undefined &&

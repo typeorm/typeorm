@@ -19,6 +19,7 @@ export interface ColumnOptions extends ColumnCommonOptions {
     /**
      * Column type's length. Used only on some column types.
      * For example type = "string" and length = "100" means that ORM will create a column with type varchar(100).
+     * Ignored when the selected driver does not support a length for the normalized column type.
      */
     length?: string | number
 

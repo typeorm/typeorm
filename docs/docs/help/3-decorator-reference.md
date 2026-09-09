@@ -135,7 +135,8 @@ export class User {
   By default, the column name is generated from the name of the property.
   You can change it by specifying your own name.
 - `length: string|number` - Column type's length. For example, if you want to create `varchar(150)` type
-  you specify column type and length options.
+  you specify column type and length options. The option is ignored when the selected driver does not support
+  a length for the normalized column type.
 - `width: number` - column type's display width. Used only for [MySQL integer types](https://dev.mysql.com/doc/refman/5.7/en/integer-types.html). _Deprecated_ in newer MySQL versions, will be removed from TypeORM in an upcoming version.
 - `onUpdate: string` - `ON UPDATE` trigger. Used only in [MySQL](https://dev.mysql.com/doc/refman/5.7/en/timestamp-initialization.html).
 - `nullable: boolean` - determines whether the column can become `NULL` or always has to be `NOT NULL`. By default column is `nullable: false`.

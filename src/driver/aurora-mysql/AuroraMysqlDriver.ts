@@ -786,12 +786,23 @@ export class AuroraMysqlDriver implements Driver {
      * @param column
      */
     getColumnLength(column: ColumnMetadata | TableColumn): string {
-        if (column.length) return column.length.toString()
+        const normalizedType = this.normalizeType(
+            column as ColumnMetadata,
+        ).toLowerCase() as ColumnType
+        if (
+            column.length &&
+            this.withLengthColumnTypes.includes(normalizedType)
+        )
+            return column.length.toString()
 
         /**
          * fix https://github.com/typeorm/typeorm/issues/1139
          */
-        if (column.generationStrategy === "uuid") return "36"
+        if (
+            column.generationStrategy === "uuid" &&
+            this.withLengthColumnTypes.includes(normalizedType)
+        )
+            return "36"
 
         switch (column.type) {
             case String:
@@ -949,14 +960,7 @@ export class AuroraMysqlDriver implements Driver {
             )
             if (!tableColumn) return false // we don't need new columns, we only need exist and changed
 
-            let columnMetadataLength = columnMetadata.length
-            if (
-                !columnMetadataLength &&
-                columnMetadata.generationStrategy === "uuid"
-            ) {
-                // fixing #3374
-                columnMetadataLength = this.getColumnLength(columnMetadata)
-            }
+            const columnMetadataLength = this.getColumnLength(columnMetadata)
 
             return (
                 tableColumn.name !== columnMetadata.databaseName ||
