@@ -639,6 +639,10 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
         checkEnum = true,
     ): boolean {
         return (
+            // length must be detected here so drivers that use CHANGE/MODIFY
+            // (MySQL, Aurora, Oracle) emit SQL for length-only updates after
+            // #3357 removed length from the DROP+ADD recreate path.
+            oldColumn.length !== newColumn.length ||
             oldColumn.charset !== newColumn.charset ||
             oldColumn.collation !== newColumn.collation ||
             oldColumn.precision !== newColumn.precision ||

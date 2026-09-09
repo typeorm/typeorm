@@ -1401,9 +1401,9 @@ export class CockroachQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        // Length-only changes should ALTER, not DROP+ADD (data loss). See typeorm#3357.
         if (
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
@@ -1657,6 +1657,7 @@ export class CockroachQueryRunner
             }
 
             if (
+                newColumn.length !== oldColumn.length ||
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {

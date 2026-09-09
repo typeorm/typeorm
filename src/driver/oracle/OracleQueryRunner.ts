@@ -1142,11 +1142,11 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 )} table.`,
             )
 
+        // Length-only changes use MODIFY below (preserves data). See typeorm#3357.
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             oldColumn.generatedType !== newColumn.generatedType ||
             oldColumn.asExpression !== newColumn.asExpression
         ) {
