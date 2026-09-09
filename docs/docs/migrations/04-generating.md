@@ -115,3 +115,6 @@ export class PostRefactoringTIMESTAMP {
 See, you don't need to write the queries on your own.
 
 The rule of thumb for generating migrations is that you generate them after **each** change you made to your models. To apply multi-line formatting to your generated migration queries, use the `p` (alias for `--pretty`) flag.
+
+> **Note on column length changes (Postgres / CockroachDB):**  
+> When only a column's `length` changes, TypeORM now generates `ALTER COLUMN ... TYPE` instead of the destructive `DROP COLUMN` + `ADD COLUMN` pattern. This prevents data loss. This behavior also applies when `precision` or `scale` changes alongside `length` — only one `ALTER COLUMN ... TYPE` statement is emitted per column.
