@@ -14,9 +14,6 @@ importers:
       ansis:
         specifier: ^4.3.1
         version: 4.3.1
-      dayjs:
-        specifier: ^1.11.23
-        version: 1.11.23
       debug:
         specifier: ^4.4.3
         version: 4.4.3(supports-color@8.1.1)
@@ -1725,9 +1722,6 @@ packages:
   data-uri-to-buffer@4.0.1:
     resolution: {integrity: sha512-0R9ikRb668HB7QDxT1vkpuUBtqc53YyAwMwGeUFKRojY/NWKvdZ+9UYtRfGmhqNbRkTSVpMbmyhXipFFv2cb/A==}
     engines: {node: '>= 12'}
-
-  dayjs@1.11.23:
-    resolution: {integrity: sha512-QDTCU0M0MxR3hQfnlDJfwekQiaanm1ubOD231u73WBckQ/fsamwRLiE2GBz6D3a/xF1NgfiDLJjXBa1hYOYTtQ==}
 
   debug@3.1.0:
     resolution: {integrity: sha512-OX8XqP7/1a9cqkxYw2yXss15f26NKWBpDXQd0/uK/KPqdQhxbPa994hnzjcE2VqQpDslf55723cKPUOGSmMY3g==}
@@ -5768,8 +5762,6 @@ snapshots:
       which: 2.0.2
 
   data-uri-to-buffer@4.0.1: {}
-
-  dayjs@1.11.23: {}
 
   debug@3.1.0:
     dependencies:

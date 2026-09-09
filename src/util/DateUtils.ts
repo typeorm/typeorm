@@ -1,5 +1,4 @@
 import type { ColumnMetadata } from "../metadata/ColumnMetadata"
-import dayjs from "dayjs"
 
 /**
  * Provides utilities to transform hydrated and persisted data.
@@ -86,7 +85,7 @@ export class DateUtils {
          */
         let date =
             typeof mixedDate === "string"
-                ? dayjs(mixedDate).toDate()
+                ? DateUtils.parseDateString(mixedDate)
                 : mixedDate
 
         if (toUtc)
@@ -357,5 +356,44 @@ export class DateUtils {
         } else {
             return String(value)
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // Private Static Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Matches the date and date-time forms that carry no timezone. Anything
+     * with a "Z" or a UTC offset deliberately fails to match, so that it falls
+     * through to `new Date`, which already handles those correctly.
+     */
+    private static readonly datePartsRegExp =
+        /^(\d{4})[-/]?(\d{1,2})?[-/]?(\d{0,2})[Tt\s]*(\d{1,2})?:?(\d{1,2})?:?(\d{1,2})?[.:]?(\d+)?$/
+
+    /**
+     * Parses a date string into local time.
+     *
+     * `new Date("2021-04-28")` reads a date-only string as UTC midnight, which
+     * shifts the date for anyone east or west of UTC. Constructing from the
+     * parts instead keeps it local, which is what a bare date in a database
+     * column means. This reproduces the behaviour of the dayjs parser that
+     * previously did the same job here.
+     *
+     * @param value date string taken from the database or from user input
+     * @returns the parsed date, or an invalid Date if it could not be parsed
+     */
+    private static parseDateString(value: string): Date {
+        const parts = value.match(DateUtils.datePartsRegExp)
+        if (!parts) return new Date(value)
+
+        return new Date(
+            Number(parts[1]),
+            Number(parts[2]) - 1 || 0,
+            Number(parts[3] || 1),
+            Number(parts[4] || 0),
+            Number(parts[5] || 0),
+            Number(parts[6] || 0),
+            Number((parts[7] || "0").slice(0, 3)),
+        )
     }
 }
