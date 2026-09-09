@@ -1326,22 +1326,105 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        // Fix #3357 — pre-classify the change so length increases, type
+        // changes, and (opt-in) length decreases route through ALTER COLUMN
+        // TYPE instead of the destructive DROP+ADD path. The DROP+ADD path
+        // is preserved verbatim for changes Postgres cannot ALTER in place
+        // (isArray flip, STORED-generated column promotion or expression
+        // change) and for lossy length-decrease cases when the dataSource
+        // has not opted in via migrationsAllowLossyAlter.
+        const typeChanged = oldColumn.type !== newColumn.type
+        const lengthChanged = oldColumn.length !== newColumn.length
+        const isArrayChanged = newColumn.isArray !== oldColumn.isArray
+        const isNewlyStoredGenerated =
+            !oldColumn.generatedType && newColumn.generatedType === "STORED"
+        const storedExpressionChanged =
+            oldColumn.asExpression !== newColumn.asExpression &&
+            newColumn.generatedType === "STORED"
+        const oldLen = Number(oldColumn.length)
+        const newLen = Number(newColumn.length)
+        const lengthDecreases =
+            lengthChanged &&
+            oldColumn.length !== undefined &&
+            oldColumn.length !== "" &&
+            newColumn.length !== undefined &&
+            newColumn.length !== "" &&
+            Number.isFinite(oldLen) &&
+            Number.isFinite(newLen) &&
+            newLen < oldLen
+        const allowLossyAlter =
+            this.driver.options.migrationsAllowLossyAlter === true
+
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
-            newColumn.isArray !== oldColumn.isArray ||
-            (!oldColumn.generatedType &&
-                newColumn.generatedType === "STORED") ||
-            (oldColumn.asExpression !== newColumn.asExpression &&
-                newColumn.generatedType === "STORED")
+            isArrayChanged ||
+            isNewlyStoredGenerated ||
+            storedExpressionChanged
         ) {
-            // To avoid data conversion, we just recreate column
+            // To avoid data conversion, we just recreate column.
+            // (Array flips and STORED-generated changes cannot be expressed
+            // as a Postgres ALTER COLUMN TYPE.)
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
             // update cloned table
             clonedTable = table.clone()
+        } else if (
+            (typeChanged || lengthChanged) &&
+            lengthDecreases &&
+            !allowLossyAlter
+        ) {
+            // Honest fall-back: a column length decrease without explicit
+            // opt-in still uses DROP+ADD so existing migrations don't
+            // silently truncate. The warning explains both why and how to
+            // opt in.
+            this.driver.dataSource.logger.logSchemaBuild(
+                `[typeorm][postgres] column "${this.escapePath(table)}"."${
+                    oldColumn.name
+                }" length decreased (${oldColumn.length} -> ${
+                    newColumn.length
+                }); using DROP+ADD to preserve historical behavior. Set ` +
+                    `\`migrationsAllowLossyAlter: true\` on the dataSource to ` +
+                    `use ALTER COLUMN TYPE … USING with truncation instead.`,
+                this,
+            )
+            await this.dropColumn(table, oldColumn)
+            await this.addColumn(table, newColumn)
+            clonedTable = table.clone()
         } else {
+            // Fix #3357 — safe type/length change via ALTER COLUMN TYPE … USING.
+            // Reached when the type or length changed, the column is not an
+            // array, not STORED-generated, and is either a length increase /
+            // pure type change OR a length decrease with explicit opt-in.
+            if (typeChanged || lengthChanged) {
+                const newSqlType = this.driver.createFullType(newColumn)
+                const oldSqlType = this.driver.createFullType(oldColumn)
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            oldColumn.name
+                        }" TYPE ${newSqlType} USING "${
+                            oldColumn.name
+                        }"::${newSqlType}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            oldColumn.name
+                        }" TYPE ${oldSqlType} USING "${
+                            oldColumn.name
+                        }"::${oldSqlType}`,
+                    ),
+                )
+                // Reflect the new type/length on the cached table column so
+                // the precision/scale and enum branches below see the
+                // post-ALTER state, not the pre-ALTER one.
+                const cachedCol = clonedTable.findColumnByName(oldColumn.name)
+                if (cachedCol) {
+                    cachedCol.type = newColumn.type
+                    cachedCol.length = newColumn.length
+                }
+            }
             if (oldColumn.name !== newColumn.name) {
                 // rename column
                 upQueries.push(
