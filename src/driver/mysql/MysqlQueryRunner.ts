@@ -1138,7 +1138,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             (oldColumn.generatedType &&
                 newColumn.generatedType &&
                 oldColumn.generatedType !== newColumn.generatedType) ||
@@ -1413,6 +1412,47 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     downQueries.push(
                         new Query(revertUpdateQuery[0], revertUpdateQuery[1]),
                     )
+                }
+            }
+
+            // A pure length change (e.g. varchar(50) -> varchar(51)) can be
+            // applied with MODIFY COLUMN, which preserves existing data.
+            // Recreating the column (DROP + ADD) would discard the data.
+            if (
+                newColumn.length !== oldColumn.length &&
+                newColumn.type === oldColumn.type
+            ) {
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(
+                            table,
+                        )} MODIFY COLUMN \`${newColumn.name}\` ${this.buildCreateColumnSql(
+                            newColumn,
+                            true,
+                            true,
+                        )}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(
+                            table,
+                        )} MODIFY COLUMN \`${oldColumn.name}\` ${this.buildCreateColumnSql(
+                            oldColumn,
+                            true,
+                            true,
+                        )}`,
+                    ),
+                )
+
+                // keep the cached table schema in sync so subsequent schema
+                // operations in the same QueryRunner don't mis-detect the
+                // column definition and emit redundant follow-up DDL
+                const cachedColumn = clonedTable.columns.find(
+                    (column) => column.name === newColumn.name,
+                )
+                if (cachedColumn) {
+                    cachedColumn.length = newColumn.length
                 }
             }
 

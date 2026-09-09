@@ -1366,7 +1366,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
             newColumn.type !== oldColumn.type ||
-            newColumn.length !== oldColumn.length ||
             (newColumn.asExpression ?? "").trim() !==
                 (oldColumn.asExpression ?? "").trim()
         ) {
@@ -1628,6 +1627,53 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                         }" IS ${this.escapeComment(oldColumn.comment)}`,
                     ),
                 )
+            }
+
+            // A pure length change (e.g. varchar(50) -> varchar(51)) can be
+            // applied with ALTER, which preserves existing data.
+            // Recreating the column (DROP + ADD) would discard the data.
+            if (
+                newColumn.length !== oldColumn.length &&
+                newColumn.type === oldColumn.type
+            ) {
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(
+                            table,
+                        )} ALTER (${this.buildCreateColumnSql(
+                            newColumn,
+                            !(
+                                oldColumn.default === null ||
+                                oldColumn.default === undefined
+                            ),
+                            !oldColumn.isNullable,
+                        )})`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(
+                            table,
+                        )} ALTER (${this.buildCreateColumnSql(
+                            oldColumn,
+                            !(
+                                newColumn.default === null ||
+                                newColumn.default === undefined
+                            ),
+                            !newColumn.isNullable,
+                        )})`,
+                    ),
+                )
+
+                // keep the cached table schema in sync so subsequent schema
+                // operations in the same QueryRunner don't mis-detect the
+                // column definition and emit redundant follow-up DDL
+                const cachedColumn = clonedTable.columns.find(
+                    (column) => column.name === newColumn.name,
+                )
+                if (cachedColumn) {
+                    cachedColumn.length = newColumn.length
+                }
             }
 
             if (newColumn.isPrimary !== oldColumn.isPrimary) {
