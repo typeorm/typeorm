@@ -725,6 +725,42 @@ export class OrmUtils {
                     result[key] = IsNull()
                 }
                 // else: "ignore" — skip this key
+            } else if (Array.isArray(value)) {
+                result[key] = value
+                    .map((item, index) => {
+                        if (OrmUtils.isPlainObject(item)) {
+                            return OrmUtils.normalizeWhereCriteria(
+                                item,
+                                options,
+                                `${propertyPath}.${index}`,
+                            )
+                        }
+                        if (item === undefined) {
+                            const behavior = options?.undefined ?? "throw"
+                            if (behavior === "throw") {
+                                throw new TypeORMError(
+                                    `Undefined value encountered in property '${propertyPath}.${index}' of a where condition. ` +
+                                        `Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
+                                )
+                            }
+                            return undefined
+                        }
+                        if (item === null) {
+                            const behavior = options?.null ?? "throw"
+                            if (behavior === "throw") {
+                                throw new TypeORMError(
+                                    `Null value encountered in property '${propertyPath}.${index}' of a where condition. ` +
+                                        `To match with SQL NULL, the IsNull() operator must be used. ` +
+                                        `Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
+                                )
+                            } else if (behavior === "sql-null") {
+                                return IsNull()
+                            }
+                            return null
+                        }
+                        return item
+                    })
+                    .filter((item) => item !== undefined)
             } else if (OrmUtils.isPlainObject(value)) {
                 const nested = OrmUtils.normalizeWhereCriteria(
                     value,
