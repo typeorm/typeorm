@@ -6,7 +6,7 @@ import {
     createTestingConnections,
     createTypeormMetadataTable,
 } from "../../utils/test-utils"
-import { TableColumn } from "../../../src"
+import { Table, TableColumn } from "../../../src"
 import type { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
 import { DriverUtils } from "../../../src/driver/DriverUtils"
 
@@ -267,6 +267,97 @@ describe("query runner > change column", () => {
                 generatedColumn!.asExpression!.should.be.equals(
                     "text || tag || name",
                 )
+            }),
+        ))
+
+    it("should change column length without recreating the column and losing data", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // SQL Server and SAP still recreate the column on a length change,
+                // because altering it in place first requires dropping every
+                // dependent constraint - out of scope here
+                if (
+                    dataSource.driver.options.type === "mssql" ||
+                    dataSource.driver.options.type === "sap"
+                )
+                    return
+
+                const queryRunner = dataSource.createQueryRunner()
+
+                await queryRunner.createTable(
+                    new Table({
+                        name: "length_change",
+                        columns: [
+                            {
+                                name: "id",
+                                type: DriverUtils.isSQLiteFamily(
+                                    dataSource.driver,
+                                )
+                                    ? "integer"
+                                    : "int",
+                                isPrimary: true,
+                            },
+                            {
+                                name: "name",
+                                type: "varchar",
+                                length: "50",
+                            },
+                        ],
+                    }),
+                    true,
+                )
+
+                const tablePath = dataSource.driver.escape("length_change")
+                const idColumnName = dataSource.driver.escape("id")
+                const nameColumnName = dataSource.driver.escape("name")
+
+                await queryRunner.query(
+                    `INSERT INTO ${tablePath} (${idColumnName}, ${nameColumnName}) VALUES (1, 'typeorm')`,
+                )
+
+                let table = await queryRunner.getTable("length_change")
+                const nameColumn = table!.findColumnByName("name")!
+                const changedNameColumn = nameColumn.clone()
+                changedNameColumn.length = "500"
+
+                queryRunner.enableSqlMemory()
+                await queryRunner.changeColumn(
+                    table!,
+                    nameColumn,
+                    changedNameColumn,
+                )
+                const upQueries = queryRunner
+                    .getMemorySql()
+                    .upQueries.map((query) => query.query.toUpperCase())
+
+                // a length change must produce an in-place alteration - neither a
+                // no-op nor a drop and re-create, which silently discards the data
+                upQueries.length.should.be.greaterThan(0)
+                upQueries.forEach((query) =>
+                    query.should.not.contain("DROP COLUMN"),
+                )
+
+                await queryRunner.executeMemoryUpSql()
+                queryRunner.clearSqlMemory()
+                queryRunner.disableSqlMemory()
+
+                const rows = await queryRunner.query(
+                    `SELECT ${nameColumnName} FROM ${tablePath}`,
+                )
+                rows.length.should.be.equal(1)
+                rows[0].name.should.be.equal("typeorm")
+
+                table = await queryRunner.getTable("length_change")
+
+                // SQLite does not impose any length restrictions
+                if (!DriverUtils.isSQLiteFamily(dataSource.driver)) {
+                    table!
+                        .findColumnByName("name")!
+                        .length!.should.be.equal("500")
+                }
+
+                await queryRunner.dropTable("length_change")
+                await queryRunner.release()
             }),
         ))
 })
