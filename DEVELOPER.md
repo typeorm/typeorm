@@ -52,6 +52,15 @@ Install all TypeORM dependencies by running this command:
 pnpm install
 ```
 
+This installs every project in the workspace: the `typeorm` package at the
+repository root, the packages under `packages/`, and the `playground` example.
+
+Those workspace packages depend on `typeorm` itself. The root manifest sets
+`publishConfig.directory` to `build/package`, so pnpm links them to the build
+output rather than to the source tree. Until you have run `pnpm run package`
+(see [Building](#building)), that link points at a directory that does not
+exist yet, and those packages fail with `Cannot find module 'typeorm'`.
+
 ## ORM config
 
 To create an initial `ormconfig.json` file, run the following command:

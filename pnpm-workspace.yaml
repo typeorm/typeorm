@@ -1,9 +1,15 @@
-# The `typeorm` package itself lives at the repository root and is the workspace
-# root, so it is not listed here. Use `pnpm -r --include-workspace-root` to run a
-# script across the root package as well as the ones below.
+# The `typeorm` package itself lives at the repository root. The root is the
+# workspace root, so it is not listed below. Use
+# `pnpm -r --include-workspace-root` to run a script across it as well as the
+# packages listed here.
 #
-# `docs` is deliberately excluded: it is a Docusaurus site with a large, unrelated
-# dependency tree, and it is built by its own workflow.
+# The packages below depend on `typeorm` with `workspace:*`. The root manifest
+# sets `publishConfig.directory` to `build/package`, so pnpm links them to the
+# build output rather than to the source tree. Nothing resolves `typeorm` until
+# `pnpm run package` has been run at least once.
+#
+# `docs` is excluded: it is a Docusaurus site with a large, unrelated dependency
+# tree, and it is built by its own workflow.
 packages:
     - "packages/*"
     - "playground"
