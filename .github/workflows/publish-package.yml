@@ -104,7 +104,7 @@ jobs:
         run: |
           if [ "${{ matrix.target }}" == "release" ]; then
             echo "should_publish=true" >> $GITHUB_OUTPUT
-            VERSION=$(node -p "require('./package.json').version")
+            VERSION=$(node -p "require('./packages/typeorm/package.json').version")
             if [[ "$VERSION" == *-* ]]; then
               echo "tag=next" >> $GITHUB_OUTPUT
             else
@@ -161,12 +161,12 @@ jobs:
         run: |
           BASE=$(node -p "require('./package.json').version.replace(/-.*/, '')")
           pnpm version "${BASE}-nightly.$(date -u +%Y%m%d)" --no-git-tag-version --allow-same-version
-        working-directory: build/package
+        working-directory: packages/typeorm/build/package
 
       - name: Publish typeorm
         if: steps.publishable.outputs.should_publish == 'true'
         run: pnpm publish --provenance --access public --no-git-checks --tag "${{ steps.publishable.outputs.tag }}"
-        working-directory: build/package
+        working-directory: packages/typeorm/build/package
 
       - name: Build @typeorm/codemod
         if: steps.publishable.outputs.should_publish == 'true' && matrix.ref != 'v0'

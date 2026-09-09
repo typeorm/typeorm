@@ -1,7 +1,7 @@
 build/
 dist/
 coverage/
-extra/
-src/driver/mongodb/typings.ts
-src/driver/mongodb/bson.typings.ts
+packages/typeorm/extra/
+packages/typeorm/src/driver/mongodb/typings.ts
+packages/typeorm/src/driver/mongodb/bson.typings.ts
 pnpm-lock.yaml

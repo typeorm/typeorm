@@ -7,6 +7,145 @@ settings:
 importers:
 
   .:
+    devDependencies:
+      eslint:
+        specifier: ^10.9.1
+        version: 10.9.1
+      husky:
+        specifier: ^9.1.7
+        version: 9.1.7
+      lint-staged:
+        specifier: ^16.4.0
+        version: 16.4.0
+      pkg-pr-new:
+        specifier: ^0.0.88
+        version: 0.0.88
+      prettier:
+        specifier: ^3.9.6
+        version: 3.9.6
+      prettier-plugin-packagejson:
+        specifier: ^3.0.2
+        version: 3.0.2(prettier@3.9.6)
+      prettier-plugin-toml:
+        specifier: ^2.0.6
+        version: 2.0.6(prettier@3.9.6)
+      standard-changelog:
+        specifier: ^7.0.1
+        version: 7.0.1(conventional-commits-filter@5.0.0)(conventional-commits-parser@6.4.0)
+
+  packages/codemod:
+    dependencies:
+      jscodeshift:
+        specifier: ^17.4.0
+        version: 17.4.0
+      semver:
+        specifier: ^7.8.5
+        version: 7.8.5
+      tinyglobby:
+        specifier: ^0.2.17
+        version: 0.2.17
+    devDependencies:
+      '@eslint/js':
+        specifier: ^10.0.1
+        version: 10.0.1(eslint@10.9.1)
+      '@types/chai':
+        specifier: ^4.3.20
+        version: 4.3.20
+      '@types/jscodeshift':
+        specifier: ^17.3.0
+        version: 17.3.0
+      '@types/mocha':
+        specifier: ^10.0.10
+        version: 10.0.10
+      '@types/node':
+        specifier: ^20.19.43
+        version: 20.19.43
+      '@types/semver':
+        specifier: ^7.8.0
+        version: 7.8.0
+      '@types/sinon':
+        specifier: ^22.0.0
+        version: 22.0.0
+      c8:
+        specifier: ^11.0.0
+        version: 11.0.0
+      chai:
+        specifier: ^4.5.0
+        version: 4.5.0
+      eslint:
+        specifier: ^10.9.1
+        version: 10.9.1
+      eslint-plugin-chai-friendly:
+        specifier: ^1.2.1
+        version: 1.2.1(eslint@10.9.1)
+      mocha:
+        specifier: ^11.8.0
+        version: 11.8.0
+      prettier:
+        specifier: ^3.9.6
+        version: 3.9.6
+      sinon:
+        specifier: ^22.1.0
+        version: 22.1.0
+      ts-node:
+        specifier: ^10.9.2
+        version: 10.9.2(@types/node@20.19.43)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      typescript-eslint:
+        specifier: ^8.69.0
+        version: 8.69.0(eslint@10.9.1)(typescript@5.9.3)
+
+  packages/legacy-naming-strategies:
+    devDependencies:
+      '@eslint/js':
+        specifier: ^10.0.1
+        version: 10.0.1(eslint@10.9.1)
+      '@tsconfig/node20':
+        specifier: ^20.1.10
+        version: 20.1.10
+      '@types/chai':
+        specifier: ^5.2.3
+        version: 5.2.3
+      '@types/mocha':
+        specifier: ^10.0.10
+        version: 10.0.10
+      '@types/node':
+        specifier: ^20.19.43
+        version: 20.19.43
+      c8:
+        specifier: ^11.0.0
+        version: 11.0.0
+      chai:
+        specifier: ^6.2.2
+        version: 6.2.2
+      eslint:
+        specifier: ^10.9.1
+        version: 10.9.1
+      eslint-plugin-chai-friendly:
+        specifier: ^1.2.1
+        version: 1.2.1(eslint@10.9.1)
+      mocha:
+        specifier: ^11.8.0
+        version: 11.8.0
+      prettier:
+        specifier: ^3.9.6
+        version: 3.9.6
+      ts-node:
+        specifier: ^10.9.2
+        version: 10.9.2(@types/node@20.19.43)(typescript@5.9.3)
+      typeorm:
+        specifier: workspace:*
+        version: link:../typeorm/build/package
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      typescript-eslint:
+        specifier: ^8.69.0
+        version: 8.69.0(eslint@10.9.1)(typescript@5.9.3)
+
+  packages/typeorm:
     dependencies:
       '@sqltools/formatter':
         specifier: ^1.2.5
@@ -132,12 +271,6 @@ importers:
       gulp-rename:
         specifier: ^2.1.0
         version: 2.1.0
-      husky:
-        specifier: ^9.1.7
-        version: 9.1.7
-      lint-staged:
-        specifier: ^16.4.0
-        version: 16.4.0
       mocha:
         specifier: ^11.8.0
         version: 11.8.0
@@ -159,18 +292,6 @@ importers:
       pg-query-stream:
         specifier: ^4.17.0
         version: 4.17.0(pg@8.23.0(pg-native@3.9.0))
-      pkg-pr-new:
-        specifier: ^0.0.88
-        version: 0.0.88
-      prettier:
-        specifier: ^3.9.6
-        version: 3.9.6
-      prettier-plugin-packagejson:
-        specifier: ^3.0.2
-        version: 3.0.2(prettier@3.9.6)
-      prettier-plugin-toml:
-        specifier: ^2.0.6
-        version: 2.0.6(prettier@3.9.6)
       redis:
         specifier: ^6.2.1
         version: 6.2.1(@opentelemetry/api@1.9.1)
@@ -186,9 +307,6 @@ importers:
       sql.js:
         specifier: ^1.14.2
         version: 1.14.2
-      standard-changelog:
-        specifier: ^7.0.1
-        version: 7.0.1(conventional-commits-filter@5.0.0)(conventional-commits-parser@6.4.0)
       testcontainers:
         specifier: ^11.14.0
         version: 11.14.0
@@ -203,118 +321,6 @@ importers:
         version: 8.69.0(eslint@10.9.1)(typescript@5.9.3)
     publishDirectory: build/package
 
-  packages/codemod:
-    dependencies:
-      jscodeshift:
-        specifier: ^17.4.0
-        version: 17.4.0
-      semver:
-        specifier: ^7.8.5
-        version: 7.8.5
-      tinyglobby:
-        specifier: ^0.2.17
-        version: 0.2.17
-    devDependencies:
-      '@eslint/js':
-        specifier: ^10.0.1
-        version: 10.0.1(eslint@10.9.1)
-      '@types/chai':
-        specifier: ^4.3.20
-        version: 4.3.20
-      '@types/jscodeshift':
-        specifier: ^17.3.0
-        version: 17.3.0
-      '@types/mocha':
-        specifier: ^10.0.10
-        version: 10.0.10
-      '@types/node':
-        specifier: ^20.19.43
-        version: 20.19.43
-      '@types/semver':
-        specifier: ^7.8.0
-        version: 7.8.0
-      '@types/sinon':
-        specifier: ^22.0.0
-        version: 22.0.0
-      c8:
-        specifier: ^11.0.0
-        version: 11.0.0
-      chai:
-        specifier: ^4.5.0
-        version: 4.5.0
-      eslint:
-        specifier: ^10.9.1
-        version: 10.9.1
-      eslint-plugin-chai-friendly:
-        specifier: ^1.2.1
-        version: 1.2.1(eslint@10.9.1)
-      mocha:
-        specifier: ^11.8.0
-        version: 11.8.0
-      prettier:
-        specifier: ^3.9.6
-        version: 3.9.6
-      sinon:
-        specifier: ^22.1.0
-        version: 22.1.0
-      ts-node:
-        specifier: ^10.9.2
-        version: 10.9.2(@types/node@20.19.43)(typescript@5.9.3)
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-      typescript-eslint:
-        specifier: ^8.69.0
-        version: 8.69.0(eslint@10.9.1)(typescript@5.9.3)
-
-  packages/legacy-naming-strategies:
-    devDependencies:
-      '@eslint/js':
-        specifier: ^10.0.1
-        version: 10.0.1(eslint@10.9.1)
-      '@tsconfig/node20':
-        specifier: ^20.1.10
-        version: 20.1.10
-      '@types/chai':
-        specifier: ^5.2.3
-        version: 5.2.3
-      '@types/mocha':
-        specifier: ^10.0.10
-        version: 10.0.10
-      '@types/node':
-        specifier: ^20.19.43
-        version: 20.19.43
-      c8:
-        specifier: ^11.0.0
-        version: 11.0.0
-      chai:
-        specifier: ^6.2.2
-        version: 6.2.2
-      eslint:
-        specifier: ^10.9.1
-        version: 10.9.1
-      eslint-plugin-chai-friendly:
-        specifier: ^1.2.1
-        version: 1.2.1(eslint@10.9.1)
-      mocha:
-        specifier: ^11.8.0
-        version: 11.8.0
-      prettier:
-        specifier: ^3.9.6
-        version: 3.9.6
-      ts-node:
-        specifier: ^10.9.2
-        version: 10.9.2(@types/node@20.19.43)(typescript@5.9.3)
-      typeorm:
-        specifier: workspace:*
-        version: link:../../build/package
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-      typescript-eslint:
-        specifier: ^8.69.0
-        version: 8.69.0(eslint@10.9.1)(typescript@5.9.3)
-
   playground:
     dependencies:
       sql.js:
@@ -325,7 +331,7 @@ importers:
         version: 10.9.2(@types/node@22.20.1)(typescript@5.9.3)
       typeorm:
         specifier: workspace:*
-        version: link:../build/package
+        version: link:../packages/typeorm/build/package
     devDependencies:
       '@types/node':
         specifier: ^22.18.6
@@ -4533,10 +4539,10 @@ snapshots:
       '@babel/generator': 7.29.8
       '@babel/helper-compilation-targets': 7.29.7
       '@babel/helper-module-transforms': 7.29.7(@babel/core@7.27.7)
-      '@babel/helpers': 7.27.6
+      '@babel/helpers': 7.29.7
       '@babel/parser': 7.29.8
       '@babel/template': 7.29.7
-      '@babel/traverse': 7.27.7
+      '@babel/traverse': 7.29.8
       '@babel/types': 7.29.8
       convert-source-map: 2.0.0
       debug: 4.4.3(supports-color@8.1.1)
@@ -5444,18 +5450,18 @@ snapshots:
 
   '@types/docker-modem@3.0.6':
     dependencies:
-      '@types/node': 20.19.43
+      '@types/node': 22.20.1
       '@types/ssh2': 1.15.5
 
   '@types/dockerode@4.0.1':
     dependencies:
       '@types/docker-modem': 3.0.6
-      '@types/node': 20.19.43
+      '@types/node': 22.20.1
       '@types/ssh2': 1.15.5
 
   '@types/duplexify@3.6.5':
     dependencies:
-      '@types/node': 20.19.43
+      '@types/node': 22.20.1
 
   '@types/emscripten@1.41.6': {}
 
@@ -5467,18 +5473,18 @@ snapshots:
 
   '@types/glob-stream@8.0.3':
     dependencies:
-      '@types/node': 20.19.43
+      '@types/node': 22.20.1
       '@types/picomatch': 4.0.3
       '@types/streamx': 2.9.5
 
   '@types/gulp-rename@2.0.7':
     dependencies:
-      '@types/node': 20.19.43
+      '@types/node': 22.20.1
       '@types/vinyl': 2.0.12
 
   '@types/gulp@4.0.18':
     dependencies:
-      '@types/node': 20.19.43
+      '@types/node': 22.20.1
       '@types/undertaker': 1.2.12
       '@types/vinyl-fs': 3.0.8
       chokidar: 3.6.0
@@ -5515,7 +5521,7 @@ snapshots:
   '@types/pumpify@1.4.5':
     dependencies:
       '@types/duplexify': 3.6.5
-      '@types/node': 20.19.43
+      '@types/node': 22.20.1
 
   '@types/readable-stream@4.0.24':
     dependencies:
@@ -5545,11 +5551,11 @@ snapshots:
 
   '@types/ssh2-streams@0.1.13':
     dependencies:
-      '@types/node': 20.19.43
+      '@types/node': 22.20.1
 
   '@types/ssh2@0.5.52':
     dependencies:
-      '@types/node': 20.19.43
+      '@types/node': 22.20.1
       '@types/ssh2-streams': 0.1.13
 
   '@types/ssh2@1.15.5':
@@ -5560,26 +5566,26 @@ snapshots:
 
   '@types/streamx@2.9.5':
     dependencies:
-      '@types/node': 20.19.43
+      '@types/node': 22.20.1
 
   '@types/undertaker-registry@1.0.4': {}
 
   '@types/undertaker@1.2.12':
     dependencies:
-      '@types/node': 20.19.43
+      '@types/node': 22.20.1
       '@types/undertaker-registry': 1.0.4
       async-done: 1.3.2
 
   '@types/vinyl-fs@3.0.8':
     dependencies:
       '@types/glob-stream': 8.0.3
-      '@types/node': 20.19.43
+      '@types/node': 22.20.1
       '@types/vinyl': 2.0.12
 
   '@types/vinyl@2.0.12':
     dependencies:
       '@types/expect': 1.20.4
-      '@types/node': 20.19.43
+      '@types/node': 22.20.1
 
   '@types/webidl-conversions@7.0.3': {}
 
@@ -6658,7 +6664,7 @@ snapshots:
   gcp-metadata@8.1.2:
     dependencies:
       gaxios: 7.3.1
-      google-logging-utils: 1.1.3
+      google-logging-utils: 1.2.0
       json-bigint: 1.0.0
     transitivePeerDependencies:
       - supports-color
@@ -7685,7 +7691,7 @@ snapshots:
       '@protobufjs/path': 1.1.2
       '@protobufjs/pool': 1.1.0
       '@protobufjs/utf8': 1.1.2
-      '@types/node': 20.19.43
+      '@types/node': 22.20.1
       long: 5.3.2
 
   pump@2.0.1:

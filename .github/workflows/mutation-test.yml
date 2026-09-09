@@ -5,6 +5,10 @@ on:
   schedule:
     - cron: "0 0 1 * *"
 
+defaults:
+  run:
+    working-directory: packages/typeorm
+
 jobs:
   mutation-testing:
     runs-on: ubuntu-latest
