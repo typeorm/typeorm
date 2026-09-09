@@ -35,12 +35,14 @@ import type {
     InsertOneResult,
     ListIndexesCursor,
     ListIndexesOptions,
+    OperationOptions,
     OrderedBulkOperation,
     UnorderedBulkOperation,
     UpdateFilter,
     UpdateOptions,
     UpdateResult,
     CountDocumentsOptions,
+    DropIndexesOptions,
 } from "../driver/mongodb/typings"
 import type { FindManyOptions } from "../find-options/FindManyOptions"
 
@@ -310,11 +312,16 @@ export class MongoRepository<
      * Index specifications are defined at http://docs.mongodb.org/manual/reference/command/createIndexes/.
      *
      * @param indexSpecs
+     * @param options
      */
-    createCollectionIndexes(indexSpecs: IndexDescription[]): Promise<string[]> {
+    createCollectionIndexes(
+        indexSpecs: IndexDescription[],
+        options?: CreateIndexesOptions,
+    ): Promise<string[]> {
         return this.manager.createCollectionIndexes(
             this.metadata.target,
             indexSpecs,
+            options,
         )
     }
 
@@ -383,9 +390,14 @@ export class MongoRepository<
 
     /**
      * Drops all indexes from the collection.
+     *
+     * @param options
      */
-    dropCollectionIndexes(): Promise<any> {
-        return this.manager.dropCollectionIndexes(this.metadata.tableName)
+    dropCollectionIndexes(options?: DropIndexesOptions): Promise<boolean> {
+        return this.manager.dropCollectionIndexes(
+            this.metadata.tableName,
+            options,
+        )
     }
 
     /**
@@ -456,11 +468,16 @@ export class MongoRepository<
      * Retrieve all the indexes on the collection.
      *
      * @param indexes
+     * @param options
      */
-    collectionIndexExists(indexes: string | string[]): Promise<boolean> {
+    collectionIndexExists(
+        indexes: string | string[],
+        options?: OperationOptions,
+    ): Promise<boolean> {
         return this.manager.collectionIndexExists(
             this.metadata.tableName,
             indexes,
+            options,
         )
     }
 
@@ -531,9 +548,11 @@ export class MongoRepository<
 
     /**
      * Returns if the collection is a capped collection.
+     *
+     * @param options
      */
-    isCapped(): Promise<any> {
-        return this.manager.isCapped(this.metadata.tableName)
+    isCapped(options?: OperationOptions): Promise<any> {
+        return this.manager.isCapped(this.metadata.tableName, options)
     }
 
     /**

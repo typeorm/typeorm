@@ -475,6 +475,8 @@ export class DataSource {
     /**
      * Wraps given function execution (and all operations made there) into a transaction.
      * All database operations must be executed using provided entity manager.
+     *
+     * MongoDB-specific transaction options can be passed by using `dataSource.mongoManager.transaction(options, callback)`.
      */
     async transaction<T>(
         runInTransaction: (entityManager: EntityManager) => Promise<T>,
@@ -487,10 +489,26 @@ export class DataSource {
         isolationOrRunInTransaction:
             IsolationLevel | ((entityManager: EntityManager) => Promise<T>),
         runInTransactionParam?: (entityManager: EntityManager) => Promise<T>,
-    ): Promise<any> {
+    ): Promise<T> {
+        const runInTransaction =
+            typeof isolationOrRunInTransaction === "function"
+                ? isolationOrRunInTransaction
+                : runInTransactionParam
+
+        if (!runInTransaction) {
+            throw new TypeORMError(
+                `Transaction method requires callback in second parameter if first parameter is supplied.`,
+            )
+        }
+
+        // MongoDB transactions does not specify isolationLevel. Transactions are configured through MongoDB TransactionOptions
+        if (typeof isolationOrRunInTransaction === "function") {
+            return this.manager.transaction(isolationOrRunInTransaction)
+        }
+
         return this.manager.transaction(
-            isolationOrRunInTransaction as any,
-            runInTransactionParam as any,
+            isolationOrRunInTransaction,
+            runInTransaction,
         )
     }
 

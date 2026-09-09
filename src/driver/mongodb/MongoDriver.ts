@@ -26,6 +26,7 @@ import type { IsolationLevel } from "../types/IsolationLevel"
 import type { UpsertType } from "../types/UpsertType"
 import type { MongoDataSourceOptions } from "./MongoDataSourceOptions"
 import { MongoQueryRunner } from "./MongoQueryRunner"
+import type { MongoClient } from "./typings"
 
 /**
  * Organizes communication with MongoDB.
@@ -55,10 +56,14 @@ export class MongoDriver implements Driver {
     mongodb: any
 
     /**
-     * Mongodb does not require to dynamically create query runner each time,
-     * because it does not have a regular connection pool as RDBMS systems have.
+     * Default query runner used by the global Mongo entity manager.
      */
     queryRunner?: MongoQueryRunner
+
+    /**
+     * Shared MongoDB client used by query runners.
+     */
+    databaseConnection?: MongoClient
 
     // -------------------------------------------------------------------------
     // Public Implemented Properties
@@ -247,6 +252,7 @@ export class MongoDriver implements Driver {
             this.buildConnectionOptions(options),
         )
 
+        this.databaseConnection = client
         this.queryRunner = new MongoQueryRunner(this.dataSource, client)
         ObjectUtils.assign(this.queryRunner, {
             manager: this.dataSource.manager,
@@ -267,6 +273,7 @@ export class MongoDriver implements Driver {
         }
 
         this.queryRunner = undefined
+        this.databaseConnection = undefined
         await queryRunner.databaseConnection.close()
     }
 
@@ -283,7 +290,11 @@ export class MongoDriver implements Driver {
      * @param mode
      */
     createQueryRunner(mode: ReplicationMode) {
-        return this.queryRunner!
+        if (!this.databaseConnection) {
+            throw new ConnectionIsNotSetError("mongodb")
+        }
+
+        return new MongoQueryRunner(this.dataSource, this.databaseConnection)
     }
 
     /**
