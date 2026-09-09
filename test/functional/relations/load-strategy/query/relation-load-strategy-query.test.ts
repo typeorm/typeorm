@@ -1,5 +1,6 @@
 import { expect } from "chai"
 import "reflect-metadata"
+import sinon from "sinon"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -455,6 +456,109 @@ describe("relations > load-strategy > query", () => {
 
                     for (const book of result?.books ?? []) {
                         expect(book.comments).to.be.undefined
+                    }
+                }),
+            ))
+    })
+
+    // https://github.com/typeorm/typeorm/issues/12775
+    describe("relation already joined by the main query", () => {
+        afterEach(() => sinon.restore())
+
+        const recordCommentQueries = (dataSource: DataSource) => {
+            const queries: string[] = []
+            sinon.stub(dataSource.logger, "logQuery").callsFake((query) => {
+                if (query.toLowerCase().includes("comment")) queries.push(query)
+            })
+            return queries
+        }
+
+        it("should not load the relation again when the query left-joins and selects it", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const { bookRepository } = await setupTestData(dataSource)
+
+                    const commentQueries = recordCommentQueries(dataSource)
+                    const books = await bookRepository
+                        .createQueryBuilder("book")
+                        .setFindOptions({ relationLoadStrategy: "query" })
+                        .leftJoinAndSelect("book.comments", "book__comments")
+                        .orderBy("book__comments.text", "ASC")
+                        .getMany()
+
+                    expect(commentQueries).to.have.length(1)
+                    expect(books).to.have.length(5)
+                    for (const book of books) {
+                        expect(book.comments).to.have.length(2)
+                        for (const comment of book.comments ?? []) {
+                            expect(comment.text).to.be.a("string")
+                        }
+                    }
+                }),
+            ))
+
+        it("should load the relation in full when the join carries an ON condition", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const { bookRepository } = await setupTestData(dataSource)
+
+                    const books = await bookRepository
+                        .createQueryBuilder("book")
+                        .setFindOptions({ relationLoadStrategy: "query" })
+                        .leftJoinAndSelect(
+                            "book.comments",
+                            "book__comments",
+                            "book__comments.text LIKE :text",
+                            { text: "%comment0" },
+                        )
+                        .getMany()
+
+                    expect(books).to.have.length(5)
+                    for (const book of books) {
+                        expect(book.comments).to.have.length(2)
+                    }
+                }),
+            ))
+
+        it("should load the relation in full when a where clause filters the joined alias", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const { bookRepository } = await setupTestData(dataSource)
+
+                    const books = await bookRepository
+                        .createQueryBuilder("book")
+                        .setFindOptions({ relationLoadStrategy: "query" })
+                        .leftJoinAndSelect("book.comments", "book__comments")
+                        .where("book__comments.text LIKE :text", {
+                            text: "%comment0",
+                        })
+                        .getMany()
+
+                    expect(books).to.have.length(5)
+                    for (const book of books) {
+                        expect(book.comments).to.have.length(2)
+                    }
+                }),
+            ))
+
+        it("should load the relation when the joined relation has eager relations of its own", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const { authorRepository } = await setupTestData(dataSource)
+
+                    const commentQueries = recordCommentQueries(dataSource)
+                    const authors = await authorRepository
+                        .createQueryBuilder("author")
+                        .setFindOptions({ relationLoadStrategy: "query" })
+                        .leftJoinAndSelect("author.books", "author__books")
+                        .getMany()
+
+                    expect(commentQueries).to.not.be.empty
+                    expect(authors).to.have.length(2)
+                    for (const author of authors) {
+                        for (const book of author.books) {
+                            expect(book.comments).to.have.length(2)
+                        }
                     }
                 }),
             ))
