@@ -59,6 +59,9 @@ The repository root holds the workspace configuration, the shared tooling
 `pnpm run package` and `pnpm run test` run from the root and delegate to
 `packages/typeorm`.
 
+If you have a pull request open that predates this layout, see
+[moving a pull request onto the packages/ layout](scripts/migrate-pr-to-packages-layout.md).
+
 ## Installing package dependencies
 
 Install all TypeORM dependencies by running this command:
