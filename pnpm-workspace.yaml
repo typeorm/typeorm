@@ -6,3 +6,4 @@
 # dependency tree, and it is built by its own workflow.
 packages:
     - "packages/*"
+    - "playground"
