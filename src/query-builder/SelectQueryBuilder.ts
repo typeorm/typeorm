@@ -2618,8 +2618,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         typeof orderBys[columnName] === "string"
                             ? orderBys[columnName]
                             : orderBys[columnName].order +
-                              " " +
-                              orderBys[columnName].nulls
+                              (orderBys[columnName].nulls
+                                  ? " " + orderBys[columnName].nulls
+                                  : "")
 
                     if (/[;'"\\]/.test(orderValue))
                         throw new TypeORMError(
