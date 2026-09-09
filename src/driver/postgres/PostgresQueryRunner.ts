@@ -1326,9 +1326,36 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        const oldColumnType =
+            oldColumn.type === "varchar"
+                ? "character varying"
+                : oldColumn.type === "char"
+                  ? "character"
+                  : oldColumn.type
+        const newColumnType =
+            newColumn.type === "varchar"
+                ? "character varying"
+                : newColumn.type === "char"
+                  ? "character"
+                  : newColumn.type
+        const isVarcharOrChar = ["character varying", "character"].includes(
+            newColumnType,
+        )
+        const canAlterLength =
+            oldColumn.length !== newColumn.length &&
+            oldColumnType === newColumnType &&
+            isVarcharOrChar &&
+            oldColumn.collation === newColumn.collation &&
+            !oldColumn.isArray &&
+            !newColumn.isArray &&
+            oldColumn.precision === newColumn.precision &&
+            oldColumn.scale === newColumn.scale &&
+            oldColumn.generatedType !== "STORED" &&
+            newColumn.generatedType !== "STORED"
+
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
+            (oldColumn.type !== newColumn.type && !canAlterLength) ||
+            (oldColumn.length !== newColumn.length && !canAlterLength) ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1342,6 +1369,28 @@ export class PostgresQueryRunner
             // update cloned table
             clonedTable = table.clone()
         } else {
+            if (canAlterLength) {
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            oldColumn.name
+                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
+                            oldColumn.name
+                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                    ),
+                )
+
+                const clonedColumn = clonedTable.columns.find(
+                    (column) => column.name === oldColumn.name,
+                )
+                if (clonedColumn) clonedColumn.length = newColumn.length
+            }
+
             if (oldColumn.name !== newColumn.name) {
                 // rename column
                 upQueries.push(
