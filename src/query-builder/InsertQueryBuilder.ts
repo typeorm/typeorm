@@ -923,6 +923,17 @@ export class InsertQueryBuilder<
 
             return expression
         } else {
+            // If the main alias actually has metadata but no columns passed the
+            // insertable filter (e.g. every column is marked `isInsert: false`,
+            // which is now the default for generated expression columns), we
+            // must not fall back to `Object.keys(valueSet)`: doing so would
+            // smuggle non-insertable columns into the generated SQL. Returning
+            // an empty values expression lets `createInsertExpression` render
+            // the correct driver-specific `DEFAULT VALUES` / `VALUES ()` form.
+            if (this.expressionMap.mainAlias!.hasMetadata) {
+                return ""
+            }
+
             // for tables without metadata
             // get values needs to be inserted
             let expression = ""
