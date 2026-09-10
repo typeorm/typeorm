@@ -730,7 +730,20 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * @param statement
      */
     protected replacePropertyNamesForTheWholeQuery(statement: string) {
-        const replacements: { [key: string]: { [key: string]: string } } = {}
+        const replacements: {
+            [key: string]: {
+                [key: string]:
+                    string | { virtualQuery: (alias: string) => string }
+            }
+        } = {}
+
+        // A virtual column (VirtualColumn decorator) has no real database column to
+        // point at, so instead of a plain database name we replace it with its SQL
+        // expression, wrapped in parens so it composes safely inside larger expressions.
+        const replacementFor = (column: ColumnMetadata) =>
+            column.isVirtualProperty && column.query
+                ? { virtualQuery: column.query }
+                : column.databaseName
 
         for (const alias of this.expressionMap.aliases) {
             if (!alias.hasMetadata) continue
@@ -775,17 +788,17 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
             for (const column of alias.metadata.columns) {
                 replacements[replaceAliasNamePrefix][column.databaseName] =
-                    column.databaseName
+                    replacementFor(column)
             }
 
             for (const column of alias.metadata.columns) {
                 replacements[replaceAliasNamePrefix][column.propertyName] =
-                    column.databaseName
+                    replacementFor(column)
             }
 
             for (const column of alias.metadata.columns) {
                 replacements[replaceAliasNamePrefix][column.propertyPath] =
-                    column.databaseName
+                    replacementFor(column)
             }
         }
 
@@ -816,18 +829,35 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         pre = matches[1]
                         p = matches[3]
 
-                        if (replacements[matches[2]][p]) {
-                            return `${pre}${this.escape(
-                                matches[2].slice(0, -1),
-                            )}.${this.escape(replacements[matches[2]][p])}`
+                        const replacement = replacements[matches[2]][p]
+                        if (replacement) {
+                            const aliasName = matches[2].slice(0, -1)
+                            if (typeof replacement === "string") {
+                                return `${pre}${this.escape(
+                                    aliasName,
+                                )}.${this.escape(replacement)}`
+                            }
+                            return `${pre}(${replacement.virtualQuery(
+                                this.escape(aliasName),
+                            )})`
                         }
                     } else {
                         match = matches[0]
                         pre = matches[1]
                         p = matches[2]
 
-                        if (replacements[""][p]) {
-                            return `${pre}${this.escape(replacements[""][p])}`
+                        const replacement = replacements[""][p]
+                        if (replacement) {
+                            if (typeof replacement === "string") {
+                                return `${pre}${this.escape(replacement)}`
+                            }
+                            // Alias prefixing is off (single-table query), but a
+                            // virtual column's query() still needs an alias to
+                            // qualify its own SQL expression with.
+                            const aliasName = this.expressionMap.mainAlias?.name
+                            return `${pre}(${replacement.virtualQuery(
+                                aliasName ? this.escape(aliasName) : "",
+                            )})`
                         }
                     }
                     return match
