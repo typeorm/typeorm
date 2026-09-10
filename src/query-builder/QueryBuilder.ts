@@ -737,9 +737,6 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             }
         } = {}
 
-        // A virtual column (VirtualColumn decorator) has no real database column to
-        // point at, so instead of a plain database name we replace it with its SQL
-        // expression, wrapped in parens so it composes safely inside larger expressions.
         const replacementFor = (column: ColumnMetadata) =>
             column.isVirtualProperty && column.query
                 ? { virtualQuery: column.query }
@@ -851,12 +848,9 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                             if (typeof replacement === "string") {
                                 return `${pre}${this.escape(replacement)}`
                             }
-                            // Alias prefixing is off (single-table query), but a
-                            // virtual column's query() still needs an alias to
-                            // qualify its own SQL expression with.
                             const aliasName = this.expressionMap.mainAlias?.name
                             return `${pre}(${replacement.virtualQuery(
-                                aliasName ? this.escape(aliasName) : "",
+                                aliasName ? this.getTableName(aliasName) : "",
                             )})`
                         }
                     }

@@ -369,6 +369,8 @@ export class Employee extends BaseEntity {
 }
 ```
 
+A virtual column can be referenced in `where()`/`andWhere()`, both as a raw condition (`.where("company.totalEmployeesCount > 2")`) and as part of an object-style condition (`.where({ totalEmployeesCount: MoreThan(2) })`) — TypeORM expands it to its underlying SQL expression in both cases. Ordering by a virtual column defined on a _joined_ relation (as opposed to the query's own root entity) is not supported yet.
+
 ## Relation decorators
 
 #### `@OneToOne`

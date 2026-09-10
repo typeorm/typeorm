@@ -152,6 +152,30 @@ describe("column > virtual columns", () => {
             expect(query).to.equal(expectedQuery)
         }))
 
+    it("should qualify a virtual column reference correctly for a schema-qualified delete/update table", () =>
+        dataSources.map((dataSource) => {
+            const metadata = dataSource.getMetadata(Company)
+            const originalTablePath = metadata.tablePath
+            metadata.tablePath = "myschema.companies"
+
+            try {
+                const query = dataSource
+                    .createQueryBuilder()
+                    .delete()
+                    .from(Company)
+                    .where("totalEmployeesCount > 2")
+                    .getSql()
+
+                let expectedQuery = `DELETE FROM "myschema"."companies" WHERE (SELECT COUNT("name") FROM "employees" WHERE "companyName" = "myschema"."companies"."name") > 2`
+                if (DriverUtils.isMySQLFamily(dataSource.driver)) {
+                    expectedQuery = expectedQuery.replaceAll('"', "`")
+                }
+                expect(query).to.equal(expectedQuery)
+            } finally {
+                metadata.tablePath = originalTablePath
+            }
+        }))
+
     it("should not generate sub-select if column is not selected", () =>
         dataSources.map((dataSource) => {
             const options: FindManyOptions<Company> = {
@@ -306,11 +330,7 @@ describe("column > virtual columns", () => {
                     .leftJoin("employee.timesheets", "timesheet")
                     .where("company.name = :name", { name: companyName })
                     .andWhere("company.totalEmployeesCount > 2")
-                    // ordering by a virtual column reached through a relation (as
-                    // opposed to a virtual column on the query's own root alias,
-                    // which andWhere above demonstrates) is still not supported —
-                    // you'll have to make your subquery a function that gets added
-                    // to the query builder instead.
+                    // ordering by a relation's virtual column is still unsupported
                     //.orderBy({
                     //    "employees.timesheets.id": "DESC",
                     //    //"employees.timesheets.totalActivityHours": "ASC",
