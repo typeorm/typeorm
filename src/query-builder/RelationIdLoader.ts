@@ -294,7 +294,9 @@ export class RelationIdLoader {
                     mainAlias +
                     "." +
                     columns[0].propertyPath +
-                    " IN (:...values1)" // todo: use ANY for postgres
+                    (DriverUtils.isPostgresFamily(this.dataSource.driver)
+                        ? " = ANY(:values1)"
+                        : " IN (:...values1)")
             }
         } else {
             condition1 =
@@ -350,7 +352,9 @@ export class RelationIdLoader {
                         mainAlias +
                         "." +
                         inverseColumns[0].propertyPath +
-                        " IN (:...values2)" // todo: use ANY for postgres
+                        (DriverUtils.isPostgresFamily(this.dataSource.driver)
+                            ? " = ANY(:values2)"
+                            : " IN (:...values2)")
                 }
             } else {
                 condition2 =
@@ -544,7 +548,9 @@ export class RelationIdLoader {
                     mainAlias +
                     "." +
                     relation.entityMetadata.primaryColumns[0].propertyPath +
-                    " IN (:...values)" // todo: use ANY for postgres
+                    (DriverUtils.isPostgresFamily(this.dataSource.driver)
+                        ? " = ANY(:values)"
+                        : " IN (:...values)")
             }
         } else {
             condition = entities
@@ -707,7 +713,9 @@ export class RelationIdLoader {
                     mainAlias +
                     "." +
                     relation.joinColumns[0].propertyPath +
-                    " IN (:...values)" // todo: use ANY for postgres
+                    (DriverUtils.isPostgresFamily(this.dataSource.driver)
+                        ? " = ANY(:values)"
+                        : " IN (:...values)")
             }
         } else {
             condition = entities
