@@ -4631,6 +4631,33 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             }
                         }
                     } else {
+                        // A primitive (e.g. `findBy(Post, { author: 1 })`)
+                        // would join the relation with no predicate and
+                        // return every row — reject it. Booleans keep the
+                        // pre-existing join shorthand behavior (#12712).
+                        if (
+                            typeof where[key] !== "object" &&
+                            typeof where[key] !== "boolean"
+                        ) {
+                            const primaryColumns =
+                                relation.inverseEntityMetadata.primaryColumns
+                            const pkHint =
+                                primaryColumns.length === 1
+                                    ? `{ ${key}: { ${
+                                          primaryColumns[0].propertyName
+                                      }: <value> } }`
+                                    : `{ ${key}: { ${primaryColumns
+                                          .map(
+                                              (column) =>
+                                                  `${column.propertyName}: <value>`,
+                                          )
+                                          .join(", ")} } }`
+                            throw new TypeORMError(
+                                `Invalid value encountered in property '${alias}.${key}' of a where condition. ` +
+                                    `To filter by the relation's primary key use the nested form ` +
+                                    `${pkHint}.`,
+                            )
+                        }
                         // const joinAlias = alias + "_" + relation.propertyName;
                         let joinAlias =
                             alias +
