@@ -4630,6 +4630,39 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                                 )
                             }
                         }
+                    } else if (
+                        typeof where[key] !== "object" ||
+                        where[key] === null
+                    ) {
+                        // Primitive shorthand under a relation key, e.g.
+                        // `{ author: 1 }`. The nested-object branch below would
+                        // push a join and recurse into a primitive, which
+                        // iterates no keys and silently drops the predicate —
+                        // returning every row. Owning sides filter on the join
+                        // column instead (same path as FindOperator equality).
+                        if (
+                            relation.isManyToOne ||
+                            (relation.isOneToOne &&
+                                relation.isOneToOneOwner)
+                        ) {
+                            const aliasPath = `${alias}.${propertyPath}`
+                            andConditions.push(
+                                this.createWhereConditionExpression(
+                                    this.getWherePredicateCondition(
+                                        aliasPath,
+                                        where[key],
+                                    ),
+                                ),
+                            )
+                            continue
+                        }
+
+                        throw new TypeORMError(
+                            `Unexpected primitive value for relation '${alias}.${key}' in a where condition. ` +
+                                `Use { ${key}: { id: value } } for collection relations ` +
+                                `(one-to-many / many-to-many); a bare primary key is only supported ` +
+                                `on many-to-one and owning one-to-one relations.`,
+                        )
                     } else {
                         // const joinAlias = alias + "_" + relation.propertyName;
                         let joinAlias =

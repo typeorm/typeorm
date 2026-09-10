@@ -726,4 +726,60 @@ describe("find options > where", () => {
                 ])
             }),
         ))
+
+    // #12712 — a bare primitive under a relation key must filter by the
+    // owning join column, not silently drop the predicate and return all rows.
+    it("where many-to-one relation primitive primary key", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
+
+                const posts = await dataSource.manager.findBy(Post, {
+                    author: 1,
+                } as any)
+                posts.map((post) => post.id).sort().should.be.eql([1, 2])
+
+                const nested = await dataSource.manager.findBy(Post, {
+                    author: { id: 1 },
+                })
+                nested.map((post) => post.id).sort().should.be.eql([1, 2])
+            }),
+        ))
+
+    it("where many-to-one relation primitive is equivalent to nested id", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
+
+                const shorthand = await dataSource
+                    .createQueryBuilder(Post, "post")
+                    .setFindOptions({
+                        where: { author: 2 } as any,
+                    })
+                    .getMany()
+
+                const nested = await dataSource
+                    .createQueryBuilder(Post, "post")
+                    .setFindOptions({
+                        where: { author: { id: 2 } },
+                    })
+                    .getMany()
+
+                shorthand.map((p) => p.id).should.be.eql(nested.map((p) => p.id))
+                shorthand.map((p) => p.id).should.be.eql([3])
+            }),
+        ))
+
+    it("where one-to-many relation primitive throws a clear error", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
+
+                await dataSource.manager
+                    .findBy(Author, {
+                        photos: 1,
+                    } as any)
+                    .should.be.rejectedWith(TypeORMError, /primitive value for relation/)
+            }),
+        ))
 })
