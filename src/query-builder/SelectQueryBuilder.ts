@@ -3617,7 +3617,11 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             mainAliasName +
                             "." +
                             metadata.primaryColumns[0].propertyPath +
-                            " IN (:...orm_distinct_ids)"
+                            (DriverUtils.isPostgresFamily(
+                                this.dataSource.driver,
+                            )
+                                ? " = ANY(:orm_distinct_ids)"
+                                : " IN (:...orm_distinct_ids)")
                     }
                 }
                 rawResults = await this.clone()
