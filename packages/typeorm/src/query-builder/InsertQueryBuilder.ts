@@ -1496,7 +1496,11 @@ export class InsertQueryBuilder<
                       this.escape(metadata.discriminatorColumn.databaseName)
                     : this.escape(metadata.discriminatorColumn.databaseName)
 
-                const condition = `${column} IN (:...discriminatorColumnValues)`
+                const condition = DriverUtils.isPostgresFamily(
+                    this.dataSource.driver,
+                )
+                    ? `${column} = ANY(:discriminatorColumnValues)`
+                    : `${column} IN (:...discriminatorColumnValues)`
                 conditionsArray.push(condition)
             }
         }
