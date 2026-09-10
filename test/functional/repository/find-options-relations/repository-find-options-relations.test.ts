@@ -11,6 +11,7 @@ import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 import { Photo } from "./entity/Photo"
 import { Counters } from "./entity/Counters"
+import { TypeORMError } from "../../../../src/error"
 import { EntityPropertyNotFoundError } from "../../../../src/error/EntityPropertyNotFoundError"
 
 describe("repository > find options > relations", () => {
@@ -549,6 +550,27 @@ describe("repository > find options > relations", () => {
                     .should.eventually.be.rejectedWith(
                         EntityPropertyNotFoundError,
                     )
+            }),
+        ))
+
+    it("should throw error when a primitive value is passed for a relation in findBy", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+
+                // passing a primitive (number) for a relation should throw a clear error
+                // instead of silently ignoring the condition and returning all rows
+                // issue #12712
+                try {
+                    await postRepository.findBy({ user: 1 } as any)
+                    expect.fail("Expected findBy with primitive relation value to throw")
+                } catch (error) {
+                    expect(error).to.be.instanceOf(TypeORMError)
+                    expect((error as Error).message).to.include(
+                        "Invalid value for relation property",
+                    )
+                    expect((error as Error).message).to.include("user")
+                }
             }),
         ))
 })
