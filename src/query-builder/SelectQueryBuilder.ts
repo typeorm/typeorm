@@ -4630,40 +4630,26 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                                 )
                             }
                         }
-                    } else if (
-                        typeof where[key] !== "object" ||
-                        where[key] === null
-                    ) {
-                        // Primitive shorthand under a relation key, e.g.
-                        // `{ author: 1 }`. The nested-object branch below would
-                        // push a join and recurse into a primitive, which
-                        // iterates no keys and silently drops the predicate —
-                        // returning every row. Owning sides filter on the join
-                        // column instead (same path as FindOperator equality).
+                    } else {
+                        // Boolean `true` is the documented "join this relation"
+                        // form. Nested objects recurse as relation criteria.
+                        // Any other primitive previously pushed a join and
+                        // recursed on a non-object, which iterates no keys and
+                        // silently dropped the predicate — returning every
+                        // row (#12712).
                         if (
-                            relation.isManyToOne ||
-                            (relation.isOneToOne &&
-                                relation.isOneToOneOwner)
+                            where[key] !== true &&
+                            (typeof where[key] !== "object" ||
+                                where[key] === null)
                         ) {
-                            const aliasPath = `${alias}.${propertyPath}`
-                            andConditions.push(
-                                this.createWhereConditionExpression(
-                                    this.getWherePredicateCondition(
-                                        aliasPath,
-                                        where[key],
-                                    ),
-                                ),
+                            throw new TypeORMError(
+                                `Unexpected primitive value for relation '${alias}.${key}' in a where condition. ` +
+                                    `Relation criteria must be a nested object, FindOperator, boolean, or null — ` +
+                                    `for example { ${key}: { id: value } }. ` +
+                                    `A bare primary key is not supported on relation properties.`,
                             )
-                            continue
                         }
 
-                        throw new TypeORMError(
-                            `Unexpected primitive value for relation '${alias}.${key}' in a where condition. ` +
-                                `Use { ${key}: { id: value } } for collection relations ` +
-                                `(one-to-many / many-to-many); a bare primary key is only supported ` +
-                                `on many-to-one and owning one-to-one relations.`,
-                        )
-                    } else {
                         // const joinAlias = alias + "_" + relation.propertyName;
                         let joinAlias =
                             alias +

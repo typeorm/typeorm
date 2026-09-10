@@ -727,46 +727,27 @@ describe("find options > where", () => {
             }),
         ))
 
-    // #12712 — a bare primitive under a relation key must filter by the
-    // owning join column, not silently drop the predicate and return all rows.
-    it("where many-to-one relation primitive primary key", () =>
+    // #12712 — a bare primitive under a relation key must not silently drop
+    // the predicate and return every row.
+    it("where many-to-one relation primitive primary key throws", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 await prepareData(dataSource.manager)
 
-                const posts = await dataSource.manager.findBy(Post, {
-                    author: 1,
-                } as any)
-                posts.map((post) => post.id).sort().should.be.eql([1, 2])
+                await dataSource.manager
+                    .findBy(Post, {
+                        author: 1,
+                    } as any)
+                    .should.be.rejectedWith(
+                        TypeORMError,
+                        /Unexpected primitive value for relation/,
+                    )
 
+                // documented nested form still works
                 const nested = await dataSource.manager.findBy(Post, {
                     author: { id: 1 },
                 })
                 nested.map((post) => post.id).sort().should.be.eql([1, 2])
-            }),
-        ))
-
-    it("where many-to-one relation primitive is equivalent to nested id", () =>
-        Promise.all(
-            dataSources.map(async (dataSource) => {
-                await prepareData(dataSource.manager)
-
-                const shorthand = await dataSource
-                    .createQueryBuilder(Post, "post")
-                    .setFindOptions({
-                        where: { author: 2 } as any,
-                    })
-                    .getMany()
-
-                const nested = await dataSource
-                    .createQueryBuilder(Post, "post")
-                    .setFindOptions({
-                        where: { author: { id: 2 } },
-                    })
-                    .getMany()
-
-                shorthand.map((p) => p.id).should.be.eql(nested.map((p) => p.id))
-                shorthand.map((p) => p.id).should.be.eql([3])
             }),
         ))
 
@@ -779,7 +760,10 @@ describe("find options > where", () => {
                     .findBy(Author, {
                         photos: 1,
                     } as any)
-                    .should.be.rejectedWith(TypeORMError, /primitive value for relation/)
+                    .should.be.rejectedWith(
+                        TypeORMError,
+                        /Unexpected primitive value for relation/,
+                    )
             }),
         ))
 })
