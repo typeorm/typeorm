@@ -730,7 +730,22 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * @param statement
      */
     protected replacePropertyNamesForTheWholeQuery(statement: string) {
-        const replacements: { [key: string]: { [key: string]: string } } = {}
+        // A replacement is either the database name of a regular column, or, for
+        // computed `@VirtualColumn`s, the SQL expression that has to be inlined
+        // in place of the (non-existent) physical column.
+        type ColumnReplacement =
+            | string
+            | { virtualQuery: (alias: string) => string }
+        const replacements: {
+            [key: string]: { [key: string]: ColumnReplacement }
+        } = {}
+
+        const getColumnReplacement = (
+            column: ColumnMetadata,
+        ): ColumnReplacement =>
+            column.isVirtualProperty && column.query
+                ? { virtualQuery: column.query }
+                : column.databaseName
 
         for (const alias of this.expressionMap.aliases) {
             if (!alias.hasMetadata) continue
@@ -775,17 +790,17 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
             for (const column of alias.metadata.columns) {
                 replacements[replaceAliasNamePrefix][column.databaseName] =
-                    column.databaseName
+                    getColumnReplacement(column)
             }
 
             for (const column of alias.metadata.columns) {
                 replacements[replaceAliasNamePrefix][column.propertyName] =
-                    column.databaseName
+                    getColumnReplacement(column)
             }
 
             for (const column of alias.metadata.columns) {
                 replacements[replaceAliasNamePrefix][column.propertyPath] =
-                    column.databaseName
+                    getColumnReplacement(column)
             }
         }
 
@@ -810,27 +825,41 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     "gm",
                 ),
                 (...matches) => {
-                    let match: string, pre: string, p: string
+                    let match: string, pre: string, p: string, prefixKey: string
                     if (replaceAliasNamePrefixes) {
                         match = matches[0]
                         pre = matches[1]
+                        prefixKey = matches[2]
                         p = matches[3]
-
-                        if (replacements[matches[2]][p]) {
-                            return `${pre}${this.escape(
-                                matches[2].slice(0, -1),
-                            )}.${this.escape(replacements[matches[2]][p])}`
-                        }
                     } else {
                         match = matches[0]
                         pre = matches[1]
+                        prefixKey = ""
                         p = matches[2]
-
-                        if (replacements[""][p]) {
-                            return `${pre}${this.escape(replacements[""][p])}`
-                        }
                     }
-                    return match
+
+                    const replacement = replacements[prefixKey][p]
+                    if (!replacement) {
+                        return match
+                    }
+
+                    // Computed `@VirtualColumn`s have no physical column to
+                    // reference, so inline their SQL expression instead.
+                    if (typeof replacement !== "string") {
+                        const escapedAlias = prefixKey
+                            ? this.escape(prefixKey.slice(0, -1))
+                            : ""
+                        return `${pre}(${replacement.virtualQuery(
+                            escapedAlias,
+                        )})`
+                    }
+
+                    if (prefixKey) {
+                        return `${pre}${this.escape(
+                            prefixKey.slice(0, -1),
+                        )}.${this.escape(replacement)}`
+                    }
+                    return `${pre}${this.escape(replacement)}`
                 },
             )
         }
