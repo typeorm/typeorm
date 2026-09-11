@@ -45,7 +45,7 @@ export class CacheClearCommand implements yargs.CommandModule {
             }
 
             await dataSource.queryResultCache.clear()
-            console.log(ansi.green`Cache was successfully cleared`)
+            PlatformTools.log(ansi.green`Cache was successfully cleared`)
 
             await dataSource.destroy()
         } catch (err) {
