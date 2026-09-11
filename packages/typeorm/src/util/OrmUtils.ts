@@ -252,16 +252,21 @@ export class OrmUtils {
                 return firstId.id === secondId.id
             }
             // Types differ (one string, one number): bridge the driver's
-            // number->string coercion, but only when the numeric side is a safe
-            // integer. Beyond Number.MAX_SAFE_INTEGER a JS number can no longer
-            // represent a bigint exactly, so String(number) may round to and
-            // wrongly match a different bigint string; NaN and Infinity are
-            // likewise never valid ids (Number.isSafeInteger excludes all of
-            // these). In those cases we cannot trust the coercion, so decline
-            // to fast-match rather than risk a false positive.
+            // number->string coercion, but only when String(number) can be
+            // trusted to represent the value faithfully:
+            //   - NaN and Infinity are never valid ids.
+            //   - An integer beyond Number.MAX_SAFE_INTEGER has already lost
+            //     precision, so it could stringify to and wrongly match a
+            //     *different* bigint string.
+            // Finite non-integers (e.g. a decimal id such as 1.5) stringify
+            // faithfully and must still match their string form, otherwise the
+            // #11773 failure mode reappears for decimal keys returned as
+            // strings.
             const numericId =
                 typeof firstId.id === "number" ? firstId.id : secondId.id
-            if (!Number.isSafeInteger(numericId)) return false
+            if (!Number.isFinite(numericId)) return false
+            if (Number.isInteger(numericId) && !Number.isSafeInteger(numericId))
+                return false
             return String(firstId.id) === String(secondId.id)
         }
 

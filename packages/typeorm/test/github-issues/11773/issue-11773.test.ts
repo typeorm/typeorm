@@ -33,7 +33,6 @@ describe("github issues > #11773 cascade nulls FK for bigint relations on parent
             dataSources.map(async (dataSource) => {
                 const manager = dataSource.manager
 
-                // Seed a parent with one child (cascade insert).
                 const parent = new Parent()
                 parent.id = 1
                 const child = new Child()
@@ -55,7 +54,6 @@ describe("github issues > #11773 cascade nulls FK for bigint relations on parent
 
                 const reloadedChild = await manager.findOneBy(Child, { id: 1 })
                 expect(reloadedChild).to.not.be.null
-                // Regression: parentId was NULL here before the fix.
                 expect(reloadedChild!.parentId).to.not.be.null
                 expect(String(reloadedChild!.parentId)).to.equal("1")
             }),
