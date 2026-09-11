@@ -4644,9 +4644,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         ) {
                             throw new TypeORMError(
                                 `Unexpected primitive value for relation '${alias}.${key}' in a where condition. ` +
-                                    `Relation criteria must be a nested object, FindOperator, boolean, or null — ` +
-                                    `for example { ${key}: { id: value } }. ` +
-                                    `A bare primary key is not supported on relation properties.`,
+                                    `Use nested relation criteria such as ` +
+                                    `{ ${key}: { ${relation.inverseEntityMetadata.primaryColumns
+                                        .map((c) => `${c.propertyName}: value`)
+                                        .join(", ")} } } ` +
+                                    `instead of a bare value. ` +
+                                    `Boolean true (join-only) and FindOperator remain supported.`,
                             )
                         }
 
