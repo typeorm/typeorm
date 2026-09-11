@@ -37,6 +37,7 @@ jobs:
 
             src: &src
               - *package-json
+              - packages/typeorm/package.json
               - packages/typeorm/extra/**/*.js
               - packages/typeorm/src/**/*.ts
               - packages/typeorm/gulpfile.ts
@@ -63,6 +64,7 @@ jobs:
 
             codemod:
               - pnpm-lock.yaml
+              - pnpm-workspace.yaml
               - packages/codemod/**/*
 
             legacy-naming-strategies:
