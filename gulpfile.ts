@@ -95,8 +95,20 @@ async function nodeCreateEsmIndex() {
 async function copyPackageFile() {
     const pkg = JSON.parse(await fs.readFile("./package.json", "utf8"))
 
-    // Preserve devDependencies used by `typeorm init` to generate project package.json
-    const initDevDeps = ["@types/node", "ts-node", "typescript"]
+    // Preserve devDependencies used by `typeorm init` to generate project package.json,
+    // including the database drivers it pins for the selected `--database`
+    const initDevDeps = [
+        "@google-cloud/spanner",
+        "@types/node",
+        "better-sqlite3",
+        "mongodb",
+        "mssql",
+        "mysql2",
+        "oracledb",
+        "pg",
+        "ts-node",
+        "typescript",
+    ]
     pkg.devDependencies = Object.fromEntries(
         initDevDeps
             .filter((dep) => dep in (pkg.devDependencies ?? {}))
