@@ -194,7 +194,7 @@ Each driver in `packages/typeorm/src/driver/` implements common interfaces:
 
 - **Build**: `pnpm run compile` - Compiles TypeScript to `packages/typeorm/build/compiled/`
 - **Package**: `pnpm run package` - Creates distribution in `packages/typeorm/build/package/`
-- **Pack**: `pnpm pack` - Creates `.tgz` file in `packages/typeorm/build/`
+- **Pack**: `cd packages/typeorm/build/package && pnpm pack` - Creates the `.tgz` file in that directory
 - **Test**: `pnpm run test` - Compile and run all tests
 - **Lint**: `pnpm run lint` - Run ESLint
 - **Format**: `pnpm run format` - Run Prettier

@@ -106,7 +106,7 @@ To build the distribution package of TypeORM packed into a `.tgz`, run:
 cd packages/typeorm/build/package && pnpm pack
 ```
 
-This command will generate a distribution package tar in the `packages/typeorm/build` directory (`packages/typeorm/build/typeorm-x.x.x.tgz`).
+This command will generate a distribution package tar in that same directory (`packages/typeorm/build/package/typeorm-x.x.x.tgz`).
 You can copy this tar into your project and run `npm install ./typeorm-x.x.x.tgz` to bundle your build of TypeORM in your project.
 
 ## Running Tests Locally
