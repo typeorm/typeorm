@@ -4631,12 +4631,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             }
                         }
                     } else {
-                        // Boolean `true` is the documented "join this relation"
-                        // form. Nested objects recurse as relation criteria.
-                        // Any other primitive previously pushed a join and
-                        // recursed on a non-object, which iterates no keys and
-                        // silently dropped the predicate — returning every
-                        // row (#12712).
+                        // `true` = join-only (documented). Nested objects recurse.
                         if (
                             where[key] !== true &&
                             (typeof where[key] !== "object" ||
