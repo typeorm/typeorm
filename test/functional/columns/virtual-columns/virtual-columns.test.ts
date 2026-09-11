@@ -123,6 +123,75 @@ describe("column > virtual columns", () => {
             expect(query).to.include(expectedQuery2)
         }))
 
+    it("should expand a virtual column referenced in a raw where/andWhere condition", () =>
+        dataSources.map((dataSource) => {
+            const query = dataSource
+                .createQueryBuilder(Company, "company")
+                .where("company.totalEmployeesCount > 2")
+                .getSql()
+
+            let expectedQuery = `SELECT "company"."name" AS "company_name", (SELECT COUNT("name") FROM "employees" WHERE "companyName" = "company"."name") AS "company_totalEmployeesCount" FROM "companies" "company" WHERE (SELECT COUNT("name") FROM "employees" WHERE "companyName" = "company"."name") > 2`
+            if (DriverUtils.isMySQLFamily(dataSource.driver)) {
+                expectedQuery = expectedQuery.replaceAll('"', "`")
+            }
+            expect(query).to.equal(expectedQuery)
+        }))
+
+    it("should expand a virtual column referenced in a raw where condition alongside an existing join", () =>
+        dataSources.map((dataSource) => {
+            const query = dataSource
+                .createQueryBuilder(Company, "company")
+                .leftJoin("company.employees", "employee")
+                .where("company.totalEmployeesCount > 2")
+                .getSql()
+
+            let expectedQuery = `SELECT "company"."name" AS "company_name", (SELECT COUNT("name") FROM "employees" WHERE "companyName" = "company"."name") AS "company_totalEmployeesCount" FROM "companies" "company" LEFT JOIN "employees" "employee" ON "employee"."companyName"="company"."name" WHERE (SELECT COUNT("name") FROM "employees" WHERE "companyName" = "company"."name") > 2`
+            if (DriverUtils.isMySQLFamily(dataSource.driver)) {
+                expectedQuery = expectedQuery.replaceAll('"', "`")
+            }
+            expect(query).to.equal(expectedQuery)
+        }))
+
+    it("should qualify a virtual column reference correctly for a schema-qualified delete/update table", () =>
+        dataSources.map((dataSource) => {
+            const metadata = dataSource.getMetadata(Company)
+            const originalTablePath = metadata.tablePath
+            metadata.tablePath = "myschema.companies"
+
+            try {
+                const query = dataSource
+                    .createQueryBuilder()
+                    .delete()
+                    .from(Company)
+                    .where("totalEmployeesCount > 2")
+                    .getSql()
+
+                let expectedQuery = `DELETE FROM "myschema"."companies" WHERE (SELECT COUNT("name") FROM "employees" WHERE "companyName" = "myschema"."companies"."name") > 2`
+                if (DriverUtils.isMySQLFamily(dataSource.driver)) {
+                    expectedQuery = expectedQuery.replaceAll('"', "`")
+                }
+                expect(query).to.equal(expectedQuery)
+            } finally {
+                metadata.tablePath = originalTablePath
+            }
+        }))
+
+    it("should qualify a virtual column reference against the real table, not an explicit custom alias, for delete/update queries", () =>
+        dataSources.map((dataSource) => {
+            const query = dataSource
+                .createQueryBuilder()
+                .delete()
+                .from(Company, "u")
+                .where("totalEmployeesCount > 2")
+                .getSql()
+
+            let expectedQuery = `DELETE FROM "companies" WHERE (SELECT COUNT("name") FROM "employees" WHERE "companyName" = "companies"."name") > 2`
+            if (DriverUtils.isMySQLFamily(dataSource.driver)) {
+                expectedQuery = expectedQuery.replaceAll('"', "`")
+            }
+            expect(query).to.equal(expectedQuery)
+        }))
+
     it("should not generate sub-select if column is not selected", () =>
         dataSources.map((dataSource) => {
             const options: FindManyOptions<Company> = {
@@ -276,8 +345,8 @@ describe("column > virtual columns", () => {
                     .leftJoin("company.employees", "employee")
                     .leftJoin("employee.timesheets", "timesheet")
                     .where("company.name = :name", { name: companyName })
-                    // we won't be supporting where & order bys with VirtualColumns (you will have to make your subquery a function that gets added to the query builder)
-                    //.andWhere("company.totalEmployeesCount > 2")
+                    .andWhere("company.totalEmployeesCount > 2")
+                    // ordering by a relation's virtual column is still unsupported
                     //.orderBy({
                     //    "employees.timesheets.id": "DESC",
                     //    //"employees.timesheets.totalActivityHours": "ASC",
