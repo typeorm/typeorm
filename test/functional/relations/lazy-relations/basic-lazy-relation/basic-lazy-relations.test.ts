@@ -11,6 +11,9 @@ import type { EntitySchemaOptions } from "../../../../../src"
 import { EntitySchema } from "../../../../../src"
 import UserSchema from "./schema/user.json"
 import ProfileSchema from "./schema/profile.json"
+import { Parent } from "./entity/Parent"
+import { Child } from "./entity/Child"
+import sinon from "sinon"
 
 describe("relations > lazy relations > basic-lazy-relations", () => {
     let dataSources: DataSource[]
@@ -19,10 +22,11 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
             entities: [
                 Post,
                 Category,
+                Parent,
+                Child,
                 new EntitySchema(UserSchema as EntitySchemaOptions<unknown>),
                 new EntitySchema(ProfileSchema as EntitySchemaOptions<unknown>),
             ],
-            enabledDrivers: ["mysql", "postgres"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
@@ -62,15 +66,15 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                     savedCategory3,
                 ])
 
-                const post = (await postRepository.findOneBy({ id: 1 }))!
-                post.title.should.be.equal("Hello post")
-                post.text.should.be.equal("This is post about post")
+                const post = await postRepository.findOneBy({ id: 1 })
+                post?.title.should.be.equal("Hello post")
+                post?.text.should.be.equal("This is post about post")
 
-                const categories = await post.categories
-                categories.length.should.be.equal(3)
-                categories.should.deep.include({ id: 1, name: "kids" })
-                categories.should.deep.include({ id: 2, name: "people" })
-                categories.should.deep.include({ id: 3, name: "animals" })
+                const categories = await post?.categories
+                categories?.length.should.be.equal(3)
+                categories?.should.deep.include({ id: 1, name: "kids" })
+                categories?.should.deep.include({ id: 2, name: "people" })
+                categories?.should.deep.include({ id: 3, name: "animals" })
             }),
         ))
 
@@ -108,28 +112,28 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                     savedCategory3,
                 ])
 
-                const post = (await postRepository.findOneBy({ id: 1 }))!
-                post.title.should.be.equal("Hello post")
-                post.text.should.be.equal("This is post about post")
+                const post = await postRepository.findOneBy({ id: 1 })
+                post?.title.should.be.equal("Hello post")
+                post?.text.should.be.equal("This is post about post")
 
-                const categories = await post.twoSideCategories
-                categories.length.should.be.equal(3)
-                categories.should.deep.include({ id: 1, name: "kids" })
-                categories.should.deep.include({ id: 2, name: "people" })
-                categories.should.deep.include({ id: 3, name: "animals" })
+                const categories = await post?.twoSideCategories
+                categories?.length.should.be.equal(3)
+                categories?.should.deep.include({ id: 1, name: "kids" })
+                categories?.should.deep.include({ id: 2, name: "people" })
+                categories?.should.deep.include({ id: 3, name: "animals" })
 
-                const category = (await categoryRepository.findOneBy({
+                const category = await categoryRepository.findOneBy({
                     id: 1,
-                }))!
-                category.name.should.be.equal("kids")
+                })
+                category?.name.should.be.equal("kids")
 
-                const twoSidePosts = await category.twoSidePosts
+                const twoSidePosts = await category?.twoSidePosts
 
                 const likePost = new Post()
                 likePost.id = 1
                 likePost.title = "Hello post"
                 likePost.text = "This is post about post"
-                twoSidePosts.should.deep.include(likePost)
+                twoSidePosts?.should.deep.include(likePost)
             }),
         ))
 
@@ -139,11 +143,11 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                 const userRepository = dataSource.getRepository("User")
                 const profileRepository = dataSource.getRepository("Profile")
 
-                const profile: any = profileRepository.create()
+                const profile = profileRepository.create()
                 profile.country = "Japan"
                 await profileRepository.save(profile)
 
-                const newUser: any = userRepository.create()
+                const newUser = userRepository.create()
                 newUser.firstName = "Umed"
                 newUser.secondName = "San"
                 newUser.profile = Promise.resolve(profile)
@@ -152,13 +156,13 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                 await newUser.profile.should.eventually.be.eql(profile)
 
                 // const loadOptions: FindOptions = { alias: "user", innerJoinAndSelect };
-                const loadedUser: any = await userRepository.findOneBy({
+                const loadedUser = await userRepository.findOneBy({
                     id: 1,
                 })
-                loadedUser.firstName.should.be.equal("Umed")
-                loadedUser.secondName.should.be.equal("San")
+                loadedUser?.firstName.should.be.equal("Umed")
+                loadedUser?.secondName.should.be.equal("San")
 
-                const lazyLoadedProfile = await loadedUser.profile
+                const lazyLoadedProfile = await loadedUser?.profile
                 lazyLoadedProfile.country.should.be.equal("Japan")
             }),
         ))
@@ -439,5 +443,46 @@ describe("relations > lazy relations > basic-lazy-relations", () => {
                     const loadedPost = await loadedCategory.onePost
                     loadedPost.title.should.be.equal("post with great category")
                 }),
+        ))
+    it("should not fetch again if relation already selected in the find options", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                const child1 = new Child()
+                const child2 = new Child()
+                await connection.manager.save([child1, child2])
+
+                const parent = new Parent()
+                parent.children = Promise.resolve([child1, child2])
+                await connection.manager.save(parent)
+
+                const loadedParentWithChildren = await connection
+                    .getRepository(Parent)
+                    .findOne({
+                        where: { id: parent.id },
+                        relations: { children: true },
+                    })
+                const loadedParent = await connection
+                    .getRepository(Parent)
+                    .findOneBy({ id: parent.id })
+
+                let queryCount = 0
+                const loggerStub = sinon
+                    .stub(connection.logger, "logQuery")
+                    .callsFake(() => queryCount++)
+
+                try {
+                    const loadedChildren =
+                        await loadedParentWithChildren?.children
+
+                    queryCount.should.be.equal(0)
+                    loadedChildren?.length.should.be.equal(2)
+
+                    const loadedChildren1 = await loadedParent?.children
+                    queryCount.should.be.not.equal(0)
+                    loadedChildren1?.length.should.be.equal(2)
+                } finally {
+                    loggerStub.restore()
+                }
+            }),
         ))
 })
