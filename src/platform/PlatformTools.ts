@@ -38,57 +38,62 @@ export class PlatformTools {
      * @returns the module
      */
     static load(name: string): any {
-        const KNOWN_MODULES = [
-            // AWS Aurora Data API (PostgreSQL/MySQL)
-            "typeorm-aurora-data-api-driver",
-            // better-sqlite3
-            "better-sqlite3",
-            // Expo
-            "expo-sqlite",
-            // Google Cloud Spanner
-            "@google-cloud/spanner",
-            // Microsoft SQL Server
-            "mssql",
-            // MongoDB
-            "mongodb",
-            // MySQL / MariaDB
-            "mysql2",
-            // Oracle
-            "oracledb",
-            // PostgreSQL
-            "pg",
-            "pg-native",
-            "pg-query-stream",
-            // React Native
-            "react-native-sqlite-storage",
-            // SAP HANA
-            "@sap/hana-client",
-            "@sap/hana-client/extension/Stream",
-            // sql.js
-            "sql.js",
-            // redis
-            "redis",
-            "ioredis",
-        ]
-
-        if (!KNOWN_MODULES.includes(name)) {
-            throw new TypeError(
-                `Invalid Package for PlatformTools.load: ${name}`,
-            )
-        }
-
-        // if name is not absolute or relative, then try to load package from the node_modules of the directory we are currently in
-        // this is useful when we are using typeorm package globally installed and it accesses drivers
-        // that are not installed globally
+        // Use explicit static require() calls for each known module so that
+        // bundlers (Webpack, Vite, esbuild, etc.) can statically analyze
+        // which dependencies need to be included in the bundle.
+        // Dynamic require(name) is invisible to static analysis.
         try {
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
-            return require(name)
+            /* eslint-disable @typescript-eslint/no-require-imports */
+            switch (name) {
+                case "typeorm-aurora-data-api-driver":
+                    return require("typeorm-aurora-data-api-driver")
+                case "better-sqlite3":
+                    return require("better-sqlite3")
+                case "expo-sqlite":
+                    return require("expo-sqlite")
+                case "@google-cloud/spanner":
+                    return require("@google-cloud/spanner")
+                case "mssql":
+                    return require("mssql")
+                case "mongodb":
+                    return require("mongodb")
+                case "mysql2":
+                    return require("mysql2")
+                case "oracledb":
+                    return require("oracledb")
+                case "pg":
+                    return require("pg")
+                case "pg-native":
+                    return require("pg-native")
+                case "pg-query-stream":
+                    return require("pg-query-stream")
+                case "react-native-sqlite-storage":
+                    return require("react-native-sqlite-storage")
+                case "@sap/hana-client":
+                    return require("@sap/hana-client")
+                case "@sap/hana-client/extension/Stream":
+                    return require("@sap/hana-client/extension/Stream")
+                case "sql.js":
+                    return require("sql.js")
+                case "redis":
+                    return require("redis")
+                case "ioredis":
+                    return require("ioredis")
+            }
+            /* eslint-enable @typescript-eslint/no-require-imports */
         } catch {
+            // if module resolution fails (e.g., typeorm is installed globally
+            // but the driver is in the project's node_modules), try loading
+            // from the current working directory as a fallback
             // eslint-disable-next-line @typescript-eslint/no-require-imports
             return require(
                 path.resolve(process.cwd() + "/node_modules/" + name),
             )
         }
+
+        throw new TypeError(
+            `Invalid Package for PlatformTools.load: ${name}`,
+        )
     }
 
     /**
