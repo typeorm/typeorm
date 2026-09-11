@@ -223,8 +223,8 @@ export class OrmUtils {
      * @param secondId
      */
     public static compareIds(
-        firstId: ObjectLiteral | undefined,
-        secondId: ObjectLiteral | undefined,
+        firstId: ObjectLiteral | undefined | null,
+        secondId: ObjectLiteral | undefined | null,
     ): boolean {
         if (
             firstId === undefined ||
@@ -234,16 +234,39 @@ export class OrmUtils {
         )
             return false
 
-        // Optimized version for the common case
+        // Optimized version for the common case of a single "id" primary key.
+        // Some drivers (e.g. the MySQL driver for bigint columns) return numeric
+        // ids as strings, so the same identifier can be a string on one side of a
+        // comparison and a number on the other. Compare such values by their
+        // numeric value so, for example, "1" still matches 1 and a persisted
+        // relation is not mistakenly treated as removed (see #11773).
         if (
-            ((typeof firstId.id === "string" &&
-                typeof secondId.id === "string") ||
-                (typeof firstId.id === "number" &&
-                    typeof secondId.id === "number")) &&
+            (typeof firstId.id === "string" ||
+                typeof firstId.id === "number") &&
+            (typeof secondId.id === "string" ||
+                typeof secondId.id === "number") &&
             Object.keys(firstId).length === 1 &&
             Object.keys(secondId).length === 1
         ) {
-            return firstId.id === secondId.id
+            if (typeof firstId.id === typeof secondId.id) {
+                return firstId.id === secondId.id
+            }
+            // Types differ (one string, one number): compare by numeric value,
+            // requiring a plain decimal numeral and a safe integer (see #11773).
+            const numericId =
+                typeof firstId.id === "number" ? firstId.id : secondId.id
+            const stringId =
+                typeof firstId.id === "string" ? firstId.id : secondId.id
+            if (!Number.isFinite(numericId)) return false
+            if (!/^-?\d+(\.\d+)?$/.test(String(stringId))) return false
+            const stringAsNumber = Number(stringId)
+            const unsafeInteger =
+                (Number.isInteger(numericId) &&
+                    !Number.isSafeInteger(numericId)) ||
+                (Number.isInteger(stringAsNumber) &&
+                    !Number.isSafeInteger(stringAsNumber))
+            if (unsafeInteger) return false
+            return numericId === stringAsNumber
         }
 
         return OrmUtils.deepCompare(firstId, secondId)
