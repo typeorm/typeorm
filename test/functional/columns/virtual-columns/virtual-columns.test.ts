@@ -176,6 +176,22 @@ describe("column > virtual columns", () => {
             }
         }))
 
+    it("should qualify a virtual column reference against the real table, not an explicit custom alias, for delete/update queries", () =>
+        dataSources.map((dataSource) => {
+            const query = dataSource
+                .createQueryBuilder()
+                .delete()
+                .from(Company, "u")
+                .where("totalEmployeesCount > 2")
+                .getSql()
+
+            let expectedQuery = `DELETE FROM "companies" WHERE (SELECT COUNT("name") FROM "employees" WHERE "companyName" = "companies"."name") > 2`
+            if (DriverUtils.isMySQLFamily(dataSource.driver)) {
+                expectedQuery = expectedQuery.replaceAll('"', "`")
+            }
+            expect(query).to.equal(expectedQuery)
+        }))
+
     it("should not generate sub-select if column is not selected", () =>
         dataSources.map((dataSource) => {
             const options: FindManyOptions<Company> = {

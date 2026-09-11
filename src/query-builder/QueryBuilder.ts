@@ -848,10 +848,10 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                             if (typeof replacement === "string") {
                                 return `${pre}${this.escape(replacement)}`
                             }
-                            const aliasName = this.expressionMap.mainAlias?.name
-                            return `${pre}(${replacement.virtualQuery(
-                                aliasName ? this.getTableName(aliasName) : "",
-                            )})`
+                            const target = this.expressionMap.mainAlias
+                                ? this.getTableName(this.getMainTableName())
+                                : ""
+                            return `${pre}(${replacement.virtualQuery(target)})`
                         }
                     }
                     return match
