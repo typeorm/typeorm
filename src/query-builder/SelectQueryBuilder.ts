@@ -4631,6 +4631,23 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             }
                         }
                     } else {
+                        // `true` = join-only (documented). Nested objects recurse.
+                        if (
+                            where[key] !== true &&
+                            (typeof where[key] !== "object" ||
+                                where[key] === null)
+                        ) {
+                            throw new TypeORMError(
+                                `Unexpected primitive value for relation '${alias}.${key}' in a where condition. ` +
+                                    `Use nested relation criteria such as ` +
+                                    `{ ${key}: { ${relation.inverseEntityMetadata.primaryColumns
+                                        .map((c) => `${c.propertyName}: value`)
+                                        .join(", ")} } } ` +
+                                    `instead of a bare value. ` +
+                                    `Boolean true (join-only) and FindOperator remain supported.`,
+                            )
+                        }
+
                         // const joinAlias = alias + "_" + relation.propertyName;
                         let joinAlias =
                             alias +
