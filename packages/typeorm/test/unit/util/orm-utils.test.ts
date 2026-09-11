@@ -381,6 +381,18 @@ describe(`OrmUtils`, () => {
             ).to.equal(true)
         })
 
+        it("does not treat permissive numeric string forms as equal", () => {
+            // Number("") === 0, Number("0x10") === 16 and Number("1e2") === 100,
+            // so a non-decimal string id must not coerce to a matching number.
+            expect(OrmUtils.compareIds({ id: "" }, { id: 0 })).to.equal(false)
+            expect(OrmUtils.compareIds({ id: "0x10" }, { id: 16 })).to.equal(
+                false,
+            )
+            expect(OrmUtils.compareIds({ id: "1e2" }, { id: 100 })).to.equal(
+                false,
+            )
+        })
+
         it("treats a null id as a non-matching identifier", () => {
             // A null id part is not string/number, so it routes through deep
             // comparison rather than the single-id fast path.

@@ -251,18 +251,15 @@ export class OrmUtils {
             if (typeof firstId.id === typeof secondId.id) {
                 return firstId.id === secondId.id
             }
-            // Types differ (one string, one number). Compare by numeric value
-            // so a bigint returned as "1" matches 1 and a scaled decimal
-            // "70.000" matches 70 (see #11773). Bail out on non-finite values,
-            // and on integers beyond the safe range where a JS number cannot
-            // represent the id exactly and could match a different one.
+            // Types differ (one string, one number): compare by numeric value,
+            // requiring a plain decimal numeral and a safe integer (see #11773).
             const numericId =
                 typeof firstId.id === "number" ? firstId.id : secondId.id
-            const stringAsNumber = Number(
-                typeof firstId.id === "string" ? firstId.id : secondId.id,
-            )
-            if (!Number.isFinite(numericId) || !Number.isFinite(stringAsNumber))
-                return false
+            const stringId =
+                typeof firstId.id === "string" ? firstId.id : secondId.id
+            if (!Number.isFinite(numericId)) return false
+            if (!/^-?\d+(\.\d+)?$/.test(String(stringId))) return false
+            const stringAsNumber = Number(stringId)
             const unsafeInteger =
                 (Number.isInteger(numericId) &&
                     !Number.isSafeInteger(numericId)) ||
