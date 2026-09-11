@@ -315,6 +315,12 @@ describe(`OrmUtils`, () => {
             expect(OrmUtils.compareIds(undefined, { id: 1 })).to.equal(false)
             expect(OrmUtils.compareIds({ id: 1 }, undefined)).to.equal(false)
             expect(OrmUtils.compareIds(undefined, undefined)).to.equal(false)
+            // Explicit null (distinct from undefined) must be handled too.
+            expect(OrmUtils.compareIds(null as any, { id: 1 })).to.equal(false)
+            expect(OrmUtils.compareIds({ id: 1 }, null as any)).to.equal(false)
+            expect(OrmUtils.compareIds(null as any, null as any)).to.equal(
+                false,
+            )
         })
 
         it("does not coerce non-finite numeric ids to match a string", () => {
@@ -329,6 +335,34 @@ describe(`OrmUtils`, () => {
             expect(
                 OrmUtils.compareIds({ id: Infinity }, { id: "Infinity" }),
             ).to.equal(false)
+        })
+
+        it("does not coerce an unsafe-integer numeric id to match a bigint string", () => {
+            // Above Number.MAX_SAFE_INTEGER a JS number cannot represent a
+            // bigint exactly: the literal 9007199254740993 is actually stored
+            // as 9007199254740992, so a naive String(number) coercion would
+            // wrongly match the *different* bigint string "9007199254740992".
+            // The safe-integer guard must reject this to avoid a false match.
+            expect(
+                OrmUtils.compareIds(
+                    { id: 9007199254740993 },
+                    { id: "9007199254740992" },
+                ),
+            ).to.equal(false)
+            expect(
+                OrmUtils.compareIds(
+                    { id: "9007199254740992" },
+                    { id: 9007199254740993 },
+                ),
+            ).to.equal(false)
+            // The boundary value itself is still a safe integer and must keep
+            // matching its string form.
+            expect(
+                OrmUtils.compareIds(
+                    { id: Number.MAX_SAFE_INTEGER },
+                    { id: String(Number.MAX_SAFE_INTEGER) },
+                ),
+            ).to.equal(true)
         })
 
         it("treats a null id as a non-matching identifier", () => {
