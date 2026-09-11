@@ -238,7 +238,7 @@ export class OrmUtils {
         // Some drivers (e.g. the MySQL driver for bigint columns) return numeric
         // ids as strings, so the same identifier can be a string on one side of a
         // comparison and a number on the other. Compare such values by their
-        // string form so, for example, "1" still matches 1 and a persisted
+        // numeric value so, for example, "1" still matches 1 and a persisted
         // relation is not mistakenly treated as removed (see #11773).
         if (
             (typeof firstId.id === "string" ||
@@ -251,23 +251,25 @@ export class OrmUtils {
             if (typeof firstId.id === typeof secondId.id) {
                 return firstId.id === secondId.id
             }
-            // Types differ (one string, one number): bridge the driver's
-            // number->string coercion, but only when String(number) can be
-            // trusted to represent the value faithfully:
-            //   - NaN and Infinity are never valid ids.
-            //   - An integer beyond Number.MAX_SAFE_INTEGER has already lost
-            //     precision, so it could stringify to and wrongly match a
-            //     *different* bigint string.
-            // Finite non-integers (e.g. a decimal id such as 1.5) stringify
-            // faithfully and must still match their string form, otherwise the
-            // #11773 failure mode reappears for decimal keys returned as
-            // strings.
+            // Types differ (one string, one number). Compare by numeric value
+            // so a bigint returned as "1" matches 1 and a scaled decimal
+            // "70.000" matches 70 (see #11773). Bail out on non-finite values,
+            // and on integers beyond the safe range where a JS number cannot
+            // represent the id exactly and could match a different one.
             const numericId =
                 typeof firstId.id === "number" ? firstId.id : secondId.id
-            if (!Number.isFinite(numericId)) return false
-            if (Number.isInteger(numericId) && !Number.isSafeInteger(numericId))
+            const stringAsNumber = Number(
+                typeof firstId.id === "string" ? firstId.id : secondId.id,
+            )
+            if (!Number.isFinite(numericId) || !Number.isFinite(stringAsNumber))
                 return false
-            return String(firstId.id) === String(secondId.id)
+            const unsafeInteger =
+                (Number.isInteger(numericId) &&
+                    !Number.isSafeInteger(numericId)) ||
+                (Number.isInteger(stringAsNumber) &&
+                    !Number.isSafeInteger(stringAsNumber))
+            if (unsafeInteger) return false
+            return numericId === stringAsNumber
         }
 
         return OrmUtils.deepCompare(firstId, secondId)

@@ -307,13 +307,16 @@ describe(`OrmUtils`, () => {
         })
 
         it("matches a decimal string id against an equal numeric id", () => {
-            // Decimal/numeric primary keys are likewise returned as strings by
-            // some drivers; a finite non-integer such as 1.5 stringifies
-            // faithfully and must still match its string form.
+            // Decimal/numeric keys are also returned as strings by some
+            // drivers, and drivers preserve the declared scale ("70.000"), so
+            // ids are compared by numeric value rather than string form.
             expect(OrmUtils.compareIds({ id: "1.5" }, { id: 1.5 })).to.equal(
                 true,
             )
             expect(OrmUtils.compareIds({ id: 1.5 }, { id: "1.5" })).to.equal(
+                true,
+            )
+            expect(OrmUtils.compareIds({ id: "70.000" }, { id: 70 })).to.equal(
                 true,
             )
             expect(OrmUtils.compareIds({ id: "1.5" }, { id: 2.5 })).to.equal(
