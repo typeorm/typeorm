@@ -223,8 +223,8 @@ export class OrmUtils {
      * @param secondId
      */
     public static compareIds(
-        firstId: ObjectLiteral | undefined,
-        secondId: ObjectLiteral | undefined,
+        firstId: ObjectLiteral | undefined | null,
+        secondId: ObjectLiteral | undefined | null,
     ): boolean {
         if (
             firstId === undefined ||

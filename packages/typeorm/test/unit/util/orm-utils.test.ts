@@ -316,11 +316,9 @@ describe(`OrmUtils`, () => {
             expect(OrmUtils.compareIds({ id: 1 }, undefined)).to.equal(false)
             expect(OrmUtils.compareIds(undefined, undefined)).to.equal(false)
             // Explicit null (distinct from undefined) must be handled too.
-            expect(OrmUtils.compareIds(null as any, { id: 1 })).to.equal(false)
-            expect(OrmUtils.compareIds({ id: 1 }, null as any)).to.equal(false)
-            expect(OrmUtils.compareIds(null as any, null as any)).to.equal(
-                false,
-            )
+            expect(OrmUtils.compareIds(null, { id: 1 })).to.equal(false)
+            expect(OrmUtils.compareIds({ id: 1 }, null)).to.equal(false)
+            expect(OrmUtils.compareIds(null, null)).to.equal(false)
         })
 
         it("does not coerce non-finite numeric ids to match a string", () => {
