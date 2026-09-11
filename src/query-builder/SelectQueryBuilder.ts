@@ -1876,8 +1876,18 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             }
 
             this.expressionMap.queryEntity = true
-            const entitiesAndRaw =
-                await this.executeEntitiesAndRawResults(queryRunner)
+            let entitiesAndRaw: { entities: Entity[]; raw: any[] }
+            if (this.takesNoRows()) {
+                // a take of 0 asks for no rows, so the entity query has nothing
+                // to fetch; skipping it also keeps a writable CTE running exactly
+                // once, since the count query below carries the same CTE. the
+                // guard executeEntitiesAndRawResults would have run still applies
+                this.assertPessimisticLockIsInTransaction(queryRunner)
+                entitiesAndRaw = { entities: [], raw: [] }
+            } else {
+                entitiesAndRaw =
+                    await this.executeEntitiesAndRawResults(queryRunner)
+            }
             this.expressionMap.queryEntity = false
 
             let count: number | undefined = this.lazyCount(entitiesAndRaw)
@@ -1911,6 +1921,36 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 // means we created our own query runner
                 await queryRunner.release()
         }
+    }
+
+    /**
+     * A pessimistic lock only means anything inside a transaction, so every path
+     * that can execute the query has to reject it outside one.
+     *
+     * @param queryRunner
+     */
+    private assertPessimisticLockIsInTransaction(
+        queryRunner: QueryRunner,
+    ): void {
+        const isPessimistic =
+            this.expressionMap.lockMode === "pessimistic_read" ||
+            this.expressionMap.lockMode === "pessimistic_write" ||
+            this.expressionMap.lockMode === "for_no_key_update" ||
+            this.expressionMap.lockMode === "for_key_share"
+
+        if (isPessimistic && !queryRunner.isTransactionActive)
+            throw new PessimisticLockTransactionRequiredError()
+    }
+
+    /**
+     * Whether the query asks for no rows at all.
+     * An explicit limit() keeps its precedence over take(), as it does everywhere else.
+     */
+    private takesNoRows(): boolean {
+        return (
+            this.expressionMap.take === 0 &&
+            this.expressionMap.limit === undefined
+        )
     }
 
     private lazyCount(entitiesAndRaw: {
@@ -3468,19 +3508,35 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 `Alias is not set. Use "from" method to set an alias.`,
             )
 
-        if (
-            (this.expressionMap.lockMode === "pessimistic_read" ||
-                this.expressionMap.lockMode === "pessimistic_write" ||
-                this.expressionMap.lockMode === "for_no_key_update" ||
-                this.expressionMap.lockMode === "for_key_share") &&
-            !queryRunner.isTransactionActive
-        )
-            throw new PessimisticLockTransactionRequiredError()
+        this.assertPessimisticLockIsInTransaction(queryRunner)
 
         if (this.expressionMap.lockMode === "optimistic") {
             const metadata = this.expressionMap.mainAlias.metadata
             if (!metadata.versionColumn && !metadata.updateDateColumn)
                 throw new NoVersionOrUpdateDateColumnError(metadata.name)
+        }
+
+        // a take of 0 asks for no rows at all, so there is nothing to query;
+        // going to the database instead would emit a zero row limit, which
+        // SQL Server and Oracle reject, and which joins silently ignore
+        if (this.takesNoRows()) {
+            // a data-modifying CTE runs for its side effects even when the outer
+            // query returns nothing, so a query carrying one still has to be sent.
+            // a zero limit is enough to send it and keep no rows, and the only
+            // drivers that accept a writable CTE also accept that limit
+            if (
+                this.hasCommonTableExpressions() &&
+                this.dataSource.driver.cteCapabilities.writable
+            ) {
+                return {
+                    entities: [],
+                    raw: await this.clone()
+                        .limit(0)
+                        .loadRawResults(queryRunner),
+                }
+            }
+
+            return { entities: [], raw: [] }
         }
 
         const relationIdLoader = new RelationIdLoader(
