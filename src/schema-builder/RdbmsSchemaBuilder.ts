@@ -325,8 +325,6 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             )
             if (!table) continue
 
-            if (metadata.columns.length !== table.columns.length) continue
-
             const renamedMetadataColumns = metadata.columns
                 .filter((c) => !c.isVirtualProperty)
                 .filter((column) => {
@@ -342,11 +340,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                     })
                 })
 
-            if (
-                renamedMetadataColumns.length === 0 ||
-                renamedMetadataColumns.length > 1
-            )
-                continue
+            if (renamedMetadataColumns.length === 0) continue
 
             const renamedTableColumns = table.columns.filter((tableColumn) => {
                 return !metadata.columns.find((column) => {
@@ -362,23 +356,53 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 })
             })
 
+            if (renamedTableColumns.length === 0) continue
+
+            // If exactly one table column and one metadata column unmatched, or matching pairs
             if (
-                renamedTableColumns.length === 0 ||
-                renamedTableColumns.length > 1
-            )
-                continue
+                renamedTableColumns.length === 1 &&
+                renamedMetadataColumns.length === 1
+            ) {
+                const renamedColumn = renamedTableColumns[0].clone()
+                renamedColumn.name = renamedMetadataColumns[0].databaseName
 
-            const renamedColumn = renamedTableColumns[0].clone()
-            renamedColumn.name = renamedMetadataColumns[0].databaseName
+                this.dataSource.logger.logSchemaBuild(
+                    `renaming column "${renamedTableColumns[0].name}" in "${table.name}" to "${renamedColumn.name}"`,
+                )
+                await this.queryRunner.renameColumn(
+                    table,
+                    renamedTableColumns[0],
+                    renamedColumn,
+                )
+            } else if (
+                renamedTableColumns.length === renamedMetadataColumns.length
+            ) {
+                // Match corresponding pairs with identical type & nullability
+                for (let i = 0; i < renamedTableColumns.length; i++) {
+                    const oldCol = renamedTableColumns[i]
+                    const matchMeta = renamedMetadataColumns.find(
+                        (meta) =>
+                            this.dataSource.driver.normalizeType(meta) ===
+                                oldCol.type &&
+                            meta.isNullable === oldCol.isNullable &&
+                            this.dataSource.driver.normalizeIsUnique(meta) ===
+                                oldCol.isUnique,
+                    )
+                    if (matchMeta) {
+                        const renamedColumn = oldCol.clone()
+                        renamedColumn.name = matchMeta.databaseName
 
-            this.dataSource.logger.logSchemaBuild(
-                `renaming column "${renamedTableColumns[0].name}" in "${table.name}" to "${renamedColumn.name}"`,
-            )
-            await this.queryRunner.renameColumn(
-                table,
-                renamedTableColumns[0],
-                renamedColumn,
-            )
+                        this.dataSource.logger.logSchemaBuild(
+                            `renaming column "${oldCol.name}" in "${table.name}" to "${renamedColumn.name}"`,
+                        )
+                        await this.queryRunner.renameColumn(
+                            table,
+                            oldCol,
+                            renamedColumn,
+                        )
+                    }
+                }
+            }
         }
     }
 
