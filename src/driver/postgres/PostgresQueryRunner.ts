@@ -1326,22 +1326,49 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        // If only the length changed within the same base type, use ALTER COLUMN ... TYPE
+        // instead of dropping and recreating the column (which causes data loss).
+        // TypeORM issue #3357: https://github.com/typeorm/typeorm/issues/3357
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
-            newColumn.isArray !== oldColumn.isArray ||
-            (!oldColumn.generatedType &&
-                newColumn.generatedType === "STORED") ||
-            (oldColumn.asExpression !== newColumn.asExpression &&
-                newColumn.generatedType === "STORED")
+            oldColumn.type === newColumn.type &&
+            oldColumn.isArray === newColumn.isArray &&
+            (!oldColumn.generatedType || oldColumn.generatedType !== "STORED") &&
+            (!newColumn.generatedType || oldColumn.generatedType === newColumn.generatedType) &&
+            oldColumn.asExpression === newColumn.asExpression &&
+            (!oldColumn.generatedType || newColumn.generatedType !== "STORED") &&
+            oldColumn.type !== newColumn.type === false
         ) {
-            // To avoid data conversion, we just recreate column
-            await this.dropColumn(table, oldColumn)
-            await this.addColumn(table, newColumn)
+            // Only length/precision/scale differences — safe to ALTER
+            const isArrayChanged = newColumn.isArray !== oldColumn.isArray
+            const generatedChanged =
+                (!oldColumn.generatedType && newColumn.generatedType === "STORED") ||
+                (oldColumn.asExpression !== newColumn.asExpression &&
+                    newColumn.generatedType === "STORED")
+            const typeChanged = oldColumn.type !== newColumn.type
 
-            // update cloned table
-            clonedTable = table.clone()
-        } else {
+            if (!isArrayChanged && !generatedChanged && !typeChanged && oldColumn.length !== newColumn.length) {
+                // Build the correct ALTER COLUMN ... TYPE query
+                const typeSQL = this.driver.buildColumnType(newColumn)
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.databaseName}" TYPE ${typeSQL}`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.databaseName}" TYPE ${this.driver.buildColumnType(oldColumn)}`,
+                    ),
+                )
+                // Clone table to keep subsequent rename/index operations consistent
+                clonedTable = table.clone()
+            } else {
+                // To avoid data conversion, we just recreate column
+                await this.dropColumn(table, oldColumn)
+                await this.addColumn(table, newColumn)
+
+                // update cloned table
+                clonedTable = table.clone()
+            }
             if (oldColumn.name !== newColumn.name) {
                 // rename column
                 upQueries.push(
