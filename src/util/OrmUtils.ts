@@ -676,8 +676,12 @@ export class OrmUtils {
         options?: InvalidFindOptionsWhereBehavior,
         path?: string,
     ): any {
-        // default to "throw" when unconfigured, matching the read/find path
-        options ??= {}
+        // Resolve both defaults once so a partially configured behavior keeps
+        // the documented "throw" default for its unspecified value type.
+        const invalidWhereValuesBehavior = {
+            null: options?.null ?? "throw",
+            undefined: options?.undefined ?? "throw",
+        }
 
         // multiple criteria are possible at the top level
         if (!path && Array.isArray(criteria)) {
@@ -705,8 +709,7 @@ export class OrmUtils {
             const propertyPath = path ? `${path}.${key}` : key
 
             if (value === undefined) {
-                const behavior = options?.undefined ?? "throw"
-                if (behavior === "throw") {
+                if (invalidWhereValuesBehavior.undefined === "throw") {
                     throw new TypeORMError(
                         `Undefined value encountered in property '${propertyPath}' of a where condition. ` +
                             `Set 'invalidWhereValuesBehavior.undefined' to 'ignore' in connection options to skip properties with undefined values.`,
@@ -714,14 +717,13 @@ export class OrmUtils {
                 }
                 // else: "ignore" — skip this key
             } else if (value === null) {
-                const behavior = options?.null ?? "throw"
-                if (behavior === "throw") {
+                if (invalidWhereValuesBehavior.null === "throw") {
                     throw new TypeORMError(
                         `Null value encountered in property '${propertyPath}' of a where condition. ` +
                             `To match with SQL NULL, the IsNull() operator must be used. ` +
                             `Set 'invalidWhereValuesBehavior.null' to 'ignore' or 'sql-null' in connection options to skip or handle null values.`,
                     )
-                } else if (behavior === "sql-null") {
+                } else if (invalidWhereValuesBehavior.null === "sql-null") {
                     result[key] = IsNull()
                 }
                 // else: "ignore" — skip this key
