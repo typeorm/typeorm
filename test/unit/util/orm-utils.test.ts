@@ -311,6 +311,21 @@ describe(`OrmUtils`, () => {
             ).to.throw(/Null value.*'email'/)
         })
 
+        it("defaults an unspecified behavior to 'throw'", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria(
+                    { name: null },
+                    { undefined: "ignore" },
+                ),
+            ).to.throw(/Null value.*'name'/)
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria(
+                    { email: undefined },
+                    { null: "sql-null" },
+                ),
+            ).to.throw(/Undefined value.*'email'/)
+        })
+
         it("honors 'ignore' by stripping null/undefined keys", () => {
             const result = OrmUtils.normalizeWhereCriteria(
                 { name: "Alice", email: null, phone: undefined },
