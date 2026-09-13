@@ -16,6 +16,76 @@ describe("database schema > column length > postgres", () => {
             enabledDrivers: ["postgres"],
         })
     })
+
+    it("length-only change should use ALTER COLUMN TYPE without dropping", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                const table = await queryRunner.getTable("post")
+                const varcharColumn = table!.findColumnByName("varchar")!
+
+                const resizedColumn = varcharColumn.clone()
+                resizedColumn.length =
+                    varcharColumn.length === "100" ? "101" : "100"
+
+                queryRunner.enableSqlMemory()
+                try {
+                    await queryRunner.changeColumn(
+                        table!,
+                        varcharColumn,
+                        resizedColumn,
+                    )
+                    const memorySql = queryRunner.getMemorySql()
+                    const upSql = memorySql.upQueries
+                        .map((q) => q.query)
+                        .join(";\n")
+                    const downSql = memorySql.downQueries
+                        .map((q) => q.query)
+                        .join(";\n")
+
+                    expect(upSql).to.contain("ALTER COLUMN")
+                    expect(upSql).to.contain("TYPE")
+                    expect(upSql).to.not.contain("DROP COLUMN")
+                    expect(downSql).to.contain("ALTER COLUMN")
+                    expect(downSql).to.contain("TYPE")
+                } finally {
+                    queryRunner.disableSqlMemory()
+                    await queryRunner.release()
+                }
+            }),
+        ))
+
+    it("default-only change should not drop and recreate the column", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                const table = await queryRunner.getTable("post")
+                const varcharColumn = table!.findColumnByName("varchar")!
+
+                const defaultChangedColumn = varcharColumn.clone()
+                defaultChangedColumn.default = "'regression-default'"
+
+                queryRunner.enableSqlMemory()
+                try {
+                    await queryRunner.changeColumn(
+                        table!,
+                        varcharColumn,
+                        defaultChangedColumn,
+                    )
+                    const memorySql = queryRunner.getMemorySql()
+                    const upSql = memorySql.upQueries
+                        .map((q) => q.query)
+                        .join(";\n")
+
+                    expect(upSql).to.not.contain("DROP COLUMN")
+                    expect(upSql).to.contain("SET DEFAULT")
+                } finally {
+                    queryRunner.disableSqlMemory()
+                    await queryRunner.release()
+                }
+            }),
+        ))
+
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
