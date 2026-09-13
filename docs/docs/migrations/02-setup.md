@@ -92,9 +92,11 @@ migrationsChecksumCheck: true
 
 ### `migrationsExtraColumns`
 
-Declares additional nullable columns on the migrations table for custom metadata. Values are taken from `MigrationInterface.migrationMetadata` when a migration is recorded.
+Declares additional columns on the migrations table for custom metadata. Values are taken from `MigrationInterface.migrationMetadata` when a migration is recorded.
 
-Reserved column names (`id`, `timestamp`, `name`, `executedAt`, `checksum`) are ignored, as are duplicate names (compared case-insensitively).
+Extra columns are always created as nullable so they can be added to an existing, populated migrations table. A migration that does not provide a value for a column stores `NULL`. Each entry accepts `name`, `type`, and an optional `length`.
+
+Reserved column names (`id`, `timestamp`, `name`, `executedAt`, `checksum`) are ignored, as are duplicate names (compared case-insensitively). On SQL Server, values for column types without a dedicated parameter type (for example `sql_variant`) are sent with a driver-inferred type.
 
 ```ts
 migrationsExtraColumns: [{ name: "executedBy", type: "varchar", length: "255" }]

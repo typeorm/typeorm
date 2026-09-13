@@ -71,15 +71,16 @@ export interface BaseDataSourceOptions {
     readonly migrationsChecksumCheck?: boolean
 
     /**
-     * Extra nullable columns created on the migrations table for custom metadata.
+     * Extra columns created on the migrations table for custom metadata.
      * Provide values per migration via `MigrationInterface.migrationMetadata`.
+     * Columns are always nullable so they can be added to an existing,
+     * populated migrations table; a migration without a value stores NULL.
      * Reserved names (`id`, `timestamp`, `name`, `executedAt`, `checksum`) are ignored.
      */
     readonly migrationsExtraColumns?: {
         name: string
         type: string
         length?: string
-        isNullable?: boolean
     }[]
 
     /**

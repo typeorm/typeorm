@@ -609,7 +609,7 @@ export class MigrationExecutor {
                             name: column.name,
                             type: column.type,
                             length: column.length,
-                            isNullable: column.isNullable ?? true,
+                            isNullable: true,
                         })),
                     ],
                 }),
@@ -784,16 +784,21 @@ export class MigrationExecutor {
         for (const column of this.getMigrationsExtraColumns()) {
             const value =
                 migration.instance?.migrationMetadata?.[column.name] ?? null
-            if (this.dataSource.driver.options.type === "mssql") {
+            if (
+                this.dataSource.driver.options.type === "mssql" &&
+                isMssqlParameterType(column.type)
+            ) {
                 const length =
                     column.length != null && column.length !== ""
                         ? parseInt(column.length, 10)
                         : undefined
                 values[column.name] =
                     length != null && !Number.isNaN(length)
-                        ? this.createMssqlParameter(value, column.type, length)
-                        : this.createMssqlParameter(value, column.type)
+                        ? new MssqlParameter(value, column.type, length)
+                        : new MssqlParameter(value, column.type)
             } else {
+                // Other drivers, or SQL Server column types without a dedicated
+                // parameter type (e.g. sql_variant): let the driver infer.
                 values[column.name] = value
             }
         }
@@ -1074,7 +1079,6 @@ export class MigrationExecutor {
         name: string
         type: string
         length?: string
-        isNullable?: boolean
     }[] {
         const reserved = new Set([
             "id",
@@ -1088,7 +1092,6 @@ export class MigrationExecutor {
             name: string
             type: string
             length?: string
-            isNullable?: boolean
         }[] = []
         for (const column of this.dataSource.options.migrationsExtraColumns ??
             []) {
@@ -1118,24 +1121,24 @@ export class MigrationExecutor {
             return
         }
 
-        const existingColumnNames = new Set(
-            table.columns.map((column) => column.name.toLowerCase()),
-        )
+        // Match by exact name: identifiers are quoted, so on case-sensitive
+        // databases "Checksum" and "checksum" are different columns and the
+        // insert would target the exact-case name.
         const missingColumns: TableColumn[] = []
-        if (!existingColumnNames.has("executedat")) {
+        if (!table.findColumnByName("executedAt")) {
             missingColumns.push(this.buildExecutedAtColumn())
         }
-        if (!existingColumnNames.has("checksum")) {
+        if (!table.findColumnByName("checksum")) {
             missingColumns.push(this.buildChecksumColumn())
         }
         for (const column of this.getMigrationsExtraColumns()) {
-            if (!existingColumnNames.has(column.name.toLowerCase())) {
+            if (!table.findColumnByName(column.name)) {
                 missingColumns.push(
                     new TableColumn({
                         name: column.name,
                         type: column.type,
                         length: column.length,
-                        isNullable: column.isNullable ?? true,
+                        isNullable: true,
                     }),
                 )
             }
