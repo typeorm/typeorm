@@ -1334,7 +1334,12 @@ export class PostgresQueryRunner
             oldColumn.length !== newColumn.length &&
             oldColumn.isArray === newColumn.isArray &&
             oldColumn.generatedType === newColumn.generatedType &&
-            oldColumn.asExpression === newColumn.asExpression
+            oldColumn.asExpression === newColumn.asExpression &&
+            // Collation changes emit their own TYPE ... COLLATE statement with the
+            // bare base type (see the collation block below), which would strip the
+            // length we just applied. Exclude them so combined changes keep the
+            // pre-existing recreation path.
+            oldColumn.collation === newColumn.collation
 
         if (isLengthOnlyChange) {
             // Use the old column name: this ALTER runs before the RENAME below,

@@ -86,6 +86,40 @@ describe("database schema > column length > postgres", () => {
             }),
         ))
 
+    it("combined length and collation change should not strip the length", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                const table = await queryRunner.getTable("post")
+                const varcharColumn = table!.findColumnByName("varchar")!
+
+                const changedColumn = varcharColumn.clone()
+                changedColumn.length = "100"
+                changedColumn.collation = "C"
+
+                queryRunner.enableSqlMemory()
+                try {
+                    await queryRunner.changeColumn(
+                        table!,
+                        varcharColumn,
+                        changedColumn,
+                    )
+                    const memorySql = queryRunner.getMemorySql()
+                    const upSql = memorySql.upQueries
+                        .map((q) => q.query)
+                        .join(";\n")
+
+                    // no bare-type collation ALTER that would drop the length
+                    expect(upSql).to.not.match(/TYPE character varying COLLATE/)
+                    // the requested length must appear in the emitted SQL
+                    expect(upSql).to.contain("character varying(100)")
+                } finally {
+                    queryRunner.disableSqlMemory()
+                    await queryRunner.release()
+                }
+            }),
+        ))
+
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
