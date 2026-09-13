@@ -215,9 +215,9 @@ describe("migrations > checksum and executedAt metadata", () => {
                     `SELECT * FROM ${dataSource.driver.escape("migrations")}`,
                 )
                 expect(rows).to.have.lengthOf(1)
-                expect(rows[0].checksum ?? rows[0].CHECKSUM).to.match(
-                    /^[a-f0-9]{64}$/,
-                )
+                // insertMigration() records the row only; it does not run up().
+                const checksum = rows[0].checksum ?? rows[0].CHECKSUM
+                expect(checksum == null || checksum === "").to.equal(true)
             }),
         ))
 

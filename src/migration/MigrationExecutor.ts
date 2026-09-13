@@ -161,7 +161,7 @@ export class MigrationExecutor {
      */
     public insertMigration(migration: Migration): Promise<void> {
         return this.withQueryRunner((q) =>
-            this.insertExecutedMigration(q, migration),
+            this.insertExecutedMigration(q, migration, { recordOnly: true }),
         )
     }
 
@@ -742,10 +742,13 @@ export class MigrationExecutor {
      *
      * @param queryRunner
      * @param migration
+     * @param options
+     * @param options.recordOnly
      */
     protected async insertExecutedMigration(
         queryRunner: QueryRunner,
         migration: Migration,
+        options?: { recordOnly?: boolean },
     ): Promise<void> {
         await this.createMigrationsTableIfNotExist(queryRunner)
 
@@ -769,6 +772,7 @@ export class MigrationExecutor {
             const checksum = await this.resolveMigrationChecksum(
                 queryRunner,
                 migration,
+                options,
             )
             values["checksum"] = this.createMssqlParameter(checksum, nameType)
         } else {
@@ -778,6 +782,7 @@ export class MigrationExecutor {
             values["checksum"] = await this.resolveMigrationChecksum(
                 queryRunner,
                 migration,
+                options,
             )
         }
 
@@ -950,12 +955,18 @@ export class MigrationExecutor {
     protected async resolveMigrationChecksum(
         queryRunner: QueryRunner,
         migration: Migration,
+        options?: { recordOnly?: boolean },
     ): Promise<string | null> {
         if (!migration.instance) {
             return null
         }
         if (migration.checksum) {
             return migration.checksum
+        }
+        // Fake runs and insertMigration() only record a row; they must not
+        // execute migration code while resolving a checksum.
+        if (options?.recordOnly || this.fake) {
+            return null
         }
 
         const captured = await this.captureMigrationSql(
