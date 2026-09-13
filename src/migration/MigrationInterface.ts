@@ -18,6 +18,12 @@ export interface MigrationInterface {
     transaction?: boolean
 
     /**
+     * Optional extra values written to columns declared in
+     * `migrationsExtraColumns` when this migration is recorded as executed.
+     */
+    migrationMetadata?: Record<string, string | number | boolean | null>
+
+    /**
      * Run the migrations.
      */
     up(queryRunner: QueryRunner): Promise<any>

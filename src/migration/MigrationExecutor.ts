@@ -1,12 +1,26 @@
 import { Table } from "../schema-builder/table/Table"
+import { TableColumn } from "../schema-builder/table/TableColumn"
 import type { DataSource } from "../data-source/DataSource"
 import { Migration } from "./Migration"
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { QueryRunner } from "../query-runner/QueryRunner"
-import { MssqlParameter } from "../driver/sqlserver/MssqlParameter"
+import {
+    isMssqlParameterType,
+    MssqlParameter,
+} from "../driver/sqlserver/MssqlParameter"
 import type { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner"
-import { ForbiddenTransactionModeOverrideError, TypeORMError } from "../error"
+import {
+    ForbiddenTransactionModeOverrideError,
+    MigrationChecksumMismatchError,
+    TypeORMError,
+} from "../error"
 import { InstanceChecker } from "../util/InstanceChecker"
+import {
+    computeMigrationChecksum,
+    formatSqlForChecksum,
+    sqlStatementsForDisplay,
+} from "./MigrationSource"
+import { QueryResult } from "../query-runner/QueryResult"
 
 /**
  * Executes migrations: runs pending and reverts previously executed migrations.
@@ -41,6 +55,7 @@ export class MigrationExecutor {
     private readonly migrationsSchema?: string
     private readonly migrationsTable: string
     private readonly migrationsTableName: string
+    private migrationsTableColumnsEnsured = false
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -83,7 +98,20 @@ export class MigrationExecutor {
             }
 
             await queryRunner.beforeMigration()
-            await (migration.instance as any).up(queryRunner)
+            if (!migration.instance) {
+                throw new TypeORMError(
+                    `Cannot execute migration "${migration.name}" because it has no instance.`,
+                )
+            }
+            const captured = await this.captureMigrationSql(
+                queryRunner,
+                () => migration.instance!.up(queryRunner),
+                true,
+            )
+            migration.checksum = computeMigrationChecksum(
+                migration.name,
+                captured,
+            )
             await queryRunner.afterMigration()
             await this.insertExecutedMigration(queryRunner, migration)
 
@@ -133,7 +161,7 @@ export class MigrationExecutor {
      */
     public insertMigration(migration: Migration): Promise<void> {
         return this.withQueryRunner((q) =>
-            this.insertExecutedMigration(q, migration),
+            this.insertExecutedMigration(q, migration, { recordOnly: true }),
         )
     }
 
@@ -216,6 +244,21 @@ export class MigrationExecutor {
 
         // get all user's migrations in the source code
         const allMigrations = this.getMigrations()
+
+        if (this.dataSource.options.migrationsChecksumCheck) {
+            try {
+                await this.verifyExecutedMigrationChecksums(
+                    queryRunner,
+                    executedMigrations,
+                    allMigrations,
+                )
+            } catch (error) {
+                // release the query runner we created so a checksum failure
+                // does not hold a pooled connection
+                if (!this.queryRunner) await queryRunner.release()
+                throw error
+            }
+        }
 
         // variable to store all migrations we did successfully
         const successMigrations: Migration[] = []
@@ -338,8 +381,7 @@ export class MigrationExecutor {
                     transactionStartedByUs = true
                 }
 
-                await migration
-                    .instance!.up(queryRunner)
+                await this.captureAndRunPendingMigration(queryRunner, migration)
                     .catch((error) => {
                         // informative log about migration failure
                         this.dataSource.logger.logMigration(
@@ -508,6 +550,8 @@ export class MigrationExecutor {
         if (this.dataSource.driver.options.type === "mongodb") {
             return
         }
+        // Always verify the table exists (it may be dropped between calls on a
+        // long-lived executor); the ensured flag only skips the column checks.
         const tableExist = await queryRunner.hasTable(this.migrationsTable) // todo: table name should be configurable
         if (!tableExist) {
             await queryRunner.createTable(
@@ -544,9 +588,35 @@ export class MigrationExecutor {
                             }),
                             isNullable: false,
                         },
+                        {
+                            name: "executedAt",
+                            type: this.dataSource.driver.normalizeType({
+                                type: this.dataSource.driver.mappedDataTypes
+                                    .migrationTimestamp,
+                            }),
+                            isNullable: true,
+                        },
+                        {
+                            name: "checksum",
+                            type: this.dataSource.driver.normalizeType({
+                                type: this.dataSource.driver.mappedDataTypes
+                                    .migrationName,
+                            }),
+                            length: "64",
+                            isNullable: true,
+                        },
+                        ...this.getMigrationsExtraColumns().map((column) => ({
+                            name: column.name,
+                            type: column.type,
+                            length: column.length,
+                            isNullable: true,
+                        })),
                     ],
                 }),
             )
+            this.migrationsTableColumnsEnsured = true
+        } else {
+            await this.ensureMigrationsTableColumns(queryRunner)
         }
     }
 
@@ -572,10 +642,24 @@ export class MigrationExecutor {
                 .from(this.migrationsTable, this.migrationsTableName)
                 .getRawMany()
             return migrationsRaw.map((migrationRaw) => {
+                const executedAtRaw = this.getRawMigrationValue(
+                    migrationRaw,
+                    "executedAt",
+                )
+                const checksumRaw = this.getRawMigrationValue(
+                    migrationRaw,
+                    "checksum",
+                )
                 return new Migration(
                     parseInt(migrationRaw["id"]),
                     parseInt(migrationRaw["timestamp"]),
                     migrationRaw["name"],
+                    undefined,
+                    undefined,
+                    executedAtRaw != null && executedAtRaw !== ""
+                        ? parseInt(String(executedAtRaw))
+                        : undefined,
+                    checksumRaw != null ? String(checksumRaw) : undefined,
                 )
             })
         }
@@ -658,30 +742,72 @@ export class MigrationExecutor {
      *
      * @param queryRunner
      * @param migration
+     * @param options
+     * @param options.recordOnly
      */
     protected async insertExecutedMigration(
         queryRunner: QueryRunner,
         migration: Migration,
+        options?: { recordOnly?: boolean },
     ): Promise<void> {
+        await this.createMigrationsTableIfNotExist(queryRunner)
+
         const values: ObjectLiteral = {}
         if (this.dataSource.driver.options.type === "mssql") {
-            values["timestamp"] = new MssqlParameter(
+            const timestampType = this.dataSource.driver.normalizeType({
+                type: this.dataSource.driver.mappedDataTypes.migrationTimestamp,
+            })
+            const nameType = this.dataSource.driver.normalizeType({
+                type: this.dataSource.driver.mappedDataTypes.migrationName,
+            })
+            values["timestamp"] = this.createMssqlParameter(
                 migration.timestamp,
-                this.dataSource.driver.normalizeType({
-                    type: this.dataSource.driver.mappedDataTypes
-                        .migrationTimestamp,
-                }) as any,
+                timestampType,
             )
-            values["name"] = new MssqlParameter(
-                migration.name,
-                this.dataSource.driver.normalizeType({
-                    type: this.dataSource.driver.mappedDataTypes.migrationName,
-                }) as any,
+            values["name"] = this.createMssqlParameter(migration.name, nameType)
+            values["executedAt"] = this.createMssqlParameter(
+                Date.now(),
+                timestampType,
             )
+            const checksum = await this.resolveMigrationChecksum(
+                queryRunner,
+                migration,
+                options,
+            )
+            values["checksum"] = this.createMssqlParameter(checksum, nameType)
         } else {
             values["timestamp"] = migration.timestamp
             values["name"] = migration.name
+            values["executedAt"] = Date.now()
+            values["checksum"] = await this.resolveMigrationChecksum(
+                queryRunner,
+                migration,
+                options,
+            )
         }
+
+        for (const column of this.getMigrationsExtraColumns()) {
+            const value =
+                migration.instance?.migrationMetadata?.[column.name] ?? null
+            if (
+                this.dataSource.driver.options.type === "mssql" &&
+                isMssqlParameterType(column.type)
+            ) {
+                const length =
+                    column.length != null && column.length !== ""
+                        ? parseInt(column.length, 10)
+                        : undefined
+                values[column.name] =
+                    length != null && !Number.isNaN(length)
+                        ? new MssqlParameter(value, column.type, length)
+                        : new MssqlParameter(value, column.type)
+            } else {
+                // Other drivers, or SQL Server column types without a dedicated
+                // parameter type (e.g. sql_variant): let the driver infer.
+                values[column.name] = value
+            }
+        }
+
         if (this.dataSource.driver.options.type === "mongodb") {
             const mongoRunner = queryRunner as MongoQueryRunner
             await mongoRunner.databaseConnection
@@ -710,18 +836,18 @@ export class MigrationExecutor {
     ): Promise<void> {
         const conditions: ObjectLiteral = {}
         if (this.dataSource.driver.options.type === "mssql") {
-            conditions["timestamp"] = new MssqlParameter(
+            conditions["timestamp"] = this.createMssqlParameter(
                 migration.timestamp,
                 this.dataSource.driver.normalizeType({
                     type: this.dataSource.driver.mappedDataTypes
                         .migrationTimestamp,
-                }) as any,
+                }),
             )
-            conditions["name"] = new MssqlParameter(
+            conditions["name"] = this.createMssqlParameter(
                 migration.name,
                 this.dataSource.driver.normalizeType({
                     type: this.dataSource.driver.mappedDataTypes.migrationName,
-                }) as any,
+                }),
             )
         } else {
             conditions["timestamp"] = migration.timestamp
@@ -759,5 +885,280 @@ export class MigrationExecutor {
                 await queryRunner.release()
             }
         }
+    }
+
+    protected async captureAndRunPendingMigration(
+        queryRunner: QueryRunner,
+        migration: Migration,
+    ): Promise<void> {
+        const captured = await this.captureMigrationSql(
+            queryRunner,
+            () => migration.instance!.up(queryRunner),
+            true,
+        )
+        migration.checksum = computeMigrationChecksum(migration.name, captured)
+    }
+
+    /**
+     * Collects SQL from `up()`, including schema-builder queries and raw
+     * `queryRunner.query()` calls.
+     * When `execute` is false, queries are recorded but not sent to the database.
+     *
+     * @param queryRunner
+     * @param run
+     * @param execute
+     */
+    protected async captureMigrationSql(
+        queryRunner: QueryRunner,
+        run: () => Promise<void>,
+        execute: boolean,
+    ): Promise<string[]> {
+        if (this.dataSource.driver.options.type === "mongodb") {
+            if (execute) {
+                await run()
+            }
+            return []
+        }
+
+        const statements: string[] = []
+        const originalQuery = queryRunner.query.bind(queryRunner)
+        queryRunner.query = ((
+            query: string,
+            parameters?: any,
+            useStructuredResult?: boolean,
+        ) => {
+            statements.push(formatSqlForChecksum(query, parameters))
+            if (execute) {
+                if (useStructuredResult === true) {
+                    return originalQuery(query, parameters, true)
+                }
+                return originalQuery(query, parameters)
+            }
+            if (useStructuredResult === true) {
+                const result = new QueryResult()
+                result.records = []
+                result.raw = []
+                return Promise.resolve(result)
+            }
+            return Promise.resolve([])
+        }) as QueryRunner["query"]
+
+        try {
+            await run()
+        } finally {
+            queryRunner.query = originalQuery
+        }
+
+        return statements
+    }
+
+    protected async resolveMigrationChecksum(
+        queryRunner: QueryRunner,
+        migration: Migration,
+        options?: { recordOnly?: boolean },
+    ): Promise<string | null> {
+        if (!migration.instance) {
+            return null
+        }
+        if (migration.checksum) {
+            return migration.checksum
+        }
+        // Fake runs and insertMigration() only record a row; they must not
+        // execute migration code while resolving a checksum.
+        if (options?.recordOnly || this.fake) {
+            return null
+        }
+
+        const captured = await this.captureMigrationSql(
+            queryRunner,
+            () => migration.instance!.up(queryRunner),
+            false,
+        )
+        return computeMigrationChecksum(migration.name, captured)
+    }
+
+    protected async verifyExecutedMigrationChecksums(
+        queryRunner: QueryRunner,
+        executedMigrations: Migration[],
+        sourceMigrations: Migration[],
+    ) {
+        if (this.dataSource.driver.options.type === "mongodb") {
+            return
+        }
+
+        const sourceMigrationsByName = new Map(
+            sourceMigrations.map((migration) => [migration.name, migration]),
+        )
+
+        for (const executedMigration of executedMigrations) {
+            if (!executedMigration.checksum) {
+                continue
+            }
+
+            const sourceMigration = sourceMigrationsByName.get(
+                executedMigration.name,
+            )
+            if (!sourceMigration?.instance) {
+                continue
+            }
+
+            const capturedSql = await this.captureMigrationSql(
+                queryRunner,
+                () => sourceMigration.instance!.up(queryRunner),
+                false,
+            )
+            const currentSql = sqlStatementsForDisplay(capturedSql)
+            const currentChecksum = computeMigrationChecksum(
+                sourceMigration.name,
+                capturedSql,
+            )
+            if (currentChecksum !== executedMigration.checksum) {
+                this.dataSource.logger.logMigration(
+                    `Checksum mismatch for "${executedMigration.name}". SQL used for current checksum:\n${currentSql}`,
+                )
+                throw new MigrationChecksumMismatchError(
+                    executedMigration.name,
+                    executedMigration.checksum,
+                    currentChecksum,
+                    currentSql,
+                )
+            }
+        }
+    }
+
+    /**
+     * Wraps a value for SQL Server using a type name resolved at runtime
+     * (driver-normalized or user-configured), rejecting unsupported names.
+     *
+     * @param value
+     * @param type
+     * @param params optional length / precision / scale
+     */
+    protected createMssqlParameter(
+        value: unknown,
+        type: string,
+        ...params: number[]
+    ): MssqlParameter {
+        if (!isMssqlParameterType(type)) {
+            throw new TypeORMError(
+                `Unsupported SQL Server parameter type "${type}" for the migrations table.`,
+            )
+        }
+        return new MssqlParameter(value, type, ...params)
+    }
+
+    protected buildExecutedAtColumn(): TableColumn {
+        return new TableColumn({
+            name: "executedAt",
+            type: this.dataSource.driver.normalizeType({
+                type: this.dataSource.driver.mappedDataTypes.migrationTimestamp,
+            }),
+            isNullable: true,
+        })
+    }
+
+    protected buildChecksumColumn(): TableColumn {
+        return new TableColumn({
+            name: "checksum",
+            type: this.dataSource.driver.normalizeType({
+                type: this.dataSource.driver.mappedDataTypes.migrationName,
+            }),
+            length: "64",
+            isNullable: true,
+        })
+    }
+
+    protected getRawMigrationValue(
+        migrationRaw: ObjectLiteral,
+        columnName: string,
+    ): unknown {
+        if (Object.prototype.hasOwnProperty.call(migrationRaw, columnName)) {
+            return migrationRaw[columnName]
+        }
+
+        const lowerName = columnName.toLowerCase()
+        for (const key of Object.keys(migrationRaw)) {
+            if (key.toLowerCase() === lowerName) {
+                return migrationRaw[key]
+            }
+        }
+
+        return undefined
+    }
+
+    protected getMigrationsExtraColumns(): {
+        name: string
+        type: string
+        length?: string
+    }[] {
+        const reserved = new Set([
+            "id",
+            "timestamp",
+            "name",
+            "executedat",
+            "checksum",
+        ])
+        const seenNames = new Set<string>()
+        const columns: {
+            name: string
+            type: string
+            length?: string
+        }[] = []
+        for (const column of this.dataSource.options.migrationsExtraColumns ??
+            []) {
+            const name = column.name?.trim()
+            if (!name) continue
+            const lowerName = name.toLowerCase()
+            // skip reserved names and duplicates (case-insensitive) so table
+            // creation does not fail with duplicate-column errors
+            if (reserved.has(lowerName) || seenNames.has(lowerName)) continue
+            seenNames.add(lowerName)
+            columns.push({ ...column, name })
+        }
+        return columns
+    }
+
+    protected async ensureMigrationsTableColumns(
+        queryRunner: QueryRunner,
+    ): Promise<void> {
+        if (this.migrationsTableColumnsEnsured) {
+            return
+        }
+
+        // Read the table once and diff in memory instead of issuing one
+        // hasColumn round-trip per column on every startup.
+        const table = await queryRunner.getTable(this.migrationsTable)
+        if (!table) {
+            return
+        }
+
+        // Match by exact name: identifiers are quoted, so on case-sensitive
+        // databases "Checksum" and "checksum" are different columns and the
+        // insert would target the exact-case name.
+        const missingColumns: TableColumn[] = []
+        if (!table.findColumnByName("executedAt")) {
+            missingColumns.push(this.buildExecutedAtColumn())
+        }
+        if (!table.findColumnByName("checksum")) {
+            missingColumns.push(this.buildChecksumColumn())
+        }
+        for (const column of this.getMigrationsExtraColumns()) {
+            if (!table.findColumnByName(column.name)) {
+                missingColumns.push(
+                    new TableColumn({
+                        name: column.name,
+                        type: column.type,
+                        length: column.length,
+                        isNullable: true,
+                    }),
+                )
+            }
+        }
+
+        if (missingColumns.length > 0) {
+            await queryRunner.addColumns(this.migrationsTable, missingColumns)
+        }
+
+        this.migrationsTableColumnsEnsured = true
     }
 }
