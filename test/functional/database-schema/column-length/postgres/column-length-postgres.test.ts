@@ -109,10 +109,54 @@ describe("database schema > column length > postgres", () => {
                         .map((q) => q.query)
                         .join(";\n")
 
-                    // no bare-type collation ALTER that would drop the length
                     expect(upSql).to.not.match(/TYPE character varying COLLATE/)
-                    // the requested length must appear in the emitted SQL
                     expect(upSql).to.contain("character varying(100)")
+                } finally {
+                    queryRunner.disableSqlMemory()
+                    await queryRunner.release()
+                }
+            }),
+        ))
+
+    it("resize with rename applies the type change before the rename and reverts in reverse order", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                const table = await queryRunner.getTable("post")
+                const varcharColumn = table!.findColumnByName("varchar")!
+
+                const renamedColumn = varcharColumn.clone()
+                renamedColumn.name = "renamed_varchar"
+                renamedColumn.length = "100"
+
+                queryRunner.enableSqlMemory()
+                try {
+                    await queryRunner.changeColumn(
+                        table!,
+                        varcharColumn,
+                        renamedColumn,
+                    )
+
+                    const memorySql = queryRunner.getMemorySql()
+                    const upSql = memorySql.upQueries
+                        .map((q) => q.query)
+                        .join(";\n")
+                    const upAlter = upSql.indexOf("ALTER COLUMN")
+                    const upRename = upSql.indexOf("RENAME COLUMN")
+                    expect(upAlter).to.be.greaterThan(-1)
+                    expect(upRename).to.be.greaterThan(-1)
+                    expect(upAlter).to.be.lessThan(upRename)
+
+                    const downExecutionOrder = [...memorySql.downQueries]
+                        .reverse()
+                        .map((q) => q.query)
+                        .join(";\n")
+                    const downRename =
+                        downExecutionOrder.indexOf("RENAME COLUMN")
+                    const downAlter = downExecutionOrder.indexOf("ALTER COLUMN")
+                    expect(downRename).to.be.greaterThan(-1)
+                    expect(downAlter).to.be.greaterThan(-1)
+                    expect(downRename).to.be.lessThan(downAlter)
                 } finally {
                     queryRunner.disableSqlMemory()
                     await queryRunner.release()
