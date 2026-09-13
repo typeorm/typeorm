@@ -1146,16 +1146,18 @@ export class EntityMetadataBuilder {
             return
         }
 
-        entityMetadata.indices.push(
-            new IndexMetadata({
-                entityMetadata: entityMetadata,
-                columns: [entityMetadata.discriminatorColumn!],
-                args: {
-                    target: entityMetadata.target,
-                    unique: false,
-                },
-            }),
-        )
+        const index = new IndexMetadata({
+            entityMetadata: entityMetadata,
+            columns: [entityMetadata.discriminatorColumn!],
+            args: {
+                target: entityMetadata.target,
+                unique: false,
+            },
+        })
+
+        // computeEntityMetadataStep2 rebuilds "indices" from "ownIndices".
+        entityMetadata.ownIndices.push(index)
+        this.computeEntityMetadataStep2(entityMetadata)
     }
 
     /**
