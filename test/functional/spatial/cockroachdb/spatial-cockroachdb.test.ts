@@ -53,6 +53,41 @@ describe("spatial-cockroachdb", () => {
             }),
         ))
 
+    // see https://github.com/typeorm/typeorm/issues/12747
+    it("should load dimensional spatial feature types from the database", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                const table = await queryRunner.getTable("dimensional_post")
+                await queryRunner.release()
+
+                const featureTypeOf = (columnName: string) =>
+                    table!
+                        .findColumnByName(columnName)!
+                        .spatialFeatureType!.toLowerCase()
+
+                expect(featureTypeOf("pointZ")).to.equal("pointz")
+                expect(featureTypeOf("pointM")).to.equal("pointm")
+                expect(featureTypeOf("pointZM")).to.equal("pointzm")
+                expect(featureTypeOf("geogZ")).to.equal("pointz")
+            }),
+        ))
+
+    // see https://github.com/typeorm/typeorm/issues/12747
+    it("should not report schema changes for dimensional spatial columns", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const sqlInMemory = await dataSource.driver
+                    .createSchemaBuilder()
+                    .log()
+
+                const dimensionalPostChanges = sqlInMemory.upQueries.filter(
+                    (query) => query.query.includes("dimensional_post"),
+                )
+                expect(dimensionalPostChanges).to.have.length(0)
+            }),
+        ))
+
     it("should create correct schema with geography type", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {

@@ -825,6 +825,11 @@ export class MysqlDriver implements Driver {
             return undefined
         }
 
+        if (typeof defaultValue === "function") {
+            const value = defaultValue()
+            return this.normalizeDatetimeFunction(value)
+        }
+
         if (
             (columnMetadata.type === "enum" ||
                 columnMetadata.type === "simple-enum" ||
@@ -844,11 +849,6 @@ export class MysqlDriver implements Driver {
 
         if (typeof defaultValue === "boolean") {
             return defaultValue ? "1" : "0"
-        }
-
-        if (typeof defaultValue === "function") {
-            const value = defaultValue()
-            return this.normalizeDatetimeFunction(value)
         }
 
         if (defaultValue === undefined) {

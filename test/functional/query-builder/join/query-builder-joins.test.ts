@@ -396,6 +396,31 @@ describe("query builder > joins", () => {
                 }),
             ))
 
+        it("should not nest a child left join inside its left joined parent", () => {
+            for (const dataSource of dataSources) {
+                // For github issue #12792
+                const query = dataSource.manager
+                    .createQueryBuilder(Post, "post")
+                    .leftJoinAndSelect("post.categories", "categories")
+                    .leftJoinAndSelect("categories.images", "images")
+                    .getQuery()
+
+                expect(query).to.not.contain("JOIN (")
+            }
+        })
+
+        it("should nest a child inner join inside its left joined parent", () => {
+            for (const dataSource of dataSources) {
+                const query = dataSource.manager
+                    .createQueryBuilder(Post, "post")
+                    .leftJoinAndSelect("post.categories", "categories")
+                    .innerJoinAndSelect("categories.images", "images")
+                    .getQuery()
+
+                expect(query).to.contain("LEFT JOIN (")
+            }
+        })
+
         it("should load data when additional condition used", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {

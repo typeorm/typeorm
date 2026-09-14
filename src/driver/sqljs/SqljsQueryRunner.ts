@@ -111,6 +111,12 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
                 statement.bind(parameters)
             }
 
+            const records: any[] = []
+
+            while (statement.step()) {
+                records.push(statement.getAsObject())
+            }
+
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
@@ -127,12 +133,6 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
                     parameters,
                     this,
                 )
-
-            const records: any[] = []
-
-            while (statement.step()) {
-                records.push(statement.getAsObject())
-            }
 
             this.broadcaster.broadcastAfterQueryEvent(
                 broadcasterResult,

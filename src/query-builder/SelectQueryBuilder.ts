@@ -2384,6 +2384,15 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             })
             .join(" ")
 
+        // nesting is only needed to stop an inner child join from filtering out the rows its outer parent
+        // preserves. In every other combination the flat form is equivalent and leaves join order to the planner.
+        const nestChildJoins =
+            joinAttr.direction === "LEFT" &&
+            (children || []).some(
+                (joinTreeChild) =>
+                    joinTreeChild.joinAttribute.direction === "INNER",
+            )
+
         // if join was build without relation (e.g. without "post.category") then it means that we have direct
         // table to join, without junction table involved. This means we simply join direct table.
         if (!parentAlias || !relation) {
@@ -2396,6 +2405,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 destinationTableAlias,
                 joinAttr.condition ?? "",
                 childJoins,
+                nestChildJoins,
             )
         }
 
@@ -2424,6 +2434,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 destinationTableAlias,
                 condition + appendedCondition,
                 childJoins,
+                nestChildJoins,
             )
         } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
             // JOIN `post` `post` ON `post`.`categoryId` = `category`.`id`
@@ -2470,6 +2481,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 destinationTableAlias,
                 condition + appendedCondition,
                 childJoins,
+                nestChildJoins,
             )
         } else {
             // means many-to-many
@@ -2554,6 +2566,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     destinationTableAlias,
                     destinationCondition + appendedCondition,
                     childJoins,
+                    nestChildJoins,
                 )
             )
         }
@@ -2565,21 +2578,20 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         alias: string,
         condition: string,
         childJoins = "",
+        nestChildJoins = false,
     ): string {
-        const prefix = childJoins ? "(" : ""
-        const postfix = childJoins ? ")" : ""
+        const joinedTable = nestChildJoins
+            ? "(" + tableName + " " + this.escape(alias) + childJoins + ")"
+            : tableName + " " + this.escape(alias)
+
         return (
             " " +
             direction +
             " JOIN " +
-            prefix +
-            tableName +
-            " " +
-            this.escape(alias) +
-            childJoins +
-            postfix +
+            joinedTable +
             this.createTableLockExpression() +
-            (condition ? " ON " + condition : "")
+            (condition ? " ON " + condition : "") +
+            (nestChildJoins ? "" : childJoins)
         )
     }
 

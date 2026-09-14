@@ -3951,7 +3951,7 @@ export class PostgresQueryRunner
                                 const sql =
                                     `SELECT * FROM (` +
                                     `SELECT "f_table_schema" "table_schema", "f_table_name" "table_name", ` +
-                                    `"f_${tableColumn.type}_column" "column_name", "srid", "type" ` +
+                                    `"f_${tableColumn.type}_column" "column_name", "srid", "type", "coord_dimension" ` +
                                     `FROM "${tableColumn.type}_columns"` +
                                     `) AS _ ` +
                                     `WHERE "column_name" = '${dbColumn["column_name"]}' AND ` +
@@ -3962,8 +3962,30 @@ export class PostgresQueryRunner
                                     await this.query(sql)
 
                                 if (results.length > 0) {
-                                    tableColumn.spatialFeatureType =
+                                    // "geometry_columns" folds the Z dimension into
+                                    // "coord_dimension" and only keeps the M suffix in
+                                    // "type", while "geography_columns" reports the
+                                    // full suffix in "type", so the suffix is only
+                                    // appended when it is missing.
+                                    let spatialFeatureType: string =
                                         results[0].type
+                                    const upperType =
+                                        spatialFeatureType.toUpperCase()
+                                    if (
+                                        results[0].coord_dimension === 3 &&
+                                        !upperType.endsWith("Z") &&
+                                        !upperType.endsWith("M")
+                                    ) {
+                                        spatialFeatureType += "Z"
+                                    } else if (
+                                        results[0].coord_dimension === 4 &&
+                                        !upperType.endsWith("Z") &&
+                                        !upperType.endsWith("M")
+                                    ) {
+                                        spatialFeatureType += "ZM"
+                                    }
+                                    tableColumn.spatialFeatureType =
+                                        spatialFeatureType
                                     tableColumn.srid = results[0].srid
                                 }
                             }

@@ -424,8 +424,8 @@ describe("query builder > select", () => {
                     expect(sql).to.equal(
                         'SELECT "hero"."id" AS "hero_id", "hero"."url" AS "hero_url" ' +
                             'FROM "hero_image" "hero" ' +
-                            'LEFT JOIN ("post" "posts" ' +
-                            'LEFT JOIN "category" "category" ON "category"."id"="posts"."categoryId") ON "posts"."heroImageId"="hero"."id" ' +
+                            'LEFT JOIN "post" "posts" ON "posts"."heroImageId"="hero"."id" ' +
+                            'LEFT JOIN "category" "category" ON "category"."id"="posts"."categoryId" ' +
                             'WHERE "category"."name" = ?',
                     )
 
@@ -453,8 +453,8 @@ describe("query builder > select", () => {
                     expect(sql).to.equal(
                         'SELECT "hero"."id" AS "hero_id", "hero"."url" AS "hero_url" ' +
                             'FROM "hero_image" "hero" ' +
-                            'LEFT JOIN ("post" "posts" ' +
-                            'LEFT JOIN "category" "category" ON "category"."id"="posts"."categoryId") ON "posts"."heroImageId"="hero"."id" ' +
+                            'LEFT JOIN "post" "posts" ON "posts"."heroImageId"="hero"."id" ' +
+                            'LEFT JOIN "category" "category" ON "category"."id"="posts"."categoryId" ' +
                             'WHERE "category"."name" IN (?, ?, ?)',
                     )
 
@@ -541,6 +541,79 @@ describe("query builder > select", () => {
                             .where("post.id = :id", { id: "2" })
                             .getOneOrFail(),
                     ).to.be.rejectedWith("")
+                }),
+            ))
+    })
+
+    describe("partial selection without primary key", () => {
+        it("should return one entity per row when the primary key is not selected", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await dataSource.getRepository(Post).save([
+                        {
+                            id: "1",
+                            title: "Post 1",
+                            description: "Description 1",
+                            rating: 1,
+                        },
+                        {
+                            id: "2",
+                            title: "Post 2",
+                            description: "Description 2",
+                            rating: 2,
+                        },
+                        {
+                            id: "3",
+                            title: "Post 3",
+                            description: "Description 3",
+                            rating: 3,
+                        },
+                    ])
+
+                    const entities = await dataSource
+                        .createQueryBuilder(Post, "post")
+                        .select(["post.title", "post.rating"])
+                        .orderBy("post.rating", "ASC")
+                        .getMany()
+
+                    expect(entities).to.have.lengthOf(3)
+                    entities.forEach((entity, index) => {
+                        expect(entity).to.be.instanceOf(Post)
+                        expect(entity.id).to.be.undefined
+                        expect(entity.title).to.equal(`Post ${index + 1}`)
+                        expect(entity.rating).to.equal(index + 1)
+                    })
+                }),
+            ))
+
+        it("should not group rows with identical selected values when the primary key is not selected", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await dataSource.getRepository(Post).save([
+                        {
+                            id: "1",
+                            title: "Same Title",
+                            description: "Same Description",
+                            rating: 1,
+                        },
+                        {
+                            id: "2",
+                            title: "Same Title",
+                            description: "Same Description",
+                            rating: 1,
+                        },
+                    ])
+
+                    const entities = await dataSource
+                        .createQueryBuilder(Post, "post")
+                        .select(["post.title", "post.rating"])
+                        .getMany()
+
+                    expect(entities).to.have.lengthOf(2)
+                    entities.forEach((entity) => {
+                        expect(entity.title).to.equal("Same Title")
+                        expect(entity.rating).to.equal(1)
+                    })
                 }),
             ))
     })

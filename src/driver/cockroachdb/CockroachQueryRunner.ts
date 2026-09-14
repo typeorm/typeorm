@@ -3638,7 +3638,7 @@ export class CockroachQueryRunner
                                 const sql =
                                     `SELECT * FROM (` +
                                     `SELECT "f_table_schema" "table_schema", "f_table_name" "table_name", ` +
-                                    `"f_${tableColumn.type}_column" "column_name", "srid", "type" ` +
+                                    `"f_${tableColumn.type}_column" "column_name", "srid", "type", "coord_dimension" ` +
                                     `FROM "${tableColumn.type}_columns"` +
                                     `) AS _ ` +
                                     `WHERE "column_name" = '${dbColumn["column_name"]}' AND ` +
@@ -3649,8 +3649,40 @@ export class CockroachQueryRunner
                                     await this.query(sql)
 
                                 if (results.length > 0) {
+                                    // "geometry_columns" folds the Z dimension into
+                                    // "coord_dimension" and only keeps the M suffix in
+                                    // "type", while "geography_columns" reports the
+                                    // full suffix in "type", so the suffix is only
+                                    // appended when it is missing.
+                                    //
+                                    // Unlike PostGIS, CockroachDB also drops the M
+                                    // suffix from "geometry_columns"."type", which makes
+                                    // PointM indistinguishable from PointZ there. The
+                                    // declared type in "crdb_sql_type" still carries it.
+                                    let spatialFeatureType: string =
+                                        /^\w+\((\w+)/.exec(
+                                            dbColumn["crdb_sql_type"] ?? "",
+                                        )?.[1] ?? results[0].type
+                                    const coordDimension = parseInt(
+                                        results[0].coord_dimension,
+                                    )
+                                    const upperType =
+                                        spatialFeatureType.toUpperCase()
+                                    if (
+                                        coordDimension === 3 &&
+                                        !upperType.endsWith("Z") &&
+                                        !upperType.endsWith("M")
+                                    ) {
+                                        spatialFeatureType += "Z"
+                                    } else if (
+                                        coordDimension === 4 &&
+                                        !upperType.endsWith("Z") &&
+                                        !upperType.endsWith("M")
+                                    ) {
+                                        spatialFeatureType += "ZM"
+                                    }
                                     tableColumn.spatialFeatureType =
-                                        results[0].type
+                                        spatialFeatureType
                                     tableColumn.srid = results[0].srid
                                         ? parseInt(results[0].srid)
                                         : undefined

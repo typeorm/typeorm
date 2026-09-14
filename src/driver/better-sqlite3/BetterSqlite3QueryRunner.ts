@@ -106,16 +106,16 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
             normalizedParameters,
             this,
         )
-        this.broadcaster.broadcastBeforeQueryEvent(
-            broadcasterResult,
+        await this.broadcaster.broadcast(
+            "BeforeQuery",
             query,
             normalizedParameters,
         )
         const queryStartTime = Date.now()
 
-        const stmt = await this.getStmt(query)
-
         try {
+            const stmt = await this.getStmt(query)
+
             const result = new QueryResult()
 
             if (stmt.reader) {
@@ -170,7 +170,19 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
                 normalizedParameters,
                 this,
             )
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                normalizedParameters,
+                false,
+                undefined,
+                undefined,
+                err,
+            )
+
             throw new QueryFailedError(query, normalizedParameters, err)
+        } finally {
+            await broadcasterResult.wait()
         }
     }
 

@@ -13,7 +13,7 @@ describe("github issues > #11085 BeforeQuery promises are not awaited before que
 
     before(async () => {
         dataSources = await createTestingConnections({
-            enabledDrivers: ["postgres"],
+            enabledDrivers: ["postgres", "better-sqlite3"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
             subscribers: [__dirname + "/subscriber/*{.js,.ts}"],
         })
