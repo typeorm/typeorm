@@ -36,20 +36,20 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@tsconfig/node20": "^20.1.9",
+    "@tsconfig/node20": "^20.1.10",
     "@types/chai": "^5.2.3",
     "@types/mocha": "^10.0.10",
     "@types/node": "^20.19.43",
     "c8": "^11.0.0",
     "chai": "^6.2.2",
-    "eslint": "^10.6.0",
+    "eslint": "^10.9.1",
     "eslint-plugin-chai-friendly": "^1.2.1",
-    "mocha": "^11.7.6",
-    "prettier": "^3.9.4",
+    "mocha": "^11.8.0",
+    "prettier": "^3.9.6",
     "ts-node": "^10.9.2",
-    "typeorm": "1.0.0",
+    "typeorm": "1.1.1",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.63.0"
+    "typescript-eslint": "^8.69.0"
   },
   "peerDependencies": {
     "typeorm": "^1.0.0"
