@@ -23,4 +23,10 @@ export interface UniqueMetadataArgs {
      * Indicate if unique constraints can be deferred.
      */
     deferrable?: DeferrableType
+
+    /**
+     * UNIQUE NULLS NOT DISTINCT constraint allows only a single NULL value to appear in a UNIQUE index.
+     * This option is only applicable in PostgreSQL.
+     */
+    nullsNotDistinct?: boolean
 }

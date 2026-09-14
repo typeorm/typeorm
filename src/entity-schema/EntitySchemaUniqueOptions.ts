@@ -15,4 +15,10 @@ export interface EntitySchemaUniqueOptions {
      * Indicate if unique constraints can be deferred.
      */
     deferrable?: DeferrableType
+
+    /**
+     * UNIQUE NULLS NOT DISTINCT constraint allows only a single NULL value to appear in a UNIQUE index.
+     * Works only in PostgreSQL.
+     */
+    nullsNotDistinct?: boolean
 }

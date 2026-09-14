@@ -212,6 +212,8 @@ export class EntityMetadataBuilder {
                                         target: uniqueConstraint.target!,
                                         name: uniqueConstraint.name,
                                         unique: true,
+                                        nullsNotDistinct:
+                                            uniqueConstraint.nullsNotDistinct,
                                         synchronize: true,
                                     },
                                 })
@@ -784,6 +786,7 @@ export class EntityMetadataBuilder {
                             target: args.target,
                             name: args.name,
                             columns: args.columns,
+                            nullsNotDistinct: !!args.nullsNotDistinct,
                         },
                     })
                 })
@@ -814,6 +817,7 @@ export class EntityMetadataBuilder {
                             columns: args.columns,
                             unique: true,
                             synchronize: true,
+                            nullsNotDistinct: args.nullsNotDistinct,
                         },
                     })
                 })
