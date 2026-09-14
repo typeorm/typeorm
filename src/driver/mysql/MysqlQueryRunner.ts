@@ -681,7 +681,61 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             : await this.getCachedTable(oldTableOrName)
         const newTable = oldTable.clone()
 
-        const { database } = this.driver.parseTableName(oldTable)
+        const { database, tableName } = this.driver.parseTableName(oldTable)
+
+        const generatedForeignKeyNames = newTable.foreignKeys
+            .filter((foreignKey) => {
+                return (
+                    foreignKey.name ===
+                    this.dataSource.namingStrategy.foreignKeyName(
+                        oldTable,
+                        foreignKey.columnNames,
+                        this.getTablePath(foreignKey),
+                        foreignKey.referencedColumnNames,
+                    )
+                )
+            })
+            .map((foreignKey) => foreignKey.name!)
+
+        // Same-named foreign key indexes are omitted from Table.indices, so
+        // load their structure before renaming the table.
+        let foreignKeyIndices: ObjectLiteral[] = []
+        if (generatedForeignKeyNames.length > 0) {
+            const currentDatabase =
+                database ?? (await this.getCurrentDatabase())
+            const placeholders = generatedForeignKeyNames
+                .map(() => "?")
+                .join(", ")
+            foreignKeyIndices = await this.query(
+                `SELECT \`INDEX_NAME\`, \`SEQ_IN_INDEX\`, \`COLUMN_NAME\`, \`NON_UNIQUE\`, \`INDEX_TYPE\`, \`SUB_PART\` ` +
+                    `FROM \`INFORMATION_SCHEMA\`.\`STATISTICS\` ` +
+                    `WHERE \`TABLE_SCHEMA\` = ? AND \`TABLE_NAME\` = ? ` +
+                    `AND \`INDEX_NAME\` IN (${placeholders}) ` +
+                    `ORDER BY \`INDEX_NAME\`, \`SEQ_IN_INDEX\``,
+                [currentDatabase, tableName, ...generatedForeignKeyNames],
+            )
+        }
+
+        const generatedForeignKeyIndexNames = new Set(
+            newTable.foreignKeys
+                .filter((foreignKey) => {
+                    const indexColumns = foreignKeyIndices.filter(
+                        (index) => index["INDEX_NAME"] === foreignKey.name,
+                    )
+                    return (
+                        indexColumns.length === foreignKey.columnNames.length &&
+                        indexColumns.every(
+                            (index, position) =>
+                                index["COLUMN_NAME"] ===
+                                    foreignKey.columnNames[position] &&
+                                Number(index["NON_UNIQUE"]) === 1 &&
+                                index["INDEX_TYPE"] === "BTREE" &&
+                                index["SUB_PART"] === null,
+                        )
+                    )
+                })
+                .map((foreignKey) => foreignKey.name!),
+        )
 
         newTable.name = database ? `${database}.${newTableName}` : newTableName
 
@@ -781,22 +835,32 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 )
 
             // build queries
-            let up =
-                `ALTER TABLE ${this.escapePath(newTable)} DROP FOREIGN KEY \`${
-                    foreignKey.name
-                }\`, ADD CONSTRAINT \`${newForeignKeyName}\` FOREIGN KEY (${columnNames}) ` +
+            const renameGeneratedIndex = generatedForeignKeyIndexNames.has(
+                foreignKey.name!,
+            )
+
+            let up = `ALTER TABLE ${this.escapePath(
+                newTable,
+            )} DROP FOREIGN KEY \`${foreignKey.name}\``
+            if (renameGeneratedIndex) {
+                up += `, DROP INDEX \`${foreignKey.name}\`, ADD INDEX \`${newForeignKeyName}\` (${columnNames})`
+            }
+            up +=
+                `, ADD CONSTRAINT \`${newForeignKeyName}\` FOREIGN KEY (${columnNames}) ` +
                 `REFERENCES ${this.escapePath(
                     this.getTablePath(foreignKey),
                 )}(${referencedColumnNames})`
             if (foreignKey.onDelete) up += ` ON DELETE ${foreignKey.onDelete}`
             if (foreignKey.onUpdate) up += ` ON UPDATE ${foreignKey.onUpdate}`
 
-            let down =
-                `ALTER TABLE ${this.escapePath(
-                    newTable,
-                )} DROP FOREIGN KEY \`${newForeignKeyName}\`, ADD CONSTRAINT \`${
-                    foreignKey.name
-                }\` FOREIGN KEY (${columnNames}) ` +
+            let down = `ALTER TABLE ${this.escapePath(
+                newTable,
+            )} DROP FOREIGN KEY \`${newForeignKeyName}\``
+            if (renameGeneratedIndex) {
+                down += `, DROP INDEX \`${newForeignKeyName}\`, ADD INDEX \`${foreignKey.name}\` (${columnNames})`
+            }
+            down +=
+                `, ADD CONSTRAINT \`${foreignKey.name}\` FOREIGN KEY (${columnNames}) ` +
                 `REFERENCES ${this.escapePath(
                     this.getTablePath(foreignKey),
                 )}(${referencedColumnNames})`
