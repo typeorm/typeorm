@@ -106,6 +106,11 @@ export abstract class AbstractLogger implements Logger {
             return
         }
 
+        // the measured time is sub-millisecond, but the logged value has always
+        // been whole milliseconds — round here so every logger implementation
+        // keeps its existing output format
+        const roundedTime = Math.round(time)
+
         this.writeLog(
             "warn",
             [
@@ -116,13 +121,13 @@ export abstract class AbstractLogger implements Logger {
                     format: "sql",
                     parameters,
                     additionalInfo: {
-                        time,
+                        time: roundedTime,
                     },
                 },
                 {
                     type: "query-slow",
                     prefix: "execution time",
-                    message: time,
+                    message: roundedTime,
                 },
             ],
             queryRunner,
