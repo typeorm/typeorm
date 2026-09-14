@@ -1333,7 +1333,7 @@ export class PostgresQueryRunner
             oldColumn.type === newColumn.type &&
             oldColumn.length !== newColumn.length &&
             oldColumn.isArray === newColumn.isArray &&
-            oldColumn.generatedType === newColumn.generatedType &&
+            !oldColumn.generatedType &&
             oldColumn.asExpression === newColumn.asExpression &&
             // Collation changes emit their own TYPE ... COLLATE statement with the
             // bare base type (see the collation block below), which would strip the
