@@ -357,3 +357,36 @@ MySQL replication supports extra configuration options:
   }
 }
 ```
+
+PostgreSQL replication supports per-endpoint pool configuration via `extra` on each `master` / `slaves` entry. Options set here are merged over the top-level `extra`, so you can apply pool settings to individual endpoints without affecting others:
+
+```typescript
+{
+    type: "postgres",
+    extra: { idleTimeoutMillis: 10_000 }, // applied to both pools
+    replication: {
+        master: {
+            host: "writer.example.com",
+            port: 5432,
+            username: "app",
+            password: "secret",
+            database: "mydb",
+        },
+        slaves: [
+            {
+                host: "reader.example.com",
+                port: 5432,
+                username: "app",
+                password: "secret",
+                database: "mydb",
+                /**
+                 * Rotate reader connections after 60 s so pg-pool
+                 * proactively replaces them before a proxy or read
+                 * replica lifetime limit drops them silently.
+                 */
+                extra: { maxLifetimeSeconds: 60 },
+            },
+        ],
+    },
+}
+```

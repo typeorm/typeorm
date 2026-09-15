@@ -1751,6 +1751,7 @@ export class PostgresDriver implements Driver {
                 max: options.poolSize,
             },
             options.extra ?? {},
+            credentials.extra ?? {},
         )
 
         if (options.parseInt8 !== undefined) {
