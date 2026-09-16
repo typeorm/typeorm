@@ -3,6 +3,7 @@ import type { DataSource } from "../data-source/DataSource"
 import { EntityMetadata } from "../metadata/EntityMetadata"
 import { ForeignKeyMetadata } from "../metadata/ForeignKeyMetadata"
 import { IndexMetadata } from "../metadata/IndexMetadata"
+import type { JoinTableColumnMetadataArgs } from "../metadata-args/JoinTableColumnMetadataArgs"
 import type { JoinTableMetadataArgs } from "../metadata-args/JoinTableMetadataArgs"
 import type { RelationMetadata } from "../metadata/RelationMetadata"
 import { TypeORMError } from "../error"
@@ -209,8 +210,18 @@ export class JunctionEntityMetadataBuilder {
         })
 
         // create junction table foreign keys
+        // Referential actions are resolved in this order:
+        //   1. the relation options (inverse relation options for the inverse foreign key)
+        //   2. the join column options of the @JoinTable decorator
+        //   3. the default
         // Note: UPDATE CASCADE clause is not supported in Oracle.
         // Note: UPDATE/DELETE CASCADE clauses are not supported in Spanner.
+        const joinColumnOptions = this.collectForeignKeyOptions(
+            joinTable.joinColumns,
+        )
+        const inverseJoinColumnOptions = this.collectForeignKeyOptions(
+            joinTable.inverseJoinColumns,
+        )
         entityMetadata.foreignKeys = relation.createForeignKeyConstraints
             ? [
                   new ForeignKeyMetadata({
@@ -222,13 +233,18 @@ export class JunctionEntityMetadataBuilder {
                       onDelete:
                           this.dataSource.driver.options.type === "spanner"
                               ? "NO ACTION"
-                              : (relation.onDelete ?? "CASCADE"),
+                              : (relation.onDelete ??
+                                joinColumnOptions.onDelete ??
+                                "CASCADE"),
                       onUpdate:
                           this.dataSource.driver.options.type === "oracle" ||
                           this.dataSource.driver.options.type === "spanner"
                               ? "NO ACTION"
-                              : (relation.onUpdate ?? "CASCADE"),
-                      deferrable: relation.deferrable,
+                              : (relation.onUpdate ??
+                                joinColumnOptions.onUpdate ??
+                                "CASCADE"),
+                      deferrable:
+                          relation.deferrable ?? joinColumnOptions.deferrable,
                   }),
                   new ForeignKeyMetadata({
                       entityMetadata: entityMetadata,
@@ -240,16 +256,20 @@ export class JunctionEntityMetadataBuilder {
                           this.dataSource.driver.options.type === "spanner"
                               ? "NO ACTION"
                               : (relation.inverseRelation?.onDelete ??
+                                inverseJoinColumnOptions.onDelete ??
                                 "CASCADE"),
                       onUpdate:
                           this.dataSource.driver.options.type === "oracle" ||
                           this.dataSource.driver.options.type === "spanner"
                               ? "NO ACTION"
                               : (relation.inverseRelation?.onUpdate ??
+                                inverseJoinColumnOptions.onUpdate ??
                                 "CASCADE"),
                       deferrable: relation.inverseRelation
-                          ? relation.inverseRelation.deferrable
-                          : relation.deferrable,
+                          ? (relation.inverseRelation.deferrable ??
+                            inverseJoinColumnOptions.deferrable)
+                          : (inverseJoinColumnOptions.deferrable ??
+                            relation.deferrable),
                   }),
               ]
             : []
@@ -389,6 +409,28 @@ export class JunctionEntityMetadataBuilder {
             }
 
             return referencedColumns
+        }
+    }
+
+    /**
+     * Collects the foreign key options given in the join column args.
+     * For composite foreign keys the first defined value of each option wins.
+     *
+     * @param joinColumns
+     */
+    protected collectForeignKeyOptions(
+        joinColumns: JoinTableColumnMetadataArgs[] | undefined,
+    ): Pick<
+        JoinTableColumnMetadataArgs,
+        "onDelete" | "onUpdate" | "deferrable"
+    > {
+        return {
+            onDelete: joinColumns?.find((joinColumn) => joinColumn.onDelete)
+                ?.onDelete,
+            onUpdate: joinColumns?.find((joinColumn) => joinColumn.onUpdate)
+                ?.onUpdate,
+            deferrable: joinColumns?.find((joinColumn) => joinColumn.deferrable)
+                ?.deferrable,
         }
     }
 
