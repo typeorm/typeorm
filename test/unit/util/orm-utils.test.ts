@@ -414,3 +414,32 @@ describe(`OrmUtils`, () => {
         })
     })
 })
+
+    describe("normalizeWhereCriteria nested relation (issue #11818)", () => {
+        it("throws on undefined inside nested relation when behavior is 'throw'", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria(
+                    { uuid: "valid-uuid", b_entity: { uuid: undefined } },
+                    { undefined: "throw", null: "throw" },
+                ),
+            ).to.throw(/Undefined value.*b_entity\.uuid/)
+        })
+
+        it("throws on undefined inside nested relation even when the top level also has a valid property", () => {
+            expect(() =>
+                OrmUtils.normalizeWhereCriteria(
+                    { uuid: "valid-uuid", b_entity: { uuid: undefined } },
+                    {},
+                ),
+            ).to.throw(/Undefined value.*b_entity\.uuid/)
+        })
+
+        it("strips nested undefined keys when behavior is 'ignore'", () => {
+            const result = OrmUtils.normalizeWhereCriteria(
+                { uuid: "valid-uuid", b_entity: { uuid: undefined } },
+                { undefined: "ignore", null: "ignore" },
+            )
+            expect(result).to.deep.equal({ uuid: "valid-uuid" })
+        })
+    })
+
