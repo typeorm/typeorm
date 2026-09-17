@@ -6,13 +6,19 @@ import {
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
 import type { DataSource } from "../../../../../src"
-import { EntitySchema, QueryFailedError } from "../../../../../src"
+import {
+    EntitySchema,
+    QueryFailedError,
+    TypeORMError,
+} from "../../../../../src"
 import type { EntityMetadata } from "../../../../../src"
 import type { ForeignKeyMetadata } from "../../../../../src/metadata/ForeignKeyMetadata"
 import { Author } from "./entity/Author"
 import { Book } from "./entity/Book"
 import { Post } from "./entity/Post"
 import { Topic } from "./entity/Topic"
+import { Article } from "./entity-unsupported/Article"
+import { Tag } from "./entity-unsupported/Tag"
 
 function junctionForeignKeys(
     metadata: EntityMetadata,
@@ -84,17 +90,13 @@ describe("relations > many-to-many > junction foreign key options (#12870)", () 
         it("should prefer relation options over joinColumn options", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    const cascadeUpdate =
-                        dataSource.driver.options.type === "oracle"
-                            ? "NO ACTION"
-                            : "CASCADE"
                     const { owner, inverse } = junctionForeignKeys(
                         dataSource.getMetadata(Post),
                         "overriddenTopics",
                     )
 
-                    expect(owner.onDelete).to.equal("CASCADE")
-                    expect(owner.onUpdate).to.equal(cascadeUpdate)
+                    expect(owner.onDelete).to.equal("NO ACTION")
+                    expect(owner.onUpdate).to.equal("NO ACTION")
                     // no inverse relation exists, so the inverseJoinColumn options apply
                     expect(inverse.onDelete).to.equal("NO ACTION")
                     expect(inverse.onUpdate).to.equal("NO ACTION")
@@ -278,5 +280,34 @@ describe("relations > many-to-many > junction foreign key options (#12870)", () 
                     expect(inverse.onUpdate).to.equal("NO ACTION")
                 }),
             ))
+    })
+
+    describe("driver validation", () => {
+        let dataSources: DataSource[] = []
+
+        after(() => closeTestingConnections(dataSources))
+
+        it("should reject join column referential actions the driver does not support", async () => {
+            let error: unknown
+            try {
+                dataSources = await createTestingConnections({
+                    entities: [Article, Tag],
+                    schemaCreate: false,
+                    dropSchema: true,
+                    enabledDrivers: ["oracle"],
+                })
+            } catch (e) {
+                error = e
+            }
+
+            // only oracle restricts the supported referential actions,
+            // so this only fails when an oracle connection is configured
+            if (error)
+                expect(error).to.eql(
+                    new TypeORMError(
+                        'OnDeleteType "RESTRICT" is not supported for oracle!',
+                    ),
+                )
+        })
     })
 })

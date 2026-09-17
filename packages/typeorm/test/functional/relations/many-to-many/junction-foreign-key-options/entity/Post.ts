@@ -44,11 +44,13 @@ export class Post {
 
     /**
      * Precedence: relation options win over joinColumn options.
+     * NO ACTION is used on the relation because it is the only onUpdate
+     * value that every driver accepts (Oracle rejects CASCADE at validation).
      */
-    @ManyToMany(() => Topic, { onDelete: "CASCADE", onUpdate: "CASCADE" })
+    @ManyToMany(() => Topic, { onDelete: "NO ACTION", onUpdate: "NO ACTION" })
     @JoinTable({
         name: "post_overridden_topics",
-        joinColumn: { onDelete: "NO ACTION", onUpdate: "NO ACTION" },
+        joinColumn: { onDelete: "CASCADE", onUpdate: "CASCADE" },
         inverseJoinColumn: { onDelete: "NO ACTION", onUpdate: "NO ACTION" },
     })
     overriddenTopics: Topic[]
