@@ -68,4 +68,19 @@ export class Post {
         },
     })
     deferredTopics: Topic[]
+
+    /**
+     * Precedence: the relation deferrable applies to both junction foreign
+     * keys and wins over the join column options.
+     */
+    @ManyToMany(() => Topic, { deferrable: "INITIALLY DEFERRED" })
+    @JoinTable({
+        name: "post_relation_deferred_topics",
+        joinColumn: { name: "post_id", deferrable: "INITIALLY IMMEDIATE" },
+        inverseJoinColumn: {
+            name: "topic_id",
+            deferrable: "INITIALLY IMMEDIATE",
+        },
+    })
+    relationDeferredTopics: Topic[]
 }

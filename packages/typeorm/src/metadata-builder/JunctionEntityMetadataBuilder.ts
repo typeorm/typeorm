@@ -265,11 +265,11 @@ export class JunctionEntityMetadataBuilder {
                               : (relation.inverseRelation?.onUpdate ??
                                 inverseJoinColumnOptions.onUpdate ??
                                 "CASCADE"),
-                      deferrable: relation.inverseRelation
-                          ? (relation.inverseRelation.deferrable ??
-                            inverseJoinColumnOptions.deferrable)
-                          : (inverseJoinColumnOptions.deferrable ??
-                            relation.deferrable),
+                      deferrable:
+                          (relation.inverseRelation
+                              ? relation.inverseRelation.deferrable
+                              : relation.deferrable) ??
+                          inverseJoinColumnOptions.deferrable,
                   }),
               ]
             : []

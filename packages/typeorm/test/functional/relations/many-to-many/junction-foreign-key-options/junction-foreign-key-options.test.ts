@@ -130,6 +130,19 @@ describe("relations > many-to-many > junction foreign key options (#12870)", () 
                 }),
             ))
 
+        it("should prefer the relation deferrable over join column options on both foreign keys", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const { owner, inverse } = junctionForeignKeys(
+                        dataSource.getMetadata(Post),
+                        "relationDeferredTopics",
+                    )
+
+                    expect(owner.deferrable).to.equal("INITIALLY DEFERRED")
+                    expect(inverse.deferrable).to.equal("INITIALLY DEFERRED")
+                }),
+            ))
+
         it("should enforce the inverse junction foreign key in the database", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
