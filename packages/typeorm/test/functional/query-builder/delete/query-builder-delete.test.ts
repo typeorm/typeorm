@@ -8,6 +8,7 @@ import {
 import type { DataSource } from "../../../../src/data-source/DataSource"
 import { User } from "./entity/User"
 import { Photo } from "./entity/Photo"
+import { Task } from "./entity/Task"
 import { EntityPropertyNotFoundError } from "../../../../src/error/EntityPropertyNotFoundError"
 
 describe("query builder > delete", () => {
@@ -157,6 +158,31 @@ describe("query builder > delete", () => {
                     error = err
                 }
                 expect(error).to.be.an.instanceof(EntityPropertyNotFoundError)
+            }),
+        ))
+
+    // https://github.com/typeorm/typeorm/issues/11579
+    it("should not escape the DELETE keyword when a column is named DELETE", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await dataSource.manager.save([
+                    dataSource.manager.create(Task, { delete: 1 }),
+                    dataSource.manager.create(Task, { delete: 2 }),
+                ])
+
+                const query = dataSource
+                    .createQueryBuilder()
+                    .delete()
+                    .from(Task)
+                    .where({ delete: 1 })
+
+                expect(query.getQuery()).to.match(/^DELETE FROM /)
+
+                await query.execute()
+
+                const tasks = await dataSource.getRepository(Task).find()
+                expect(tasks).to.have.lengthOf(1)
+                expect(tasks[0].delete).to.equal(2)
             }),
         ))
 })

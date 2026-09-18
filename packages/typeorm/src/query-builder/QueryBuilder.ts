@@ -729,7 +729,18 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      *
      * @param statement
      */
-    protected replacePropertyNamesForTheWholeQuery(statement: string) {
+    protected replacePropertyNamesForTheWholeQuery(statement: string): string {
+        // the query comment is not SQL, so its text must never be rewritten
+        const comment = this.createComment()
+        if (comment && statement.startsWith(comment)) {
+            return (
+                comment +
+                this.replacePropertyNamesForTheWholeQuery(
+                    statement.slice(comment.length),
+                )
+            )
+        }
+
         const replacements: { [key: string]: { [key: string]: string } } = {}
 
         for (const alias of this.expressionMap.aliases) {
@@ -810,6 +821,11 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     "gm",
                 ),
                 (...matches) => {
+                    // the first token of the statement is always the SQL keyword
+                    // (DELETE, UPDATE, SELECT, ...), never a property name
+                    const offset: number = matches[matches.length - 2]
+                    if (offset === 0) return matches[0]
+
                     let match: string, pre: string, p: string
                     if (replaceAliasNamePrefixes) {
                         match = matches[0]
