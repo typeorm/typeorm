@@ -1886,7 +1886,8 @@ export class CockroachQueryRunner
                 (oldColumn.type === "enum" ||
                     oldColumn.type === "simple-enum") &&
                 (!OrmUtils.isArraysEqual(newColumn.enum!, oldColumn.enum!) ||
-                    newColumn.enumName !== oldColumn.enumName)
+                    this.buildEnumName(table, newColumn) !==
+                        this.buildEnumName(table, oldColumn))
             ) {
                 const arraySuffix = newColumn.isArray ? "[]" : ""
 
