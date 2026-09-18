@@ -59,6 +59,13 @@ export class ColumnMetadata {
     type: ColumnType
 
     /**
+     * Column type overrides keyed by driver type ("mysql", "postgres", ...).
+     * Set via `dialectTypes` column option; consulted when the schema builder
+     * converts the column to DDL, so only the physical column type changes.
+     */
+    dialectTypes?: { [key: string]: string }
+
+    /**
      * Type's length in the database.
      */
     length: string = ""
@@ -367,6 +374,8 @@ export class ColumnMetadata {
         if (options.args.options.name)
             this.givenDatabaseName = options.args.options.name
         if (options.args.options.type) this.type = options.args.options.type
+        if (options.args.options.dialectTypes)
+            this.dialectTypes = options.args.options.dialectTypes
         if (options.args.options.length)
             this.length = options.args.options.length
                 ? options.args.options.length.toString()

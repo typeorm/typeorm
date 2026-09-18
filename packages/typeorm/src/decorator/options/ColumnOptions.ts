@@ -12,6 +12,20 @@ export interface ColumnOptions extends ColumnCommonOptions {
     type?: ColumnType
 
     /**
+     * Column type per database, keyed by the driver type ("mysql", "postgres",
+     * "better-sqlite3", ...). The override replaces `type` when the matching
+     * driver syncs or migrates the schema; every other driver keeps using
+     * `type`, or the default inferred type when there is none. Useful for
+     * types that only some databases support, e.g.:
+     *
+     * ```
+     * \@Column({ type: "json", dialectTypes: { postgres: "jsonb" } })
+     * payload: string
+     * ```
+     */
+    dialectTypes?: { [key: string]: string }
+
+    /**
      * Column name in the database.
      */
     name?: string
