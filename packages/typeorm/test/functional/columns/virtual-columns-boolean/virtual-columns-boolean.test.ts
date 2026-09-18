@@ -1,7 +1,6 @@
 import { expect } from "chai"
 import "reflect-metadata"
 import type { DataSource } from "../../../../src"
-import { DriverUtils } from "../../../../src/driver/DriverUtils"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -19,18 +18,17 @@ describe("column > virtual columns > boolean", () => {
             entities: [Post],
         })
 
+        // identifier quoting differs per driver, so the column is escaped by the driver itself
         for (const dataSource of dataSources) {
-            // By default, MySQL uses backticks instead of quotes for identifiers
-            if (DriverUtils.isMySQLFamily(dataSource.driver)) {
-                const hasAttachmentMetadata = dataSource
-                    .getMetadata(Post)
-                    .columns.find(
-                        (columnMetadata) =>
-                            columnMetadata.propertyName === "hasAttachment",
-                    )!
-                hasAttachmentMetadata.query = (alias) =>
-                    `CASE WHEN ${alias}.\`attachment\` IS NOT NULL THEN 1 ELSE 0 END`
-            }
+            const hasAttachmentMetadata = dataSource
+                .getMetadata(Post)
+                .columns.find(
+                    (columnMetadata) =>
+                        columnMetadata.propertyName === "hasAttachment",
+                )!
+            const attachment = dataSource.driver.escape("attachment")
+            hasAttachmentMetadata.query = (alias) =>
+                `CASE WHEN ${alias}.${attachment} IS NOT NULL THEN 1 ELSE 0 END`
         }
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
