@@ -70,28 +70,34 @@ Additional options can be added to the `extra` object and will be passed directl
 
 Note: CockroachDB returns all numeric data types as `string`. However, if you omit the column type and define your property as `number` ORM will `parseInt` string into number.
 
-### Widening PostgreSQL varchar columns
+### Resizing PostgreSQL varchar columns
 
-For the `postgres` driver, increasing a `varchar` / `character varying`
-column's length (or removing its length limit) uses `ALTER COLUMN ... TYPE`
-instead of dropping and recreating the column. Existing values, including
-trailing spaces and nulls, are retained. The same applies to widening varchar
-array elements without changing the column's array shape.
+For the `postgres` driver, changing a `varchar` / `character varying` column's
+length uses `ALTER COLUMN ... TYPE` instead of dropping and recreating the
+column. The two names are aliases, including in caller-created `TableColumn`
+objects. This also covers adding or removing a length limit and resizing varchar
+array elements without changing the array shape.
 
-This behavior is limited to columns whose base type and collation are unchanged
-and which are not generated columns. Renaming, defaults, nullability and comments
-can still be changed in the same operation. Fixed-width `char` / `character`,
-narrowing, type conversions, array-shape changes and combined collation changes
-are outside this widening rule; their existing migration paths may still drop
-and recreate columns. Inspect generated migrations before applying them.
+Widening preserves existing values, including trailing spaces and nulls.
+Narrowing delegates validation to PostgreSQL: fitting values are retained, while
+ordinary overlength content rejects the ALTER statement rather than erasing the
+column. **PostgreSQL may trim excess trailing spaces without an error.** This is
+native assignment-conversion behavior, not a universally lossless operation.
+The generated `down` migration has the same rules: it may fail on longer values
+inserted after widening, and it cannot restore any characters already trimmed.
+No explicit `USING` cast is added to force truncation. See
+[PostgreSQL character types](https://www.postgresql.org/docs/current/datatype-character.html).
 
-The generated `down` migration restores the previous type with PostgreSQL's
-native narrowing semantics. It can fail when values inserted after the widening
-exceed the old limit. PostgreSQL also allows excess trailing spaces to be trimmed
-without an error, so rollback is **not guaranteed to preserve newly inserted
-values exactly**. Review both migration directions and explicitly handle data
-that no longer fits; successful widening does not make every later rollback
-lossless. See [PostgreSQL character types](https://www.postgresql.org/docs/current/datatype-character.html).
+The in-place path requires unchanged array shape and collation metadata and
+excludes generated columns. Renaming, defaults, nullability and comments can
+still change in the same operation. Fixed-width `char` / `character`, conversions
+to other types, array-shape changes and combined collation changes remain on
+their existing paths, which may still recreate columns. These other conversions
+are not covered by this varchar repair.
+
+Inspect both directions of generated migrations before executing them. Use a
+transaction for multi-statement changes when atomicity is required: rejection of
+one ALTER statement does not undo earlier statements run outside a transaction.
 
 ### Vector columns
 

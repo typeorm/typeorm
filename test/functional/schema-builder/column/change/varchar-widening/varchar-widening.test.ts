@@ -1,6 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { EntitySchema } from "../../../../../../src"
+import { EntitySchema, TableColumn } from "../../../../../../src"
 import type { DataSource, QueryRunner } from "../../../../../../src"
 import {
     closeTestingConnections,
@@ -462,7 +462,6 @@ describe("schema builder > postgres varchar widening", () => {
     }
 
     for (const scenario of [
-        { name: "narrowing", changes: { length: "10" } },
         {
             name: "changed collation",
             changes: { length: "100", collation: "C" },
@@ -487,6 +486,255 @@ describe("schema builder > postgres varchar widening", () => {
                         .upQueries.some((q) => /DROP COLUMN/.test(q.query)),
                 ).to.equal(true)
                 runner.disableSqlMemory()
+            }))
+    }
+
+    for (const length of ["50", "100"]) {
+        it(`should treat a caller's varchar alias as the inspected type at length ${length}`, () =>
+            withRunner(async (dataSource, runner) => {
+                const table = (await runner.getTable("varchar_widening"))!
+                const old = table.findColumnByName("value")!
+                expect(old.type).to.equal("character varying")
+                const next = new TableColumn({
+                    ...old,
+                    type: "varchar",
+                    length,
+                })
+                await runner.changeColumn("varchar_widening", "value", next)
+                expect(await stored(dataSource)).to.deep.equal(rows)
+                expect(
+                    runner
+                        .getMemorySql()
+                        .upQueries.some((q) => /DROP COLUMN/.test(q.query)),
+                ).to.equal(false)
+                if (length === "50")
+                    expect(runner.getMemorySql().upQueries).to.have.length(0)
+                const again = next.clone()
+                again.length = "120"
+                await runner.changeColumn("varchar_widening", "value", again)
+                expect(await stored(dataSource)).to.deep.equal(rows)
+                await runner.executeMemoryDownSql()
+                expect(await stored(dataSource)).to.deep.equal(rows)
+                expect(
+                    (await runner.getTable(
+                        "varchar_widening",
+                    ))!.findColumnByName("value")!.length,
+                ).to.equal("50")
+            }))
+    }
+
+    it("should retain all column settings across successive changes without reloading the table", () =>
+        withRunner(async (dataSource, runner) => {
+            await dataSource.query(
+                "DELETE FROM varchar_widening WHERE value IS NULL",
+            )
+            const table = (await runner.getTable("varchar_widening"))!
+            const first = table.findColumnByName("value")!.clone()
+            first.name = "renamed"
+            first.length = "100"
+            first.isNullable = false
+            first.default = "'first default'"
+            first.comment = "first comment"
+            await runner.changeColumn("varchar_widening", "value", first)
+            runner.clearSqlMemory()
+            const second = first.clone()
+            second.length = "150"
+            second.isNullable = true
+            second.default = "'second default'"
+            second.comment = "second comment"
+            // Resolve oldColumn from the runner cache, not a database reload.
+            await runner.changeColumn("varchar_widening", "renamed", second)
+            const sql = runner.getMemorySql()
+            expect(
+                sql.upQueries.some((q) => q.query.includes("DROP NOT NULL")),
+            ).to.equal(true)
+            expect(
+                sql.downQueries.some((q) => q.query.includes("SET NOT NULL")),
+            ).to.equal(true)
+            expect(
+                sql.downQueries.some((q) =>
+                    q.query.includes("SET DEFAULT 'first default'"),
+                ),
+            ).to.equal(true)
+            expect(
+                sql.downQueries.some((q) =>
+                    q.query.includes("'first comment'"),
+                ),
+            ).to.equal(true)
+            await runner.executeMemoryDownSql()
+            const actual = (await runner.getTable(
+                "varchar_widening",
+            ))!.findColumnByName("renamed")!
+            expect(actual.length).to.equal("100")
+            expect(actual.isNullable).to.equal(false)
+            expect(actual.default).to.equal("'first default'")
+            expect(actual.comment).to.equal("first comment")
+            expect(await stored(dataSource, "renamed")).to.deep.equal(
+                rows.filter((r) => r.value !== null),
+            )
+        }))
+
+    it("should narrow fitting values in place and retain indexes and foreign keys", () =>
+        withRunner(async (dataSource, runner) => {
+            await dataSource.query(
+                "ALTER TABLE varchar_widening ADD CONSTRAINT unique_value UNIQUE (value)",
+            )
+            await dataSource.query(
+                "CREATE TABLE narrowing_child (value varchar(50) REFERENCES varchar_widening(value))",
+            )
+            await dataSource.query("INSERT INTO narrowing_child VALUES ($1)", [
+                values[0],
+            ])
+            const indexes = await dataSource.query(
+                "SELECT indexname, indexdef FROM pg_indexes WHERE tablename='varchar_widening' ORDER BY indexname",
+            )
+            await resize(runner, "30")
+            expect(await stored(dataSource)).to.deep.equal(rows)
+            expect(
+                await dataSource.query(
+                    "SELECT indexname, indexdef FROM pg_indexes WHERE tablename='varchar_widening' ORDER BY indexname",
+                ),
+            ).to.deep.equal(indexes)
+            expect(
+                await dataSource.query("SELECT value FROM narrowing_child"),
+            ).to.deep.equal([{ value: values[0] }])
+            expect(
+                runner
+                    .getMemorySql()
+                    .upQueries.some((q) => /DROP COLUMN/.test(q.query)),
+            ).to.equal(false)
+            await expect(
+                dataSource.query(
+                    "INSERT INTO narrowing_child VALUES ('missing')",
+                ),
+            ).to.be.rejected
+            await runner.executeMemoryDownSql()
+            expect(await stored(dataSource)).to.deep.equal(rows)
+        }))
+
+    it("should reject overlength narrowing without erasing values or advancing cached state", () =>
+        withRunner(async (dataSource, runner) => {
+            const table = (await runner.getTable("varchar_widening"))!
+            const tooShort = table.findColumnByName("value")!.clone()
+            tooShort.length = "10"
+            let code: string | undefined
+            try {
+                await runner.changeColumn("varchar_widening", "value", tooShort)
+            } catch (error) {
+                code = error.driverError?.code
+            }
+            expect(code).to.equal("22001")
+            expect(await stored(dataSource)).to.deep.equal(rows)
+            runner.clearSqlMemory()
+            const recovery = tooShort.clone()
+            recovery.length = "75"
+            await runner.changeColumn("varchar_widening", "value", recovery)
+            expect(
+                runner.getMemorySql().downQueries.map((q) => q.query),
+            ).to.deep.equal([
+                'ALTER TABLE "varchar_widening" ALTER COLUMN "value" TYPE character varying(50)',
+            ])
+            expect(await stored(dataSource)).to.deep.equal(rows)
+        }))
+
+    it("should narrow an unbounded varchar without recreating it", () =>
+        withRunner(async (dataSource, runner) => {
+            await dataSource.query(
+                "CREATE TABLE narrowing_unbounded (value varchar)",
+            )
+            await dataSource.query(
+                "INSERT INTO narrowing_unbounded VALUES ($1)",
+                ["preserve   "],
+            )
+            const table = (await runner.getTable("narrowing_unbounded"))!
+            const old = table.findColumnByName("value")!
+            const next = new TableColumn({
+                ...old,
+                type: "varchar",
+                length: "20",
+            })
+            await runner.changeColumn(table, old, next)
+            expect(
+                await dataSource.query("SELECT value FROM narrowing_unbounded"),
+            ).to.deep.equal([{ value: "preserve   " }])
+            await runner.executeMemoryDownSql()
+            expect(
+                (await runner.getTable(
+                    "narrowing_unbounded",
+                ))!.findColumnByName("value")!.length,
+            ).to.equal("")
+        }))
+
+    it("should explicitly retain native trailing-space semantics on forward narrowing", () =>
+        withRunner(async (dataSource, runner) => {
+            await dataSource.query("DELETE FROM varchar_widening")
+            await dataSource.query(
+                "INSERT INTO varchar_widening VALUES (1, 'abc   ')",
+            )
+            await resize(runner, "4")
+            expect(await stored(dataSource)).to.deep.equal([
+                { id: 1, value: "abc " },
+            ])
+            expect(
+                runner
+                    .getMemorySql()
+                    .upQueries.some((q) => /DROP COLUMN/.test(q.query)),
+            ).to.equal(false)
+            // Re-expansion cannot restore characters already trimmed by PostgreSQL.
+            await runner.executeMemoryDownSql()
+            expect(await stored(dataSource)).to.deep.equal([
+                { id: 1, value: "abc " },
+            ])
+        }))
+
+    it("should generate an in-place schema migration for fitting narrower values", () =>
+        withRunner(async (dataSource) => {
+            dataSource
+                .getMetadata("VarcharWidening")
+                .findColumnWithPropertyName("value")!.length = "30"
+            const migration = await dataSource.driver
+                .createSchemaBuilder()
+                .log()
+            expect(
+                migration.upQueries.some((q) => /DROP COLUMN/.test(q.query)),
+            ).to.equal(false)
+            await dataSource.synchronize()
+            expect(await stored(dataSource)).to.deep.equal(rows)
+            expect(
+                (await dataSource.driver.createSchemaBuilder().log()).upQueries,
+            ).to.have.length(0)
+        }))
+
+    for (const incompatible of [false, true]) {
+        it(`should ${incompatible ? "reject incompatible" : "preserve fitting"} varchar array elements on narrowing`, () =>
+            withRunner(async (dataSource, runner) => {
+                await dataSource.query(
+                    "CREATE TABLE narrowing_array (value varchar(20)[])",
+                )
+                const original = [
+                    incompatible ? "a".repeat(11) : "a  ",
+                    "漢字🙂",
+                    null,
+                    "",
+                ]
+                await dataSource.query(
+                    "INSERT INTO narrowing_array VALUES ($1)",
+                    [original],
+                )
+                const table = (await runner.getTable("narrowing_array"))!
+                const old = table.findColumnByName("value")!
+                const next = old.clone()
+                next.type = "varchar"
+                next.length = "10"
+                if (incompatible) {
+                    await expect(runner.changeColumn(table, old, next)).to.be
+                        .rejected
+                } else {
+                    await runner.changeColumn(table, old, next)
+                }
+                expect(
+                    await dataSource.query("SELECT value FROM narrowing_array"),
+                ).to.deep.equal([{ value: original }])
             }))
     }
 })

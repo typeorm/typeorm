@@ -1326,28 +1326,25 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
-        // Widening varchar preserves its values, including trailing spaces.
-        // Keep narrowing, fixed-width types, generated columns, and collation
-        // changes on their existing paths; they need separate conversion rules.
-        const isVarcharWidening =
+        // varchar and character varying are the same PostgreSQL type, including
+        // when a caller-created TableColumn uses a different spelling from inspection.
+        const canAlterVarchar =
             (oldColumn.type === "character varying" ||
                 oldColumn.type === "varchar") &&
-            oldColumn.type === newColumn.type &&
+            (newColumn.type === "character varying" ||
+                newColumn.type === "varchar") &&
             oldColumn.isArray === newColumn.isArray &&
             !oldColumn.generatedType &&
             !newColumn.generatedType &&
             oldColumn.collation === newColumn.collation &&
             (newColumn.collationSchema === undefined ||
-                oldColumn.collationSchema === newColumn.collationSchema) &&
-            /^\d+$/.test(oldColumn.length) &&
-            Number(oldColumn.length) > 0 &&
-            (newColumn.length === "" ||
-                (/^\d+$/.test(newColumn.length) &&
-                    Number(newColumn.length) > Number(oldColumn.length)))
+                oldColumn.collationSchema === newColumn.collationSchema)
+        const isVarcharLengthChange =
+            canAlterVarchar && oldColumn.length !== newColumn.length
 
         if (
-            oldColumn.type !== newColumn.type ||
-            (oldColumn.length !== newColumn.length && !isVarcharWidening) ||
+            (oldColumn.type !== newColumn.type && !canAlterVarchar) ||
+            (oldColumn.length !== newColumn.length && !isVarcharLengthChange) ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1638,14 +1635,14 @@ export class PostgresQueryRunner
             }
 
             if (
-                isVarcharWidening ||
+                isVarcharLengthChange ||
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {
                 // ALTER TYPE without COLLATE selects the type's default collation.
-                // A length increase must not change an explicitly collated column.
-                const wideningCollation =
-                    isVarcharWidening && oldColumn.collation
+                // A length change must not change an explicitly collated column.
+                const varcharCollation =
+                    isVarcharLengthChange && oldColumn.collation
                         ? ` COLLATE ${[
                               oldColumn.collationSchema,
                               oldColumn.collation,
@@ -1660,14 +1657,14 @@ export class PostgresQueryRunner
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${this.driver.createFullType(newColumn)}${wideningCollation}`,
+                        }" TYPE ${this.driver.createFullType(newColumn)}${varcharCollation}`,
                     ),
                 )
                 downQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${this.driver.createFullType(oldColumn)}${wideningCollation}`,
+                        }" TYPE ${this.driver.createFullType(oldColumn)}${varcharCollation}`,
                     ),
                 )
             }
@@ -2497,10 +2494,16 @@ export class PostgresQueryRunner
             }
         }
 
-        if (isVarcharWidening) {
-            clonedTable.columns.find(
+        if (canAlterVarchar) {
+            // Later operations may resolve the column from this cache. Retain all
+            // applied properties, not only length, and normalize the type alias.
+            const updatedColumn = newColumn.clone()
+            updatedColumn.type = "character varying"
+            updatedColumn.collationSchema ??= oldColumn.collationSchema
+            const columnIndex = clonedTable.columns.findIndex(
                 (column) => column.name === newColumn.name,
-            )!.length = newColumn.length
+            )
+            clonedTable.columns[columnIndex] = updatedColumn
         }
 
         await this.executeQueries(upQueries, downQueries)
