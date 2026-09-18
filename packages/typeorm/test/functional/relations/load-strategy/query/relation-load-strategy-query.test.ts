@@ -333,6 +333,75 @@ describe("relations > load-strategy > query", () => {
             ))
     })
 
+    describe("embedded relations", () => {
+        // https://github.com/typeorm/typeorm/issues/12788
+        it("should load a relation declared inside an embedded entity when order is given", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const bookRepository = dataSource.getRepository(Book)
+                    const categoryRepository =
+                        dataSource.getRepository(Category)
+
+                    const category = await categoryRepository.save(
+                        new Category(),
+                    )
+                    await bookRepository.save(
+                        bookRepository.create({
+                            title: "book1",
+                            text: "text1",
+                            meta: { note: "note1", categories: [category] },
+                        }),
+                    )
+
+                    const results = await bookRepository.find({
+                        relations: { meta: { categories: true } },
+                        order: { id: "ASC" },
+                        relationLoadStrategy: "query",
+                    })
+
+                    expect(results).to.have.length(1)
+                    expect(results[0].meta.categories).to.be.an("array")
+                    expect(results[0].meta.categories).to.have.length(1)
+                    expect(results[0].meta.categories[0].id).to.equal(
+                        category.id,
+                    )
+                }),
+            ))
+
+        it("should load a relation declared inside an embedded entity when select is given", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const bookRepository = dataSource.getRepository(Book)
+                    const categoryRepository =
+                        dataSource.getRepository(Category)
+
+                    const category = await categoryRepository.save(
+                        new Category(),
+                    )
+                    await bookRepository.save(
+                        bookRepository.create({
+                            title: "book1",
+                            text: "text1",
+                            meta: { note: "note1", categories: [category] },
+                        }),
+                    )
+
+                    const results = await bookRepository.find({
+                        relations: { meta: { categories: true } },
+                        select: { id: true },
+                        relationLoadStrategy: "query",
+                    })
+
+                    expect(results).to.have.length(1)
+                    expect(results[0].meta.categories).to.be.an("array")
+                    expect(results[0].meta.categories).to.have.length(1)
+                    expect(results[0].meta.categories[0].id).to.equal(
+                        category.id,
+                    )
+                }),
+            ))
+    })
+
     describe("DataSource-level strategy", () => {
         let dsLevelDataSources: DataSource[]
         before(async () => {

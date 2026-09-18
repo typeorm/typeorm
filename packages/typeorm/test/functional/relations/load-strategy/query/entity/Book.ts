@@ -6,6 +6,7 @@ import {
     PrimaryGeneratedColumn,
 } from "../../../../../../src"
 import { Author } from "./Author"
+import { BookMeta } from "./BookMeta"
 import { Comment } from "./Comment"
 
 @Entity()
@@ -24,4 +25,7 @@ export class Book {
 
     @OneToMany(() => Comment, (comment) => comment.book, { eager: true })
     comments?: Comment[]
+
+    @Column(() => BookMeta)
+    meta: BookMeta
 }
