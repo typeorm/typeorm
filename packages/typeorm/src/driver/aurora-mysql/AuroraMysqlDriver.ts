@@ -602,10 +602,6 @@ export class AuroraMysqlDriver implements Driver {
                   )
                 : value
 
-        if (this.options.formatOptions?.castParameters !== false) {
-            return this.client.prepareHydratedValue(value, columnMetadata)
-        }
-
         if (
             columnMetadata.type === Boolean ||
             columnMetadata.type === "bool" ||
@@ -613,7 +609,13 @@ export class AuroraMysqlDriver implements Driver {
         ) {
             // boolean expressions are BIGINT in MySQL and arrive as "0"/"1" strings under bigNumberStrings
             value = value !== "0" && Boolean(value)
-        } else if (
+        }
+
+        if (this.options.formatOptions?.castParameters !== false) {
+            return this.client.prepareHydratedValue(value, columnMetadata)
+        }
+
+        if (
             columnMetadata.type === "datetime" ||
             columnMetadata.type === Date
         ) {
