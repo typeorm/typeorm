@@ -70,6 +70,29 @@ Additional options can be added to the `extra` object and will be passed directl
 
 Note: CockroachDB returns all numeric data types as `string`. However, if you omit the column type and define your property as `number` ORM will `parseInt` string into number.
 
+### Widening PostgreSQL varchar columns
+
+For the `postgres` driver, increasing a `varchar` / `character varying`
+column's length (or removing its length limit) uses `ALTER COLUMN ... TYPE`
+instead of dropping and recreating the column. Existing values, including
+trailing spaces and nulls, are retained. The same applies to widening varchar
+array elements without changing the column's array shape.
+
+This behavior is limited to columns whose base type and collation are unchanged
+and which are not generated columns. Renaming, defaults, nullability and comments
+can still be changed in the same operation. Fixed-width `char` / `character`,
+narrowing, type conversions, array-shape changes and combined collation changes
+are outside this widening rule; their existing migration paths may still drop
+and recreate columns. Inspect generated migrations before applying them.
+
+The generated `down` migration restores the previous type with PostgreSQL's
+native narrowing semantics. It can fail when values inserted after the widening
+exceed the old limit. PostgreSQL also allows excess trailing spaces to be trimmed
+without an error, so rollback is **not guaranteed to preserve newly inserted
+values exactly**. Review both migration directions and explicitly handle data
+that no longer fits; successful widening does not make every later rollback
+lossless. See [PostgreSQL character types](https://www.postgresql.org/docs/current/datatype-character.html).
+
 ### Vector columns
 
 Vector columns can be used for similarity searches using PostgreSQL's vector operators:

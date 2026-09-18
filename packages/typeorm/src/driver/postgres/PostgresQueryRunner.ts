@@ -1326,9 +1326,26 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        // Widening varchar preserves its values, including trailing spaces.
+        // Keep narrowing, fixed-width types, generated columns, and collation
+        // changes on their existing paths; they need separate conversion rules.
+        const isVarcharWidening =
+            (oldColumn.type === "character varying" ||
+                oldColumn.type === "varchar") &&
+            oldColumn.type === newColumn.type &&
+            oldColumn.isArray === newColumn.isArray &&
+            !oldColumn.generatedType &&
+            !newColumn.generatedType &&
+            oldColumn.collation === newColumn.collation &&
+            /^\d+$/.test(oldColumn.length) &&
+            Number(oldColumn.length) > 0 &&
+            (newColumn.length === "" ||
+                (/^\d+$/.test(newColumn.length) &&
+                    Number(newColumn.length) > Number(oldColumn.length)))
+
         if (
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
+            (oldColumn.length !== newColumn.length && !isVarcharWidening) ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1619,21 +1636,28 @@ export class PostgresQueryRunner
             }
 
             if (
+                isVarcharWidening ||
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {
+                // ALTER TYPE without COLLATE selects the type's default collation.
+                // A length increase must not change an explicitly collated column.
+                const wideningCollation =
+                    isVarcharWidening && oldColumn.collation
+                        ? ` COLLATE "${oldColumn.collation.replaceAll('"', '""')}"`
+                        : ""
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                        }" TYPE ${this.driver.createFullType(newColumn)}${wideningCollation}`,
                     ),
                 )
                 downQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                        }" TYPE ${this.driver.createFullType(oldColumn)}${wideningCollation}`,
                     ),
                 )
             }
@@ -2461,6 +2485,12 @@ export class PostgresQueryRunner
                     // )
                 }
             }
+        }
+
+        if (isVarcharWidening) {
+            clonedTable.columns.find(
+                (column) => column.name === newColumn.name,
+            )!.length = newColumn.length
         }
 
         await this.executeQueries(upQueries, downQueries)
