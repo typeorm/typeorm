@@ -395,6 +395,72 @@ describe("schema builder > postgres varchar widening", () => {
             }
         }))
 
+    for (const shadowed of [false, true]) {
+        it(`should preserve the collation OID outside search_path${shadowed ? " with a same-named visible collation" : ""}`, () =>
+            withRunner(async (dataSource, runner) => {
+                await dataSource.query('CREATE SCHEMA "widening""schema"')
+                try {
+                    await dataSource.query(
+                        'CREATE COLLATION "widening""schema"."shared""rule" FROM "C"',
+                    )
+                    if (shadowed) {
+                        await dataSource.query(
+                            'CREATE COLLATION public."shared""rule" FROM "POSIX"',
+                        )
+                    }
+                    await dataSource.query(
+                        'CREATE TABLE widening_schema_check (value varchar(10) COLLATE "widening""schema"."shared""rule")',
+                    )
+                    await dataSource.query(
+                        "INSERT INTO widening_schema_check VALUES ($1)",
+                        ["keep   "],
+                    )
+                    const readCollation = () =>
+                        dataSource.query(
+                            "SELECT a.attcollation AS oid, n.nspname AS schema, c.collname AS name FROM pg_attribute a JOIN pg_collation c ON c.oid=a.attcollation JOIN pg_namespace n ON n.oid=c.collnamespace WHERE a.attrelid='widening_schema_check'::regclass AND a.attname='value'",
+                        )
+                    const before = await readCollation()
+                    expect(before[0].schema).to.equal('widening"schema')
+                    const table = (await runner.getTable(
+                        "widening_schema_check",
+                    ))!
+                    const old = table.findColumnByName("value")!
+                    const next = old.clone()
+                    next.length = "20"
+                    await runner.changeColumn(table, old, next)
+                    expect(await readCollation()).to.deep.equal(before)
+                    const again = next.clone()
+                    again.length = "30"
+                    // Cached columns must retain the collation's schema as well.
+                    await runner.changeColumn(
+                        "widening_schema_check",
+                        "value",
+                        again,
+                    )
+                    expect(await readCollation()).to.deep.equal(before)
+                    await runner.executeMemoryDownSql()
+                    expect(await readCollation()).to.deep.equal(before)
+                    expect(
+                        await dataSource.query(
+                            "SELECT value FROM widening_schema_check",
+                        ),
+                    ).to.deep.equal([{ value: "keep   " }])
+                } finally {
+                    await dataSource.query(
+                        "DROP TABLE IF EXISTS widening_schema_check",
+                    )
+                    if (shadowed)
+                        await dataSource.query(
+                            'DROP COLLATION IF EXISTS public."shared""rule"',
+                        )
+                    await dataSource.query(
+                        'DROP COLLATION IF EXISTS "widening""schema"."shared""rule"',
+                    )
+                    await dataSource.query('DROP SCHEMA "widening""schema"')
+                }
+            }))
+    }
+
     for (const scenario of [
         { name: "narrowing", changes: { length: "10" } },
         {

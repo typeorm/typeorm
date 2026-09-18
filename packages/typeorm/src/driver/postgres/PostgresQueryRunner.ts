@@ -1337,6 +1337,8 @@ export class PostgresQueryRunner
             !oldColumn.generatedType &&
             !newColumn.generatedType &&
             oldColumn.collation === newColumn.collation &&
+            (newColumn.collationSchema === undefined ||
+                oldColumn.collationSchema === newColumn.collationSchema) &&
             /^\d+$/.test(oldColumn.length) &&
             Number(oldColumn.length) > 0 &&
             (newColumn.length === "" ||
@@ -1644,7 +1646,15 @@ export class PostgresQueryRunner
                 // A length increase must not change an explicitly collated column.
                 const wideningCollation =
                     isVarcharWidening && oldColumn.collation
-                        ? ` COLLATE "${oldColumn.collation.replaceAll('"', '""')}"`
+                        ? ` COLLATE ${[
+                              oldColumn.collationSchema,
+                              oldColumn.collation,
+                          ]
+                              .filter(
+                                  (part): part is string => part !== undefined,
+                              )
+                              .map((part) => `"${part.replaceAll('"', '""')}"`)
+                              .join(".")}`
                         : ""
                 upQueries.push(
                     new Query(
@@ -4217,9 +4227,12 @@ export class PostgresQueryRunner
                             if (dbColumn["character_set_name"])
                                 tableColumn.charset =
                                     dbColumn["character_set_name"]
-                            if (dbColumn["collation_name"])
+                            if (dbColumn["collation_name"]) {
                                 tableColumn.collation =
                                     dbColumn["collation_name"]
+                                tableColumn.collationSchema =
+                                    dbColumn["collation_schema"]
+                            }
                             return tableColumn
                         }),
                 )
