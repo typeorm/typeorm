@@ -32,4 +32,4 @@ runs:
       if: inputs.download-build == 'true'
       with:
         name: build
-        path: build/
+        path: packages/typeorm/build/
