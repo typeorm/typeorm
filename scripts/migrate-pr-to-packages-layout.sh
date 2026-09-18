@@ -3,8 +3,8 @@
 # Move a pull request branch onto the packages/ layout.
 #
 # The `typeorm` package moved from the repository root into `packages/typeorm`.
-# Everything that moved did so as a pure rename, with no change to file
-# contents, so git can usually replay a branch across the move on its own. This
+# `src`, `test` and `extra` moved as pure renames, which is what most branches
+# touch, so git can usually replay a branch across the move on its own. This
 # script runs that rebase with the settings it needs, and offers a fallback for
 # branches where the rebase is more trouble than it is worth.
 #

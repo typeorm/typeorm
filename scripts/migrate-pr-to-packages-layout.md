@@ -4,9 +4,11 @@ The `typeorm` package moved out of the repository root and into
 `packages/typeorm`. If your pull request was opened before that change, its
 files no longer exist where it expects them.
 
-Everything moved as a pure rename, with no change to file contents. Git records
-those renames at 100% similarity, so in most cases it can replay your branch
-across the move without your help.
+`src`, `test` and `extra` moved as pure renames, with no change to file
+contents. Git records those 3282 renames at 100% similarity, so in most cases it
+can replay your branch across the move without your help. A few config files
+moved with small edits for their new location, and `package.json` was split
+rather than moved: see the table below.
 
 ## What moved
 
@@ -72,11 +74,19 @@ The typeorm repository moved the `typeorm` package from the repository root
 into `packages/typeorm`. My branch predates that move and needs to be rebased
 onto it.
 
-These top-level paths moved into `packages/typeorm/`, as pure renames with no
-change to file contents: src, test, extra, package.json, gulpfile.ts,
+src, test and extra moved into `packages/typeorm/` as pure renames, with no
+change to file contents.
+
+These moved too, some with small edits for their new location: gulpfile.ts,
 tsconfig.json, tsconfig.node.json, tsconfig.browser.json, .mocharc.json,
 .c8rc.json, stryker.config.json, ormconfig.sample.json,
 sonar-project.properties, eslint.config.mjs.
+
+The root package.json was split rather than moved. The published manifest is now
+`packages/typeorm/package.json`, and a new private manifest at the repository
+root holds the workspace. Changes to dependencies, exports or the package's own
+scripts belong in `packages/typeorm/package.json`; changes to `pnpm`,
+`packageManager` or `devEngines` belong in the root one.
 
 Please:
 1. Confirm the working tree is clean, and create a backup branch first.
