@@ -120,4 +120,47 @@ describe("query builder > comment", () => {
                 expect(sql).to.match(/^\/\* Hello World \*\/ /)
             }),
         ))
+
+    // https://github.com/typeorm/typeorm/issues/10207
+    it("should not treat parameter-like tokens in the comment as parameters", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const test = new Test()
+                await dataSource.manager.save(test)
+
+                const query = dataSource.manager
+                    .createQueryBuilder(Test, "test")
+                    .where("test.id = :id", { id: test.id })
+                const [, expectedParameters] = query.getQueryAndParameters()
+
+                query.comment("route :id")
+                const [sql, parameters] = query.getQueryAndParameters()
+                expect(sql).to.match(/^\/\* route :id \*\/ /)
+                expect(parameters).to.deep.equal(expectedParameters)
+
+                const loaded = await query.getOne()
+                expect(loaded).to.exist
+            }),
+        ))
+
+    it("should not spread array parameters referenced in the comment", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const test = new Test()
+                await dataSource.manager.save(test)
+
+                const query = dataSource.manager
+                    .createQueryBuilder(Test, "test")
+                    .where("test.id IN (:...ids)", { ids: [test.id, -1] })
+                const [, expectedParameters] = query.getQueryAndParameters()
+
+                query.comment("ids :...ids")
+                const [sql, parameters] = query.getQueryAndParameters()
+                expect(sql).to.match(/^\/\* ids :\.\.\.ids \*\/ /)
+                expect(parameters).to.deep.equal(expectedParameters)
+
+                const loaded = await query.getMany()
+                expect(loaded).to.have.lengthOf(1)
+            }),
+        ))
 })

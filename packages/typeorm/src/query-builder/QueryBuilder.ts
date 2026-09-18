@@ -509,6 +509,18 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     getQueryAndParameters(): [string, any[]] {
         const query = this.getQuery()
         const parameters = this.getParameters()
+
+        // the query comment is not SQL, so it must not be scanned for parameters
+        const comment = this.createComment()
+        if (comment && query.startsWith(comment)) {
+            const [sql, escapedParameters] =
+                this.dataSource.driver.escapeQueryWithParameters(
+                    query.slice(comment.length),
+                    parameters,
+                )
+            return [comment + sql, escapedParameters]
+        }
+
         return this.dataSource.driver.escapeQueryWithParameters(
             query,
             parameters,
