@@ -7,6 +7,12 @@ on:
         required: true
         type: number
 
+# Every `run` step below operates on the core package. Steps that need the
+# repository root (docker compose) override this individually.
+defaults:
+  run:
+    working-directory: packages/typeorm
+
 jobs:
   better-sqlite3:
     runs-on: ubuntu-latest
@@ -200,6 +206,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - run: docker compose up oracle --detach
+        working-directory: ${{ github.workspace }}
 
       - uses: ./.github/actions/setup-node
         with:
@@ -208,6 +215,7 @@ jobs:
 
       - run: jq 'map(select(.type == "oracle"))' ormconfig.sample.json > ormconfig.json
       - run: docker compose up oracle --no-recreate --wait
+        working-directory: ${{ github.workspace }}
       - run: pnpm exec c8 pnpm run test:ci
 
       - uses: ./.github/actions/upload-coverage
@@ -255,6 +263,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - run: docker compose up hanaexpress --detach
+        working-directory: ${{ github.workspace }}
 
       - uses: ./.github/actions/setup-node
         with:
@@ -263,6 +272,7 @@ jobs:
 
       - run: jq 'map(select(.type == "sap"))' ormconfig.sample.json > ormconfig.json
       - run: docker compose up hanaexpress --no-recreate --wait
+        working-directory: ${{ github.workspace }}
       - run: pnpm exec c8 pnpm run test:ci
 
       - uses: ./.github/actions/upload-coverage

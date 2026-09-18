@@ -1,0 +1,14 @@
+# Every package lives under `packages/`, including `typeorm` itself. The
+# repository root is the workspace root and is not a published package.
+#
+# `packages/legacy-naming-strategies` and `playground` depend on `typeorm` with
+# `workspace:*`. The `typeorm` manifest sets `publishConfig.directory` to
+# `build/package`, so pnpm links them to the build output rather than to the
+# source tree. Nothing resolves `typeorm` until `pnpm run package` has been run
+# at least once.
+#
+# `docs` is excluded: it is a Docusaurus site with a large, unrelated dependency
+# tree, and it is built by its own workflow.
+packages:
+    - "packages/*"
+    - "playground"
