@@ -611,7 +611,8 @@ export class AuroraMysqlDriver implements Driver {
             columnMetadata.type === "bool" ||
             columnMetadata.type === "boolean"
         ) {
-            value = value ? true : false
+            // boolean expressions are BIGINT in MySQL and arrive as "0"/"1" strings under bigNumberStrings
+            value = value !== "0" && Boolean(value)
         } else if (
             columnMetadata.type === "datetime" ||
             columnMetadata.type === Date
