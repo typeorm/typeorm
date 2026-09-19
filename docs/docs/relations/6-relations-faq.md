@@ -261,7 +261,9 @@ export class ActionLog {
 
 Here is an example if you want to define your entities, and you don't want those to cause errors in some environments.
 In this situation we have Action.ts and Person.ts importing each other for a many-to-many relationship.
-We use import type so that we can use the type information without any JavaScript code being generated.
+We use `import type` so that we can use the type information without any JavaScript code being generated.
+
+> **Note:** For ESM projects, a complementary approach is to use the `Relation<T>` wrapper type on the property itself, as shown in the [Getting Started guide](/docs/getting-started#relations-in-esm-projects). This works alongside `import type` for the decorator arguments.
 
 ```typescript
 import { Entity, PrimaryColumn, Column, ManytoMany } from "typeorm"
