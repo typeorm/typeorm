@@ -3434,8 +3434,6 @@ export class PostgresQueryRunner
             schemas.push(currentSchema)
         }
 
-        // Returns a SQL fragment that excludes objects owned by an extension
-        // (e.g. PostGIS views, pg_stat_statements views, spatial_ref_sys table).
         const notExtensionOwned = (
             alias: string,
             nameCol: string,
@@ -3459,7 +3457,7 @@ export class PostgresQueryRunner
         const isAnotherTransactionActive = this.isTransactionActive
         if (!isAnotherTransactionActive) await this.startTransaction()
         try {
-            // drop views — exclude extension-owned views
+            // drop views
             const views: ObjectLiteral[] = await this.query(
                 `SELECT quote_ident(v.schemaname) || '.' || quote_ident(v.viewname) as "name" ` +
                     `FROM "pg_views" v WHERE v."schemaname" = ANY($1) ` +
@@ -3488,7 +3486,7 @@ export class PostgresQueryRunner
                 }
             }
 
-            // drop tables — exclude extension-owned tables
+            // drop tables
             const tables: ObjectLiteral[] = await this.query(
                 `SELECT quote_ident(t.schemaname) || '.' || quote_ident(t.tablename) as "name" ` +
                     `FROM "pg_tables" t WHERE t."schemaname" = ANY($1) ` +
