@@ -257,6 +257,7 @@ export class RelationJoinColumnBuilder {
                             comment: referencedColumn.comment,
                             enum: referencedColumn.enum,
                             enumName: referencedColumn.enumName,
+                            dialectTypes: referencedColumn.dialectTypes,
                             primary: relation.isPrimary,
                             nullable: relation.isNullable,
                         },

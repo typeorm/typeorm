@@ -5,6 +5,7 @@ import type { RelationMetadata } from "./RelationMetadata"
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { ColumnMetadataArgs } from "../metadata-args/ColumnMetadataArgs"
 import type { DataSource } from "../data-source/DataSource"
+import type { Driver } from "../driver/Driver"
 import { OrmUtils } from "../util/OrmUtils"
 import type { ValueTransformer } from "../decorator/options/ValueTransformer"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
@@ -64,6 +65,22 @@ export class ColumnMetadata {
      * converts the column to DDL, so only the physical column type changes.
      */
     dialectTypes?: { [key: string]: string }
+
+    /**
+     * The physical column type the schema builder must use on `driver`:
+     * the `dialectTypes` override registered for that driver when present,
+     * otherwise the driver-normalized logical type. Schema creation and
+     * change detection both go through this, so a column with an override
+     * is never reported as changed only because its logical type differs.
+     *
+     * @param driver
+     */
+    resolveDriverType(driver: Driver): string {
+        return (
+            this.dialectTypes?.[driver.options.type] ??
+            driver.normalizeType(this)
+        )
+    }
 
     /**
      * Type's length in the database.

@@ -1485,7 +1485,7 @@ export class PostgresDriver implements Driver {
 
             const isColumnChanged =
                 tableColumn.name !== columnMetadata.databaseName ||
-                tableColumn.type !== this.normalizeType(columnMetadata) ||
+                tableColumn.type !== columnMetadata.resolveDriverType(this) ||
                 tableColumn.length !== columnMetadata.length ||
                 tableColumn.isArray !== columnMetadata.isArray ||
                 tableColumn.precision !== columnMetadata.precision ||

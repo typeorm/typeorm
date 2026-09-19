@@ -7,9 +7,6 @@ export class TableUtils {
         columnMetadata: ColumnMetadata,
         driver: Driver,
     ): TableColumnOptions {
-        // a dialect-specific type replaces the generic one on its own driver;
-        // every other driver keeps using the regular type as-is
-        const dialectType = columnMetadata.dialectTypes?.[driver.options.type]
         return {
             name: columnMetadata.databaseName,
             length: driver.getColumnLength(columnMetadata),
@@ -27,7 +24,7 @@ export class TableUtils {
             generationStrategy: columnMetadata.generationStrategy,
             generatedIdentity: columnMetadata.generatedIdentity,
             isNullable: columnMetadata.isNullable,
-            type: dialectType ?? driver.normalizeType(columnMetadata),
+            type: columnMetadata.resolveDriverType(driver),
             isPrimary: columnMetadata.isPrimary,
             isUnique: driver.normalizeIsUnique(columnMetadata),
             isArray: columnMetadata.isArray || false,

@@ -1345,6 +1345,6 @@ export class MysqlDriver implements Driver {
             tableColumn.type.toLowerCase() === "longtext"
         )
             return false
-        return tableColumn.type !== this.normalizeType(columnMetadata)
+        return tableColumn.type !== columnMetadata.resolveDriverType(this)
     }
 }

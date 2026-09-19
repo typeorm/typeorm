@@ -124,11 +124,15 @@ export class EntityMetadataValidator {
                 .filter((column) => !column.isVirtualProperty)
                 .forEach((column) => {
                     // a dialect-specific override replaces the type both in the
-                    // DDL and in this validation, so a type unsupported by the
-                    // current driver can still be used for the other drivers
+                    // DDL and in this validation. Its value is used verbatim, so
+                    // only the base name (e.g. "varchar" in "varchar(10)") is
+                    // checked against the driver's supported types
                     const override = column.dialectTypes?.[driver.options.type]
-                    const normalizedColumn = (override ??
-                        driver.normalizeType(column)) as ColumnType
+                    const normalizedColumn = (
+                        override
+                            ? override.split("(")[0].trim()
+                            : driver.normalizeType(column)
+                    ) as ColumnType
                     if (!driver.supportedDataTypes.includes(normalizedColumn))
                         throw new DataTypeNotSupportedError(
                             column,

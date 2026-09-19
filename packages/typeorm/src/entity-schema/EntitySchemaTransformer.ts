@@ -128,6 +128,7 @@ export class EntitySchemaTransformer {
                     collation: regularColumn.collation,
                     enum: regularColumn.enum,
                     enumName: regularColumn.enumName,
+                    dialectTypes: regularColumn.dialectTypes,
                     asExpression: regularColumn.asExpression,
                     generatedType: regularColumn.generatedType,
                     hstoreType: regularColumn.hstoreType,

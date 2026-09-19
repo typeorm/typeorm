@@ -159,6 +159,14 @@ export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
     enumName?: string
 
     /**
+     * Column type per database, keyed by the driver type ("mysql", "postgres",
+     * "better-sqlite3", ...). The override replaces `type` when the matching
+     * driver syncs or migrates the schema; every other driver keeps using
+     * `type`, or the default inferred type when there is none.
+     */
+    dialectTypes?: { [key: string]: string }
+
+    /**
      * Generated column expression.
      */
     asExpression?: string

@@ -2,15 +2,15 @@ import "reflect-metadata"
 
 import { expect } from "chai"
 
-import { type DataSource } from "../../../src"
+import { type DataSource } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
+} from "../../../utils/test-utils"
 import { Post } from "./entity/Post"
 
-describe("github issues > #12874", () => {
+describe("columns > dialect types", () => {
     let dataSources: DataSource[]
 
     before(async () => {
@@ -50,6 +50,23 @@ describe("github issues > #12874", () => {
                         expect(level.type).to.equal("tinyint")
                         break
                 }
+            }),
+        )
+    })
+
+    it("should not report changed columns on a second synchronization", async () => {
+        // the physical type differs from the logical one on the overriding
+        // driver, but the comparison must use the same resolved type for
+        // creation and detection, otherwise synchronize never settles
+        await Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                const before = await queryRunner.getTables()
+                await dataSource.synchronize(false)
+                const after = await queryRunner.getTables()
+                await queryRunner.release()
+
+                expect(after).to.be.deep.equal(before)
             }),
         )
     })

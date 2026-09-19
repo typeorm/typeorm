@@ -334,7 +334,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                         return (
                             tableColumn.name === column.databaseName &&
                             tableColumn.type ===
-                                this.dataSource.driver.normalizeType(column) &&
+                                column.resolveDriverType(
+                                    this.dataSource.driver,
+                                ) &&
                             tableColumn.isNullable === column.isNullable &&
                             tableColumn.isUnique ===
                                 this.dataSource.driver.normalizeIsUnique(column)
@@ -353,7 +355,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                     return (
                         !column.isVirtualProperty &&
                         column.databaseName === tableColumn.name &&
-                        this.dataSource.driver.normalizeType(column) ===
+                        column.resolveDriverType(this.dataSource.driver) ===
                             tableColumn.type &&
                         column.isNullable === tableColumn.isNullable &&
                         this.dataSource.driver.normalizeIsUnique(column) ===
