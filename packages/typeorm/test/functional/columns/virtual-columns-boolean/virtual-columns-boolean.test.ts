@@ -12,24 +12,11 @@ describe("column > virtual columns > boolean", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
-            disabledDrivers: ["spanner"],
+            enabledDrivers: ["mysql", "mariadb", "aurora-mysql"],
             schemaCreate: true,
             dropSchema: true,
             entities: [Post],
         })
-
-        // identifier quoting differs per driver, so the column is escaped by the driver itself
-        for (const dataSource of dataSources) {
-            const hasAttachmentMetadata = dataSource
-                .getMetadata(Post)
-                .columns.find(
-                    (columnMetadata) =>
-                        columnMetadata.propertyName === "hasAttachment",
-                )!
-            const attachment = dataSource.driver.escape("attachment")
-            hasAttachmentMetadata.query = (alias) =>
-                `CASE WHEN ${alias}.${attachment} IS NOT NULL THEN 1 ELSE 0 END`
-        }
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))

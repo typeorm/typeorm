@@ -13,7 +13,6 @@ export class Post {
     @Column({ type: "varchar", nullable: true })
     attachment: string | null
 
-    // the query is set per driver in the test, since identifier quoting differs
     @VirtualColumn({
         query: (alias) =>
             `CASE WHEN ${alias}.attachment IS NOT NULL THEN 1 ELSE 0 END`,
