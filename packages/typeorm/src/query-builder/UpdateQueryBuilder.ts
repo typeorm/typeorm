@@ -24,7 +24,6 @@ import type { SelectQueryBuilder } from "./SelectQueryBuilder"
 import { isUint8Array } from "../util/Uint8ArrayUtils"
 import type { AbstractSqliteDriver } from "../driver/sqlite-abstract/AbstractSqliteDriver"
 import type { ReactNativeDriver } from "../driver/react-native/ReactNativeDriver"
-import { SelectQueryBuilder } from "./SelectQueryBuilder"
 
 /**
  * Allows to build complex sql queries in a fashion way and execute those queries.
