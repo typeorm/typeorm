@@ -25,6 +25,8 @@ There are several options you can specify for relations:
     - _soft-delete_ will mark children as soft-deleted.
     - _disable_ will keep the relation intact. To delete, one has to use their own repository.
 
+When saving multiple parents in the same batch, moving an existing child from one parent's collection to another parent's collection of the same relation reassigns the child. The original parent's orphan action does not delete, soft-delete, or nullify that reassigned child. Children removed without being assigned to another parent in the batch still follow the configured orphan action. This does not coordinate separate `save()` calls or separate chunks of a chunked save.
+
 ## Cascades
 
 Cascades example:

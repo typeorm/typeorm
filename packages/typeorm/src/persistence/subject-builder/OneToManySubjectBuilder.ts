@@ -185,6 +185,18 @@ export class OneToManySubjectBuilder {
                 relatedEntityDatabaseRelationIds,
                 relatedPersistedEntityRelationIds,
             ).forEach((removedRelatedEntityRelationId) => {
+                // The child is not orphaned if another parent saves it through
+                // this same relation. Inspect the input graph so save order
+                // does not affect whether reassignment wins over orphan removal.
+                if (
+                    this.isReassigned(
+                        subject,
+                        relation,
+                        removedRelatedEntityRelationId,
+                    )
+                )
+                    return
+
                 // by example: removedRelatedEntityRelationId is category that was bind in the database before, but now its unbind
 
                 // todo: probably we can improve this in the future by finding entity with column those values,
@@ -227,5 +239,32 @@ export class OneToManySubjectBuilder {
                 this.subjects.push(removedRelatedEntitySubject)
             })
         }
+    }
+
+    private isReassigned(
+        subject: Subject,
+        relation: RelationMetadata,
+        childId: ObjectLiteral,
+    ): boolean {
+        return this.subjects.some((otherSubject) => {
+            if (
+                otherSubject === subject ||
+                !otherSubject.entity ||
+                (!otherSubject.canBeInserted && !otherSubject.canBeUpdated) ||
+                !otherSubject.metadata.oneToManyRelations.includes(relation)
+            )
+                return false
+
+            const children: ObjectLiteral[] | undefined =
+                relation.getEntityValue(otherSubject.entity)
+            return (
+                children?.some((child) =>
+                    OrmUtils.compareIds(
+                        childId,
+                        relation.inverseEntityMetadata.getEntityIdMap(child),
+                    ),
+                ) ?? false
+            )
+        })
     }
 }
