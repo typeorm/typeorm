@@ -6,13 +6,14 @@ import {
 } from "../../utils/test-utils"
 import type { DataSource } from "../../../src/data-source/DataSource"
 import type { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
+import type { CockroachDriver } from "../../../src/driver/cockroachdb/CockroachDriver"
 import { expect } from "chai"
 
 describe("github issues > #6958 Promises never get resolved in specific cases", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
-            enabledDrivers: ["postgres"],
+            enabledDrivers: ["postgres", "cockroachdb"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
@@ -31,8 +32,8 @@ describe("github issues > #6958 Promises never get resolved in specific cases", 
                 expect(runner1.isReleased).to.be.true
                 expect(runner2.isReleased).to.be.true
                 expect(
-                    (connection.driver as PostgresDriver).connectedQueryRunners
-                        .length,
+                    (connection.driver as PostgresDriver | CockroachDriver)
+                        .connectedQueryRunners.length,
                 ).to.equal(0)
             }),
         ))
