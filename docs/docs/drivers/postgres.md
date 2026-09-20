@@ -88,12 +88,22 @@ inserted after widening, and it cannot restore any characters already trimmed.
 No explicit `USING` cast is added to force truncation. See
 [PostgreSQL character types](https://www.postgresql.org/docs/current/datatype-character.html).
 
-The in-place path requires unchanged array shape and collation metadata and
-excludes generated columns. Renaming, defaults, nullability and comments can
-still change in the same operation. Fixed-width `char` / `character`, conversions
-to other types, array-shape changes and combined collation changes remain on
-their existing paths, which may still recreate columns. These other conversions
-are not covered by this varchar repair.
+The in-place path also supports collation changes, with or without a length
+change. It applies the target collation in the same `ALTER COLUMN ... TYPE`
+statement and restores the previous length and collation in the down migration.
+Removing an explicit collation selects the type's default. Schema-qualified
+collations retain their identity; an unqualified new collation is resolved using
+the current search path and retained in the query runner's column cache.
+Collation changes can affect comparison and ordering semantics and require
+PostgreSQL to rebuild affected indexes or validate constraints. An incompatible
+change may be rejected; no destructive fallback is attempted for these varchar
+operations. See [PostgreSQL ALTER TABLE](https://www.postgresql.org/docs/18/sql-altertable.html).
+
+The path requires unchanged array shape and excludes generated columns.
+Renaming, defaults, nullability and comments can still change in the same
+operation. Fixed-width `char` / `character`, conversions to other types and
+array-shape changes remain on their existing paths, which may still recreate
+columns. These other conversions are not covered by this varchar repair.
 
 Inspect both directions of generated migrations before executing them. Use a
 transaction for multi-statement changes when atomicity is required: rejection of

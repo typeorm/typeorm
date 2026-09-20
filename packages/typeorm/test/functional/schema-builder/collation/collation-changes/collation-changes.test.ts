@@ -30,6 +30,9 @@ describe("schema builder > collation > collation changes", () => {
     it("ALTER ... COLLATE query should be created", async () => {
         await Promise.all(
             dataSources.map(async (connection) => {
+                const repository = connection.getRepository(Item)
+                const saved = await repository.save({ name: "preserve β   " })
+
                 // change metadata
                 const meta = connection.getMetadata(Item)
                 const col = meta.columns.find(
@@ -43,8 +46,8 @@ describe("schema builder > collation > collation changes", () => {
                     .createSchemaBuilder()
                     .log()
                 const tableName = meta.tableName
-                const expectedUp = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying COLLATE "${NEW_COLLATION}"`
-                const expectedDown = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying COLLATE "${OLD_COLLATION}"`
+                const expectedUp = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(100) COLLATE "pg_catalog"."${NEW_COLLATION}"`
+                const expectedDown = `ALTER TABLE "${tableName}" ALTER COLUMN "${COLUMN_NAME}" TYPE character varying(100) COLLATE "pg_catalog"."${OLD_COLLATION}"`
 
                 // assert that the expected queries are in the generated SQL
                 const upJoined = sqlInMemory.upQueries
@@ -66,6 +69,7 @@ describe("schema builder > collation > collation changes", () => {
                     )!
                     // old collation should be appeared
                     expect(originColumn.collation).to.equal(OLD_COLLATION)
+                    expect(originColumn.length).to.equal("100")
 
                     await connection.synchronize()
 
@@ -75,7 +79,27 @@ describe("schema builder > collation > collation changes", () => {
                     )!
                     // new collation should be appeared
                     expect(appliedColumn.collation).to.equal(NEW_COLLATION)
+                    expect(appliedColumn.length).to.equal("100")
+                    expect(
+                        (await repository.findOneByOrFail({ id: saved.id }))
+                            .name,
+                    ).to.equal(saved.name)
+                    for (const query of [
+                        ...sqlInMemory.downQueries,
+                    ].reverse()) {
+                        await queryRunner.query(query.query, query.parameters)
+                    }
+                    const reverted = (await queryRunner.getTable(
+                        meta.tableName,
+                    ))!.findColumnByName(COLUMN_NAME)!
+                    expect(reverted.collation).to.equal(OLD_COLLATION)
+                    expect(reverted.length).to.equal("100")
+                    expect(
+                        (await repository.findOneByOrFail({ id: saved.id }))
+                            .name,
+                    ).to.equal(saved.name)
                 } finally {
+                    col.collation = OLD_COLLATION
                     await queryRunner.release()
                 }
             }),

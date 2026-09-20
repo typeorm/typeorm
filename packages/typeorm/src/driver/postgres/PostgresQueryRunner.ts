@@ -1335,16 +1335,23 @@ export class PostgresQueryRunner
                 newColumn.type === "varchar") &&
             oldColumn.isArray === newColumn.isArray &&
             !oldColumn.generatedType &&
-            !newColumn.generatedType &&
-            oldColumn.collation === newColumn.collation &&
-            (newColumn.collationSchema === undefined ||
-                oldColumn.collationSchema === newColumn.collationSchema)
-        const isVarcharLengthChange =
-            canAlterVarchar && oldColumn.length !== newColumn.length
+            !newColumn.generatedType
+        const isVarcharTypeChange =
+            canAlterVarchar &&
+            (oldColumn.length !== newColumn.length ||
+                oldColumn.collation !== newColumn.collation ||
+                (newColumn.collationSchema !== undefined &&
+                    oldColumn.collationSchema !== newColumn.collationSchema))
+        let varcharCollationSchema = newColumn.collation
+            ? (newColumn.collationSchema ??
+              (oldColumn.collation === newColumn.collation
+                  ? oldColumn.collationSchema
+                  : undefined))
+            : undefined
 
         if (
             (oldColumn.type !== newColumn.type && !canAlterVarchar) ||
-            (oldColumn.length !== newColumn.length && !isVarcharLengthChange) ||
+            (oldColumn.length !== newColumn.length && !isVarcharTypeChange) ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1635,36 +1642,52 @@ export class PostgresQueryRunner
             }
 
             if (
-                isVarcharLengthChange ||
+                isVarcharTypeChange ||
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {
-                // ALTER TYPE without COLLATE selects the type's default collation.
-                // A length change must not change an explicitly collated column.
-                const varcharCollation =
-                    isVarcharLengthChange && oldColumn.collation
-                        ? ` COLLATE ${[
-                              oldColumn.collationSchema,
-                              oldColumn.collation,
-                          ]
+                const collationSql = (
+                    column: TableColumn,
+                    schema = column.collationSchema,
+                ) =>
+                    column.collation
+                        ? ` COLLATE ${[schema, column.collation]
                               .filter(
                                   (part): part is string => part !== undefined,
                               )
                               .map((part) => `"${part.replaceAll('"', '""')}"`)
                               .join(".")}`
                         : ""
+                if (
+                    canAlterVarchar &&
+                    newColumn.collation &&
+                    varcharCollationSchema === undefined
+                ) {
+                    // Keep the resolved identity for later cached changes.
+                    const [collation] = await this.query(
+                        `SELECT "n"."nspname" AS "schema" FROM pg_catalog.pg_collation "c" INNER JOIN pg_catalog.pg_namespace "n" ON "n"."oid" = "c"."collnamespace" WHERE "c"."oid" = $1::pg_catalog.regcollation`,
+                        [`"${newColumn.collation.replaceAll('"', '""')}"`],
+                    )
+                    varcharCollationSchema = collation.schema
+                }
+                const upCollation = canAlterVarchar
+                    ? collationSql(newColumn, varcharCollationSchema)
+                    : ""
+                const downCollation = canAlterVarchar
+                    ? collationSql(oldColumn)
+                    : ""
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${this.driver.createFullType(newColumn)}${varcharCollation}`,
+                        }" TYPE ${this.driver.createFullType(newColumn)}${upCollation}`,
                     ),
                 )
                 downQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${this.driver.createFullType(oldColumn)}${varcharCollation}`,
+                        }" TYPE ${this.driver.createFullType(oldColumn)}${downCollation}`,
                     ),
                 )
             }
@@ -2374,7 +2397,10 @@ export class PostgresQueryRunner
             }
 
             // update column collation
-            if (newColumn.collation !== oldColumn.collation) {
+            if (
+                !canAlterVarchar &&
+                newColumn.collation !== oldColumn.collation
+            ) {
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
@@ -2499,7 +2525,7 @@ export class PostgresQueryRunner
             // applied properties, not only length, and normalize the type alias.
             const updatedColumn = newColumn.clone()
             updatedColumn.type = "character varying"
-            updatedColumn.collationSchema ??= oldColumn.collationSchema
+            updatedColumn.collationSchema = varcharCollationSchema
             const columnIndex = clonedTable.columns.findIndex(
                 (column) => column.name === newColumn.name,
             )

@@ -461,11 +461,24 @@ describe("schema builder > postgres varchar widening", () => {
             }))
     }
 
+    it("should preserve values when widening and changing the collation together", () =>
+        withRunner(async (dataSource, runner) => {
+            const table = (await runner.getTable("varchar_widening"))!
+            const old = table.findColumnByName("value")!
+            const next = old.clone()
+            Object.assign(next, { length: "100", collation: "C" })
+            await runner.changeColumn(table, old, next)
+            expect(await stored(dataSource)).to.deep.equal(rows)
+            expect(
+                runner
+                    .getMemorySql()
+                    .upQueries.some((q) => /DROP COLUMN/.test(q.query)),
+            ).to.equal(false)
+            await runner.executeMemoryDownSql()
+            expect(await stored(dataSource)).to.deep.equal(rows)
+        }))
+
     for (const scenario of [
-        {
-            name: "changed collation",
-            changes: { length: "100", collation: "C" },
-        },
         { name: "changed type", changes: { length: "100", type: "character" } },
         {
             name: "changed array shape",
