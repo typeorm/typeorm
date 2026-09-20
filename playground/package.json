@@ -1,6 +1,7 @@
 {
   "name": "typeorm-sql-js-example",
   "version": "1.0.0",
+  "private": true,
   "description": "",
   "type": "module",
   "scripts": {
@@ -11,7 +12,7 @@
   "dependencies": {
     "sql.js": "^1.13.0",
     "ts-node": "^10.9.2",
-    "typeorm": "file:.."
+    "typeorm": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.18.6",

@@ -104,6 +104,15 @@ async function copyPackageFile() {
     )
     delete pkg.devEngines
     delete pkg.packageManager
+    // `directory` points at the build output so the workspace packages can link
+    // to it during development. It must not follow the manifest into the
+    // published package, where it would point at a directory that is not there.
+    if (pkg.publishConfig) {
+        delete pkg.publishConfig.directory
+        if (Object.keys(pkg.publishConfig).length === 0) {
+            delete pkg.publishConfig
+        }
+    }
     delete pkg.pnpm
     delete pkg.scripts
 
@@ -114,7 +123,13 @@ async function copyPackageFile() {
 }
 
 function copyReadme() {
-    return gulp.src("./README.md").pipe(gulp.dest("./build/package"))
+    return gulp.src("../../README.md").pipe(gulp.dest("./build/package"))
+}
+
+// pnpm copies a LICENSE from the workspace root when the packed directory has
+// none. Copy it here instead, so the published files do not depend on that.
+function copyLicense() {
+    return gulp.src("../../LICENSE").pipe(gulp.dest("./build/package"))
 }
 
 // -------------------------------------------------------------------------
@@ -131,6 +146,7 @@ gulp.task(
             nodeCreateEsmIndex,
             copyPackageFile,
             copyReadme,
+            copyLicense,
             browserCopyShims,
         ),
     ),

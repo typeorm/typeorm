@@ -1,3 +1,26 @@
+## [1.1.1](https://github.com/typeorm/typeorm/compare/1.1.0...1.1.1) (2026-09-01)
+
+### Bug Fixes
+
+- **better-sqlite3:** await query event subscribers and report failed queries ([#12752](https://github.com/typeorm/typeorm/issues/12752)) ([8cf2258](https://github.com/typeorm/typeorm/commit/8cf22582d32f9b33ff2f2f5ab5c5f98832ab0d84))
+- **cache:** release query runners created by clear and getFromCache ([#12797](https://github.com/typeorm/typeorm/issues/12797)) ([3883d76](https://github.com/typeorm/typeorm/commit/3883d764aa597985b0d93c9db0af502090fbdaea))
+- evaluate function defaults before enum/string normalization ([#12508](https://github.com/typeorm/typeorm/issues/12508)) ([c95b3bd](https://github.com/typeorm/typeorm/commit/c95b3bd8504c68c80122e1e9362f3fe569bf0143))
+- export `DateUtils` from the package entry point ([#12566](https://github.com/typeorm/typeorm/issues/12566)) ([9fed5b4](https://github.com/typeorm/typeorm/commit/9fed5b41502d05e0affd8ebd8c5da8a5b7728da7))
+- export `RelationMetadata` ([#12789](https://github.com/typeorm/typeorm/issues/12789)) ([9694a4a](https://github.com/typeorm/typeorm/commit/9694a4ad4796be29fdb30e189e6757b5ed3ed614))
+- guard metadata access in InsertQueryBuilder for raw-table upsert ([#12702](https://github.com/typeorm/typeorm/issues/12702)) ([281bfba](https://github.com/typeorm/typeorm/commit/281bfba42a5813b106bcf5ba79bc7f7251bd1e73))
+- **persistence:** keep many-to-many junction rows when the relation is not loaded ([#12711](https://github.com/typeorm/typeorm/issues/12711)) ([04ff4da](https://github.com/typeorm/typeorm/commit/04ff4daedcf60fa4ffd0d5d33bbafaac1a9bbc96))
+- **postgres:** read `coord_dimension` when loading spatial columns ([#12749](https://github.com/typeorm/typeorm/issues/12749)) ([1b2df90](https://github.com/typeorm/typeorm/commit/1b2df90bead65a3437f6ecf2c7a21c160b319872))
+- **query-builder:** nest child joins only when outer join semantics require it ([#12793](https://github.com/typeorm/typeorm/issues/12793)) ([953b76f](https://github.com/typeorm/typeorm/commit/953b76f478a50cbcc99d46381f399f362830218e))
+- resolve relation values for join columns inside embedded entities ([#12726](https://github.com/typeorm/typeorm/issues/12726)) ([008f5c6](https://github.com/typeorm/typeorm/commit/008f5c6f66b1e1394a3ca13a25a42905b62a173a))
+- return undefined from deepValue when path is missing ([#12776](https://github.com/typeorm/typeorm/issues/12776)) ([5105371](https://github.com/typeorm/typeorm/commit/5105371dce16f1aa4e67f95a9696801149e35d28))
+- **schema:** default many-to-many inverse foreign key to CASCADE ([#12663](https://github.com/typeorm/typeorm/issues/12663)) ([a68612e](https://github.com/typeorm/typeorm/commit/a68612e218c33b3e4f82040262e3c8c15f19017a))
+- **sqljs:** measure query execution time after the statement runs ([#12759](https://github.com/typeorm/typeorm/issues/12759)) ([bb1ddea](https://github.com/typeorm/typeorm/commit/bb1ddea3c08f3f92df2d16589040a675905da124))
+- **version-utils:** compare versions of unequal length correctly ([#12668](https://github.com/typeorm/typeorm/issues/12668)) ([5543c7c](https://github.com/typeorm/typeorm/commit/5543c7c462a85b79746ae61205ddd43c1d8de157))
+
+### Performance Improvements
+
+- avoid quadratic grouping of raw results selected without primary keys ([#12802](https://github.com/typeorm/typeorm/issues/12802)) ([b495ed4](https://github.com/typeorm/typeorm/commit/b495ed449c9b606aab3fbed0debac07e8f385f2d))
+
 # [1.1.0](https://github.com/typeorm/typeorm/compare/1.0.0...1.1.0) (2026-07-13)
 
 ### Bug Fixes
