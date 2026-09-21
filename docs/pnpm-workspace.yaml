@@ -1,0 +1,3 @@
+# Install the documentation independently of the parent workspace.
+packages:
+    - "."
