@@ -581,7 +581,11 @@ describe("repository > find options > operators", () => {
     it("any", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                if (!(dataSource.driver.options.type === "postgres")) return
+                if (!(
+                    dataSource.driver.options.type === "postgres" ||
+                    dataSource.driver.options.type === "postgres-js"
+                ))
+                    return
 
                 // insert some fake data
                 const post1 = new Post()
@@ -608,7 +612,11 @@ describe("repository > find options > operators", () => {
     it("not(any)", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                if (!(dataSource.driver.options.type === "postgres")) return
+                if (!(
+                    dataSource.driver.options.type === "postgres" ||
+                    dataSource.driver.options.type === "postgres-js"
+                ))
+                    return
 
                 // insert some fake data
                 const post1 = new Post()

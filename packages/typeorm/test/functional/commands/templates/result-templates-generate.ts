@@ -12,6 +12,7 @@ export const resultsTemplates: Record<string, any> = {
     sqlite,
     "better-sqlite3": sqlite,
     postgres,
+    "postgres-js": postgres,
     oracle,
     cockroachdb,
 }

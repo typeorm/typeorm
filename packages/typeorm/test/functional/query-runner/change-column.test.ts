@@ -186,7 +186,9 @@ describe("query runner > change column", () => {
     it("should correctly change generated as expression", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                const isPostgres = dataSource.driver.options.type === "postgres"
+                const isPostgres =
+                    dataSource.driver.options.type === "postgres" ||
+                    dataSource.driver.options.type === "postgres-js"
                 const isSpanner = dataSource.driver.options.type === "spanner"
                 const shouldRun =
                     (isPostgres &&

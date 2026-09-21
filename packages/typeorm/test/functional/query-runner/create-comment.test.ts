@@ -33,7 +33,7 @@ describe("create comment", () => {
                     [tableName],
                 )
                 return res.length > 0 ? res[0]["COMMENTS"] : undefined
-            } else if (dbType === "postgres") {
+            } else if (dbType === "postgres" || dbType === "postgres-js") {
                 const res = await dataSource.query(
                     `SELECT obj_description($1::regclass, 'pg_class') AS "comment"`,
                     [tableName],

@@ -10,6 +10,7 @@ import type { MysqlDataSourceOptions } from "../driver/mysql/MysqlDataSourceOpti
 import type { NativescriptDataSourceOptions } from "../driver/nativescript/NativescriptDataSourceOptions"
 import type { OracleDataSourceOptions } from "../driver/oracle/OracleDataSourceOptions"
 import type { PostgresDataSourceOptions } from "../driver/postgres/PostgresDataSourceOptions"
+import type { PostgresJsDataSourceOptions } from "../driver/postgres/PostgresJsDataSourceOptions"
 import type { ReactNativeDataSourceOptions } from "../driver/react-native/ReactNativeDataSourceOptions"
 import type { SapDataSourceOptions } from "../driver/sap/SapDataSourceOptions"
 import type { SpannerDataSourceOptions } from "../driver/spanner/SpannerDataSourceOptions"
@@ -32,6 +33,7 @@ export type DataSourceOptions =
     | NativescriptDataSourceOptions
     | OracleDataSourceOptions
     | PostgresDataSourceOptions
+    | PostgresJsDataSourceOptions
     | ReactNativeDataSourceOptions
     | SapDataSourceOptions
     | SpannerDataSourceOptions
