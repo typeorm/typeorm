@@ -1,3 +1,4 @@
+import { DateUtils } from "../../util/DateUtils"
 import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import { NamedPlaceholdersNotSupportedError, TypeORMError } from "../../error"
 import { QueryFailedError } from "../../error/QueryFailedError"
@@ -64,7 +65,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
         await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
         const broadcasterResult = new BroadcasterResult()
-        const queryStartTime = Date.now()
+        const queryStartTime = DateUtils.performanceNow()
 
         try {
             const raw = await new Promise<any>((ok, fail) => {
@@ -79,7 +80,7 @@ export class CordovaQueryRunner extends AbstractSqliteQueryRunner {
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = Date.now()
+            const queryEndTime = DateUtils.performanceNow()
             const queryExecutionTime = queryEndTime - queryStartTime
 
             this.broadcaster.broadcastAfterQueryEvent(
