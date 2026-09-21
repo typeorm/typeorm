@@ -1326,9 +1326,11 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        const isVector = oldColumn.type === "vector" || oldColumn.type === "halfvec" || newColumn.type === "vector" || newColumn.type === "halfvec"
         if (
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
+            (isVector && oldColumn.length !== newColumn.length) ||
+            
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
@@ -1619,21 +1621,32 @@ export class PostgresQueryRunner
             }
 
             if (
+                newColumn.length !== oldColumn.length ||
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {
+                let upType = this.driver.createFullType(newColumn)
+                let downType = this.driver.createFullType(oldColumn)
+
+                if (newColumn.generatedType === "STORED" && newColumn.asExpression) {
+                    upType += ` GENERATED ALWAYS AS (${newColumn.asExpression}) STORED`
+                }
+                if (oldColumn.generatedType === "STORED" && oldColumn.asExpression) {
+                    downType += ` GENERATED ALWAYS AS (${oldColumn.asExpression}) STORED`
+                }
+
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${this.driver.createFullType(newColumn)}`,
+                        }" TYPE ${upType}`,
                     ),
                 )
                 downQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
                             newColumn.name
-                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
+                        }" TYPE ${downType}`,
                     ),
                 )
             }

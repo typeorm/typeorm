@@ -1134,11 +1134,13 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 `Column "${oldColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        const isVector = oldColumn.type === "vector" || newColumn.type === "vector"
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
             oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
+            (isVector && oldColumn.length !== newColumn.length) ||
+            
             (oldColumn.generatedType &&
                 newColumn.generatedType &&
                 oldColumn.generatedType !== newColumn.generatedType) ||
