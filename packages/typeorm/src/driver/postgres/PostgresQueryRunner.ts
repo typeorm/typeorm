@@ -1326,14 +1326,64 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
+        // #3357: same base type + length-only change -> ALTER COLUMN ... TYPE
+        // (non-destructive; preserves data). All other changes fall through to
+        // the pre-existing paths below unchanged.
+        const isLengthOnlyChange =
+            oldColumn.type === newColumn.type &&
+            oldColumn.length !== newColumn.length &&
+            oldColumn.isArray === newColumn.isArray &&
+            !oldColumn.generatedType &&
+            oldColumn.asExpression === newColumn.asExpression &&
+            // Collation changes emit their own TYPE ... COLLATE statement with the
+            // bare base type (see the collation block below), which would strip the
+            // length we just applied. Exclude them so combined changes keep the
+            // pre-existing recreation path.
+            oldColumn.collation === newColumn.collation
+
+        if (isLengthOnlyChange) {
+            // Use the old column name: this ALTER runs before the RENAME below,
+            // so a combined resize+rename must address the name that exists now.
+            // Down queries run in reverse (rename reverts first), so the down
+            // ALTER also targets the old name.
+            upQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" TYPE ${this.driver.createFullType(newColumn)}`,
+                ),
+            )
+            downQueries.push(
+                new Query(
+                    `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${oldColumn.name}" TYPE ${this.driver.createFullType(oldColumn)}`,
+                ),
+            )
+
+            // Keep the query-runner cache consistent instead of leaving the
+            // stale length behind.
+            const cachedColumn = clonedTable.columns.find(
+                (column) => column.name === oldColumn.name,
+            )
+            if (cachedColumn) {
+                cachedColumn.length = newColumn.length
+                cachedColumn.precision = newColumn.precision
+                cachedColumn.scale = newColumn.scale
+            }
+
+            // The ALTER above already carries the new precision/scale (via
+            // createFullType), so mark them handled to avoid a duplicate
+            // ALTER from the precision/scale block below.
+            oldColumn.precision = newColumn.precision
+            oldColumn.scale = newColumn.scale
+        }
+
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
-            newColumn.isArray !== oldColumn.isArray ||
-            (!oldColumn.generatedType &&
-                newColumn.generatedType === "STORED") ||
-            (oldColumn.asExpression !== newColumn.asExpression &&
-                newColumn.generatedType === "STORED")
+            !isLengthOnlyChange &&
+            (oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length ||
+                newColumn.isArray !== oldColumn.isArray ||
+                (!oldColumn.generatedType &&
+                    newColumn.generatedType === "STORED") ||
+                (oldColumn.asExpression !== newColumn.asExpression &&
+                    newColumn.generatedType === "STORED"))
         ) {
             // To avoid data conversion, we just recreate column
             await this.dropColumn(table, oldColumn)
