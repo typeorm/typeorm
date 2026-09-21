@@ -1472,6 +1472,12 @@ export class EntityManager {
      * Shared implementation of {@link increment} and {@link decrement}: builds a
      * `column = column +/- value` UPDATE and delegates execution to {@link update},
      * so the criteria handling stays aligned with the other write methods.
+     *
+     * @param operation
+     * @param entityClass
+     * @param conditions
+     * @param propertyPath
+     * @param value
      */
     protected incrementOrDecrementBy<Entity extends ObjectLiteral>(
         operation: "increment" | "decrement",

@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
     "outDir": "dist",
-    "noEmit": true
+    "noEmit": true,
+    "types": ["node", "mocha"]
   },
   "exclude": ["node_modules", "dist"],
   "extends": "@tsconfig/node20/tsconfig.json",
