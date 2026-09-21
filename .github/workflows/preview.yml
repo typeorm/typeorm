@@ -5,10 +5,10 @@ on:
     paths:
       - .github/workflows/preview.yml
       # core
-      - src/**
-      - gulpfile.ts
-      - package.json
-      - tsconfig*.json
+      - packages/typeorm/src/**
+      - packages/typeorm/gulpfile.ts
+      - packages/typeorm/package.json
+      - packages/typeorm/tsconfig*.json
       # codemod
       - packages/codemod/src/**
       - packages/codemod/package.json
@@ -34,10 +34,7 @@ jobs:
 
             typeorm:
               - *ci
-              - src/**
-              - gulpfile.ts
-              - package.json
-              - tsconfig*.json
+              - packages/typeorm/**
 
             codemod:
               - *ci
@@ -58,14 +55,9 @@ jobs:
         if: contains(needs.detect-changes.outputs.changes, 'typeorm')
         run: |
           pnpm run package
-          echo "PACKAGES=./build/package" >> "$GITHUB_ENV"
+          echo "PACKAGES=./packages/typeorm/build/package" >> "$GITHUB_ENV"
 
       # @typeorm/codemod
-      - name: install codemod
-        if: contains(needs.detect-changes.outputs.changes, 'codemod')
-        run: pnpm install --frozen-lockfile
-        working-directory: packages/codemod
-
       - name: build codemod
         if: contains(needs.detect-changes.outputs.changes, 'codemod')
         run: |
