@@ -59,8 +59,8 @@ jobs:
 
             lint:
               - *src-or-tests
-              - packages/**/eslint.config.mjs
-              - packages/codemod/**/*
+              # `pnpm run lint` fans out to every workspace package
+              - packages/**
 
             codemod:
               - pnpm-lock.yaml
