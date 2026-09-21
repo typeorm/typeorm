@@ -113,6 +113,7 @@ jobs:
       # core package has to exist before it can be linted.
       - run: pnpm run package
       - run: pnpm run lint
+      - run: pnpm run check:manifests
 
   tests-linux:
     if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')
