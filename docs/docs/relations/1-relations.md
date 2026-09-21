@@ -237,5 +237,28 @@ You can also change the name of the generated "junction" table.
 categories: Category[];
 ```
 
+You can also set the referential actions of the junction table foreign keys per side.
+Options set on the relation (or on the inverse relation for `inverseJoinColumn`) take precedence.
+This lets the owning side restrict the inverse foreign key without declaring the inverse relation:
+
+```typescript
+@ManyToMany(type => Category, { onDelete: "CASCADE" })
+@JoinTable({
+    name: "question_categories",
+    joinColumn: {
+        name: "question",
+        referencedColumnName: "id"
+    },
+    inverseJoinColumn: {
+        name: "category",
+        referencedColumnName: "id",
+        onDelete: "NO ACTION", // a category assigned to a question cannot be deleted
+        onUpdate: "NO ACTION",
+        deferrable: "INITIALLY DEFERRED" // supported by postgres, sqlite and sap
+    }
+})
+categories: Category[];
+```
+
 If the destination table has composite primary keys,
 then an array of properties must be sent to `@JoinTable`.

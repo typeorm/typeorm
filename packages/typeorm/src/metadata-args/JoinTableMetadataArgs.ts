@@ -1,4 +1,4 @@
-import type { JoinColumnMetadataArgs } from "./JoinColumnMetadataArgs"
+import type { JoinTableColumnMetadataArgs } from "./JoinTableColumnMetadataArgs"
 
 /**
  * Arguments for JoinTableMetadata class.
@@ -23,12 +23,12 @@ export interface JoinTableMetadataArgs {
     /**
      * First column of the join table.
      */
-    readonly joinColumns?: JoinColumnMetadataArgs[]
+    readonly joinColumns?: JoinTableColumnMetadataArgs[]
 
     /**
      * Second (inverse) column of the join table.
      */
-    readonly inverseJoinColumns?: JoinColumnMetadataArgs[]
+    readonly inverseJoinColumns?: JoinTableColumnMetadataArgs[]
 
     /**
      * Database where join table will be created.
