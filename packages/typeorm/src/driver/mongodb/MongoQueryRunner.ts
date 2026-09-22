@@ -688,26 +688,26 @@ export class MongoQueryRunner implements QueryRunner {
     async release(): Promise<void> {
         if (this.isReleased) return
 
-        let abortError: unknown
-        let cleanupError: unknown
+        let abortError: Error | undefined
+        let cleanupError: Error | undefined
         try {
             if (this.isTransactionActive && this.session) {
                 await this.session.abortTransaction()
             }
         } catch (error) {
-            abortError = error
+            abortError = this.normalizeError(error)
         }
 
         this.isTransactionActive = false
         try {
             await this.releaseSession()
         } catch (error) {
-            cleanupError = error
+            cleanupError = this.normalizeError(error)
         }
         this.isReleased = true
 
-        if (abortError) this.throwError(abortError)
-        if (cleanupError) this.throwError(cleanupError)
+        if (abortError) throw abortError
+        if (cleanupError) throw cleanupError
     }
 
     async [Symbol.asyncDispose](): Promise<void> {
@@ -779,23 +779,23 @@ export class MongoQueryRunner implements QueryRunner {
 
         await this.broadcaster.broadcast("BeforeTransactionRollback")
 
-        let rollbackError: unknown
-        let cleanupError: unknown
+        let rollbackError: Error | undefined
+        let cleanupError: Error | undefined
         try {
             await this.session.abortTransaction()
         } catch (error) {
-            rollbackError = error
+            rollbackError = this.normalizeError(error)
         }
 
         this.isTransactionActive = false
         try {
             await this.releaseSession()
         } catch (error) {
-            cleanupError = error
+            cleanupError = this.normalizeError(error)
         }
 
-        if (rollbackError) this.throwError(rollbackError)
-        if (cleanupError) this.throwError(cleanupError)
+        if (rollbackError) throw rollbackError
+        if (cleanupError) throw cleanupError
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
 
@@ -1703,13 +1703,12 @@ export class MongoQueryRunner implements QueryRunner {
     }
 
     /**
-     * Throws caught values as errors.
+     * Converts a caught value into an error.
      *
-     * @param error Caught value to throw.
+     * @param error Caught value to convert.
      */
-    protected throwError(error: unknown): never {
-        if (error instanceof Error) throw error
-        throw new TypeORMError(String(error))
+    protected normalizeError(error: unknown): Error {
+        return error instanceof Error ? error : new TypeORMError(String(error))
     }
 
     /**

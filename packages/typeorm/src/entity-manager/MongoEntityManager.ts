@@ -130,19 +130,15 @@ export class MongoEntityManager extends EntityManager {
         if (typeof optionsOrIsolationOrRunInTransaction === "function") {
             options = {}
             runInTransaction = optionsOrIsolationOrRunInTransaction
+        } else if (typeof optionsOrIsolationOrRunInTransaction === "string") {
+            throw new TypeORMError(
+                "MongoDB does not support SQL transaction isolation levels.",
+            )
+        } else if (!runInTransactionParam) {
+            throw new TypeORMError(
+                "Transaction method requires a callback in the second parameter.",
+            )
         } else {
-            if (typeof optionsOrIsolationOrRunInTransaction === "string") {
-                throw new TypeORMError(
-                    "MongoDB does not support SQL transaction isolation levels.",
-                )
-            }
-
-            if (!runInTransactionParam) {
-                throw new TypeORMError(
-                    "Transaction method requires a callback in the second parameter.",
-                )
-            }
-
             options = optionsOrIsolationOrRunInTransaction
             runInTransaction = runInTransactionParam
         }
