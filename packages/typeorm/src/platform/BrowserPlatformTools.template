@@ -62,6 +62,14 @@ export class PlatformTools {
     }
 
     /**
+     * @param input string to encode
+     * @returns the SHA-256 digest of the input string
+     */
+    static sha256(input: string): string {
+        return RandomGenerator.sha256(input)
+    }
+
+    /**
      * Normalizes given path. Does "path.normalize".
      */
     static pathNormalize(pathStr: string): string {

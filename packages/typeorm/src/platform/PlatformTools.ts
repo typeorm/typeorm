@@ -105,6 +105,15 @@ export class PlatformTools {
     }
 
     /**
+     * Returns a SHA-256 hex digest.
+     *
+     * @param input string to encode
+     */
+    static sha256(input: string): string {
+        return crypto.createHash("sha256").update(input, "utf8").digest("hex")
+    }
+
+    /**
      * Normalizes given path. Does "path.normalize" and replaces backslashes with forward slashes on Windows.
      *
      * @param pathStr

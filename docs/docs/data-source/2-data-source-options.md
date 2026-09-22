@@ -69,6 +69,10 @@ Different RDBMS-es have their own specific options.
 
 - `migrationsTransactionMode` - Controls transaction mode when running [migrations](../migrations/01-why.md).
 
+- `migrationsChecksumCheck` - When `true`, compares each executed migration's stored SHA-256 checksum (migration name + generated `up()` SQL, including bound parameters of raw queries) against a dry-run of the current `up()` SQL before running migrations. Throws if they differ. Default: `false`.
+
+- `migrationsExtraColumns` - Extra columns (`name`, `type`, optional `length`) to create on the migrations table for custom metadata. Columns are always nullable. Provide values via `MigrationInterface.migrationMetadata`.
+
 - `metadataTableName` - Name of the table in the database which is going to contain information about table metadata.
   By default, this table is called "typeorm_metadata".
 
