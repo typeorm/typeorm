@@ -50,7 +50,16 @@ describe("columns > dialect types", () => {
                 const amount = table!.findColumnByName("amount")!
                 const createdAt = table!.findColumnByName("createdAt")!
                 const createdAtZero = table!.findColumnByName("createdAtZero")!
+                const unboundedText = table!.findColumnByName("unboundedText")!
+                const preservedText = table!.findColumnByName("preservedText")!
+                const floatingAmount =
+                    table!.findColumnByName("floatingAmount")!
+                const preservedAmount =
+                    table!.findColumnByName("preservedAmount")!
                 expect(shortText.isUnique).to.equal(true)
+                expect(preservedText.length).to.equal("40")
+                expect(preservedAmount.precision).to.equal(12)
+                expect(preservedAmount.scale).to.equal(4)
 
                 switch (dataSource.driver.options.type) {
                     case "postgres":
@@ -67,6 +76,11 @@ describe("columns > dialect types", () => {
                         )
                         expect(createdAt.precision).to.equal(3)
                         expect(createdAtZero.precision).to.equal(0)
+                        expect(unboundedText.type).to.equal("text")
+                        expect(unboundedText.length).to.equal("")
+                        expect(floatingAmount.type).to.equal("double precision")
+                        expect(floatingAmount.precision).to.be.undefined
+                        expect(floatingAmount.scale).to.be.undefined
                         break
                     case "mysql":
                     case "mariadb":
@@ -76,6 +90,9 @@ describe("columns > dialect types", () => {
                         expect(shortText.length).to.equal("40")
                         expect(amount.precision).to.equal(12)
                         expect(amount.scale).to.equal(4)
+                        expect(unboundedText.length).to.equal("40")
+                        expect(floatingAmount.precision).to.equal(12)
+                        expect(floatingAmount.scale).to.equal(4)
                         break
                     case "better-sqlite3":
                         expect(payload.type).to.equal("json")
@@ -121,6 +138,14 @@ describe("columns > dialect types", () => {
                 expect(amount.type).to.equal("decimal")
                 expect(amount.precision).to.equal(12)
                 expect(amount.scale).to.equal(4)
+                expect(
+                    metadata.findColumnWithPropertyName("unboundedText")!
+                        .length,
+                ).to.equal("40")
+                const floatingAmount =
+                    metadata.findColumnWithPropertyName("floatingAmount")!
+                expect(floatingAmount.precision).to.equal(12)
+                expect(floatingAmount.scale).to.equal(4)
                 expect(
                     metadata.findColumnWithPropertyName("shortText"),
                 ).to.equal(shortText)

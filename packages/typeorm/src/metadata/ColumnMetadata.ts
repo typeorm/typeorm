@@ -136,6 +136,17 @@ export class ColumnMetadata {
                 )
             }
             physical.type = override.trim() as ColumnType
+            const normalizedType = driver.normalizeType(physical) as ColumnType
+            // Retain shared modifiers only when the replacement type supports
+            // them; for example, PostgreSQL text cannot inherit varchar length.
+            if (!driver.withLengthColumnTypes.includes(normalizedType))
+                physical.length = ""
+            if (!driver.withPrecisionColumnTypes.includes(normalizedType)) {
+                physical.precision = undefined
+                physical.scale = undefined
+            } else if (!driver.withScaleColumnTypes.includes(normalizedType)) {
+                physical.scale = undefined
+            }
             return physical
         }
 

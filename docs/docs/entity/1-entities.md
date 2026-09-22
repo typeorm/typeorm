@@ -209,6 +209,9 @@ rejected during initialization, and TypeScript checks keys against supported
 driver names. Numeric parameters can be supplied for types that support
 `length` or `precision` and `scale`, such as `varchar(10)` or `decimal(10,2)`.
 Override parameters take precedence over the corresponding column options.
+Without explicit parameters, compatible column options are retained; modifiers
+that the replacement type does not support are dropped. For example, overriding
+a `varchar` column with PostgreSQL `text` drops its length.
 
 ```typescript
 @Column({ type: "json", dialectTypes: { postgres: "jsonb" } })

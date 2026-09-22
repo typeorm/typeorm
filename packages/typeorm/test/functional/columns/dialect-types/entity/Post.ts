@@ -28,12 +28,42 @@ export class Post {
     shortText: string
 
     @Column({
+        type: "varchar",
+        length: 40,
+        dialectTypes: { postgres: "text" },
+    })
+    unboundedText: string
+
+    @Column({
+        type: "varchar",
+        length: 40,
+        dialectTypes: { postgres: "character varying" },
+    })
+    preservedText: string
+
+    @Column({
         type: "decimal",
         precision: 12,
         scale: 4,
         dialectTypes: { postgres: "decimal(10,2)" },
     })
     amount: number
+
+    @Column({
+        type: "decimal",
+        precision: 12,
+        scale: 4,
+        dialectTypes: { postgres: "double precision" },
+    })
+    floatingAmount: number
+
+    @Column({
+        type: "decimal",
+        precision: 12,
+        scale: 4,
+        dialectTypes: { postgres: "numeric" },
+    })
+    preservedAmount: number
 
     @Column({ type: "datetime", dialectTypes: { postgres: "timestamp(3)" } })
     createdAt: Date
