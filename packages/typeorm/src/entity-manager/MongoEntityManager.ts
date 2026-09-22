@@ -4,6 +4,9 @@ import type { EntityTarget } from "../common/EntityTarget"
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner"
 import type { MongoDriver } from "../driver/mongodb/MongoDriver"
+import type { IsolationLevel } from "../driver/types/IsolationLevel"
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import type { MongoRepository } from "../repository/MongoRepository"
 import { DocumentToEntityTransformer } from "../query-builder/transformer/DocumentToEntityTransformer"
 import type { FindManyOptions } from "../find-options/FindManyOptions"
 import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
@@ -13,7 +16,11 @@ import { InsertResult } from "../query-builder/result/InsertResult"
 import { UpdateResult } from "../query-builder/result/UpdateResult"
 import { DeleteResult } from "../query-builder/result/DeleteResult"
 import type { EntityMetadata } from "../metadata/EntityMetadata"
-import { EntityPropertyNotFoundError } from "../error"
+import {
+    EntityPropertyNotFoundError,
+    QueryRunnerProviderAlreadyReleasedError,
+    TypeORMError,
+} from "../error"
 
 import type {
     AggregateOptions,
@@ -53,6 +60,7 @@ import type {
     UnorderedBulkOperation,
     UpdateFilter,
     UpdateOptions,
+    TransactionOptions,
     UpdateResult as UpdateResultMongoDb,
 } from "../driver/mongodb/typings"
 import type { DataSource } from "../data-source/DataSource"
@@ -72,6 +80,10 @@ export class MongoEntityManager extends EntityManager {
     readonly "@instanceof" = Symbol.for("MongoEntityManager")
 
     get mongoQueryRunner(): MongoQueryRunner {
+        if (this.queryRunner) {
+            return this.queryRunner as MongoQueryRunner
+        }
+
         return (this.dataSource.driver as MongoDriver)
             .queryRunner as MongoQueryRunner
     }
@@ -80,13 +92,86 @@ export class MongoEntityManager extends EntityManager {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(dataSource: DataSource) {
-        super(dataSource)
+    constructor(dataSource: DataSource, queryRunner?: QueryRunner) {
+        super(dataSource, queryRunner)
     }
 
     // -------------------------------------------------------------------------
     // Overridden Methods
     // -------------------------------------------------------------------------
+
+    getMongoRepository<Entity extends ObjectLiteral>(
+        target: EntityTarget<Entity>,
+    ): MongoRepository<Entity> {
+        return this.getRepository(target) as MongoRepository<Entity>
+    }
+
+    async transaction<T>(
+        runInTransaction: (entityManager: EntityManager) => Promise<T>,
+    ): Promise<T>
+    async transaction<T>(
+        isolationLevel: IsolationLevel,
+        runInTransaction: (entityManager: EntityManager) => Promise<T>,
+    ): Promise<T>
+    async transaction<T>(
+        options: TransactionOptions,
+        runInTransaction: (entityManager: EntityManager) => Promise<T>,
+    ): Promise<T>
+    async transaction<T>(
+        optionsOrIsolationOrRunInTransaction:
+            | TransactionOptions
+            | IsolationLevel
+            | ((entityManager: EntityManager) => Promise<T>),
+        runInTransactionParam?: (entityManager: EntityManager) => Promise<T>,
+    ): Promise<T> {
+        let options: TransactionOptions
+        let runInTransaction: (entityManager: EntityManager) => Promise<T>
+
+        if (typeof optionsOrIsolationOrRunInTransaction === "function") {
+            options = {}
+            runInTransaction = optionsOrIsolationOrRunInTransaction
+        } else {
+            if (typeof optionsOrIsolationOrRunInTransaction === "string") {
+                throw new TypeORMError(
+                    "MongoDB does not support SQL transaction isolation levels.",
+                )
+            }
+
+            if (!runInTransactionParam) {
+                throw new TypeORMError(
+                    "Transaction method requires a callback in the second parameter.",
+                )
+            }
+
+            options = optionsOrIsolationOrRunInTransaction
+            runInTransaction = runInTransactionParam
+        }
+
+        if (this.queryRunner?.isReleased) {
+            throw new QueryRunnerProviderAlreadyReleasedError()
+        }
+
+        const queryRunner = (this.queryRunner ??
+            this.dataSource.createQueryRunner()) as MongoQueryRunner
+        let transactionStarted = false
+
+        try {
+            await queryRunner.startTransactionWithOptions(options)
+            transactionStarted = true
+            const result = await runInTransaction(queryRunner.manager)
+            await queryRunner.commitTransaction()
+            return result
+        } catch (error) {
+            if (transactionStarted && queryRunner.isTransactionActive) {
+                await queryRunner.rollbackTransaction().catch(() => undefined)
+            }
+            throw error
+        } finally {
+            if (!this.queryRunner) {
+                await queryRunner.release()
+            }
+        }
+    }
 
     /**
      * Finds entities that match given find options.

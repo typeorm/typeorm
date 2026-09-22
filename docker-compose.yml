@@ -163,5 +163,16 @@ services:
   mongodb:
     image: "mongo:8.3.8"
     container_name: "typeorm-mongodb"
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
     ports:
       - "27017:27017"
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - >-
+          mongosh --quiet --eval 'if (db.hello().isWritablePrimary) { quit(0) }
+          try { rs.initiate({ _id: "rs0", members: [{ _id: 0, host: "localhost:27017" }] }) }
+          catch (error) {} quit(1)'
+      interval: 2s
+      timeout: 5s
+      retries: 30

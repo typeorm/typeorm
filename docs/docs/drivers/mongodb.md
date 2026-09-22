@@ -275,7 +275,7 @@ The example above returns each product with only `name` and `specs.weight` popul
 
 ## Using `MongoEntityManager` and `MongoRepository`
 
-You can use the majority of methods inside the `EntityManager` (except for RDBMS-specific, like `query` and `transaction`).
+You can use the majority of methods inside the `EntityManager` except for RDBMS-specific methods such as `query`.
 For example:
 
 ```typescript
@@ -302,6 +302,37 @@ const timber = await myDataSource.getMongoRepository(User).findOneBy({
     lastName: "Saw",
 })
 ```
+
+## Transactions
+
+MongoDB transactions require a replica set or sharded cluster. Use only the entity manager provided to the transaction callback:
+
+```typescript
+await myDataSource.transaction(async (transactionalEntityManager) => {
+    await transactionalEntityManager.save(user)
+    await transactionalEntityManager.save(photo)
+})
+```
+
+MongoDB transaction options are available through `MongoEntityManager`:
+
+```typescript
+await myDataSource.mongoManager.transaction(
+    {
+        readPreference: "primary",
+        readConcern: { level: "majority" },
+        writeConcern: { w: "majority" },
+    },
+    async (transactionalEntityManager) => {
+        await transactionalEntityManager.save(user)
+        await transactionalEntityManager.save(photo)
+    },
+)
+```
+
+MongoDB does not support SQL isolation levels or nested transactions. Await transaction operations in sequence because the MongoDB driver does not support parallel operations within one transaction.
+
+TypeORM does not retry MongoDB transaction callbacks. Applications that retry errors must account for external effects performed by the callback.
 
 Use Advanced options in find():
 
