@@ -946,7 +946,7 @@ export abstract class AbstractSqliteDriver implements Driver {
 
             const isColumnChanged =
                 tableColumn.name !== columnMetadata.databaseName ||
-                tableColumn.type !== columnMetadata.resolveDriverType(this) ||
+                tableColumn.type !== this.normalizeType(columnMetadata) ||
                 tableColumn.length !== columnMetadata.length ||
                 tableColumn.precision !== columnMetadata.precision ||
                 tableColumn.scale !== columnMetadata.scale ||

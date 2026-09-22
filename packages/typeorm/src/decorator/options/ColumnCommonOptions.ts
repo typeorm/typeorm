@@ -1,4 +1,5 @@
 import type { ValueTransformer } from "./ValueTransformer"
+import type { DatabaseType } from "../../driver/types/DatabaseType"
 
 /**
  * Column options specific to all column types.
@@ -18,8 +19,9 @@ export interface ColumnCommonOptions {
     /**
      * Column type per database, keyed by the driver type ("mysql", "postgres",
      * "better-sqlite3", ...). The override replaces `type` when the matching
-     * driver syncs or migrates the schema; every other driver keeps using
-     * `type`, or the default inferred type when there is none. Useful for
+     * driver syncs or migrates the schema. It must name a type supported by
+     * that driver; aliases are normalized for schema comparison. Every other
+     * driver keeps using `type`, or the default inferred type. Useful for
      * types that only some databases support, e.g.:
      *
      * ```
@@ -27,7 +29,7 @@ export interface ColumnCommonOptions {
      * payload: string
      * ```
      */
-    dialectTypes?: { [key: string]: string }
+    dialectTypes?: Partial<Record<DatabaseType, string>>
 
     /**
      * Indicates if this column is a primary key.

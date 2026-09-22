@@ -131,6 +131,14 @@ export class User {
 `@Column` accept several options you can use:
 
 - `type: ColumnType` - Column type. One of the [supported column types](../entity/1-entities.md#column-types).
+- `dialectTypes: Partial<Record<DatabaseType, string>>` - Physical type
+  overrides keyed by database driver name, such as `{ postgres: "jsonb" }`.
+  A missing key falls back to `type`. Overrides affect schema creation and
+  comparison while the runtime logical type remains `type`. Each override
+  must be supported by its driver. Column type aliases are normalized for
+  comparison. Numeric `length` or `precision`/`scale`
+  parameters in an override take precedence over the corresponding column
+  options. Empty or whitespace overrides are rejected during initialization.
 - `name: string` - Column name in the database table.
   By default, the column name is generated from the name of the property.
   You can change it by specifying your own name.

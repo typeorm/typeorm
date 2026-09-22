@@ -6,11 +6,13 @@ import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { ColumnMetadataArgs } from "../metadata-args/ColumnMetadataArgs"
 import type { DataSource } from "../data-source/DataSource"
 import type { Driver } from "../driver/Driver"
+import type { DatabaseType } from "../driver/types/DatabaseType"
 import { OrmUtils } from "../util/OrmUtils"
 import type { ValueTransformer } from "../decorator/options/ValueTransformer"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { TypeORMError } from "../error/TypeORMError"
 import { areUint8ArraysEqual, isUint8Array } from "../util/Uint8ArrayUtils"
 import type { VirtualColumnOptions } from "../decorator/options/VirtualColumnOptions"
 
@@ -64,22 +66,120 @@ export class ColumnMetadata {
      * Set via `dialectTypes` column option; consulted when the schema builder
      * converts the column to DDL, so only the physical column type changes.
      */
-    dialectTypes?: { [key: string]: string }
+    dialectTypes?: Partial<Record<DatabaseType, string>>
 
     /**
-     * The physical column type the schema builder must use on `driver`:
-     * the `dialectTypes` override registered for that driver when present,
-     * otherwise the driver-normalized logical type. Schema creation and
-     * change detection both go through this, so a column with an override
-     * is never reported as changed only because its logical type differs.
+     * Projects physical column options for schema validation, creation and
+     * comparison without changing the logical metadata used at runtime.
      *
      * @param driver
      */
-    resolveDriverType(driver: Driver): string {
-        return (
-            this.dialectTypes?.[driver.options.type] ??
-            driver.normalizeType(this)
+    resolveDriverColumn(driver: Driver): ColumnMetadata {
+        const override = this.dialectTypes?.[driver.options.type]
+        if (override === undefined) return this
+        if (!override.trim()) {
+            throw new TypeORMError(
+                `Column "${this.propertyName}" has an empty dialectTypes override for "${driver.options.type}"`,
+            )
+        }
+
+        const physical = Object.assign(
+            Object.create(Object.getPrototypeOf(this)),
+            this,
+        ) as ColumnMetadata
+        // Single-column uniqueness checks compare column object identity.
+        // Rebind only constraints that reference this column in the projected
+        // metadata so driver checks see the physical column without mutating
+        // the entity's original constraints.
+        physical.entityMetadata = Object.assign(
+            Object.create(Object.getPrototypeOf(this.entityMetadata)),
+            this.entityMetadata,
+            {
+                columns: this.entityMetadata.columns.map((column) =>
+                    column === this ? physical : column,
+                ),
+                uniques: this.entityMetadata.uniques.map((unique) =>
+                    unique.columns.includes(this)
+                        ? Object.assign(
+                              Object.create(Object.getPrototypeOf(unique)),
+                              unique,
+                              {
+                                  columns: unique.columns.map((column) =>
+                                      column === this ? physical : column,
+                                  ),
+                              },
+                          )
+                        : unique,
+                ),
+                indices: this.entityMetadata.indices.map((index) =>
+                    index.columns.includes(this)
+                        ? Object.assign(
+                              Object.create(Object.getPrototypeOf(index)),
+                              index,
+                              {
+                                  columns: index.columns.map((column) =>
+                                      column === this ? physical : column,
+                                  ),
+                              },
+                          )
+                        : index,
+                ),
+            },
+        ) as EntityMetadata
+        const parameterized = /^(.+?)\(\s*(\d+)\s*(?:,\s*(\d+)\s*)?\)$/.exec(
+            override.trim(),
         )
+        if (!parameterized) {
+            if (override.includes("(") || override.includes(")")) {
+                throw new TypeORMError(
+                    `Column "${this.propertyName}" has invalid dialectTypes parameters for "${driver.options.type}"`,
+                )
+            }
+            physical.type = override.trim() as ColumnType
+            return physical
+        }
+
+        const baseType = parameterized[1].trim() as ColumnType
+        const normalizedType = driver.normalizeType({
+            type: baseType,
+        }) as ColumnType
+        const firstParameter = Number(parameterized[2])
+        const secondParameter = parameterized[3]
+            ? Number(parameterized[3])
+            : undefined
+        if (
+            !Number.isSafeInteger(firstParameter) ||
+            firstParameter < 0 ||
+            (secondParameter !== undefined &&
+                (!Number.isSafeInteger(secondParameter) || secondParameter < 0))
+        ) {
+            throw new TypeORMError(
+                `Column "${this.propertyName}" has invalid dialectTypes parameters for "${driver.options.type}"`,
+            )
+        }
+        physical.type = baseType
+        if (
+            !parameterized[3] &&
+            driver.withLengthColumnTypes.includes(normalizedType) &&
+            firstParameter > 0
+        ) {
+            physical.length = String(firstParameter)
+            physical.precision = undefined
+            physical.scale = undefined
+        } else if (
+            driver.withPrecisionColumnTypes.includes(normalizedType) &&
+            (secondParameter === undefined ||
+                driver.withScaleColumnTypes.includes(normalizedType))
+        ) {
+            physical.length = ""
+            physical.precision = firstParameter
+            physical.scale = secondParameter
+        } else {
+            throw new TypeORMError(
+                `Column "${this.propertyName}" has unsupported dialectTypes parameters for "${driver.options.type}"`,
+            )
+        }
+        return physical
     }
 
     /**

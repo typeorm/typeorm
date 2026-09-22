@@ -198,6 +198,23 @@ or
 @Column({ type: "int" })
 ```
 
+For a physical type that differs by database, set `dialectTypes` with the
+database driver name as the key. If the current driver has no override, the
+regular `type` is used. Overrides affect schema creation and comparison; the
+logical type used for runtime value handling remains `type`. Each override
+must be supported by its driver and compatible with the field's existing
+value conversion. Column type aliases are normalized
+for schema comparison. Empty or whitespace overrides are
+rejected during initialization, and TypeScript checks keys against supported
+driver names. Numeric parameters can be supplied for types that support
+`length` or `precision` and `scale`, such as `varchar(10)` or `decimal(10,2)`.
+Override parameters take precedence over the corresponding column options.
+
+```typescript
+@Column({ type: "json", dialectTypes: { postgres: "jsonb" } })
+payload: object
+```
+
 If you want to specify additional type parameters you can do it via column options.
 For example:
 

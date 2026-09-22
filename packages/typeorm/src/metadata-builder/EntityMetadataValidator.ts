@@ -123,15 +123,9 @@ export class EntityMetadataValidator {
             entityMetadata.columns
                 .filter((column) => !column.isVirtualProperty)
                 .forEach((column) => {
-                    // a dialect-specific override replaces the type both in the
-                    // DDL and in this validation. Its value is used verbatim, so
-                    // only the base name (e.g. "varchar" in "varchar(10)") is
-                    // checked against the driver's supported types
-                    const override = column.dialectTypes?.[driver.options.type]
-                    const normalizedColumn = (
-                        override
-                            ? override.split("(")[0].trim()
-                            : driver.normalizeType(column)
+                    const physicalColumn = column.resolveDriverColumn(driver)
+                    const normalizedColumn = driver.normalizeType(
+                        physicalColumn,
                     ) as ColumnType
                     if (!driver.supportedDataTypes.includes(normalizedColumn))
                         throw new DataTypeNotSupportedError(
@@ -140,16 +134,16 @@ export class EntityMetadataValidator {
                             driver.options.type,
                         )
                     if (
-                        column.length &&
+                        physicalColumn.length &&
                         !driver.withLengthColumnTypes.includes(normalizedColumn)
                     )
                         throw new TypeORMError(
                             `Column ${column.propertyName} of Entity ${entityMetadata.name} does not support length property.`,
                         )
                     if (
-                        column.type === "enum" &&
-                        !column.enum &&
-                        !column.enumName
+                        normalizedColumn === "enum" &&
+                        !physicalColumn.enum &&
+                        !physicalColumn.enumName
                     )
                         throw new TypeORMError(
                             `Column "${column.propertyName}" of Entity "${entityMetadata.name}" is defined as enum, but missing "enum" or "enumName" properties.`,

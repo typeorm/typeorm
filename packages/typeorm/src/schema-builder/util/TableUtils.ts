@@ -7,6 +7,7 @@ export class TableUtils {
         columnMetadata: ColumnMetadata,
         driver: Driver,
     ): TableColumnOptions {
+        columnMetadata = columnMetadata.resolveDriverColumn(driver)
         return {
             name: columnMetadata.databaseName,
             length: driver.getColumnLength(columnMetadata),
@@ -24,7 +25,7 @@ export class TableUtils {
             generationStrategy: columnMetadata.generationStrategy,
             generatedIdentity: columnMetadata.generatedIdentity,
             isNullable: columnMetadata.isNullable,
-            type: columnMetadata.resolveDriverType(driver),
+            type: driver.normalizeType(columnMetadata),
             isPrimary: columnMetadata.isPrimary,
             isUnique: driver.normalizeIsUnique(columnMetadata),
             isArray: columnMetadata.isArray || false,
