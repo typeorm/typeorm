@@ -9,6 +9,7 @@ import { NoConnectionOptionError } from "../error/NoConnectionOptionError"
 import { InitializedRelationError } from "../error/InitializedRelationError"
 import { TypeORMError } from "../error"
 import { DriverUtils } from "../driver/DriverUtils"
+import { TemporalUtils } from "../util/TemporalUtils"
 
 /// todo: add check if there are multiple tables with the same name
 /// todo: add checks when generated column / table names are too long for the specific driver
@@ -64,6 +65,8 @@ export class EntityMetadataValidator {
         // check if table metadata has an id
         if (!entityMetadata.primaryColumns.length && !entityMetadata.isJunction)
             throw new MissingPrimaryColumnError(entityMetadata)
+
+        this.validateTemporalColumns(entityMetadata, driver)
 
         // if entity has multiple primary keys and uses custom constraint name,
         // then all primary keys should have the same constraint name
@@ -267,6 +270,28 @@ export class EntityMetadataValidator {
                         `This may lead to unexpected circular removals. Please set cascade remove only from one side of relationship.`,
                 )
         }) // todo: maybe better just deny removal from one to one relation without join column?
+    }
+
+    /**
+     * Throws if any column opts into `temporal` but no Temporal implementation is available.
+     *
+     * @param entityMetadata
+     * @param driver
+     */
+    protected validateTemporalColumns(
+        entityMetadata: EntityMetadata,
+        driver: Driver,
+    ): void {
+        for (const column of entityMetadata.columns) {
+            if (column.temporal === undefined || column.temporal === false)
+                continue
+
+            if (!TemporalUtils.isSupported(driver.options.temporal)) {
+                throw new TypeORMError(
+                    `Column "${entityMetadata.name}.${column.propertyName}" uses Temporal, but no Temporal implementation is available. Pass \`temporal\` in DataSource options or use Node 26+.`,
+                )
+            }
+        }
     }
 
     /**

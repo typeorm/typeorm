@@ -3,6 +3,14 @@ import type { ValueTransformer } from "./ValueTransformer"
 import type { ColumnCommonOptions } from "./ColumnCommonOptions"
 
 /**
+ * Opt-in option for hydrating/persisting a column as a TC39 Temporal type
+ * instead of `Date`.
+ *
+ * @see ColumnOptions.temporal
+ */
+export type TemporalColumnOption = boolean | { timeZone: string }
+
+/**
  * Describes all column's options.
  */
 export interface ColumnOptions extends ColumnCommonOptions {
@@ -154,6 +162,16 @@ export interface ColumnOptions extends ColumnCommonOptions {
      * this column when reading or writing to the database.
      */
     transformer?: ValueTransformer | ValueTransformer[]
+
+    /**
+     * Opt-in flag for Temporal hydration/persistence. `true` picks the default kind:
+     * wall-clock columns (postgres `timestamp`, mysql `datetime`, `date`, `time`) → `PlainDateTime`/`PlainDate`/`PlainTime`;
+     * moment-in-time columns (postgres `timestamptz`, mysql/mariadb `timestamp`) → `ZonedDateTime` in `UTC`;
+     * postgres `interval` → `Duration`.
+     * `{ timeZone }` overrides UTC for moment-in-time columns. `false` opts out.
+     * Requires a Temporal implementation — pass `temporal` in DataSource options or use Node 26+.
+     */
+    temporal?: TemporalColumnOption
 
     /**
      * Spatial Feature Type (Geometry, Point, Polygon, etc.)
