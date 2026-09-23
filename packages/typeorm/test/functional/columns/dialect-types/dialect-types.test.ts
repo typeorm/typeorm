@@ -255,6 +255,119 @@ describe("columns > dialect types", () => {
         )
     })
 
+    it("should discard MySQL modifiers unsupported by a physical override", async () => {
+        await Promise.all(
+            dataSources
+                .filter((source) =>
+                    ["mysql", "mariadb"].includes(source.options.type),
+                )
+                .map(async (source) => {
+                    const driverType = source.driver.options.type
+                    const entity = new EntitySchema({
+                        name: "DialectMysqlModifierOverride",
+                        columns: {
+                            id: { type: Number, primary: true },
+                            unsignedText: {
+                                type: "int",
+                                unsigned: true,
+                                dialectTypes: { [driverType]: "varchar(10)" },
+                            },
+                            numericText: {
+                                type: "varchar",
+                                length: 10,
+                                charset: "latin1",
+                                collation: "latin1_swedish_ci",
+                                dialectTypes: { [driverType]: "int" },
+                            },
+                            retainedUnsigned: {
+                                type: "int",
+                                unsigned: true,
+                                dialectTypes: { [driverType]: "bigint" },
+                            },
+                            retainedCharset: {
+                                type: "varchar",
+                                length: 10,
+                                charset: "latin1",
+                                collation: "latin1_swedish_ci",
+                                dialectTypes: { [driverType]: "text" },
+                            },
+                        },
+                    })
+                    const dataSource = new DataSource({
+                        ...source.options,
+                        entities: [entity],
+                        synchronize: true,
+                        dropSchema: false,
+                    } as DataSourceOptions)
+                    await dataSource.initialize()
+                    const queryRunner = dataSource.createQueryRunner()
+                    try {
+                        const metadata = dataSource.getMetadata(entity)
+                        const unsignedText =
+                            metadata.findColumnWithPropertyName("unsignedText")!
+                        expect(unsignedText.unsigned).to.equal(true)
+                        expect(
+                            unsignedText.resolveDriverColumn(dataSource.driver)
+                                .unsigned,
+                        ).to.equal(false)
+                        const numericText =
+                            metadata.findColumnWithPropertyName("numericText")!
+                        expect(numericText.charset).to.equal("latin1")
+                        expect(numericText.collation).to.equal(
+                            "latin1_swedish_ci",
+                        )
+                        const physicalNumericText =
+                            numericText.resolveDriverColumn(dataSource.driver)
+                        expect(physicalNumericText.charset).to.be.undefined
+                        expect(physicalNumericText.collation).to.be.undefined
+                        const retainedUnsigned =
+                            metadata.findColumnWithPropertyName(
+                                "retainedUnsigned",
+                            )!
+                        expect(
+                            retainedUnsigned.resolveDriverColumn(
+                                dataSource.driver,
+                            ).unsigned,
+                        ).to.equal(true)
+                        const retainedCharset =
+                            metadata.findColumnWithPropertyName(
+                                "retainedCharset",
+                            )!
+                        const physicalRetainedCharset =
+                            retainedCharset.resolveDriverColumn(
+                                dataSource.driver,
+                            )
+                        expect(physicalRetainedCharset.charset).to.equal(
+                            "latin1",
+                        )
+                        expect(physicalRetainedCharset.collation).to.equal(
+                            "latin1_swedish_ci",
+                        )
+                        const table = await queryRunner.getTable(
+                            metadata.tableName,
+                        )
+                        expect(
+                            table!.findColumnByName("unsignedText")!.unsigned,
+                        ).to.equal(false)
+                        expect(
+                            table!.findColumnByName("numericText")!.type,
+                        ).to.equal("int")
+                        const queries = await dataSource.driver
+                            .createSchemaBuilder()
+                            .log()
+                        expect(queries.upQueries).to.be.empty
+                        expect(queries.downQueries).to.be.empty
+                    } finally {
+                        await queryRunner.dropTable(
+                            dataSource.getMetadata(entity).tableName,
+                        )
+                        await queryRunner.release()
+                        await dataSource.destroy()
+                    }
+                }),
+        )
+    })
+
     it("should allow a scale larger than precision on PostgreSQL 15 and later", async () => {
         await Promise.all(
             dataSources

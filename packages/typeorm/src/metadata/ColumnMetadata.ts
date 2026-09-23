@@ -16,6 +16,28 @@ import { TypeORMError } from "../error/TypeORMError"
 import { areUint8ArraysEqual, isUint8Array } from "../util/Uint8ArrayUtils"
 import type { VirtualColumnOptions } from "../decorator/options/VirtualColumnOptions"
 
+const mysqlUnsignedTypes = new Set<ColumnType>([
+    "int",
+    "tinyint",
+    "smallint",
+    "mediumint",
+    "bigint",
+    "float",
+    "double",
+    "decimal",
+])
+
+const mysqlCharacterTypes = new Set<ColumnType>([
+    "char",
+    "varchar",
+    "tinytext",
+    "text",
+    "mediumtext",
+    "longtext",
+    "enum",
+    "set",
+])
+
 /**
  * This metadata contains all information about entity's column.
  */
@@ -126,6 +148,25 @@ export class ColumnMetadata {
                 ),
             },
         ) as EntityMetadata
+        const clearIncompatibleModifiers = (normalizedType: ColumnType) => {
+            if (normalizedType !== "enum") {
+                physical.enum = undefined
+                physical.enumName = undefined
+            }
+            if (
+                driver.options.type === "mysql" ||
+                driver.options.type === "mariadb" ||
+                driver.options.type === "aurora-mysql"
+            ) {
+                if (!mysqlUnsignedTypes.has(normalizedType))
+                    physical.unsigned = false
+                if (!mysqlCharacterTypes.has(normalizedType)) {
+                    physical.charset = undefined
+                    physical.collation = undefined
+                }
+            }
+        }
+
         const parameterized =
             /^(.+?)\(\s*(\d+|max)\s*(?:,\s*(\d+)\s*)?\)$/i.exec(override.trim())
         if (!parameterized) {
@@ -136,10 +177,7 @@ export class ColumnMetadata {
             }
             physical.type = override.trim() as ColumnType
             const normalizedType = driver.normalizeType(physical) as ColumnType
-            if (normalizedType !== "enum") {
-                physical.enum = undefined
-                physical.enumName = undefined
-            }
+            clearIncompatibleModifiers(normalizedType)
             // Retain shared modifiers only when the replacement type supports
             // them; for example, PostgreSQL text cannot inherit varchar length.
             if (
@@ -161,10 +199,7 @@ export class ColumnMetadata {
         const normalizedType = driver.normalizeType({
             type: baseType,
         }) as ColumnType
-        if (normalizedType !== "enum") {
-            physical.enum = undefined
-            physical.enumName = undefined
-        }
+        clearIncompatibleModifiers(normalizedType)
         if (parameterized[2].toLowerCase() === "max") {
             if (
                 parameterized[3] !== undefined ||
