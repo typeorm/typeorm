@@ -136,6 +136,10 @@ export class ColumnMetadata {
             }
             physical.type = override.trim() as ColumnType
             const normalizedType = driver.normalizeType(physical) as ColumnType
+            if (normalizedType !== "enum") {
+                physical.enum = undefined
+                physical.enumName = undefined
+            }
             // Retain shared modifiers only when the replacement type supports
             // them; for example, PostgreSQL text cannot inherit varchar length.
             if (
@@ -157,6 +161,10 @@ export class ColumnMetadata {
         const normalizedType = driver.normalizeType({
             type: baseType,
         }) as ColumnType
+        if (normalizedType !== "enum") {
+            physical.enum = undefined
+            physical.enumName = undefined
+        }
         if (parameterized[2].toLowerCase() === "max") {
             if (
                 parameterized[3] !== undefined ||

@@ -158,6 +158,103 @@ describe("columns > dialect types", () => {
         )
     })
 
+    it("should not rebuild named logical enum constraints after a varchar override", async () => {
+        await Promise.all(
+            dataSources
+                .filter((source) => source.options.type === "postgres")
+                .map(async (source) => {
+                    const entity = new EntitySchema({
+                        name: "DialectEnumOverride",
+                        columns: {
+                            id: { type: Number, primary: true },
+                            status: {
+                                type: "enum",
+                                enum: ["open", "closed"],
+                                enumName: "dialect_enum_override_status",
+                                dialectTypes: { postgres: "varchar(20)" },
+                            },
+                            plainStatus: {
+                                type: "enum",
+                                enum: ["open", "closed"],
+                                enumName: "dialect_enum_override_plain_status",
+                                dialectTypes: { postgres: "text" },
+                            },
+                            scope: { type: "varchar" },
+                        },
+                        uniques: [
+                            { columns: ["status"] },
+                            { columns: ["status", "scope"] },
+                        ],
+                        indices: [{ columns: ["status", "scope"] }],
+                    })
+                    const child = new EntitySchema<{
+                        id: number
+                        parent: object
+                    }>({
+                        name: "DialectEnumOverrideChild",
+                        columns: { id: { type: Number, primary: true } },
+                        relations: {
+                            parent: {
+                                type: "many-to-one",
+                                target: "DialectEnumOverride",
+                                joinColumn: {
+                                    name: "status",
+                                    referencedColumnName: "status",
+                                },
+                            },
+                        },
+                    })
+                    const dataSource = new DataSource({
+                        ...source.options,
+                        entities: [entity, child],
+                        synchronize: true,
+                        dropSchema: false,
+                    } as DataSourceOptions)
+                    await dataSource.initialize()
+                    const queryRunner = dataSource.createQueryRunner()
+                    try {
+                        const metadata = dataSource.getMetadata(entity)
+                        const status =
+                            metadata.findColumnWithPropertyName("status")!
+                        expect(status.type).to.equal("enum")
+                        expect(status.enumName).to.equal(
+                            "dialect_enum_override_status",
+                        )
+                        const table = await queryRunner.getTable(
+                            metadata.tableName,
+                        )
+                        expect(
+                            table!.findColumnByName("status")!.type,
+                        ).to.equal("character varying")
+                        expect(
+                            table!.findColumnByName("plainStatus")!.type,
+                        ).to.equal("text")
+                        const childTable = await queryRunner.getTable(
+                            dataSource.getMetadata(child).tableName,
+                        )
+                        expect(childTable!.foreignKeys).to.have.length(1)
+                        expect(
+                            childTable!.findColumnByName("status")!.type,
+                        ).to.equal("character varying")
+                        const queries = await dataSource.driver
+                            .createSchemaBuilder()
+                            .log()
+                        expect(queries.upQueries).to.be.empty
+                        expect(queries.downQueries).to.be.empty
+                    } finally {
+                        await queryRunner.dropTable(
+                            dataSource.getMetadata(child).tableName,
+                        )
+                        await queryRunner.dropTable(
+                            dataSource.getMetadata(entity).tableName,
+                        )
+                        await queryRunner.release()
+                        await dataSource.destroy()
+                    }
+                }),
+        )
+    })
+
     it("should allow a scale larger than precision on PostgreSQL 15 and later", async () => {
         await Promise.all(
             dataSources
