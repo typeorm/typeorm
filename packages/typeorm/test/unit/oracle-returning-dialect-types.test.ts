@@ -17,6 +17,7 @@ describe("OracleDriver > RETURNING dialect types", () => {
         BIND_OUT: 3003,
         DB_TYPE_CLOB: 2017,
         DB_TYPE_BLOB: 2019,
+        DB_TYPE_RAW: 2006,
         DB_TYPE_VARCHAR: 2001,
         DB_TYPE_NUMBER: 2010,
     }
@@ -24,8 +25,10 @@ describe("OracleDriver > RETURNING dialect types", () => {
         name: string
         type: ColumnType
         override?: string
+        length?: number
         value: string | number | Buffer
         nativeType: number
+        maxSize?: number
     }[] = [
         {
             name: "text overridden as clob",
@@ -42,10 +45,42 @@ describe("OracleDriver > RETURNING dialect types", () => {
             nativeType: oracle.DB_TYPE_BLOB,
         },
         {
+            name: "blob overridden as raw(16)",
+            type: "blob",
+            override: "raw(16)",
+            value: Buffer.alloc(16),
+            nativeType: oracle.DB_TYPE_RAW,
+            maxSize: 16,
+        },
+        {
+            name: "blob overridden as raw(512) beyond the client default buffer",
+            type: "blob",
+            override: "raw(512)",
+            value: Buffer.alloc(512),
+            nativeType: oracle.DB_TYPE_RAW,
+            maxSize: 512,
+        },
+        {
             name: "varchar without an override",
             type: "varchar",
             value: "returned text",
             nativeType: oracle.DB_TYPE_VARCHAR,
+        },
+        {
+            name: "blob overridden as raw with the default column length",
+            type: "blob",
+            override: "raw",
+            value: Buffer.alloc(512),
+            nativeType: oracle.DB_TYPE_RAW,
+            maxSize: 2000,
+        },
+        {
+            name: "raw without an override",
+            type: "raw",
+            length: 512,
+            value: Buffer.alloc(512),
+            nativeType: oracle.DB_TYPE_RAW,
+            maxSize: 512,
         },
         {
             name: "Number without an override",
@@ -63,6 +98,7 @@ describe("OracleDriver > RETURNING dialect types", () => {
                     id: { type: Number, primary: true },
                     payload: {
                         type: testCase.type,
+                        length: testCase.length,
                         dialectTypes: testCase.override
                             ? { oracle: testCase.override }
                             : undefined,
@@ -93,9 +129,16 @@ describe("OracleDriver > RETURNING dialect types", () => {
                     (parameter) => parameter?.dir === oracle.BIND_OUT,
                 ),
             ).to.deep.equal([
-                { type: testCase.nativeType, dir: oracle.BIND_OUT },
+                {
+                    type: testCase.nativeType,
+                    dir: oracle.BIND_OUT,
+                    ...(testCase.maxSize !== undefined
+                        ? { maxSize: testCase.maxSize }
+                        : {}),
+                },
             ])
             expect(column.type).to.equal(testCase.type)
+            expect(column.length).to.equal(testCase.length?.toString() ?? "")
             expect(column.dialectTypes?.oracle).to.equal(testCase.override)
             expect(dataSource.isInitialized).to.equal(false)
         })

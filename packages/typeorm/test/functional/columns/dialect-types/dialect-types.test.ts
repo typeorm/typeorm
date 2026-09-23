@@ -4,6 +4,7 @@ import { expect } from "chai"
 
 import { DataSource } from "../../../../src"
 import { EntitySchema } from "../../../../src/entity-schema/EntitySchema"
+import { DriverUtils } from "../../../../src/driver/DriverUtils"
 import type { DataSourceOptions } from "../../../../src/data-source/DataSourceOptions"
 import type { ColumnCommonOptions } from "../../../../src/decorator/options/ColumnCommonOptions"
 import {
@@ -156,6 +157,68 @@ describe("columns > dialect types", () => {
         )
     })
 
+    it("should allow a scale larger than precision on PostgreSQL 15 and later", async () => {
+        await Promise.all(
+            dataSources
+                .filter(
+                    (source) =>
+                        source.options.type === "postgres" &&
+                        DriverUtils.isReleaseVersionOrGreater(
+                            source.driver,
+                            "15",
+                        ),
+                )
+                .map(async (source) => {
+                    const entity = new EntitySchema({
+                        name: "DialectFraction",
+                        columns: {
+                            id: { type: Number, primary: true },
+                            amount: {
+                                type: "decimal",
+                                dialectTypes: { postgres: "decimal(2,5)" },
+                            },
+                        },
+                    })
+                    const dataSource = new DataSource({
+                        ...source.options,
+                        entities: [entity],
+                        synchronize: true,
+                        dropSchema: false,
+                    })
+                    await dataSource.initialize()
+                    const queryRunner = dataSource.createQueryRunner()
+                    try {
+                        const table = await queryRunner.getTable(
+                            dataSource.getMetadata(entity).tableName,
+                        )
+                        expect(
+                            table!.findColumnByName("amount")!.precision,
+                        ).to.equal(2)
+                        expect(
+                            table!.findColumnByName("amount")!.scale,
+                        ).to.equal(5)
+                        const repository = dataSource.getRepository(entity)
+                        await repository.save({ id: 1, amount: "0.00012" })
+                        expect(
+                            (await repository.findOneByOrFail({ id: 1 }))
+                                .amount,
+                        ).to.equal("0.00012")
+                        const queries = await dataSource.driver
+                            .createSchemaBuilder()
+                            .log()
+                        expect(queries.upQueries).to.be.empty
+                        expect(queries.downQueries).to.be.empty
+                    } finally {
+                        await queryRunner.dropTable(
+                            dataSource.getMetadata(entity).tableName,
+                        )
+                        await queryRunner.release()
+                        await dataSource.destroy()
+                    }
+                }),
+        )
+    })
+
     it("should reject empty dialect type overrides during initialization", async () => {
         await Promise.all(
             dataSources.flatMap((source) =>
@@ -191,6 +254,7 @@ describe("columns > dialect types", () => {
             ["varchar(10,2)", "unsupported"],
             ["varchar(-1)", "invalid"],
             ["decimal(10,-2)", "invalid"],
+            ["decimal(0,0)", "invalid"],
             ["varchar(9007199254740992)", "invalid"],
         ] as const
         await Promise.all(

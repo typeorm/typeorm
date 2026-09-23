@@ -272,6 +272,7 @@ export class RelationJoinColumnBuilder {
             }
             relationalColumn.referencedColumn = referencedColumn // its important to set it here because we need to set referenced column for user defined join column
             relationalColumn.type = referencedColumn.type // also since types of relational column and join column must be equal we override user defined column type
+            relationalColumn.dialectTypes = referencedColumn.dialectTypes
             relationalColumn.relationMetadata = relation
             relationalColumn.build(this.dataSource)
             return relationalColumn

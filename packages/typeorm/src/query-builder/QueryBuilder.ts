@@ -1010,6 +1010,17 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                                     physicalColumn.type,
                                 ),
                                 dir: (driver as OracleDriver).oracle.BIND_OUT,
+                                // Buffer OUT binds otherwise default to 200 bytes.
+                                ...(driver.normalizeType(physicalColumn) ===
+                                "raw"
+                                    ? {
+                                          maxSize: Number(
+                                              physicalColumn.length ||
+                                                  driver.dataTypeDefaults.raw
+                                                      .length,
+                                          ),
+                                      }
+                                    : {}),
                             })
                         })
                         .join(", ")

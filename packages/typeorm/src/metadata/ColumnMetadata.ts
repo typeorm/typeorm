@@ -161,7 +161,11 @@ export class ColumnMetadata {
         if (
             !Number.isSafeInteger(firstParameter) ||
             (secondParameter !== undefined &&
-                !Number.isSafeInteger(secondParameter))
+                !Number.isSafeInteger(secondParameter)) ||
+            ((normalizedType === "decimal" ||
+                normalizedType === "numeric" ||
+                normalizedType === "number") &&
+                firstParameter === 0)
         ) {
             throw new TypeORMError(
                 `Column "${this.propertyName}" has invalid dialectTypes parameters for "${driver.options.type}"`,
