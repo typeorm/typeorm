@@ -124,14 +124,14 @@ describe("columns > dialect types", () => {
                 expect(unique ?? uniqueIndex).to.exist
 
                 const queryRunner = dataSource.createQueryRunner()
-                const before = await queryRunner.getTables()
+                const before = await queryRunner.getTable("post")
                 const syncQueries = await dataSource.driver
                     .createSchemaBuilder()
                     .log()
                 expect(syncQueries.upQueries).to.be.empty
                 expect(syncQueries.downQueries).to.be.empty
                 await dataSource.synchronize(false)
-                const after = await queryRunner.getTables()
+                const after = await queryRunner.getTable("post")
                 await queryRunner.release()
 
                 expect(after).to.be.deep.equal(before)

@@ -1630,11 +1630,16 @@ export class InsertQueryBuilder<
             //     value = new ArrayParameter(value);
 
             const paramName = this.createParameter(value)
+            const physicalColumn = column.resolveDriverColumn(
+                this.dataSource.driver,
+            )
 
             if (
                 (DriverUtils.isMySQLFamily(this.dataSource.driver) ||
                     this.dataSource.driver.options.type === "aurora-mysql") &&
-                this.dataSource.driver.spatialTypes.includes(column.type)
+                this.dataSource.driver.spatialTypes.includes(
+                    physicalColumn.type,
+                )
             ) {
                 const useLegacy = (
                     this.dataSource.driver as MysqlDriver | AuroraMysqlDriver
@@ -1649,19 +1654,23 @@ export class InsertQueryBuilder<
                 }
             } else if (
                 DriverUtils.isPostgresFamily(this.dataSource.driver) &&
-                this.dataSource.driver.spatialTypes.includes(column.type)
+                this.dataSource.driver.spatialTypes.includes(
+                    physicalColumn.type,
+                )
             ) {
                 if (column.srid != null) {
-                    expression += `ST_SetSRID(ST_GeomFromGeoJSON(${paramName}), ${column.srid})::${column.type}`
+                    expression += `ST_SetSRID(ST_GeomFromGeoJSON(${paramName}), ${column.srid})::${physicalColumn.type}`
                 } else {
-                    expression += `ST_GeomFromGeoJSON(${paramName})::${column.type}`
+                    expression += `ST_GeomFromGeoJSON(${paramName})::${physicalColumn.type}`
                 }
             } else if (
                 this.dataSource.driver.options.type === "mssql" &&
-                this.dataSource.driver.spatialTypes.includes(column.type)
+                this.dataSource.driver.spatialTypes.includes(
+                    physicalColumn.type,
+                )
             ) {
                 expression +=
-                    column.type +
+                    physicalColumn.type +
                     "::STGeomFromText(" +
                     paramName +
                     ", " +
