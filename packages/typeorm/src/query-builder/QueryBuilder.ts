@@ -1001,10 +1001,14 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     " INTO " +
                     columns
                         .map((column) => {
+                            const physicalColumn =
+                                column.resolveDriverColumn(driver)
                             return this.createParameter({
                                 type: (
                                     driver as OracleDriver
-                                ).columnTypeToNativeParameter(column.type),
+                                ).columnTypeToNativeParameter(
+                                    physicalColumn.type,
+                                ),
                                 dir: (driver as OracleDriver).oracle.BIND_OUT,
                             })
                         })

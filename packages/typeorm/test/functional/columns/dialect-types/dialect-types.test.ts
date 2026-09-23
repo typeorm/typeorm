@@ -186,30 +186,38 @@ describe("columns > dialect types", () => {
         )
     })
 
-    it("should reject unsupported override parameters", async () => {
+    it("should reject invalid or unsupported override parameters", async () => {
+        const overrides = [
+            ["varchar(10,2)", "unsupported"],
+            ["varchar(-1)", "invalid"],
+            ["decimal(10,-2)", "invalid"],
+            ["varchar(9007199254740992)", "invalid"],
+        ] as const
         await Promise.all(
             dataSources.map(async (source) => {
-                const entity = new EntitySchema({
-                    name: "InvalidDialectParameters",
-                    columns: {
-                        id: { type: Number, primary: true },
-                        payload: {
-                            type: "varchar",
-                            dialectTypes: {
-                                [source.driver.options.type]: "varchar(10,2)",
+                for (const [override, reason] of overrides) {
+                    const entity = new EntitySchema({
+                        name: "InvalidDialectParameters",
+                        columns: {
+                            id: { type: Number, primary: true },
+                            payload: {
+                                type: "varchar",
+                                dialectTypes: {
+                                    [source.driver.options.type]: override,
+                                },
                             },
                         },
-                    },
-                })
-                const dataSource = new DataSource({
-                    ...source.options,
-                    entities: [entity],
-                    synchronize: false,
-                    dropSchema: false,
-                } as DataSourceOptions)
-                await expect(dataSource.initialize()).to.be.rejectedWith(
-                    "has unsupported dialectTypes parameters",
-                )
+                    })
+                    const dataSource = new DataSource({
+                        ...source.options,
+                        entities: [entity],
+                        synchronize: false,
+                        dropSchema: false,
+                    } as DataSourceOptions)
+                    await expect(dataSource.initialize()).to.be.rejectedWith(
+                        "has " + reason + " dialectTypes parameters",
+                    )
+                }
             }),
         )
     })

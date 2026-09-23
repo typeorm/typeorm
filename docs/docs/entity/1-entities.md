@@ -200,8 +200,9 @@ or
 
 For a physical type that differs by database, set `dialectTypes` with the
 database driver name as the key. If the current driver has no override, the
-regular `type` is used. Overrides affect schema creation and comparison, and
-SQL Server's typed parameters and `OUTPUT` table variables. Entity value
+regular `type` is used. Overrides affect schema creation and comparison,
+PostgreSQL extension detection, SQL Server's typed parameters and
+`OUTPUT` table variables, and Oracle's `RETURNING` bindings. Entity value
 conversion and hydration still use the logical `type`. Each override
 must be supported by its driver and compatible with the field's existing
 value conversion. Column type aliases are normalized

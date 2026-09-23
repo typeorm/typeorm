@@ -134,7 +134,8 @@ export class User {
 - `dialectTypes: Partial<Record<DatabaseType, string>>` - Physical type
   overrides keyed by database driver name, such as `{ postgres: "jsonb" }`.
   A missing key falls back to `type`. Overrides affect schema creation,
-  comparison, and SQL Server's typed parameters and `OUTPUT` table variables.
+  comparison, PostgreSQL extension detection, and SQL Server's typed parameters
+  and `OUTPUT` table variables, and Oracle's `RETURNING` bindings.
   Entity value conversion and hydration still use the logical `type`. Each override
   must be supported by its driver. Column type aliases are normalized for
   comparison. Numeric `length` or `precision`/`scale`

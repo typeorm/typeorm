@@ -160,9 +160,8 @@ export class ColumnMetadata {
             : undefined
         if (
             !Number.isSafeInteger(firstParameter) ||
-            firstParameter < 0 ||
             (secondParameter !== undefined &&
-                (!Number.isSafeInteger(secondParameter) || secondParameter < 0))
+                !Number.isSafeInteger(secondParameter))
         ) {
             throw new TypeORMError(
                 `Column "${this.propertyName}" has invalid dialectTypes parameters for "${driver.options.type}"`,
