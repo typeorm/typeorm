@@ -136,7 +136,8 @@ export class User {
   A missing key falls back to `type`. Overrides affect schema creation,
   comparison, spatial read/write expressions, PostgreSQL extension detection, and SQL Server's typed parameters
   and `OUTPUT` table variables, and Oracle's `RETURNING` bindings.
-  Entity value conversion and hydration still use the logical `type`. Each override
+  Entity value conversion and hydration still use the logical `type`; an omitted
+  column default inlined by INSERT uses the physical type. Each override
   must be supported by its driver. Column type aliases are normalized for
   comparison. Numeric `length` or `precision`/`scale`
   parameters in an override take precedence over the corresponding column

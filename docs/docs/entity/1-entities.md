@@ -203,7 +203,8 @@ database driver name as the key. If the current driver has no override, the
 regular `type` is used. Overrides affect schema creation and comparison,
 spatial read/write expressions, PostgreSQL extension detection, SQL Server's typed parameters and
 `OUTPUT` table variables, and Oracle's `RETURNING` bindings. Entity value
-conversion and hydration still use the logical `type`. Each override
+conversion and hydration still use the logical `type`. An omitted column
+default inlined by INSERT uses the physical type. Each override
 must be supported by its driver and compatible with the field's existing
 value conversion. Column type aliases are normalized
 for schema comparison. Empty or whitespace overrides are

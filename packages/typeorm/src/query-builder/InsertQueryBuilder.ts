@@ -1337,7 +1337,11 @@ export class InsertQueryBuilder<
                         ) {
                             // try to use default defined in the column
                             expression +=
-                                this.dataSource.driver.normalizeDefault(column)
+                                this.dataSource.driver.normalizeDefault(
+                                    column.resolveDriverColumn(
+                                        this.dataSource.driver,
+                                    ),
+                                )
                         } else {
                             expression += "NULL" // otherwise simply use NULL and pray if column is nullable
                         }
@@ -1593,8 +1597,9 @@ export class InsertQueryBuilder<
                 // unfortunately sqlite does not support DEFAULT expression in INSERT queries
                 if (column.default !== undefined && column.default !== null) {
                     // try to use default defined in the column
-                    expression +=
-                        this.dataSource.driver.normalizeDefault(column)
+                    expression += this.dataSource.driver.normalizeDefault(
+                        column.resolveDriverColumn(this.dataSource.driver),
+                    )
                 } else if (
                     this.dataSource.driver.options.type === "spanner" &&
                     column.isGenerated &&
