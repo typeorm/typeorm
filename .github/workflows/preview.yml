@@ -5,10 +5,10 @@ on:
     paths:
       - .github/workflows/preview.yml
       # core
-      - src/**
-      - gulpfile.ts
-      - package.json
-      - tsconfig*.json
+      - packages/typeorm/src/**
+      - packages/typeorm/gulpfile.ts
+      - packages/typeorm/package.json
+      - packages/typeorm/tsconfig*.json
       # codemod
       - packages/codemod/src/**
       - packages/codemod/package.json
@@ -24,8 +24,8 @@ jobs:
     outputs:
       changes: ${{ steps.detect-changes.outputs.changes }}
     steps:
-      - uses: actions/checkout@v6
-      - uses: dorny/paths-filter@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4.0.2
         id: detect-changes
         with:
           filters: |
@@ -34,10 +34,7 @@ jobs:
 
             typeorm:
               - *ci
-              - src/**
-              - gulpfile.ts
-              - package.json
-              - tsconfig*.json
+              - packages/typeorm/**
 
             codemod:
               - *ci
@@ -48,7 +45,7 @@ jobs:
     if: needs.detect-changes.outputs.changes != '[]'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup-node
@@ -58,14 +55,9 @@ jobs:
         if: contains(needs.detect-changes.outputs.changes, 'typeorm')
         run: |
           pnpm run package
-          echo "PACKAGES=./build/package" >> "$GITHUB_ENV"
+          echo "PACKAGES=./packages/typeorm/build/package" >> "$GITHUB_ENV"
 
       # @typeorm/codemod
-      - name: install codemod
-        if: contains(needs.detect-changes.outputs.changes, 'codemod')
-        run: pnpm install --frozen-lockfile
-        working-directory: packages/codemod
-
       - name: build codemod
         if: contains(needs.detect-changes.outputs.changes, 'codemod')
         run: |

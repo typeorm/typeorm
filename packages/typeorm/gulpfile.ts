@@ -1,0 +1,155 @@
+import { exec } from "child_process"
+import fs from "fs/promises"
+import gulp from "gulp"
+import rename from "gulp-rename"
+
+async function execAsync(command: string) {
+    return new Promise<void>((resolve, reject) => {
+        exec(command, (error, stdout, stderr) => {
+            if (stderr.trim().length) {
+                console.error(stderr)
+            }
+            if (stdout.trim().length) {
+                console.log(stdout)
+            }
+            if (error) {
+                console.error(
+                    `Command "${command}" failed with exit code ${error.code}.`,
+                )
+                reject(error)
+            } else {
+                resolve()
+            }
+        })
+    })
+}
+
+// -------------------------------------------------------------------------
+// Packaging for browser
+// -------------------------------------------------------------------------
+
+function browserCopySources() {
+    return gulp
+        .src([
+            "./src/**/*.ts",
+            "!./src/commands/*.ts",
+            "!./src/cli.ts",
+            "!./src/typeorm.ts",
+            "!./src/typeorm-model-shim.ts",
+        ])
+        .pipe(gulp.dest("./build/browser/src"))
+}
+
+function browserCopyTemplates() {
+    return gulp
+        .src("./src/platform/*.template")
+        .pipe(
+            rename((p) => {
+                p.extname = ".ts"
+            }),
+        )
+        .pipe(gulp.dest("./build/browser/src/platform"))
+}
+
+async function browserCompile() {
+    await execAsync("tsc -p tsconfig.browser.json")
+}
+
+function browserCopyShims() {
+    return gulp
+        .src([
+            "./extra/typeorm-model-shim.js",
+            "./extra/typeorm-class-transformer-shim.js",
+        ])
+        .pipe(gulp.dest("./build/package"))
+}
+
+// -------------------------------------------------------------------------
+// Packaging for Node.js
+// -------------------------------------------------------------------------
+
+async function nodeCompile() {
+    await execAsync("tsc -p tsconfig.node.json")
+}
+
+async function nodeCreateEsmIndex() {
+    const buildDir = "./build/package"
+    const cjsIndex = require(`${buildDir}/index.js`)
+    const cjsKeys = Object.keys(cjsIndex).filter(
+        (key) => key !== "default" && !key.startsWith("__"),
+    )
+
+    const indexMjsContent =
+        'import TypeORM from "./index.js";\n' +
+        `const {\n    ${cjsKeys.join(",\n    ")}\n} = TypeORM;\n` +
+        `export {\n    ${cjsKeys.join(",\n    ")}\n};\n` +
+        "export default TypeORM;\n"
+
+    await fs.writeFile(`${buildDir}/index.mjs`, indexMjsContent, "utf8")
+}
+
+// -------------------------------------------------------------------------
+// Packaging
+// -------------------------------------------------------------------------
+
+async function copyPackageFile() {
+    const pkg = JSON.parse(await fs.readFile("./package.json", "utf8"))
+
+    // Preserve devDependencies used by `typeorm init` to generate project package.json
+    const initDevDeps = ["@types/node", "ts-node", "typescript"]
+    pkg.devDependencies = Object.fromEntries(
+        initDevDeps
+            .filter((dep) => dep in (pkg.devDependencies ?? {}))
+            .map((dep) => [dep, pkg.devDependencies[dep]]),
+    )
+    delete pkg.devEngines
+    delete pkg.packageManager
+    // `directory` points at the build output so the workspace packages can link
+    // to it during development. It must not follow the manifest into the
+    // published package, where it would point at a directory that is not there.
+    if (pkg.publishConfig) {
+        delete pkg.publishConfig.directory
+        if (Object.keys(pkg.publishConfig).length === 0) {
+            delete pkg.publishConfig
+        }
+    }
+    delete pkg.pnpm
+    delete pkg.scripts
+
+    await fs.writeFile(
+        "./build/package/package.json",
+        JSON.stringify(pkg, null, 2) + "\n",
+    )
+}
+
+function copyReadme() {
+    return gulp.src("../../README.md").pipe(gulp.dest("./build/package"))
+}
+
+// pnpm copies a LICENSE from the workspace root when the packed directory has
+// none. Copy it here instead, so the published files do not depend on that.
+function copyLicense() {
+    return gulp.src("../../LICENSE").pipe(gulp.dest("./build/package"))
+}
+
+// -------------------------------------------------------------------------
+// Tasks
+// -------------------------------------------------------------------------
+
+gulp.task(
+    "package",
+    gulp.series(
+        () => fs.rm("./build", { recursive: true, force: true }),
+        gulp.parallel(browserCopySources, browserCopyTemplates),
+        gulp.parallel(nodeCompile, browserCompile),
+        gulp.parallel(
+            nodeCreateEsmIndex,
+            copyPackageFile,
+            copyReadme,
+            copyLicense,
+            browserCopyShims,
+        ),
+    ),
+)
+
+gulp.task("clean", () => fs.rm("./build", { recursive: true, force: true }))

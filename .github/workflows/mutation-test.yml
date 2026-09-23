@@ -5,6 +5,10 @@ on:
   schedule:
     - cron: "0 0 1 * *"
 
+defaults:
+  run:
+    working-directory: packages/typeorm
+
 jobs:
   mutation-testing:
     runs-on: ubuntu-latest
@@ -43,7 +47,7 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-node
 
       - run: |
@@ -61,7 +65,7 @@ jobs:
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: mutation-testing
-          path: ./reports/mutation/mutation.html
+          path: ./packages/typeorm/reports/mutation/mutation.html

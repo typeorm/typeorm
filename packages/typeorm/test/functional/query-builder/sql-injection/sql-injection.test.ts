@@ -1,0 +1,551 @@
+import "reflect-metadata"
+import { expect } from "chai"
+import type { DataSource } from "../../../../src/data-source/DataSource"
+import { DriverUtils } from "../../../../src/driver/DriverUtils"
+import {
+    closeTestingConnections,
+    createTestingConnections,
+} from "../../../utils/test-utils"
+import { Post } from "./entity/Post"
+
+describe("query builder > sql injection", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            disabledDrivers: ["mongodb", "spanner"],
+            entities: [__dirname + "/entity/*{.js,.ts}"],
+            schemaCreate: true,
+            dropSchema: true,
+        })
+
+        await Promise.all(
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(Post)
+                const seed = new Post()
+                seed.id = 1
+                seed.version = 1
+                seed.name = "seed"
+                seed.text = "text"
+                seed.tag = "tag"
+                await repo.save(seed)
+
+                const other = new Post()
+                other.id = 2
+                other.version = 2
+                other.name = "other"
+                other.text = "other text"
+                other.tag = "other tag"
+                await repo.save(other)
+            }),
+        )
+    })
+    after(() => closeTestingConnections(dataSources))
+
+    const maliciousInputs = [
+        "'; DROP TABLE post; --",
+        "test' OR '1'='1",
+        "1; DELETE FROM post;",
+        "' UNION SELECT * FROM post --",
+        "\\'; DROP TABLE post; --",
+        '"; DROP TABLE post; --',
+        "'/**/OR/**/1=1--",
+        "'' OR ''='",
+        "0x27 OR 1=1--",
+        "\x00'; DROP TABLE post;--",
+        "' OR SLEEP(5)--",
+        "1 OR 1=1",
+    ]
+
+    function verifyIntegrity(dataSource: DataSource) {
+        return async () => {
+            const count = await dataSource.getRepository(Post).count()
+            expect(count).to.equal(2)
+        }
+    }
+
+    describe("andWhere", () => {
+        for (const malicious of maliciousInputs) {
+            it(`should prevent injection with: ${malicious}`, () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        try {
+                            const results = await dataSource
+                                .createQueryBuilder(Post, "post")
+                                .where("post.id = :id", { id: 1 })
+                                .andWhere("post.name = :name", {
+                                    name: malicious,
+                                })
+                                .getMany()
+                            expect(results).to.have.length(0)
+                        } catch {
+                            // some drivers reject certain byte sequences
+                        }
+                        await verifyIntegrity(dataSource)()
+                    }),
+                ))
+        }
+    })
+
+    describe("delete", () => {
+        for (const malicious of maliciousInputs) {
+            it(`should prevent injection with: ${malicious}`, () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        try {
+                            await dataSource
+                                .createQueryBuilder()
+                                .delete()
+                                .from(Post)
+                                .where("name = :name", { name: malicious })
+                                .execute()
+                        } catch {
+                            // some drivers reject certain inputs
+                        }
+                        await verifyIntegrity(dataSource)()
+                    }),
+                ))
+        }
+    })
+
+    describe("having", () => {
+        for (const malicious of maliciousInputs) {
+            it(`should prevent injection with: ${malicious}`, () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        try {
+                            await dataSource
+                                .createQueryBuilder(Post, "post")
+                                .groupBy("post.id")
+                                .having("post.name = :name", {
+                                    name: malicious,
+                                })
+                                .getRawMany()
+                        } catch {
+                            // expected to throw on invalid expression
+                        }
+                        await verifyIntegrity(dataSource)()
+                    }),
+                ))
+        }
+    })
+
+    describe("orderBy value injection", () => {
+        it("should reject invalid order direction in OrderByCondition", () => {
+            for (const dataSource of dataSources) {
+                expect(() =>
+                    dataSource.createQueryBuilder(Post, "post").orderBy({
+                        "post.id": "ASC; DELETE FROM post;" as any,
+                    }),
+                ).to.throw(/Invalid order direction/)
+            }
+        })
+
+        it("should reject invalid nulls option in OrderByCondition", () => {
+            for (const dataSource of dataSources) {
+                expect(() =>
+                    dataSource.createQueryBuilder(Post, "post").orderBy({
+                        "post.id": {
+                            order: "ASC",
+                            nulls: "NULLS FIRST; DROP TABLE post;" as any,
+                        },
+                    }),
+                ).to.throw(/Invalid nulls option/)
+            }
+        })
+
+        it("should accept valid OrderByCondition values", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await dataSource
+                        .getRepository(Post)
+                        .createQueryBuilder("post")
+                        .orderBy({
+                            "post.id": "DESC",
+                            "post.name": "ASC",
+                        })
+                        .getMany()
+                }),
+            ))
+
+        it("should accept valid OrderByCondition with nulls option", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (
+                        DriverUtils.isMySQLFamily(dataSource.driver) ||
+                        dataSource.driver.options.type === "mssql"
+                    )
+                        return
+
+                    await dataSource
+                        .createQueryBuilder(Post, "post")
+                        .orderBy({
+                            "post.id": "DESC",
+                            "post.name": {
+                                order: "ASC",
+                                nulls: "NULLS LAST",
+                            },
+                        })
+                        .getMany()
+                }),
+            ))
+
+        it("should reject invalid order direction in UpdateQueryBuilder", () => {
+            for (const dataSource of dataSources) {
+                expect(() =>
+                    dataSource
+                        .createQueryBuilder()
+                        .update(Post)
+                        .set({ name: "test" })
+                        .orderBy({
+                            id: "ASC; DROP TABLE post;" as any,
+                        }),
+                ).to.throw(/Invalid order direction/)
+            }
+        })
+
+        it("should reject invalid order direction in SoftDeleteQueryBuilder", () => {
+            for (const dataSource of dataSources) {
+                expect(() =>
+                    dataSource
+                        .createQueryBuilder()
+                        .softDelete()
+                        .from(Post)
+                        .orderBy({
+                            id: "ASC; DROP TABLE post;" as any,
+                        }),
+                ).to.throw(/Invalid order direction/)
+            }
+        })
+    })
+
+    describe("UpdateQueryBuilder orderBy direction injection", () => {
+        it("should reject invalid order direction string", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ name: "test" })
+                            // @ts-expect-error intentionally invalid order direction
+                            .orderBy("id", "ASC, (SELECT SLEEP(2))"),
+                    ).to.throw(/Invalid order direction/)
+                    await verifyIntegrity(dataSource)()
+                }),
+            ))
+
+        it("should reject invalid order direction in addOrderBy", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ name: "test" })
+                            .orderBy("id")
+                            // @ts-expect-error intentionally invalid order direction
+                            .addOrderBy("name", "DESC; DROP TABLE post"),
+                    ).to.throw(/Invalid order direction/)
+                    await verifyIntegrity(dataSource)()
+                }),
+            ))
+
+        it("should reject invalid nulls value", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ name: "test" })
+                            .orderBy(
+                                "id",
+                                "ASC",
+                                // @ts-expect-error intentionally invalid nulls
+                                "NULLS FIRST; DROP TABLE post",
+                            ),
+                    ).to.throw(/Invalid nulls option/)
+                    await verifyIntegrity(dataSource)()
+                }),
+            ))
+
+        it("should accept valid order directions", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ name: "test" })
+                            .orderBy("id", "ASC"),
+                    ).to.not.throw()
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ name: "test" })
+                            .orderBy("id", "DESC"),
+                    ).to.not.throw()
+                }),
+            ))
+    })
+
+    describe("SoftDeleteQueryBuilder orderBy direction injection", () => {
+        it("should reject invalid order direction string", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .softDelete()
+                            .from(Post)
+                            // @ts-expect-error intentionally invalid order direction
+                            .orderBy("id", "ASC, (SELECT SLEEP(2))"),
+                    ).to.throw(/Invalid order direction/)
+                    await verifyIntegrity(dataSource)()
+                }),
+            ))
+
+        it("should reject invalid order direction in addOrderBy", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .softDelete()
+                            .from(Post)
+                            .orderBy("id")
+                            // @ts-expect-error intentionally invalid order direction
+                            .addOrderBy("name", "DESC; DROP TABLE post"),
+                    ).to.throw(/Invalid order direction/)
+                    await verifyIntegrity(dataSource)()
+                }),
+            ))
+
+        it("should reject invalid nulls value", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.driver.options.type === "mongodb") return
+
+                    expect(() =>
+                        dataSource
+                            .createQueryBuilder()
+                            .softDelete()
+                            .from(Post)
+                            .orderBy(
+                                "id",
+                                "ASC",
+                                // @ts-expect-error intentionally invalid nulls
+                                "NULLS FIRST; DROP TABLE post",
+                            ),
+                    ).to.throw(/Invalid nulls option/)
+                    await verifyIntegrity(dataSource)()
+                }),
+            ))
+    })
+
+    describe("UpdateQueryBuilder limit validation", () => {
+        it("should reject non-numeric limit", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (!DriverUtils.isMySQLFamily(dataSource.driver)) return
+
+                    expect(() => {
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ text: "updated" })
+                            .limit("1; DROP TABLE post" as any)
+                    }).to.throw(/not a number/)
+                }),
+            ))
+
+        it("should accept valid numeric limit", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (!DriverUtils.isMySQLFamily(dataSource.driver)) return
+
+                    expect(() => {
+                        dataSource
+                            .createQueryBuilder()
+                            .update(Post)
+                            .set({ text: "updated" })
+                            .limit(10)
+                    }).to.not.throw()
+                }),
+            ))
+    })
+
+    describe("SoftDeleteQueryBuilder limit validation", () => {
+        it("should reject non-numeric limit", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (!DriverUtils.isMySQLFamily(dataSource.driver)) return
+
+                    expect(() => {
+                        dataSource
+                            .createQueryBuilder()
+                            .softDelete()
+                            .from(Post)
+                            .limit("1; DROP TABLE post" as any)
+                    }).to.throw(/not a number/)
+                }),
+            ))
+
+        it("should accept valid numeric limit", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (!DriverUtils.isMySQLFamily(dataSource.driver)) return
+
+                    expect(() => {
+                        dataSource
+                            .createQueryBuilder()
+                            .softDelete()
+                            .from(Post)
+                            .limit(10)
+                    }).to.not.throw()
+                }),
+            ))
+    })
+
+    describe("orWhere", () => {
+        for (const malicious of maliciousInputs) {
+            it(`should prevent injection with: ${malicious}`, () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        try {
+                            const results = await dataSource
+                                .createQueryBuilder(Post, "post")
+                                .where("post.name = :name1", {
+                                    name1: "nonexistent",
+                                })
+                                .orWhere("post.name = :name2", {
+                                    name2: malicious,
+                                })
+                                .getMany()
+                            expect(results).to.have.length(0)
+                        } catch {
+                            // some drivers reject certain byte sequences
+                        }
+                        await verifyIntegrity(dataSource)()
+                    }),
+                ))
+        }
+    })
+
+    describe("update", () => {
+        for (const malicious of maliciousInputs) {
+            it(`should prevent injection with: ${malicious}`, () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        try {
+                            await dataSource
+                                .createQueryBuilder()
+                                .update(Post)
+                                .set({ text: "updated" })
+                                .where("name = :name", { name: malicious })
+                                .execute()
+                            const posts = await dataSource
+                                .getRepository(Post)
+                                .find()
+                            expect(posts).to.have.length(2)
+                            for (const post of posts) {
+                                expect(post.text).to.not.equal("updated")
+                            }
+                        } catch {
+                            // some drivers reject certain inputs
+                        }
+                        await verifyIntegrity(dataSource)()
+                    }),
+                ))
+        }
+    })
+
+    describe("where", () => {
+        for (const malicious of maliciousInputs) {
+            it(`should prevent injection with: ${malicious}`, () =>
+                Promise.all(
+                    dataSources.map(async (dataSource) => {
+                        try {
+                            const results = await dataSource
+                                .createQueryBuilder(Post, "post")
+                                .where("post.name = :name", {
+                                    name: malicious,
+                                })
+                                .getMany()
+                            expect(results).to.have.length(0)
+                        } catch {
+                            // some drivers reject certain byte sequences
+                        }
+                        await verifyIntegrity(dataSource)()
+                    }),
+                ))
+        }
+    })
+
+    describe("useIndex", () => {
+        it("should escape a malicious index name", () => {
+            for (const dataSource of dataSources) {
+                if (!DriverUtils.isMySQLFamily(dataSource.driver)) {
+                    continue
+                }
+
+                const sql = dataSource
+                    .createQueryBuilder(Post, "post")
+                    .useIndex("my_index; DROP TABLE post")
+                    .getSql()
+
+                // The malicious payload should be wrapped in backticks,
+                // not interpreted as a raw SQL statement
+                expect(sql).to.contain("USE INDEX")
+                expect(sql).to.contain("`my_index; DROP TABLE post`")
+            }
+        })
+
+        it("should escape each index name when an array is passed", () => {
+            for (const dataSource of dataSources) {
+                if (!DriverUtils.isMySQLFamily(dataSource.driver)) {
+                    continue
+                }
+
+                const sql = dataSource
+                    .createQueryBuilder(Post, "post")
+                    .useIndex(["idx_one", "idx_two"])
+                    .getSql()
+
+                expect(sql).to.contain("`idx_one`, `idx_two`")
+            }
+        })
+
+        it("should escape a malicious index name in an array", () => {
+            for (const dataSource of dataSources) {
+                if (!DriverUtils.isMySQLFamily(dataSource.driver)) {
+                    continue
+                }
+
+                const sql = dataSource
+                    .createQueryBuilder(Post, "post")
+                    .useIndex(["good_index", "bad`; DROP TABLE post"])
+                    .getSql()
+
+                expect(sql).to.not.match(
+                    /DROP TABLE(?! post`)/, // should only appear inside escaped identifier
+                )
+                expect(sql).to.contain("USE INDEX")
+            }
+        })
+    })
+})
