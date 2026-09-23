@@ -69,7 +69,7 @@ export class ColumnMetadata {
     dialectTypes?: Partial<Record<DatabaseType, string>>
 
     /**
-     * Projects physical column options for schema validation, creation and
+     * Projects physical column options for schema validation, SQL declarations and
      * comparison without changing the logical metadata used at runtime.
      *
      * @param driver

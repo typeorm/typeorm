@@ -1033,39 +1033,45 @@ export class SqlServerDriver implements Driver {
         // if its already MssqlParameter then simply return it
         if (InstanceChecker.isMssqlParameter(value)) return value
 
-        const normalizedType = this.normalizeType({ type: column.type })
-        if (column.length) {
+        const physicalColumn = column.resolveDriverColumn(this)
+        const normalizedType = this.normalizeType({
+            type: physicalColumn.type,
+        })
+        if (physicalColumn.length) {
             return new MssqlParameter(
                 value,
                 normalizedType as any,
-                column.length as any,
+                physicalColumn.length as any,
             )
         } else if (
-            column.precision !== null &&
-            column.precision !== undefined &&
-            column.scale !== null &&
-            column.scale !== undefined
+            physicalColumn.precision !== null &&
+            physicalColumn.precision !== undefined &&
+            physicalColumn.scale !== null &&
+            physicalColumn.scale !== undefined
         ) {
             return new MssqlParameter(
                 value,
                 normalizedType as any,
-                column.precision,
-                column.scale,
+                physicalColumn.precision,
+                physicalColumn.scale,
             )
         } else if (
-            column.precision !== null &&
-            column.precision !== undefined
+            physicalColumn.precision !== null &&
+            physicalColumn.precision !== undefined
         ) {
             return new MssqlParameter(
                 value,
                 normalizedType as any,
-                column.precision,
+                physicalColumn.precision,
             )
-        } else if (column.scale !== null && column.scale !== undefined) {
+        } else if (
+            physicalColumn.scale !== null &&
+            physicalColumn.scale !== undefined
+        ) {
             return new MssqlParameter(
                 value,
                 normalizedType as any,
-                column.scale,
+                physicalColumn.scale,
             )
         }
 
@@ -1134,13 +1140,16 @@ export class SqlServerDriver implements Driver {
         columns: ColumnMetadata[],
     ): string {
         const outputColumns = columns.map((column) => {
+            const physicalColumn = column.resolveDriverColumn(this)
             return `${this.escape(column.databaseName)} ${this.createFullType(
                 new TableColumn({
                     name: column.databaseName,
-                    type: this.normalizeType(column),
-                    length: column.length,
-                    isNullable: column.isNullable,
-                    isArray: column.isArray,
+                    type: this.normalizeType(physicalColumn),
+                    length: physicalColumn.length,
+                    precision: physicalColumn.precision,
+                    scale: physicalColumn.scale,
+                    isNullable: physicalColumn.isNullable,
+                    isArray: physicalColumn.isArray,
                 }),
             )}`
         })
