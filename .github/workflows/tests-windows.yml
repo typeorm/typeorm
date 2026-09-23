@@ -7,11 +7,17 @@ on:
         required: true
         type: number
 
+# Every `run` step below operates on the core package. Steps that need the
+# repository root (docker compose) override this individually.
+defaults:
+  run:
+    working-directory: packages/typeorm
+
 jobs:
   better-sqlite3:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
@@ -27,7 +33,7 @@ jobs:
   sqljs:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}

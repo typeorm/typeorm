@@ -1,235 +1,46 @@
 {
-  "name": "typeorm",
-  "version": "1.0.0-pre",
-  "description": "Data-Mapper ORM for TypeScript and ES2023+. Supports MySQL/MariaDB, PostgreSQL, MS SQL Server, Oracle, SAP HANA, SQLite, MongoDB databases.",
-  "homepage": "https://typeorm.io",
-  "bugs": {
-    "url": "https://github.com/typeorm/typeorm/issues"
-  },
+  "name": "typeorm-monorepo",
+  "version": "1.1.1",
+  "private": true,
+  "description": "Workspace root for the TypeORM repository",
   "repository": {
     "type": "git",
     "url": "https://github.com/typeorm/typeorm.git"
   },
-  "funding": "https://opencollective.com/typeorm",
   "license": "MIT",
-  "author": {
-    "name": "TypeORM",
-    "email": "maintainers@typeorm.io"
-  },
-  "exports": {
-    ".": {
-      "types": "./index.d.ts",
-      "react-native": {
-        "default": "./browser/index.js"
-      },
-      "node": {
-        "types": "./index.d.ts",
-        "import": "./index.mjs",
-        "require": "./index.js"
-      },
-      "browser": {
-        "require": "./index.js",
-        "import": "./browser/index.js",
-        "default": "./index.js"
-      }
-    },
-    "./browser": {
-      "types": "./index.d.ts",
-      "default": "./browser/index.js"
-    },
-    "./*.js": "./*.js",
-    "./*": {
-      "require": "./*.js",
-      "import": "./*"
-    }
-  },
-  "main": "./index.js",
-  "module": "./index.mjs",
-  "browser": {
-    "./browser/connection/ConnectionOptionsReader.js": "./browser/platform/BrowserConnectionOptionsReaderDummy.js",
-    "./browser/connection/options-reader/ConnectionOptionsXmlReader.js": "./browser/platform/BrowserConnectionOptionsReaderDummy.js",
-    "./browser/connection/options-reader/ConnectionOptionsYmlReader.js": "./browser/platform/BrowserConnectionOptionsReaderDummy.js",
-    "./browser/driver/aurora-data-api/AuroraDataApiDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/driver/better-sqlite3/BetterSqlite3Driver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/driver/cockroachdb/CockroachDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/driver/mongodb/MongoDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/driver/mongodb/MongoQueryRunner.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/driver/mongodb/bson.typings.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/driver/mongodb/typings.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/driver/mysql/MysqlDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/driver/oracle/OracleDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/driver/postgres/PostgresDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/driver/sap/SapDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/driver/sqlserver/SqlServerDriver.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/entity-manager/MongoEntityManager.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/logger/FileLogger.js": "./browser/platform/BrowserFileLoggerDummy.js",
-    "./browser/platform/PlatformTools.js": "./browser/platform/BrowserPlatformTools.js",
-    "./browser/repository/MongoRepository.js": "./browser/platform/BrowserDisabledDriversDummy.js",
-    "./browser/util/DirectoryExportedClassesLoader.js": "./browser/platform/BrowserDirectoryExportedClassesLoader.js",
-    "./index.js": "./browser/index.js",
-    "./index.mjs": "./browser/index.js"
-  },
-  "types": "./index.d.ts",
-  "bin": {
-    "typeorm": "./cli.js",
-    "typeorm-ts-node-commonjs": "./cli-ts-node-commonjs.js",
-    "typeorm-ts-node-esm": "./cli-ts-node-esm.js"
-  },
   "scripts": {
     "changelog": "standard-changelog",
-    "compile": "gulp clean && tsc",
+    "check:manifests": "node scripts/check-publishable-manifests.mjs",
+    "compile": "pnpm --filter typeorm run compile",
     "docs:dev": "cd docs && pnpm run start",
     "format": "prettier --cache --write .",
     "format:ci": "prettier --check .",
-    "lint": "eslint",
-    "package": "gulp package",
+    "lint": "pnpm -r run lint",
+    "package": "pnpm --filter typeorm run package",
     "prepare": "husky",
-    "test": "pnpm run compile && pnpm run test:fast --",
-    "test:ci": "mocha --bail",
-    "test:fast": "mocha",
-    "typecheck": "tsc --noEmit",
-    "watch": "tsc --watch"
-  },
-  "dependencies": {
-    "@sqltools/formatter": "^1.2.5",
-    "ansis": "^4.2.0",
-    "dayjs": "^1.11.20",
-    "debug": "^4.4.3",
-    "dedent": "^1.7.2",
-    "reflect-metadata": "^0.2.2",
-    "sql-highlight": "^6.1.0",
-    "tinyglobby": "^0.2.16",
-    "tslib": "^2.8.1",
-    "yargs": "^18.0.0"
+    "test": "pnpm --filter typeorm run test",
+    "test:fast": "pnpm --filter typeorm run test:fast",
+    "typecheck": "pnpm --filter typeorm run typecheck",
+    "watch": "pnpm --filter typeorm run watch"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@google-cloud/spanner": "^8.7.1",
-    "@js-temporal/polyfill": "^0.5.1",
-    "@sap/hana-client": "^2.28.20",
-    "@stryker-mutator/core": "^9.6.1",
-    "@stryker-mutator/mocha-runner": "^9.6.1",
-    "@tsconfig/node20": "^20.1.9",
-    "@types/chai": "^5.2.3",
-    "@types/chai-as-promised": "^8.0.2",
-    "@types/debug": "^4.1.13",
-    "@types/gulp": "^4.0.18",
-    "@types/gulp-rename": "^2.0.7",
-    "@types/mocha": "^10.0.10",
-    "@types/node": "^20.19.40",
-    "@types/sinon": "^21.0.1",
-    "@types/sinon-chai": "^4.0.0",
-    "@types/source-map-support": "^0.5.10",
-    "@types/yargs": "^17.0.35",
-    "better-sqlite3": "^12.9.0",
-    "c8": "^11.0.0",
-    "chai": "^6.2.2",
-    "chai-as-promised": "^8.0.2",
-    "class-transformer": "^0.5.1",
-    "eslint": "^10.3.0",
-    "eslint-plugin-chai-friendly": "^1.2.0",
-    "eslint-plugin-jsdoc": "^62.9.0",
-    "eslint-plugin-unicorn": "^64.0.0",
-    "globals": "17.6.0",
-    "gulp": "^5.0.1",
-    "gulp-rename": "^2.1.0",
+    "eslint": "^10.9.1",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
-    "mocha": "^11.7.5",
-    "mongodb": "^7.2.0",
-    "mssql": "^12.5.2",
-    "mysql2": "^3.22.3",
-    "oracledb": "^6.10.0",
-    "pg": "^8.20.0",
-    "pg-query-stream": "^4.14.0",
-    "pkg-pr-new": "^0.0.71",
-    "prettier": "^3.8.3",
+    "pkg-pr-new": "^0.0.88",
+    "prettier": "^3.9.6",
     "prettier-plugin-packagejson": "^3.0.2",
     "prettier-plugin-toml": "^2.0.6",
-    "redis": "^5.12.1",
-    "sinon": "^21.1.2",
-    "sinon-chai": "^4.0.1",
-    "sort-package-json": "^3.6.1",
-    "source-map-support": "^0.5.21",
-    "sql.js": "^1.14.1",
-    "standard-changelog": "^7.0.1",
-    "testcontainers": "^11.14.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.59.2"
+    "standard-changelog": "^7.0.1"
   },
-  "peerDependencies": {
-    "@google-cloud/spanner": "^8.0.0",
-    "@sap/hana-client": "^2.14.22",
-    "better-sqlite3": "^12.0.0",
-    "ioredis": "^5.0.4",
-    "mongodb": "^7.0.0",
-    "mssql": "^12.0.0",
-    "mysql2": "^3.15.3",
-    "oracledb": "^6.3.0",
-    "pg": "^8.5.1",
-    "pg-native": "^3.0.0",
-    "pg-query-stream": "^4.0.0",
-    "redis": "^5.0.0",
-    "sql.js": "^1.4.0",
-    "ts-node": "^10.9.2",
-    "typeorm-aurora-data-api-driver": "^3.0.0"
-  },
-  "peerDependenciesMeta": {
-    "@google-cloud/spanner": {
-      "optional": true
-    },
-    "@sap/hana-client": {
-      "optional": true
-    },
-    "better-sqlite3": {
-      "optional": true
-    },
-    "ioredis": {
-      "optional": true
-    },
-    "mongodb": {
-      "optional": true
-    },
-    "mssql": {
-      "optional": true
-    },
-    "mysql2": {
-      "optional": true
-    },
-    "oracledb": {
-      "optional": true
-    },
-    "pg": {
-      "optional": true
-    },
-    "pg-native": {
-      "optional": true
-    },
-    "pg-query-stream": {
-      "optional": true
-    },
-    "redis": {
-      "optional": true
-    },
-    "sql.js": {
-      "optional": true
-    },
-    "ts-node": {
-      "optional": true
-    },
-    "typeorm-aurora-data-api-driver": {
-      "optional": true
-    }
-  },
-  "packageManager": "pnpm@10.33.4",
+  "packageManager": "pnpm@10.34.5",
   "engines": {
     "node": "^20.19.0 || ^22.13.0 || >=24.11.0"
   },
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
-      "version": "^10.33.4",
+      "version": "^10.34.5",
       "onFail": "error"
     }
   },
@@ -245,28 +56,5 @@
       "protobufjs",
       "ssh2"
     ]
-  },
-  "tags": [
-    "orm",
-    "typescript",
-    "typescript-orm",
-    "mariadb",
-    "mariadb-orm",
-    "mysql",
-    "mysql-orm",
-    "oracle",
-    "oracle-orm",
-    "postgresql",
-    "postgresql-orm",
-    "sap-hana",
-    "sap-hana-orm",
-    "spanner",
-    "cloud-spanner",
-    "cloud-spanner-orm",
-    "sqlite",
-    "sqlite-orm",
-    "better-sqlite3",
-    "sql-server",
-    "sql-server-orm"
-  ]
+  }
 }

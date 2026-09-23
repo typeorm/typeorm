@@ -533,3 +533,63 @@ article mark,
 [data-theme="dark"] [class*="docItemContainer"] mark {
     background-color: rgba(255, 119, 51, 0.2) !important;
 }
+
+/* =============================================
+   Version dropdown (navbar)
+   ============================================= */
+
+/* Section headers (Current / Legacy) — non-clickable label rows */
+.dropdown__link.navbar__version-section,
+.dropdown__link.navbar__version-section:hover {
+    background: transparent !important;
+    cursor: default !important;
+    pointer-events: none;
+    padding: 10px 16px 4px !important;
+}
+
+.dropdown__link.navbar__version-section:not(:first-child) {
+    margin-top: 4px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    padding-top: 10px !important;
+}
+
+[data-theme="dark"] .dropdown__link.navbar__version-section:not(:first-child) {
+    border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+.navbar__version-section-label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #6b7280; /* 5.7:1 on #fff */
+}
+
+[data-theme="dark"] .navbar__version-section-label {
+    color: #c8b5d8; /* ~8.7:1 on #1a0030 */
+}
+
+/* Version items — indented to align with section headers, leaving room for the active bar */
+.dropdown__link.navbar__version-item {
+    position: relative;
+    padding-left: 22px !important;
+    font-weight: 500;
+}
+
+/* Active version indicator — orange left bar + emphasis */
+.dropdown__link.navbar__version-item--active {
+    color: var(--ifm-color-primary) !important;
+    font-weight: 600;
+}
+
+.dropdown__link.navbar__version-item--active::before {
+    content: "";
+    position: absolute;
+    left: 8px;
+    top: 6px;
+    bottom: 6px;
+    width: 3px;
+    border-radius: 2px;
+    background: var(--ifm-color-primary);
+}
