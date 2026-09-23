@@ -140,7 +140,9 @@ export class User {
   must be supported by its driver. Column type aliases are normalized for
   comparison. Numeric `length` or `precision`/`scale`
   parameters in an override take precedence over the corresponding column
-  options. Empty or whitespace overrides are rejected during initialization.
+  options. The `max` length is supported for SQL Server's `varchar`, `nvarchar`
+  and `varbinary`, and Spanner's `string` and `bytes`. Empty or whitespace
+  overrides are rejected during initialization.
 - `name: string` - Column name in the database table.
   By default, the column name is generated from the name of the property.
   You can change it by specifying your own name.

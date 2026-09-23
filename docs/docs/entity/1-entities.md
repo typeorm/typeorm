@@ -210,6 +210,8 @@ for schema comparison. Empty or whitespace overrides are
 rejected during initialization, and TypeScript checks keys against supported
 driver names. Numeric parameters can be supplied for types that support
 `length` or `precision` and `scale`, such as `varchar(10)` or `decimal(10,2)`.
+The `max` length is also accepted for SQL Server's `varchar`, `nvarchar` and
+`varbinary`, and Spanner's `string` and `bytes`, for example `nvarchar(max)`.
 Override parameters take precedence over the corresponding column options.
 Without explicit parameters, compatible column options are retained; modifiers
 that the replacement type does not support are dropped. For example, overriding

@@ -203,6 +203,15 @@ export class SqlServerDriver implements Driver {
     ]
 
     /**
+     * Gets list of column data types that support MAX as their length.
+     */
+    withMaxLengthColumnTypes: ColumnType[] = [
+        "varchar",
+        "nvarchar",
+        "varbinary",
+    ]
+
+    /**
      * Gets list of column data types that support precision by a driver.
      */
     withPrecisionColumnTypes: ColumnType[] = [

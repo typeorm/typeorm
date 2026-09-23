@@ -14,6 +14,7 @@ import {
 } from "../../../utils/test-utils"
 import { Post } from "./entity/Post"
 
+// Regression coverage for https://github.com/typeorm/typeorm/issues/12874.
 describe("columns > dialect types", () => {
     const invalidDriverKey: ColumnCommonOptions = {
         dialectTypes: {

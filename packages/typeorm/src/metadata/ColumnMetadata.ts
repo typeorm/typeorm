@@ -126,9 +126,8 @@ export class ColumnMetadata {
                 ),
             },
         ) as EntityMetadata
-        const parameterized = /^(.+?)\(\s*(\d+)\s*(?:,\s*(\d+)\s*)?\)$/.exec(
-            override.trim(),
-        )
+        const parameterized =
+            /^(.+?)\(\s*(\d+|max)\s*(?:,\s*(\d+)\s*)?\)$/i.exec(override.trim())
         if (!parameterized) {
             if (override.includes("(") || override.includes(")")) {
                 throw new TypeORMError(
@@ -139,7 +138,11 @@ export class ColumnMetadata {
             const normalizedType = driver.normalizeType(physical) as ColumnType
             // Retain shared modifiers only when the replacement type supports
             // them; for example, PostgreSQL text cannot inherit varchar length.
-            if (!driver.withLengthColumnTypes.includes(normalizedType))
+            if (
+                !driver.withLengthColumnTypes.includes(normalizedType) ||
+                (physical.length.toLowerCase() === "max" &&
+                    !driver.withMaxLengthColumnTypes?.includes(normalizedType))
+            )
                 physical.length = ""
             if (!driver.withPrecisionColumnTypes.includes(normalizedType)) {
                 physical.precision = undefined
@@ -154,6 +157,21 @@ export class ColumnMetadata {
         const normalizedType = driver.normalizeType({
             type: baseType,
         }) as ColumnType
+        if (parameterized[2].toLowerCase() === "max") {
+            if (
+                parameterized[3] !== undefined ||
+                !driver.withMaxLengthColumnTypes?.includes(normalizedType)
+            ) {
+                throw new TypeORMError(
+                    `Column "${this.propertyName}" has unsupported dialectTypes parameters for "${driver.options.type}"`,
+                )
+            }
+            physical.type = baseType
+            physical.length = "max"
+            physical.precision = undefined
+            physical.scale = undefined
+            return physical
+        }
         const firstParameter = Number(parameterized[2])
         const secondParameter = parameterized[3]
             ? Number(parameterized[3])
