@@ -153,6 +153,10 @@ export class ColumnMetadata {
                 physical.enum = undefined
                 physical.enumName = undefined
             }
+            if (!driver.spatialTypes.includes(normalizedType)) {
+                physical.spatialFeatureType = undefined
+                physical.srid = undefined
+            }
             if (
                 driver.options.type === "mysql" ||
                 driver.options.type === "mariadb" ||

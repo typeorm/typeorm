@@ -50,6 +50,8 @@ describe("columns > dialect types > spatial writes", () => {
                     },
                     storedValue: {
                         type: "geometry",
+                        spatialFeatureType: "Point",
+                        srid: 4326,
                         dialectTypes: {
                             postgres: "jsonb",
                             mssql: "varchar(128)",
@@ -93,6 +95,11 @@ describe("columns > dialect types > spatial writes", () => {
                 expect(table!.findColumnByName("storedValue")!.type).to.equal(
                     engine === "postgres" ? "jsonb" : "varchar",
                 )
+                expect(
+                    table!.findColumnByName("storedValue")!.spatialFeatureType,
+                ).to.be.undefined
+                expect(table!.findColumnByName("storedValue")!.srid).to.be
+                    .undefined
                 const metadata = dataSource.getMetadata(entity)
                 expect(
                     metadata.findColumnWithPropertyName("location")!.type,
@@ -103,6 +110,9 @@ describe("columns > dialect types > spatial writes", () => {
                 expect(
                     metadata.findColumnWithPropertyName("storedValue")!.type,
                 ).to.equal("geometry")
+                expect(
+                    metadata.findColumnWithPropertyName("storedValue")!.srid,
+                ).to.equal(4326)
             }),
         )
     })

@@ -219,6 +219,7 @@ that the replacement type does not support are dropped. For example, overriding
 a `varchar` column with PostgreSQL `text` drops its length.
 On MySQL-family drivers, `unsigned` is retained only for numeric physical types,
 while `charset` and `collation` are retained only for character types.
+Spatial feature type and SRID are retained only for spatial physical types.
 
 ```typescript
 @Column({ type: "json", dialectTypes: { postgres: "jsonb" } })
