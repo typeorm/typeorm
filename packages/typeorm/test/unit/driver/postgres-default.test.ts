@@ -77,4 +77,20 @@ describe("driver > postgres > defaultEqual", () => {
         const col = createTableColumn({ default: "'inactive'" })
         expect(driver["defaultEqual"](meta, col)).to.be.false
     })
+
+    it("should preserve case sensitivity inside single-quoted literals", () => {
+        const meta = createColumnMetadata({ default: "ACTIVE", type: "varchar" })
+        const col = createTableColumn({ default: "'active'" })
+        expect(driver["defaultEqual"](meta, col)).to.be.false
+    })
+
+    it("should not strip cast-like syntax inside single-quoted literals", () => {
+        // 'a::b' inside string literal must not be stripped to 'a'
+        const meta = createColumnMetadata({ default: "a::b", type: "varchar" })
+        const colDifferent = createTableColumn({ default: "'a'" })
+        expect(driver["defaultEqual"](meta, colDifferent)).to.be.false
+
+        const colIdentical = createTableColumn({ default: "'a::b'" })
+        expect(driver["defaultEqual"](meta, colIdentical)).to.be.true
+    })
 })
