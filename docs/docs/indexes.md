@@ -161,6 +161,10 @@ issues with getting information about existing database indexes and synchronizin
 (for example, in [the migrations](./migrations/01-why.md)) with any index signature you want. To make TypeORM ignore these indexes during synchronization, use `synchronize: false`
 option on the `@Index` decorator.
 
+**An explicit index name is required when `synchronize: false` is set.** TypeORM recognizes such an index only by matching its name
+against the database; without a name it has no way to tell the index apart from a stale, unmanaged one, so it would be dropped on
+the next schema synchronization or migration generation. Give it the same name as the manually-created database index.
+
 For example, you create an index with case-insensitive comparison:
 
 ```sql
