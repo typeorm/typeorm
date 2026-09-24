@@ -1267,7 +1267,54 @@ export class PostgresDriver implements Driver {
         const columnDefault = this.lowerDefaultValueIfNecessary(
             this.normalizeDefault(columnMetadata),
         )
-        return columnDefault === tableColumn.default
+        if (columnDefault === tableColumn.default) return true
+        if (columnDefault === undefined || tableColumn.default === undefined)
+            return false
+
+        // Normalize typecasts (e.g. ARRAY[]::enum_def[], 'VALUE'::enum_def, '{}'::text[])
+        // PostgresQueryRunner strips /::[\w\s.[\]\-"]+/g from pg_catalog defaults,
+        // but columnDefault in metadata may still retain explicit type casts.
+        const cleanColumnDefault = this.stripTypeCasts(columnDefault)
+        const cleanTableDefault = this.stripTypeCasts(tableColumn.default)
+
+        if (
+            cleanColumnDefault === cleanTableDefault ||
+            cleanColumnDefault.toLowerCase() === cleanTableDefault.toLowerCase()
+        ) {
+            return true
+        }
+
+        // For array columns, treat empty array representations as equivalent ('{}' <=> 'array[]')
+        if (columnMetadata.isArray) {
+            const isEmptyArray = (val: string) => {
+                const lower = val.toLowerCase().trim()
+                return (
+                    lower === "'{}'" ||
+                    lower === "{}" ||
+                    lower === "array[]" ||
+                    lower === "array[]::text[]"
+                )
+            }
+            if (
+                isEmptyArray(cleanColumnDefault) &&
+                isEmptyArray(cleanTableDefault)
+            ) {
+                return true
+            }
+        }
+
+        return false
+    }
+
+    /**
+     * Strips PostgreSQL type casts and outer parentheses from default value strings.
+     */
+    private stripTypeCasts(value: string): string {
+        return value
+            .replaceAll(/::[\w\s.[\]\-"]+/g, "")
+            .trim()
+            .replace(/^\((.*)\)$/, "$1")
+            .trim()
     }
 
     /**
