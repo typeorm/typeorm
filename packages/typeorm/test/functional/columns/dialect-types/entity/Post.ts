@@ -1,0 +1,70 @@
+import { Column } from "../../../../../src/decorator/columns/Column"
+import { PrimaryGeneratedColumn } from "../../../../../src/decorator/columns/PrimaryGeneratedColumn"
+import { Entity } from "../../../../../src/decorator/entity/Entity"
+
+@Entity("post")
+export class Post {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    @Column({ type: "json", dialectTypes: { postgres: "jsonb" } })
+    payload: object
+
+    @Column({ type: "tinyint", dialectTypes: { postgres: "smallint" } })
+    level: number
+
+    @Column({ type: "tinyint", dialectTypes: { postgres: "int" } })
+    aliasLevel: number
+
+    @Column({
+        type: "varchar",
+        length: 40,
+        unique: true,
+        dialectTypes: { postgres: "varchar(010)" },
+    })
+    shortText: string
+
+    @Column({
+        type: "varchar",
+        length: 40,
+        dialectTypes: { postgres: "text" },
+    })
+    unboundedText: string
+
+    @Column({
+        type: "varchar",
+        length: 40,
+        dialectTypes: { postgres: "character varying" },
+    })
+    preservedText: string
+
+    @Column({
+        type: "decimal",
+        precision: 12,
+        scale: 4,
+        dialectTypes: { postgres: "decimal(10,2)" },
+    })
+    amount: number
+
+    @Column({
+        type: "decimal",
+        precision: 12,
+        scale: 4,
+        dialectTypes: { postgres: "double precision" },
+    })
+    floatingAmount: number
+
+    @Column({
+        type: "decimal",
+        precision: 12,
+        scale: 4,
+        dialectTypes: { postgres: "numeric" },
+    })
+    preservedAmount: number
+
+    @Column({ type: "datetime", dialectTypes: { postgres: "timestamp(3)" } })
+    createdAt: Date
+
+    @Column({ type: "datetime", dialectTypes: { postgres: "timestamp(0)" } })
+    createdAtZero: Date
+}

@@ -7,6 +7,7 @@ export class TableUtils {
         columnMetadata: ColumnMetadata,
         driver: Driver,
     ): TableColumnOptions {
+        columnMetadata = columnMetadata.resolveDriverColumn(driver)
         return {
             name: columnMetadata.databaseName,
             length: driver.getColumnLength(columnMetadata),
