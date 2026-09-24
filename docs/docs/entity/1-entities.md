@@ -205,7 +205,51 @@ For example:
 @Column("varchar", { length: 200 })
 ```
 
+```typescript
+@Column({ type: "varchar", length: 255 })
+name: string
+```
+
 > Note about `bigint` type: `bigint` column type, used in SQL databases, doesn't fit into the regular `number` type and maps property to a `string` instead.
+
+### Column Type Inference
+
+When no explicit type is provided in the `@Column()` decorator, TypeORM attempts to infer the database column type from the TypeScript property type metadata.
+
+```typescript
+@Column()
+name: string
+```
+
+The inferred type depends on the database driver and its internal implementation.
+
+> ⚠️ **Important:**
+> The following table represents common mappings, but it is not guaranteed to be accurate for all configurations or drivers.
+
+| TypeScript Type | PostgreSQL | MySQL / MariaDB | SQLite | SQL Server |
+|----------------|------------|-----------------|--------|------------|
+| `string` | `varchar` / `text` | `varchar` | `text` | `nvarchar` |
+| `number` | `int` | `int` | `integer` | `int` |
+| `boolean` | `boolean` | `tinyint` | `boolean` | `bit` |
+| `Date` | `timestamp` | `datetime` | `datetime` | `datetime` |
+
+> **Note:**
+>
+> - The exact mapping is determined internally by each database driver implementation.
+> - The actual column type may vary depending on configuration and driver-specific behavior.
+> - Inference relies on TypeScript metadata and may not work for all types.
+> - If TypeORM cannot infer a suitable database column type, you must explicitly specify it in `@Column()`.
+> - For production systems, it is recommended to explicitly define column types.
+
+When the type cannot be inferred, you must specify it explicitly:
+
+```typescript
+@Column({ type: "varchar", length: 255 })
+name: string
+
+@Column({ type: "simple-json" })
+profile: { name: string; nickname: string }
+```
 
 ### `enum` column type
 
@@ -217,7 +261,7 @@ Using typescript enums:
 export enum UserRole {
     ADMIN = "admin",
     EDITOR = "editor",
-    GHOST = "ghost",
+    GHOST = "ghost"
 }
 
 @Entity()
@@ -239,7 +283,7 @@ export class User {
 Using array with enum values:
 
 ```typescript
-export type UserRoleType = "admin" | "editor" | "ghost",
+export type UserRoleType = "admin" | "editor" | "ghost"
 
 @Entity()
 export class User {
