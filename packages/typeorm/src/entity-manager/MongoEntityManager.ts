@@ -150,23 +150,33 @@ export class MongoEntityManager extends EntityManager {
         const queryRunner = (this.queryRunner ??
             this.dataSource.createQueryRunner()) as MongoQueryRunner
         let transactionStarted = false
+        let result: T
 
         try {
             await queryRunner.startTransactionWithOptions(options)
             transactionStarted = true
-            const result = await runInTransaction(queryRunner.manager)
+            result = await runInTransaction(queryRunner.manager)
             await queryRunner.commitTransaction()
-            return result
         } catch (error) {
             if (transactionStarted && queryRunner.isTransactionActive) {
                 await queryRunner.rollbackTransaction().catch(() => undefined)
             }
-            throw error
-        } finally {
             if (!this.queryRunner) {
-                await queryRunner.release()
+                try {
+                    await queryRunner.release()
+                } catch (cleanupError) {
+                    this.dataSource.logger.log(
+                        "warn",
+                        `MongoDB transaction failed and query runner cleanup also failed: ${this.normalizeError(cleanupError).message}`,
+                        queryRunner,
+                    )
+                }
             }
+            throw error
         }
+
+        if (!this.queryRunner) await queryRunner.release()
+        return result
     }
 
     /**
@@ -430,10 +440,11 @@ export class MongoEntityManager extends EntityManager {
         const result = new UpdateResult()
 
         if (Array.isArray(criteria)) {
-            const updateResults = await Promise.all(
-                (criteria as any[]).map((criteriaItem) => {
-                    return this.update(target, criteriaItem, partialEntity)
-                }),
+            const updateResults = await this.executeMongoOperations(
+                (criteria as any[]).map(
+                    (criteriaItem) => () =>
+                        this.update(target, criteriaItem, partialEntity),
+                ),
             )
 
             result.raw = updateResults.map((r) => r.raw)
@@ -484,10 +495,10 @@ export class MongoEntityManager extends EntityManager {
         const result = new DeleteResult()
 
         if (Array.isArray(criteria)) {
-            const deleteResults = await Promise.all(
-                (criteria as any[]).map((criteriaItem) => {
-                    return this.delete(target, criteriaItem)
-                }),
+            const deleteResults = await this.executeMongoOperations(
+                (criteria as any[]).map(
+                    (criteriaItem) => () => this.delete(target, criteriaItem),
+                ),
             )
 
             result.raw = deleteResults.map((r) => r.raw)
@@ -1580,10 +1591,38 @@ export class MongoEntityManager extends EntityManager {
         } else if (deleteDateColumn) {
             this.filterSoftDeleted(cursor, deleteDateColumn, query)
         }
-        const [results, count] = await Promise.all<any>([
-            cursor.toArray(),
-            this.count(entityClassOrName, query),
+        const [results, count] = await this.executeMongoOperations<any>([
+            () => cursor.toArray(),
+            () => this.count(entityClassOrName, query),
         ])
         return [results, parseInt(count)]
+    }
+
+    /**
+     * MongoDB transaction sessions require operations to run in sequence.
+     *
+     * @param operations Database operations to execute.
+     * @returns Results in operation order.
+     */
+    protected async executeMongoOperations<T>(
+        operations: Array<() => Promise<T>>,
+    ): Promise<T[]> {
+        if (!this.mongoQueryRunner.isTransactionActive) {
+            return Promise.all(operations.map((operation) => operation()))
+        }
+
+        const results: T[] = []
+        for (const operation of operations) {
+            results.push(await operation())
+        }
+        return results
+    }
+
+    /**
+     * @param error Caught value to convert.
+     * @returns The value as an error.
+     */
+    protected normalizeError(error: unknown): Error {
+        return error instanceof Error ? error : new TypeORMError(String(error))
     }
 }

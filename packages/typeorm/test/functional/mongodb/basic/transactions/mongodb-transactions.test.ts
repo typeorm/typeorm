@@ -16,6 +16,7 @@ import {
 import { TransactionDocument } from "./entity/TransactionDocument"
 
 const transactionEvents: string[] = []
+let beforeRollbackError: Error | undefined
 
 @EventSubscriber()
 class TransactionSubscriber implements EntitySubscriberInterface {
@@ -37,6 +38,7 @@ class TransactionSubscriber implements EntitySubscriberInterface {
 
     beforeTransactionRollback(): void {
         transactionEvents.push("before rollback")
+        if (beforeRollbackError) throw beforeRollbackError
     }
 
     afterTransactionRollback(): void {
@@ -57,6 +59,7 @@ describe("mongodb > transactions", () => {
     beforeEach(async () => {
         await reloadTestingDatabases(dataSources)
         transactionEvents.length = 0
+        beforeRollbackError = undefined
     })
     after(() => closeTestingConnections(dataSources))
 
@@ -71,6 +74,56 @@ describe("mongodb > transactions", () => {
                         { name: "second" },
                     ])
                     expect(await repository.count()).to.equal(2)
+                })
+
+                expect(
+                    await dataSource
+                        .getMongoRepository(TransactionDocument)
+                        .count(),
+                ).to.equal(2)
+            }),
+        ))
+
+    it("does not start a transaction for ordinary saves", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner =
+                    dataSource.createQueryRunner() as MongoQueryRunner
+                const startTransaction = sinon.spy(
+                    queryRunner,
+                    "startTransaction",
+                )
+                const createQueryRunner = sinon
+                    .stub(dataSource, "createQueryRunner")
+                    .returns(queryRunner)
+
+                try {
+                    await dataSource
+                        .getMongoRepository(TransactionDocument)
+                        .save({ name: "ordinary save" })
+                } finally {
+                    createQueryRunner.restore()
+                    startTransaction.restore()
+                }
+
+                expect(startTransaction.notCalled).to.be.true
+                expect(
+                    await dataSource
+                        .getMongoRepository(TransactionDocument)
+                        .count(),
+                ).to.equal(1)
+            }),
+        ))
+
+    it("commits chunked saves sequentially", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await dataSource.transaction(async (manager) => {
+                    await manager.save(
+                        TransactionDocument,
+                        [{ name: "first" }, { name: "second" }],
+                        { chunk: 1 },
+                    )
                 })
 
                 expect(
@@ -98,6 +151,39 @@ describe("mongodb > transactions", () => {
                         .getMongoRepository(TransactionDocument)
                         .count(),
                 ).to.equal(0)
+            }),
+        ))
+
+    it("does not report committed work as failed when session cleanup fails", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const client = (dataSource.driver as MongoDriver)
+                    .databaseConnection!
+                const session = client.startSession()
+                const startSession = sinon
+                    .stub(client, "startSession")
+                    .returns(session)
+                const endSession = sinon
+                    .stub(session, "endSession")
+                    .rejects(new Error("session cleanup failed"))
+
+                try {
+                    await dataSource.transaction(async (manager) => {
+                        await manager
+                            .getMongoRepository(TransactionDocument)
+                            .insertOne({ name: "committed" })
+                    })
+                } finally {
+                    startSession.restore()
+                    endSession.restore()
+                    await session.endSession()
+                }
+
+                expect(
+                    await dataSource
+                        .getMongoRepository(TransactionDocument)
+                        .count(),
+                ).to.equal(1)
             }),
         ))
 
@@ -130,6 +216,71 @@ describe("mongodb > transactions", () => {
                 }
 
                 expect(endSession.calledOnce).to.be.true
+            }),
+        ))
+
+    it("preserves the callback error when rollback broadcasting and abort fail", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const client = (dataSource.driver as MongoDriver)
+                    .databaseConnection!
+                const session = client.startSession()
+                const startSession = sinon
+                    .stub(client, "startSession")
+                    .returns(session)
+                const endSession = sinon.spy(session, "endSession")
+                const abortTransaction = sinon
+                    .stub(session, "abortTransaction")
+                    .rejects(new Error("abort failed"))
+                beforeRollbackError = new Error("subscriber failed")
+
+                try {
+                    await dataSource
+                        .transaction(() => {
+                            throw new Error("callback failed")
+                        })
+                        .should.be.rejectedWith("callback failed")
+                } finally {
+                    startSession.restore()
+                    abortTransaction.restore()
+                }
+
+                expect(abortTransaction.called).to.be.true
+                expect(endSession.calledOnce).to.be.true
+            }),
+        ))
+
+    it("runs array updates and deletes inside a transaction", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const repository =
+                    dataSource.getMongoRepository(TransactionDocument)
+                const documents = await repository.save([
+                    { name: "first" },
+                    { name: "second" },
+                ])
+
+                await dataSource.transaction(async (manager) => {
+                    await manager.update(
+                        TransactionDocument,
+                        documents.map((document) => document.id),
+                        { name: "updated" },
+                    )
+                    const [updatedDocuments, count] =
+                        await manager.findAndCount(TransactionDocument)
+                    expect(count).to.equal(2)
+                    expect(
+                        updatedDocuments.every(
+                            (document) => document.name === "updated",
+                        ),
+                    ).to.be.true
+                    await manager.delete(
+                        TransactionDocument,
+                        documents.map((document) => document.id),
+                    )
+                })
+
+                expect(await repository.count()).to.equal(0)
             }),
         ))
 

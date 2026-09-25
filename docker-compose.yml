@@ -172,7 +172,8 @@ services:
         - >-
           mongosh --quiet --eval 'if (db.hello().isWritablePrimary) { quit(0) }
           try { rs.initiate({ _id: "rs0", members: [{ _id: 0, host: "localhost:27017" }] }) }
-          catch (error) {} quit(1)'
+          catch (error) { if (error.codeName !== "AlreadyInitialized") { print(error); quit(2) } }
+          quit(1)'
       interval: 2s
       timeout: 5s
       retries: 30

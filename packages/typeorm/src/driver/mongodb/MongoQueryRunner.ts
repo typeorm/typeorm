@@ -764,7 +764,11 @@ export class MongoQueryRunner implements QueryRunner {
         await this.broadcaster.broadcast("BeforeTransactionCommit")
         await this.session.commitTransaction()
         this.isTransactionActive = false
-        await this.releaseSession()
+        try {
+            await this.releaseSession()
+        } catch (error) {
+            this.logCleanupError("committed transaction", error)
+        }
         await this.broadcaster.broadcast("AfterTransactionCommit")
     }
 
@@ -777,14 +781,18 @@ export class MongoQueryRunner implements QueryRunner {
             throw new TransactionNotStartedError()
         }
 
-        await this.broadcaster.broadcast("BeforeTransactionRollback")
-
         let rollbackError: Error | undefined
         let cleanupError: Error | undefined
         try {
-            await this.session.abortTransaction()
+            await this.broadcaster.broadcast("BeforeTransactionRollback")
         } catch (error) {
             rollbackError = this.normalizeError(error)
+        }
+
+        try {
+            await this.session.abortTransaction()
+        } catch (error) {
+            rollbackError ??= this.normalizeError(error)
         }
 
         this.isTransactionActive = false
@@ -1709,6 +1717,20 @@ export class MongoQueryRunner implements QueryRunner {
      */
     protected normalizeError(error: unknown): Error {
         return error instanceof Error ? error : new TypeORMError(String(error))
+    }
+
+    /**
+     * Reports a session cleanup failure without changing a completed transaction result.
+     *
+     * @param action Completed transaction action.
+     * @param error Session cleanup error.
+     */
+    protected logCleanupError(action: string, error: unknown): void {
+        this.dataSource.logger.log(
+            "warn",
+            `MongoDB ${action}, but session cleanup failed: ${this.normalizeError(error).message}`,
+            this,
+        )
     }
 
     /**
