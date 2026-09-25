@@ -1,4 +1,9 @@
-import { Entity, Column, PrimaryGeneratedColumn, Index } from "../../../../src"
+import {
+    Entity,
+    Column,
+    PrimaryGeneratedColumn,
+    Index,
+} from "../../../../../src"
 
 @Entity("sample_entity")
 export class SampleEntity {

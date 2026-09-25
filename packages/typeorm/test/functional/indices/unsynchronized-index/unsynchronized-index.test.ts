@@ -1,15 +1,16 @@
 import "reflect-metadata"
-import type { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
-import { TableIndex } from "../../../src/schema-builder/table/TableIndex"
+} from "../../../utils/test-utils"
+import { TableIndex } from "../../../../src/schema-builder/table/TableIndex"
 import { SampleEntity } from "./entity/SampleEntity"
 import { expect } from "chai"
 
-describe("github issues > #10348 Using synchronization: false with @Index does not ignore the index when creating migrations", () => {
+// Functional test suite for unsynchronized indices (regression coverage for #10348)
+describe("indices > unsynchronized index", () => {
     let dataSources: DataSource[]
 
     before(async () => {
@@ -48,7 +49,6 @@ describe("github issues > #10348 Using synchronization: false with @Index does n
                     i.columns.some((c) => c.propertyName === "title"),
                 )!.name
 
-                // Create the two indexes in the database manually (as would happen via migrations)
                 await queryRunner.createIndex(
                     table!,
                     new TableIndex({
@@ -67,10 +67,8 @@ describe("github issues > #10348 Using synchronization: false with @Index does n
                 table = await queryRunner.getTable("sample_entity")
                 expect(table!.indices.length).to.be.equal(2)
 
-                // Run schema sync
                 await dataSource.synchronize()
 
-                // Check that neither index was dropped
                 table = await queryRunner.getTable("sample_entity")
                 expect(table!.indices.length).to.be.equal(2)
                 expect(table!.indices.find((i) => i.name === titleIndexName))
