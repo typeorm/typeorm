@@ -93,7 +93,6 @@
     "dedent": "^1.7.2",
     "reflect-metadata": "^0.2.2",
     "sql-highlight": "^6.1.0",
-    "tinyglobby": "^0.2.17",
     "tslib": "^2.8.1",
     "yargs": "^18.1.0"
   },
@@ -110,7 +109,7 @@
     "@types/gulp": "^4.0.18",
     "@types/gulp-rename": "^2.0.7",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^20.19.43",
+    "@types/node": "^22.20.1",
     "@types/sinon": "^22.0.0",
     "@types/sinon-chai": "^4.0.0",
     "@types/source-map-support": "^0.5.10",
@@ -208,7 +207,7 @@
     }
   },
   "engines": {
-    "node": "^20.19.0 || ^22.13.0 || >=24.11.0"
+    "node": "^22.13.0 || >=24.11.0"
   },
   "publishConfig": {
     "directory": "build/package"
