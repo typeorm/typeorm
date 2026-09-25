@@ -9,6 +9,7 @@ import { IndexMetadata } from "../../../../../../src/metadata/IndexMetadata"
 import { Teacher } from "./entity/Teacher"
 import { Student } from "./entity/Student"
 import { TableIndex } from "../../../../../../src/schema-builder/table/TableIndex"
+import { TypeORMError } from "../../../../../../src/error"
 import { expect } from "chai"
 
 describe("schema builder > change index", () => {
@@ -138,6 +139,35 @@ describe("schema builder > change index", () => {
                 }
 
                 await queryRunner.release()
+            }),
+        ))
+
+    // https://github.com/typeorm/typeorm/issues/10348
+    it("should throw when `synchronize` is set to false without an explicit index name", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const teacherMetadata = dataSource.getMetadata(Teacher)
+                const nameColumn =
+                    teacherMetadata.findColumnWithPropertyName("name")!
+
+                // Mirrors `@Index({ synchronize: false })` applied directly on a
+                // column, i.e. without an explicit index name. TypeORM only
+                // recognizes a `synchronize: false` index by matching its name
+                // against the database; without a name it cannot tell the index
+                // apart from a stale, unmanaged one and would drop it during
+                // schema synchronization / migration generation.
+                const indexMetadata = new IndexMetadata({
+                    entityMetadata: teacherMetadata,
+                    columns: [nameColumn],
+                    args: {
+                        target: Teacher,
+                        synchronize: false,
+                    },
+                })
+
+                expect(() =>
+                    indexMetadata.build(dataSource.namingStrategy),
+                ).to.throw(TypeORMError, /explicit name/)
             }),
         ))
 })
