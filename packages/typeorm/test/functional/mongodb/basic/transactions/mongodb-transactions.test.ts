@@ -5,6 +5,11 @@ import { DataSource } from "../../../../../src/data-source/DataSource"
 import type { DataSourceOptions } from "../../../../../src/data-source/DataSourceOptions"
 import { EventSubscriber } from "../../../../../src/decorator/listeners/EventSubscriber"
 import type { EntitySubscriberInterface } from "../../../../../src/subscriber/EntitySubscriberInterface"
+import type { BaseEvent } from "../../../../../src/subscriber/event/BaseEvent"
+import type { InsertEvent } from "../../../../../src/subscriber/event/InsertEvent"
+import type { LoadEvent } from "../../../../../src/subscriber/event/LoadEvent"
+import type { EntityMetadata } from "../../../../../src/metadata/EntityMetadata"
+import type * as yargs from "yargs"
 import type { MongoDriver } from "../../../../../src/driver/mongodb/MongoDriver"
 import type { MongoQueryRunner } from "../../../../../src/driver/mongodb/MongoQueryRunner"
 import type { TransactionOptions } from "../../../../../src/driver/mongodb/typings"
@@ -325,17 +330,30 @@ describe("mongodb > transactions", () => {
                 const abortTransaction = sinon
                     .stub(session, "abortTransaction")
                     .rejects(new Error("abort failed"))
+                const warning = sinon.spy(dataSource.logger, "log")
+                const callbackError = new Error("callback failed")
 
                 try {
-                    await dataSource
-                        .transaction(async (manager) => {
+                    try {
+                        await dataSource.transaction(async (manager) => {
                             await manager
                                 .getMongoRepository(TransactionDocument)
                                 .insertOne({ name: "rolled back" })
-                            throw new Error("callback failed")
+                            throw callbackError
                         })
-                        .should.be.rejectedWith("callback failed")
+                        expect.fail("transaction should reject")
+                    } catch (error) {
+                        expect(error).to.equal(callbackError)
+                    }
+                    expect(
+                        warning.calledWithMatch(
+                            "warn",
+                            sinon.match(/abort failed/),
+                            sinon.match.object,
+                        ),
+                    ).to.be.true
                 } finally {
+                    warning.restore()
                     startSession.restore()
                     abortTransaction.restore()
                 }
@@ -710,7 +728,9 @@ describe("mongodb > transactions", () => {
                 let maximum = 0
                 const hook =
                     (name: string) =>
-                    async (event: { manager: any; metadata?: any }) => {
+                    async (
+                        event: BaseEvent & { metadata?: EntityMetadata },
+                    ) => {
                         order.push(name)
                         active++
                         maximum = Math.max(maximum, active)
@@ -726,33 +746,52 @@ describe("mongodb > transactions", () => {
                         }
                         if (
                             name === "beforeInsert:first" &&
-                            event.metadata.target === TransactionDocument
+                            event.metadata?.target === TransactionDocument
                         ) {
                             await event.manager
                                 .getMongoRepository(OtherTransactionDocument)
                                 .save({ name: "nested" })
                         }
                     }
-                const subscribers: any[] = [
-                    {
-                        afterTransactionStart: hook("start:first"),
-                        beforeInsert: (event: any) =>
-                            event.metadata.target === TransactionDocument &&
-                            hook("beforeInsert:first")(event),
-                        afterLoad: (_: any, event: any) =>
-                            hook("load:first")(event),
-                        beforeTransactionCommit: hook("commit:first"),
-                    },
-                    {
-                        afterTransactionStart: hook("start:second"),
-                        beforeInsert: (event: any) =>
-                            event.metadata.target === TransactionDocument &&
-                            hook("beforeInsert:second")(event),
-                        afterLoad: (_: any, event: any) =>
-                            hook("load:second")(event),
-                        beforeTransactionCommit: hook("commit:second"),
-                    },
-                ]
+                const subscribers: EntitySubscriberInterface<TransactionDocument>[] =
+                    [
+                        {
+                            afterTransactionStart: hook("start:first"),
+                            beforeInsert: (
+                                event: InsertEvent<TransactionDocument>,
+                            ) => {
+                                if (
+                                    event.metadata.target ===
+                                    TransactionDocument
+                                )
+                                    return hook("beforeInsert:first")(event)
+                                return undefined
+                            },
+                            afterLoad: (
+                                _entity: TransactionDocument,
+                                event?: LoadEvent<TransactionDocument>,
+                            ) => event && hook("load:first")(event),
+                            beforeTransactionCommit: hook("commit:first"),
+                        },
+                        {
+                            afterTransactionStart: hook("start:second"),
+                            beforeInsert: (
+                                event: InsertEvent<TransactionDocument>,
+                            ) => {
+                                if (
+                                    event.metadata.target ===
+                                    TransactionDocument
+                                )
+                                    return hook("beforeInsert:second")(event)
+                                return undefined
+                            },
+                            afterLoad: (
+                                _entity: TransactionDocument,
+                                event?: LoadEvent<TransactionDocument>,
+                            ) => event && hook("load:second")(event),
+                            beforeTransactionCommit: hook("commit:second"),
+                        },
+                    ]
                 dataSource.subscribers.push(...subscribers)
                 try {
                     await dataSource.transaction(async (manager) => {
@@ -885,8 +924,10 @@ describe("mongodb > transactions", () => {
             dataSources.map(async (dataSource) => {
                 const sessionStates: boolean[] = []
                 const counts: number[] = []
-                const observe = async (event: any) => {
-                    sessionStates.push(!!event.queryRunner.session)
+                const observe = async (event: BaseEvent) => {
+                    sessionStates.push(
+                        !!Reflect.get(event.queryRunner, "session"),
+                    )
                     counts.push(
                         await event.manager
                             .getMongoRepository(TransactionDocument)
@@ -1140,11 +1181,13 @@ describe("mongodb > transactions", () => {
                     .resolves()
                 try {
                     for (const transaction of ["default", "all"] as const) {
-                        const args = {
+                        const args: yargs.Arguments = {
+                            _: [],
+                            $0: "typeorm",
                             dataSource: "unused.ts",
                             t: transaction,
                             f: false,
-                        } as any
+                        }
                         await new MigrationRunCommand().handler(args)
                         await new MigrationRevertCommand().handler(args)
                         const expected =

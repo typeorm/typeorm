@@ -159,7 +159,20 @@ export class MongoEntityManager extends EntityManager {
             await queryRunner.commitTransaction()
         } catch (error) {
             if (transactionStarted && queryRunner.isTransactionActive) {
-                await queryRunner.rollbackTransaction().catch(() => undefined)
+                try {
+                    await queryRunner.rollbackTransaction()
+                } catch (rollbackError) {
+                    const failure = this.normalizeError(rollbackError)
+                    try {
+                        this.dataSource.logger.log(
+                            "warn",
+                            `MongoDB transaction rollback failed after another error: ${failure.stack ?? failure.message}`,
+                            queryRunner,
+                        )
+                    } catch {
+                        // Keep the original transaction error even if logging fails.
+                    }
+                }
             }
             if (!this.queryRunner) {
                 try {
