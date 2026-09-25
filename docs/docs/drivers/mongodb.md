@@ -334,6 +334,8 @@ MongoDB does not support SQL isolation levels or nested transactions. Await tran
 
 MongoDB transactions are opt-in. TypeORM does not automatically wrap ordinary `save` or `remove` operations in a transaction.
 
+Transaction counts use MongoDB's `countDocuments` operation. Filters containing `$where`, `$near`, or `$nearSphere` are not supported. Use `$expr` instead of `$where`, or an appropriate `$geoWithin` query instead of the near operators.
+
 TypeORM does not retry MongoDB transaction callbacks. Applications that retry errors must account for external effects performed by the callback.
 
 Use Advanced options in find():

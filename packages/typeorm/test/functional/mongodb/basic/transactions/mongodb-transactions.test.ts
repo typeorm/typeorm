@@ -46,6 +46,42 @@ class TransactionSubscriber implements EntitySubscriberInterface {
     }
 }
 
+async function expectSequentialUpdates(
+    manager: MongoEntityManager,
+    operation: () => Promise<unknown>,
+): Promise<void> {
+    const queryRunner = manager.mongoQueryRunner
+    const originalUpdateMany = queryRunner.updateMany.bind(queryRunner)
+    let activeUpdates = 0
+    let maximumActiveUpdates = 0
+    const updateMany = sinon
+        .stub(queryRunner, "updateMany")
+        .callsFake(async (collectionName, query, update, options) => {
+            activeUpdates += 1
+            maximumActiveUpdates = Math.max(maximumActiveUpdates, activeUpdates)
+            await new Promise((resolve) => setTimeout(resolve, 10))
+
+            try {
+                return await originalUpdateMany(
+                    collectionName,
+                    query,
+                    update,
+                    options,
+                )
+            } finally {
+                activeUpdates -= 1
+            }
+        })
+
+    try {
+        await operation()
+    } finally {
+        updateMany.restore()
+    }
+
+    expect(maximumActiveUpdates).to.equal(1)
+}
+
 describe("mongodb > transactions", () => {
     let dataSources: DataSource[]
 
@@ -131,6 +167,85 @@ describe("mongodb > transactions", () => {
                         .getMongoRepository(TransactionDocument)
                         .count(),
                 ).to.equal(2)
+            }),
+        ))
+
+    it("serializes multi-entity persistence operations", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const repository =
+                    dataSource.getMongoRepository(TransactionDocument)
+                const documents = await repository.save([
+                    { name: "first" },
+                    { name: "second" },
+                ])
+                documents[0].name = "updated first"
+                documents[1].name = "updated second"
+
+                await dataSource.transaction(async (entityManager) => {
+                    const manager = entityManager as MongoEntityManager
+                    await expectSequentialUpdates(manager, () =>
+                        manager.save(TransactionDocument, documents),
+                    )
+                    await expectSequentialUpdates(manager, () =>
+                        manager.softRemove(TransactionDocument, documents),
+                    )
+                    await expectSequentialUpdates(manager, () =>
+                        manager.recover(TransactionDocument, documents),
+                    )
+                })
+
+                expect(await repository.count()).to.equal(2)
+            }),
+        ))
+
+    it("rejects unsupported transaction count filters clearly", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const filters = [
+                    { operator: "$where", filter: { $where: "true" } },
+                    {
+                        operator: "$near",
+                        filter: { location: { $near: [0, 0] } },
+                    },
+                    {
+                        operator: "$nearSphere",
+                        filter: {
+                            $and: [
+                                { active: true },
+                                {
+                                    location: {
+                                        $nearSphere: [0, 0],
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                ]
+
+                for (const { operator, filter } of filters) {
+                    await dataSource
+                        .transaction((entityManager) =>
+                            (entityManager as MongoEntityManager).count(
+                                TransactionDocument,
+                                filter,
+                            ),
+                        )
+                        .should.be.rejectedWith(
+                            `MongoDB transaction counts do not support ${operator}`,
+                        )
+                }
+
+                await dataSource
+                    .getMongoRepository(TransactionDocument)
+                    .insertOne({ name: "counted" })
+                const count = await dataSource.transaction((entityManager) =>
+                    (entityManager as MongoEntityManager).count(
+                        TransactionDocument,
+                        { name: "counted" },
+                    ),
+                )
+                expect(count).to.equal(1)
             }),
         ))
 

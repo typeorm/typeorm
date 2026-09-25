@@ -1,4 +1,9 @@
-import { Column, Entity, ObjectIdColumn } from "../../../../../../src"
+import {
+    Column,
+    DeleteDateColumn,
+    Entity,
+    ObjectIdColumn,
+} from "../../../../../../src"
 import type { ObjectId } from "mongodb"
 
 @Entity()
@@ -8,4 +13,7 @@ export class TransactionDocument {
 
     @Column()
     name: string
+
+    @DeleteDateColumn()
+    deletedAt?: Date
 }

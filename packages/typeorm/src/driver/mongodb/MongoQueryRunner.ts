@@ -211,6 +211,14 @@ export class MongoQueryRunner implements QueryRunner {
         options?: CountOptions,
     ): Promise<number> {
         if (this.session) {
+            const unsupportedOperator =
+                this.findUnsupportedTransactionCountOperator(filter)
+            if (unsupportedOperator) {
+                throw new TypeORMError(
+                    `MongoDB transaction counts do not support ${unsupportedOperator}. Use a transaction-compatible filter instead.`,
+                )
+            }
+
             return this.getCollection(collectionName).countDocuments(
                 filter || {},
                 this.getSessionOptions(options),
@@ -1667,6 +1675,36 @@ export class MongoQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Finds a filter operator that countDocuments cannot use in a transaction.
+     *
+     * @param value Filter value to inspect.
+     * @param seen Objects already inspected.
+     * @returns The unsupported operator, if present.
+     */
+    protected findUnsupportedTransactionCountOperator(
+        value: unknown,
+        seen = new WeakSet<object>(),
+    ): "$where" | "$near" | "$nearSphere" | undefined {
+        if (value === null || typeof value !== "object") return undefined
+        if (seen.has(value)) return undefined
+        seen.add(value)
+
+        for (const [key, nestedValue] of Object.entries(value)) {
+            if (key === "$where" || key === "$near" || key === "$nearSphere") {
+                return key
+            }
+
+            const nestedOperator = this.findUnsupportedTransactionCountOperator(
+                nestedValue,
+                seen,
+            )
+            if (nestedOperator) return nestedOperator
+        }
+
+        return undefined
+    }
 
     /**
      * Gets collection from the database with a given name.
