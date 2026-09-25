@@ -330,9 +330,13 @@ await myDataSource.mongoManager.transaction(
 )
 ```
 
-MongoDB does not support SQL isolation levels or nested transactions. Await transaction operations in sequence because the MongoDB driver does not support parallel operations within one transaction.
+MongoDB does not support SQL isolation levels or nested transactions. Await transaction operations in sequence because the MongoDB driver does not support parallel operations within one transaction. TypeORM sequences its own persistence reads and hooks on an active Mongo transaction, but does not serialize application-created parallel operations. Subscribers may await nested saves; their hooks run in registration order during an active transaction.
 
-MongoDB transactions are opt-in. TypeORM does not automatically wrap ordinary `save` or `remove` operations in a transaction.
+A `beforeTransactionStart` subscriber runs before the session exists, so its queries are outside the transaction. `afterTransactionStart` and `beforeTransactionCommit`/`beforeTransactionRollback` subscribers run with the session; `afterTransactionCommit` and `afterTransactionRollback` run after it is released. An after-commit hook error may reject the callback even though the transaction committed; a commit error may leave the server outcome uncertain.
+
+Create **and consume** native cursors and bulk builders inside the transaction callback, before its session ends. Creating one outside and consuming it inside does not attach the session; using one after commit or rollback is invalid. MongoDB remains authoritative for commands it does not permit within a transaction (including unsupported DDL and aggregation stages).
+
+MongoDB transactions are opt-in. TypeORM does not automatically wrap ordinary `save` or `remove` operations in a transaction. MongoDB migrations default to `none` unless `migrationsTransactionMode` or a run/revert transaction option explicitly selects `all` or `each`. Explicit transaction modes require a replica set or sharded cluster; the default remains usable on standalone deployments. `executeMigration()` runs a single migration using its supplied runner, not the pending-migration transaction-mode loop.
 
 Transaction counts use MongoDB's `countDocuments` operation. Filters containing `$where`, `$near`, or `$nearSphere` are not supported. Use `$expr` instead of `$where`, or an appropriate `$geoWithin` query instead of the near operators.
 

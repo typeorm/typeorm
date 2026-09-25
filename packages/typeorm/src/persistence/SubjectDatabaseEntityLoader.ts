@@ -1,5 +1,6 @@
 import type { Subject } from "./Subject"
 import type { ObjectLiteral } from "../common/ObjectLiteral"
+import { isActiveMongoTransaction } from "../driver/mongodb/isActiveMongoTransaction"
 import type { QueryRunner } from "../query-runner/QueryRunner"
 import type { FindManyOptions } from "../find-options/FindManyOptions"
 import type { MongoRepository } from "../repository/MongoRepository"
@@ -150,7 +151,11 @@ export class SubjectDatabaseEntityLoader {
         // Avoid concurrent queries on the same pg client; see #12238.
         // CockroachDB uses the pg package over a single connection too.
         const driverType = this.queryRunner.dataSource.options.type
-        if (driverType === "postgres" || driverType === "cockroachdb") {
+        if (
+            driverType === "postgres" ||
+            driverType === "cockroachdb" ||
+            isActiveMongoTransaction(this.queryRunner)
+        ) {
             for (const subjectGroup of subjectGroups) {
                 await loadSubjectGroup(subjectGroup)
             }

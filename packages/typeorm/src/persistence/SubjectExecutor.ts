@@ -107,8 +107,7 @@ export class SubjectExecutor {
         if (this.options?.listeners !== false) {
             // console.time(".broadcastBeforeEventsForAll");
             broadcasterResult = this.broadcastBeforeEventsForAll()
-            if (broadcasterResult.promises.length > 0)
-                await Promise.all(broadcasterResult.promises)
+            await broadcasterResult.wait()
             // console.timeEnd(".broadcastBeforeEventsForAll");
         }
 
@@ -181,8 +180,7 @@ export class SubjectExecutor {
         if (this.options?.listeners !== false) {
             // console.time(".broadcastAfterEventsForAll");
             broadcasterResult = this.broadcastAfterEventsForAll()
-            if (broadcasterResult.promises.length > 0)
-                await Promise.all(broadcasterResult.promises)
+            await broadcasterResult.wait()
             // console.timeEnd(".broadcastAfterEventsForAll");
         }
         // console.timeEnd("SubjectExecutor.execute");
@@ -234,7 +232,7 @@ export class SubjectExecutor {
      * Broadcasts "BEFORE_INSERT", "BEFORE_UPDATE", "BEFORE_REMOVE", "BEFORE_SOFT_REMOVE", "BEFORE_RECOVER" events for all given subjects.
      */
     protected broadcastBeforeEventsForAll(): BroadcasterResult {
-        const result = new BroadcasterResult()
+        const result = new BroadcasterResult(this.queryRunner)
         if (this.insertSubjects.length)
             this.insertSubjects.forEach((subject) =>
                 this.queryRunner.broadcaster.broadcastBeforeInsertEvent(
@@ -293,7 +291,7 @@ export class SubjectExecutor {
      * Note: this method has a performance-optimized code organization.
      */
     protected broadcastAfterEventsForAll(): BroadcasterResult {
-        const result = new BroadcasterResult()
+        const result = new BroadcasterResult(this.queryRunner)
         if (this.insertSubjects.length)
             this.insertSubjects.forEach((subject) =>
                 this.queryRunner.broadcaster.broadcastAfterInsertEvent(
