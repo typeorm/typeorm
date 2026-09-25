@@ -4,6 +4,9 @@ import type { EntityTarget } from "../common/EntityTarget"
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner"
 import type { MongoDriver } from "../driver/mongodb/MongoDriver"
+import type { IsolationLevel } from "../driver/types/IsolationLevel"
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import type { MongoRepository } from "../repository/MongoRepository"
 import { DocumentToEntityTransformer } from "../query-builder/transformer/DocumentToEntityTransformer"
 import type { FindManyOptions } from "../find-options/FindManyOptions"
 import { FindOptionsUtils } from "../find-options/FindOptionsUtils"
@@ -13,7 +16,11 @@ import { InsertResult } from "../query-builder/result/InsertResult"
 import { UpdateResult } from "../query-builder/result/UpdateResult"
 import { DeleteResult } from "../query-builder/result/DeleteResult"
 import type { EntityMetadata } from "../metadata/EntityMetadata"
-import { EntityPropertyNotFoundError } from "../error"
+import {
+    EntityPropertyNotFoundError,
+    QueryRunnerProviderAlreadyReleasedError,
+    TypeORMError,
+} from "../error"
 
 import type {
     AggregateOptions,
@@ -53,6 +60,7 @@ import type {
     UnorderedBulkOperation,
     UpdateFilter,
     UpdateOptions,
+    TransactionOptions,
     UpdateResult as UpdateResultMongoDb,
 } from "../driver/mongodb/typings"
 import type { DataSource } from "../data-source/DataSource"
@@ -72,6 +80,10 @@ export class MongoEntityManager extends EntityManager {
     readonly "@instanceof" = Symbol.for("MongoEntityManager")
 
     get mongoQueryRunner(): MongoQueryRunner {
+        if (this.queryRunner) {
+            return this.queryRunner as MongoQueryRunner
+        }
+
         return (this.dataSource.driver as MongoDriver)
             .queryRunner as MongoQueryRunner
     }
@@ -80,13 +92,105 @@ export class MongoEntityManager extends EntityManager {
     // Constructor
     // -------------------------------------------------------------------------
 
-    constructor(dataSource: DataSource) {
-        super(dataSource)
+    constructor(dataSource: DataSource, queryRunner?: QueryRunner) {
+        super(dataSource, queryRunner)
     }
 
     // -------------------------------------------------------------------------
     // Overridden Methods
     // -------------------------------------------------------------------------
+
+    getMongoRepository<Entity extends ObjectLiteral>(
+        target: EntityTarget<Entity>,
+    ): MongoRepository<Entity> {
+        return this.getRepository(target) as MongoRepository<Entity>
+    }
+
+    async transaction<T>(
+        runInTransaction: (entityManager: EntityManager) => Promise<T>,
+    ): Promise<T>
+    async transaction<T>(
+        isolationLevel: IsolationLevel,
+        runInTransaction: (entityManager: EntityManager) => Promise<T>,
+    ): Promise<T>
+    async transaction<T>(
+        options: TransactionOptions,
+        runInTransaction: (entityManager: EntityManager) => Promise<T>,
+    ): Promise<T>
+    async transaction<T>(
+        optionsOrIsolationOrRunInTransaction:
+            | TransactionOptions
+            | IsolationLevel
+            | ((entityManager: EntityManager) => Promise<T>),
+        runInTransactionParam?: (entityManager: EntityManager) => Promise<T>,
+    ): Promise<T> {
+        let options: TransactionOptions
+        let runInTransaction: (entityManager: EntityManager) => Promise<T>
+
+        if (typeof optionsOrIsolationOrRunInTransaction === "function") {
+            options = {}
+            runInTransaction = optionsOrIsolationOrRunInTransaction
+        } else if (typeof optionsOrIsolationOrRunInTransaction === "string") {
+            throw new TypeORMError(
+                "MongoDB does not support SQL transaction isolation levels.",
+            )
+        } else if (!runInTransactionParam) {
+            throw new TypeORMError(
+                "Transaction method requires a callback in the second parameter.",
+            )
+        } else {
+            options = optionsOrIsolationOrRunInTransaction
+            runInTransaction = runInTransactionParam
+        }
+
+        if (this.queryRunner?.isReleased) {
+            throw new QueryRunnerProviderAlreadyReleasedError()
+        }
+
+        const queryRunner = (this.queryRunner ??
+            this.dataSource.createQueryRunner()) as MongoQueryRunner
+        let transactionStarted = false
+        let result: T
+
+        try {
+            await queryRunner.startTransactionWithOptions(options)
+            transactionStarted = true
+            result = await runInTransaction(queryRunner.manager)
+            await queryRunner.commitTransaction()
+        } catch (error) {
+            if (transactionStarted && queryRunner.isTransactionActive) {
+                try {
+                    await queryRunner.rollbackTransaction()
+                } catch (rollbackError) {
+                    const failure = this.normalizeError(rollbackError)
+                    try {
+                        this.dataSource.logger.log(
+                            "warn",
+                            `MongoDB transaction rollback failed after another error: ${failure.stack ?? failure.message}`,
+                            queryRunner,
+                        )
+                    } catch {
+                        // Keep the original transaction error even if logging fails.
+                    }
+                }
+            }
+            if (!this.queryRunner) {
+                try {
+                    await queryRunner.release()
+                } catch (cleanupError) {
+                    this.dataSource.logger.log(
+                        "warn",
+                        `MongoDB transaction failed and query runner cleanup also failed: ${this.normalizeError(cleanupError).message}`,
+                        queryRunner,
+                    )
+                }
+            }
+            throw error
+        }
+
+        if (!this.queryRunner) await queryRunner.release()
+        return result
+    }
 
     /**
      * Finds entities that match given find options.
@@ -349,10 +453,11 @@ export class MongoEntityManager extends EntityManager {
         const result = new UpdateResult()
 
         if (Array.isArray(criteria)) {
-            const updateResults = await Promise.all(
-                (criteria as any[]).map((criteriaItem) => {
-                    return this.update(target, criteriaItem, partialEntity)
-                }),
+            const updateResults = await this.executeMongoOperations(
+                (criteria as any[]).map(
+                    (criteriaItem) => () =>
+                        this.update(target, criteriaItem, partialEntity),
+                ),
             )
 
             result.raw = updateResults.map((r) => r.raw)
@@ -403,10 +508,10 @@ export class MongoEntityManager extends EntityManager {
         const result = new DeleteResult()
 
         if (Array.isArray(criteria)) {
-            const deleteResults = await Promise.all(
-                (criteria as any[]).map((criteriaItem) => {
-                    return this.delete(target, criteriaItem)
-                }),
+            const deleteResults = await this.executeMongoOperations(
+                (criteria as any[]).map(
+                    (criteriaItem) => () => this.delete(target, criteriaItem),
+                ),
             )
 
             result.raw = deleteResults.map((r) => r.raw)
@@ -1499,10 +1604,38 @@ export class MongoEntityManager extends EntityManager {
         } else if (deleteDateColumn) {
             this.filterSoftDeleted(cursor, deleteDateColumn, query)
         }
-        const [results, count] = await Promise.all<any>([
-            cursor.toArray(),
-            this.count(entityClassOrName, query),
+        const [results, count] = await this.executeMongoOperations<any>([
+            () => cursor.toArray(),
+            () => this.count(entityClassOrName, query),
         ])
         return [results, parseInt(count)]
+    }
+
+    /**
+     * MongoDB transaction sessions require operations to run in sequence.
+     *
+     * @param operations Database operations to execute.
+     * @returns Results in operation order.
+     */
+    protected async executeMongoOperations<T>(
+        operations: Array<() => Promise<T>>,
+    ): Promise<T[]> {
+        if (!this.mongoQueryRunner.isTransactionActive) {
+            return Promise.all(operations.map((operation) => operation()))
+        }
+
+        const results: T[] = []
+        for (const operation of operations) {
+            results.push(await operation())
+        }
+        return results
+    }
+
+    /**
+     * @param error Caught value to convert.
+     * @returns The value as an error.
+     */
+    protected normalizeError(error: unknown): Error {
+        return error instanceof Error ? error : new TypeORMError(String(error))
     }
 }

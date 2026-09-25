@@ -106,7 +106,7 @@ export class Broadcaster {
         event: U,
         ...args: Parameters<BroadcasterEvents[U]>
     ): Promise<void> {
-        const result = new BroadcasterResult()
+        const result = new BroadcasterResult(this.queryRunner)
 
         const broadcastFunction = this[`broadcast${event}Event` as keyof this]
 
@@ -137,10 +137,7 @@ export class Broadcaster {
         if (entity && metadata.beforeInsertListeners.length) {
             metadata.beforeInsertListeners.forEach((listener) => {
                 if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity)
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult)
-                    result.count++
+                    result.add(() => listener.execute(entity))
                 }
             })
         }
@@ -151,17 +148,16 @@ export class Broadcaster {
                     this.isAllowedSubscriber(subscriber, metadata.target) &&
                     subscriber.beforeInsert
                 ) {
-                    const executionResult = subscriber.beforeInsert({
-                        dataSource: this.queryRunner.dataSource,
-                        connection: this.queryRunner.dataSource,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                        entity: entity,
-                        metadata: metadata,
-                    })
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult)
-                    result.count++
+                    result.add(() =>
+                        subscriber.beforeInsert!({
+                            dataSource: this.queryRunner.dataSource,
+                            connection: this.queryRunner.dataSource,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                            entity: entity,
+                            metadata: metadata,
+                        }),
+                    )
                 }
             })
         }
@@ -194,10 +190,7 @@ export class Broadcaster {
         if (entity && metadata.beforeUpdateListeners.length) {
             metadata.beforeUpdateListeners.forEach((listener) => {
                 if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity)
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult)
-                    result.count++
+                    result.add(() => listener.execute(entity))
                 }
             })
         }
@@ -208,20 +201,19 @@ export class Broadcaster {
                     this.isAllowedSubscriber(subscriber, metadata.target) &&
                     subscriber.beforeUpdate
                 ) {
-                    const executionResult = subscriber.beforeUpdate({
-                        dataSource: this.queryRunner.dataSource,
-                        connection: this.queryRunner.dataSource,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                        entity: entity,
-                        metadata: metadata,
-                        databaseEntity: databaseEntity,
-                        updatedColumns: updatedColumns ?? [],
-                        updatedRelations: updatedRelations ?? [],
-                    })
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult)
-                    result.count++
+                    result.add(() =>
+                        subscriber.beforeUpdate!({
+                            dataSource: this.queryRunner.dataSource,
+                            connection: this.queryRunner.dataSource,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                            entity: entity,
+                            metadata: metadata,
+                            databaseEntity: databaseEntity,
+                            updatedColumns: updatedColumns ?? [],
+                            updatedRelations: updatedRelations ?? [],
+                        }),
+                    )
                 }
             })
         }
@@ -251,10 +243,7 @@ export class Broadcaster {
         if (entity && metadata.beforeRemoveListeners.length) {
             metadata.beforeRemoveListeners.forEach((listener) => {
                 if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity)
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult)
-                    result.count++
+                    result.add(() => listener.execute(entity))
                 }
             })
         }
@@ -265,21 +254,20 @@ export class Broadcaster {
                     this.isAllowedSubscriber(subscriber, metadata.target) &&
                     subscriber.beforeRemove
                 ) {
-                    const executionResult = subscriber.beforeRemove({
-                        dataSource: this.queryRunner.dataSource,
-                        connection: this.queryRunner.dataSource,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                        entity: entity,
-                        metadata: metadata,
-                        databaseEntity: databaseEntity,
-                        entityId: metadata.getEntityIdMixedMap(
-                            databaseEntity ?? identifier,
-                        ),
-                    })
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult)
-                    result.count++
+                    result.add(() =>
+                        subscriber.beforeRemove!({
+                            dataSource: this.queryRunner.dataSource,
+                            connection: this.queryRunner.dataSource,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                            entity: entity,
+                            metadata: metadata,
+                            databaseEntity: databaseEntity,
+                            entityId: metadata.getEntityIdMixedMap(
+                                databaseEntity ?? identifier,
+                            ),
+                        }),
+                    )
                 }
             })
         }
@@ -309,10 +297,7 @@ export class Broadcaster {
         if (entity && metadata.beforeSoftRemoveListeners.length) {
             metadata.beforeSoftRemoveListeners.forEach((listener) => {
                 if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity)
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult)
-                    result.count++
+                    result.add(() => listener.execute(entity))
                 }
             })
         }
@@ -323,21 +308,20 @@ export class Broadcaster {
                     this.isAllowedSubscriber(subscriber, metadata.target) &&
                     subscriber.beforeSoftRemove
                 ) {
-                    const executionResult = subscriber.beforeSoftRemove({
-                        dataSource: this.queryRunner.dataSource,
-                        connection: this.queryRunner.dataSource,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                        entity: entity,
-                        metadata: metadata,
-                        databaseEntity: databaseEntity,
-                        entityId: metadata.getEntityIdMixedMap(
-                            databaseEntity ?? identifier,
-                        ),
-                    })
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult)
-                    result.count++
+                    result.add(() =>
+                        subscriber.beforeSoftRemove!({
+                            dataSource: this.queryRunner.dataSource,
+                            connection: this.queryRunner.dataSource,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                            entity: entity,
+                            metadata: metadata,
+                            databaseEntity: databaseEntity,
+                            entityId: metadata.getEntityIdMixedMap(
+                                databaseEntity ?? identifier,
+                            ),
+                        }),
+                    )
                 }
             })
         }
@@ -367,10 +351,7 @@ export class Broadcaster {
         if (entity && metadata.beforeRecoverListeners.length) {
             metadata.beforeRecoverListeners.forEach((listener) => {
                 if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity)
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult)
-                    result.count++
+                    result.add(() => listener.execute(entity))
                 }
             })
         }
@@ -381,21 +362,20 @@ export class Broadcaster {
                     this.isAllowedSubscriber(subscriber, metadata.target) &&
                     subscriber.beforeRecover
                 ) {
-                    const executionResult = subscriber.beforeRecover({
-                        dataSource: this.queryRunner.dataSource,
-                        connection: this.queryRunner.dataSource,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                        entity: entity,
-                        metadata: metadata,
-                        databaseEntity: databaseEntity,
-                        entityId: metadata.getEntityIdMixedMap(
-                            databaseEntity ?? identifier,
-                        ),
-                    })
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult)
-                    result.count++
+                    result.add(() =>
+                        subscriber.beforeRecover!({
+                            dataSource: this.queryRunner.dataSource,
+                            connection: this.queryRunner.dataSource,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                            entity: entity,
+                            metadata: metadata,
+                            databaseEntity: databaseEntity,
+                            entityId: metadata.getEntityIdMixedMap(
+                                databaseEntity ?? identifier,
+                            ),
+                        }),
+                    )
                 }
             })
         }
@@ -423,10 +403,7 @@ export class Broadcaster {
         if (entity && metadata.afterInsertListeners.length) {
             metadata.afterInsertListeners.forEach((listener) => {
                 if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity)
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult)
-                    result.count++
+                    result.add(() => listener.execute(entity))
                 }
             })
         }
@@ -437,18 +414,17 @@ export class Broadcaster {
                     this.isAllowedSubscriber(subscriber, metadata.target) &&
                     subscriber.afterInsert
                 ) {
-                    const executionResult = subscriber.afterInsert({
-                        dataSource: this.queryRunner.dataSource,
-                        connection: this.queryRunner.dataSource,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                        entity: entity,
-                        metadata: metadata,
-                        entityId: metadata.getEntityIdMixedMap(identifier),
-                    })
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult)
-                    result.count++
+                    result.add(() =>
+                        subscriber.afterInsert!({
+                            dataSource: this.queryRunner.dataSource,
+                            connection: this.queryRunner.dataSource,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                            entity: entity,
+                            metadata: metadata,
+                            entityId: metadata.getEntityIdMixedMap(identifier),
+                        }),
+                    )
                 }
             })
         }
@@ -469,17 +445,16 @@ export class Broadcaster {
         if (this.queryRunner.dataSource.subscribers.length) {
             this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (subscriber.beforeQuery) {
-                    const executionResult = subscriber.beforeQuery({
-                        dataSource: this.queryRunner.dataSource,
-                        connection: this.queryRunner.dataSource,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                        query: query,
-                        parameters: parameters,
-                    })
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult)
-                    result.count++
+                    result.add(() =>
+                        subscriber.beforeQuery!({
+                            dataSource: this.queryRunner.dataSource,
+                            connection: this.queryRunner.dataSource,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                            query: query,
+                            parameters: parameters,
+                        }),
+                    )
                 }
             })
         }
@@ -508,21 +483,20 @@ export class Broadcaster {
         if (this.queryRunner.dataSource.subscribers.length) {
             this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (subscriber.afterQuery) {
-                    const executionResult = subscriber.afterQuery({
-                        dataSource: this.queryRunner.dataSource,
-                        connection: this.queryRunner.dataSource,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                        query: query,
-                        parameters: parameters,
-                        success: success,
-                        executionTime: executionTime,
-                        rawResults: rawResults,
-                        error: error,
-                    })
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult)
-                    result.count++
+                    result.add(() =>
+                        subscriber.afterQuery!({
+                            dataSource: this.queryRunner.dataSource,
+                            connection: this.queryRunner.dataSource,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                            query: query,
+                            parameters: parameters,
+                            success: success,
+                            executionTime: executionTime,
+                            rawResults: rawResults,
+                            error: error,
+                        }),
+                    )
                 }
             })
         }
@@ -537,15 +511,14 @@ export class Broadcaster {
         if (this.queryRunner.dataSource.subscribers.length) {
             this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (subscriber.beforeTransactionStart) {
-                    const executionResult = subscriber.beforeTransactionStart({
-                        dataSource: this.queryRunner.dataSource,
-                        connection: this.queryRunner.dataSource,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                    })
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult)
-                    result.count++
+                    result.add(() =>
+                        subscriber.beforeTransactionStart!({
+                            dataSource: this.queryRunner.dataSource,
+                            connection: this.queryRunner.dataSource,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                        }),
+                    )
                 }
             })
         }
@@ -560,15 +533,14 @@ export class Broadcaster {
         if (this.queryRunner.dataSource.subscribers.length) {
             this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (subscriber.afterTransactionStart) {
-                    const executionResult = subscriber.afterTransactionStart({
-                        dataSource: this.queryRunner.dataSource,
-                        connection: this.queryRunner.dataSource,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                    })
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult)
-                    result.count++
+                    result.add(() =>
+                        subscriber.afterTransactionStart!({
+                            dataSource: this.queryRunner.dataSource,
+                            connection: this.queryRunner.dataSource,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                        }),
+                    )
                 }
             })
         }
@@ -583,15 +555,14 @@ export class Broadcaster {
         if (this.queryRunner.dataSource.subscribers.length) {
             this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (subscriber.beforeTransactionCommit) {
-                    const executionResult = subscriber.beforeTransactionCommit({
-                        dataSource: this.queryRunner.dataSource,
-                        connection: this.queryRunner.dataSource,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                    })
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult)
-                    result.count++
+                    result.add(() =>
+                        subscriber.beforeTransactionCommit!({
+                            dataSource: this.queryRunner.dataSource,
+                            connection: this.queryRunner.dataSource,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                        }),
+                    )
                 }
             })
         }
@@ -606,15 +577,14 @@ export class Broadcaster {
         if (this.queryRunner.dataSource.subscribers.length) {
             this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (subscriber.afterTransactionCommit) {
-                    const executionResult = subscriber.afterTransactionCommit({
-                        dataSource: this.queryRunner.dataSource,
-                        connection: this.queryRunner.dataSource,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                    })
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult)
-                    result.count++
+                    result.add(() =>
+                        subscriber.afterTransactionCommit!({
+                            dataSource: this.queryRunner.dataSource,
+                            connection: this.queryRunner.dataSource,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                        }),
+                    )
                 }
             })
         }
@@ -629,16 +599,14 @@ export class Broadcaster {
         if (this.queryRunner.dataSource.subscribers.length) {
             this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (subscriber.beforeTransactionRollback) {
-                    const executionResult =
-                        subscriber.beforeTransactionRollback({
+                    result.add(() =>
+                        subscriber.beforeTransactionRollback!({
                             dataSource: this.queryRunner.dataSource,
                             connection: this.queryRunner.dataSource,
                             queryRunner: this.queryRunner,
                             manager: this.queryRunner.manager,
-                        })
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult)
-                    result.count++
+                        }),
+                    )
                 }
             })
         }
@@ -653,17 +621,14 @@ export class Broadcaster {
         if (this.queryRunner.dataSource.subscribers.length) {
             this.queryRunner.dataSource.subscribers.forEach((subscriber) => {
                 if (subscriber.afterTransactionRollback) {
-                    const executionResult = subscriber.afterTransactionRollback(
-                        {
+                    result.add(() =>
+                        subscriber.afterTransactionRollback!({
                             dataSource: this.queryRunner.dataSource,
                             connection: this.queryRunner.dataSource,
                             queryRunner: this.queryRunner,
                             manager: this.queryRunner.manager,
-                        },
+                        }),
                     )
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult)
-                    result.count++
                 }
             })
         }
@@ -695,10 +660,7 @@ export class Broadcaster {
         if (entity && metadata.afterUpdateListeners.length) {
             metadata.afterUpdateListeners.forEach((listener) => {
                 if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity)
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult)
-                    result.count++
+                    result.add(() => listener.execute(entity))
                 }
             })
         }
@@ -709,20 +671,19 @@ export class Broadcaster {
                     this.isAllowedSubscriber(subscriber, metadata.target) &&
                     subscriber.afterUpdate
                 ) {
-                    const executionResult = subscriber.afterUpdate({
-                        dataSource: this.queryRunner.dataSource,
-                        connection: this.queryRunner.dataSource,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                        entity: entity,
-                        metadata: metadata,
-                        databaseEntity: databaseEntity,
-                        updatedColumns: updatedColumns ?? [],
-                        updatedRelations: updatedRelations ?? [],
-                    })
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult)
-                    result.count++
+                    result.add(() =>
+                        subscriber.afterUpdate!({
+                            dataSource: this.queryRunner.dataSource,
+                            connection: this.queryRunner.dataSource,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                            entity: entity,
+                            metadata: metadata,
+                            databaseEntity: databaseEntity,
+                            updatedColumns: updatedColumns ?? [],
+                            updatedRelations: updatedRelations ?? [],
+                        }),
+                    )
                 }
             })
         }
@@ -752,10 +713,7 @@ export class Broadcaster {
         if (entity && metadata.afterRemoveListeners.length) {
             metadata.afterRemoveListeners.forEach((listener) => {
                 if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity)
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult)
-                    result.count++
+                    result.add(() => listener.execute(entity))
                 }
             })
         }
@@ -766,21 +724,20 @@ export class Broadcaster {
                     this.isAllowedSubscriber(subscriber, metadata.target) &&
                     subscriber.afterRemove
                 ) {
-                    const executionResult = subscriber.afterRemove({
-                        dataSource: this.queryRunner.dataSource,
-                        connection: this.queryRunner.dataSource,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                        entity: entity,
-                        metadata: metadata,
-                        databaseEntity: databaseEntity,
-                        entityId: metadata.getEntityIdMixedMap(
-                            databaseEntity ?? identifier,
-                        ),
-                    })
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult)
-                    result.count++
+                    result.add(() =>
+                        subscriber.afterRemove!({
+                            dataSource: this.queryRunner.dataSource,
+                            connection: this.queryRunner.dataSource,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                            entity: entity,
+                            metadata: metadata,
+                            databaseEntity: databaseEntity,
+                            entityId: metadata.getEntityIdMixedMap(
+                                databaseEntity ?? identifier,
+                            ),
+                        }),
+                    )
                 }
             })
         }
@@ -810,10 +767,7 @@ export class Broadcaster {
         if (entity && metadata.afterSoftRemoveListeners.length) {
             metadata.afterSoftRemoveListeners.forEach((listener) => {
                 if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity)
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult)
-                    result.count++
+                    result.add(() => listener.execute(entity))
                 }
             })
         }
@@ -824,21 +778,20 @@ export class Broadcaster {
                     this.isAllowedSubscriber(subscriber, metadata.target) &&
                     subscriber.afterSoftRemove
                 ) {
-                    const executionResult = subscriber.afterSoftRemove({
-                        dataSource: this.queryRunner.dataSource,
-                        connection: this.queryRunner.dataSource,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                        entity: entity,
-                        metadata: metadata,
-                        databaseEntity: databaseEntity,
-                        entityId: metadata.getEntityIdMixedMap(
-                            databaseEntity ?? identifier,
-                        ),
-                    })
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult)
-                    result.count++
+                    result.add(() =>
+                        subscriber.afterSoftRemove!({
+                            dataSource: this.queryRunner.dataSource,
+                            connection: this.queryRunner.dataSource,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                            entity: entity,
+                            metadata: metadata,
+                            databaseEntity: databaseEntity,
+                            entityId: metadata.getEntityIdMixedMap(
+                                databaseEntity ?? identifier,
+                            ),
+                        }),
+                    )
                 }
             })
         }
@@ -868,10 +821,7 @@ export class Broadcaster {
         if (entity && metadata.afterRecoverListeners.length) {
             metadata.afterRecoverListeners.forEach((listener) => {
                 if (listener.isAllowed(entity)) {
-                    const executionResult = listener.execute(entity)
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult)
-                    result.count++
+                    result.add(() => listener.execute(entity))
                 }
             })
         }
@@ -882,21 +832,20 @@ export class Broadcaster {
                     this.isAllowedSubscriber(subscriber, metadata.target) &&
                     subscriber.afterRecover
                 ) {
-                    const executionResult = subscriber.afterRecover({
-                        dataSource: this.queryRunner.dataSource,
-                        connection: this.queryRunner.dataSource,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                        entity: entity,
-                        metadata: metadata,
-                        databaseEntity: databaseEntity,
-                        entityId: metadata.getEntityIdMixedMap(
-                            databaseEntity ?? identifier,
-                        ),
-                    })
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult)
-                    result.count++
+                    result.add(() =>
+                        subscriber.afterRecover!({
+                            dataSource: this.queryRunner.dataSource,
+                            connection: this.queryRunner.dataSource,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                            entity: entity,
+                            metadata: metadata,
+                            databaseEntity: databaseEntity,
+                            entityId: metadata.getEntityIdMixedMap(
+                                databaseEntity ?? identifier,
+                            ),
+                        }),
+                    )
                 }
             })
         }
@@ -963,10 +912,7 @@ export class Broadcaster {
                 metadata.afterLoadListeners.forEach((listener) => {
                     nonPromiseEntities.forEach((entity) => {
                         if (listener.isAllowed(entity)) {
-                            const executionResult = listener.execute(entity)
-                            if (executionResult instanceof Promise)
-                                result.promises.push(executionResult)
-                            result.count++
+                            result.add(() => listener.execute(entity))
                         }
                     })
                 })
@@ -974,17 +920,16 @@ export class Broadcaster {
 
             fittingSubscribers.forEach((subscriber) => {
                 nonPromiseEntities.forEach((entity) => {
-                    const executionResult = subscriber.afterLoad!(entity, {
-                        dataSource: this.queryRunner.dataSource,
-                        connection: this.queryRunner.dataSource,
-                        queryRunner: this.queryRunner,
-                        manager: this.queryRunner.manager,
-                        entity,
-                        metadata,
-                    })
-                    if (executionResult instanceof Promise)
-                        result.promises.push(executionResult)
-                    result.count++
+                    result.add(() =>
+                        subscriber.afterLoad!(entity, {
+                            dataSource: this.queryRunner.dataSource,
+                            connection: this.queryRunner.dataSource,
+                            queryRunner: this.queryRunner,
+                            manager: this.queryRunner.manager,
+                            entity,
+                            metadata,
+                        }),
+                    )
                 })
             })
         }

@@ -1,25 +1,44 @@
-/**
- * Broadcaster execution result - promises executed by operations and number of executed listeners and subscribers.
- */
+import type { QueryRunner } from "../query-runner/QueryRunner"
+import { isActiveMongoTransaction } from "../driver/mongodb/isActiveMongoTransaction"
+
+/** Result of broadcasting listeners and subscribers. */
 export class BroadcasterResult {
-    /**
-     * Number of executed listeners and subscribers.
-     */
     count: number = 0
-
-    /**
-     * Promises returned by listeners and subscribers which needs to be awaited.
-     */
     promises: Promise<any>[] = []
+    private readonly deferred: (() => void | Promise<any>)[] = []
+    private waitPromise?: Promise<BroadcasterResult>
+    private readonly sequential: boolean
+
+    constructor(queryRunner?: QueryRunner) {
+        this.sequential = isActiveMongoTransaction(queryRunner)
+    }
 
     /**
-     * Wait for all promises to settle
+     * Keep ordinary hooks eager; defer only hooks sharing an active Mongo session.
+     *
+     * @param callback
      */
-    async wait(): Promise<BroadcasterResult> {
-        if (this.promises.length > 0) {
-            await Promise.all(this.promises)
+    add(callback: () => void | Promise<any>): void {
+        if (this.sequential) {
+            this.deferred.push(callback)
+        } else {
+            const result = callback()
+            if (result instanceof Promise) this.promises.push(result)
+            this.count++
         }
+    }
 
-        return this
+    /** Invoke deferred hooks once, in registration order, stopping at the first failure. */
+    wait(): Promise<BroadcasterResult> {
+        this.waitPromise ??= (async () => {
+            for (const callback of this.deferred) {
+                const result = callback()
+                this.count++
+                await result
+            }
+            if (this.promises.length) await Promise.all(this.promises)
+            return this
+        })()
+        return this.waitPromise
     }
 }
