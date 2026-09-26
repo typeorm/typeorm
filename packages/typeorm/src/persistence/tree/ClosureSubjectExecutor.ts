@@ -310,7 +310,7 @@ export class ClosureSubjectExecutor {
                     ...descendantColumnNames,
                 ].join(", ")}) ` +
                     `SELECT ${select.join(", ")} ` +
-                    `FROM ${tableName} AS ${superAlias}, ${tableName} AS ${subAlias} ` +
+                    `FROM ${tableName} ${superAlias}, ${tableName} ${subAlias} ` +
                     `WHERE ${[
                         ...entityWhereCondition,
                         ...parentWhereCondition,
