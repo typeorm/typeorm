@@ -7,6 +7,7 @@ import {
 } from "../../../utils/test-utils"
 import { Record } from "./entity/Record"
 
+// Regression for #12902: delimiters in keys must not merge distinct entities.
 describe("query builder > composite key hydration", () => {
     let dataSources: DataSource[]
     before(async () => {

@@ -144,6 +144,15 @@ export class RawSqlResultsToEntityTransformer {
                         return JSON.stringify(keyValue)
                     }
 
+                    if (
+                        typeof keyValue === "number" &&
+                        !Number.isFinite(keyValue)
+                    ) {
+                        // JSON turns non-finite numbers into null; a nested tuple
+                        // also keeps them distinct from literal string values.
+                        return [keyValue.toString()]
+                    }
+
                     return typeof keyValue === "bigint"
                         ? keyValue.toString()
                         : keyValue
