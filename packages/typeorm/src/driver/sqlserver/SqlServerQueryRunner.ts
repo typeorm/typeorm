@@ -856,7 +856,9 @@ export class SqlServerQueryRunner
      * @param ifExists
      */
     async dropView(target: View | string, ifExists?: boolean): Promise<void> {
-        const viewName = InstanceChecker.isView(target) ? target.name : target
+        const viewName = InstanceChecker.isView(target)
+            ? this.driver.buildTableName(target.name, target.schema)
+            : target
         let view: View
         try {
             view = await this.getCachedView(viewName)
