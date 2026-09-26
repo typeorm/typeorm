@@ -290,7 +290,8 @@ export class NestedSetSubjectExecutor {
                     `${rightColumnName} = CASE ` +
                     `WHEN ${rightColumnName} > ${entity.right} THEN ${rightColumnName} - ${treeSize} ` +
                     `ELSE ${rightColumnName} ` +
-                    `END`,
+                    `END ` +
+                    `WHERE ${leftColumnName} > ${entity.left} OR ${rightColumnName} > ${entity.right}`,
             )
         }
     }
