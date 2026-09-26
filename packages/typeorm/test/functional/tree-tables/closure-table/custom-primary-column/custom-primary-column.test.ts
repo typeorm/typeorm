@@ -19,6 +19,7 @@ describe("tree-tables > closure-table > custom primary column", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
+    // Regression for #12904: renamed primary columns must not leave stale links.
     for (const destination of ["other root", "same tree", "root"] as const) {
         it(`should remove old ancestry when moving a branch to ${destination} with a renamed primary column`, () =>
             Promise.all(
@@ -57,6 +58,20 @@ describe("tree-tables > closure-table > custom primary column", () => {
                     ).to.have.members(expectedAncestors)
 
                     expect(await repository.count()).to.equal(4)
+                    const junction = repository.metadata.closureJunctionTable
+                    const closureCount = await dataSource
+                        .createQueryBuilder()
+                        .select("COUNT(*)", "count")
+                        .from(junction.tablePath, "closure")
+                        .getRawOne()
+                    const expectedClosureCounts = {
+                        "other root": 7,
+                        "same tree": 10,
+                        root: 5,
+                    }
+                    expect(Number(closureCount.count)).to.equal(
+                        expectedClosureCounts[destination],
+                    )
                 }),
             ))
     }
