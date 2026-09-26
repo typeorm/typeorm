@@ -1,4 +1,5 @@
-import { MigrationInterface, QueryRunner, Table, View } from "../../../../src"
+import type { MigrationInterface, QueryRunner } from "../../../../src"
+import { Table, View } from "../../../../src"
 
 export class SchemaView1764343604699 implements MigrationInterface {
     name = "SchemaView1764343604699"

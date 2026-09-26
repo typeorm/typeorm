@@ -1,4 +1,5 @@
-import { MigrationInterface, QueryRunner, Table, View } from "../../../../src"
+import type { MigrationInterface, QueryRunner } from "../../../../src"
+import { Table, View } from "../../../../src"
 
 export class MetadataView1764343604699 implements MigrationInterface {
     name = "MetadataView1764343604699"
