@@ -267,8 +267,18 @@ export class NestedSetSubjectExecutor {
         }
 
         const entitiesNs = await this.getNestedSetIds(metadata, entitiesIds)
+        let previousRemovedSubtree: NestedSetIds | undefined
 
         for (const entity of entitiesNs) {
+            // Bounds are ordered by right DESC, so a removed ancestor comes first.
+            if (
+                previousRemovedSubtree &&
+                entity.left >= previousRemovedSubtree.left &&
+                entity.right <= previousRemovedSubtree.right
+            ) {
+                continue
+            }
+            previousRemovedSubtree = entity
             const treeSize = entity.right - entity.left + 1
 
             await this.queryRunner.query(
