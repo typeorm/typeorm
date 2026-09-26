@@ -10,6 +10,7 @@ import {
     SingleIdNested,
 } from "../../update-remove/entity/RemainingTreeEntities"
 
+// Regression for #12903: overlapping removals must close each subtree only once.
 describe("tree-tables > nested-set > overlapping remove", () => {
     let dataSources: DataSource[]
     before(async () => {
