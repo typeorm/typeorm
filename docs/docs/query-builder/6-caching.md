@@ -124,6 +124,45 @@ Example:
 }
 ```
 
+If you prefer to store cached results in memory instead of a database table or Redis, you can use the built-in in-memory cache provider. This is useful for development, testing, or scenarios where you don't want to persist cache data across application restarts.
+
+To use in-memory caching, specify the cache type as "in-memory" in your data source options:
+
+```typescript
+{
+    type: "mysql",
+    host: "localhost",
+    username: "test",
+    ...
+    cache: {
+        type: "in-memory"
+    }
+}
+```
+
+You can also configure the in-memory cache with additional options such as maximum number of entries, maximum size, and time-to-live:
+
+```typescript
+{
+    type: "mysql",
+    host: "localhost",
+    username: "test",
+    ...
+    cache: {
+        type: "in-memory",
+        options: {
+            max: 10_000,                // Maximum entries (default: 10_000)
+            maxSize: 10 * 1024 * 1024,  // Maximum size in bytes (default: 10MB)
+            ttl: 24 * 60 * 60 * 1000    // Maximum TTL in milliseconds (default: 24 hours)
+        }
+    }
+}
+```
+
+The in-memory cache uses an LRU (Least Recently Used) eviction policy when the maximum number of entries or size limit is reached. Note that cached data will be lost when your application restarts, as it's stored only in memory.
+
+**Note**: The actual cache eviction time for each query is determined by query-level cache settings (such as `cache(3000)` for 3 seconds or `cache('id', 3000)` for a specific cache ID with 3-second expiration), which override the global TTL configuration.
+
 If storing cache in a single database table is not effective for you,
 you can change the cache type to "redis" or "ioredis" and TypeORM will store all cached records in redis instead.
 Example:
