@@ -1,5 +1,7 @@
 import "reflect-metadata"
+import { expect } from "chai"
 import { Category } from "./entity/Category"
+import { RenamedCategory } from "./entity/RenamedCategory"
 import type { DataSource } from "../../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
@@ -11,11 +13,53 @@ describe("tree-tables > closure-table > custom primary column", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
-            entities: [Category],
+            entities: [Category, RenamedCategory],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
+
+    for (const destination of ["other root", "same tree", "root"] as const) {
+        it(`should remove old ancestry when moving a branch to ${destination} with a renamed primary column`, () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const repository =
+                        dataSource.getTreeRepository(RenamedCategory)
+                    const oldParent = await repository.save({ cat_name: "old" })
+                    const newParent = await repository.save({
+                        cat_name: "new",
+                        parent: destination === "same tree" ? oldParent : null,
+                    })
+                    const branch = await repository.save(
+                        repository.create({
+                            cat_name: "branch",
+                            parent: oldParent,
+                        }),
+                    )
+                    const leaf = await repository.save({
+                        cat_name: "leaf",
+                        parent: branch,
+                    })
+
+                    branch.parent = destination === "root" ? null : newParent
+                    await repository.save(branch)
+
+                    const ancestors = await repository.findAncestors(leaf)
+                    const expectedAncestors = [branch.cat_id, leaf.cat_id]
+                    if (destination !== "root") {
+                        expectedAncestors.push(newParent.cat_id)
+                    }
+                    if (destination === "same tree") {
+                        expectedAncestors.push(oldParent.cat_id)
+                    }
+                    expect(
+                        ancestors.map((category) => category.cat_id),
+                    ).to.have.members(expectedAncestors)
+
+                    expect(await repository.count()).to.equal(4)
+                }),
+            ))
+    }
 
     it("should persist and retrieve tree with custom primary column names", () =>
         Promise.all(
