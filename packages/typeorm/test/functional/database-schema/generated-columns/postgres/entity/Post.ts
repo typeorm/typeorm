@@ -18,16 +18,10 @@ export class Post {
     lastName: string
 
     @Column({
-        asExpression: `' ' || COALESCE("firstName", '') || ' ' || COALESCE("lastName", '')`,
-        generatedType: "STORED",
-    })
-    storedFullName: string
-
-    @Column({
         asExpression: `"firstName" || "lastName"`,
         generatedType: "STORED",
     })
-    name: string
+    storedFullName: string
 
     @Column({
         generatedType: "STORED",
@@ -36,5 +30,20 @@ export class Post {
         length: 255,
         nullable: true,
     })
-    nameHash: string
+    storedNameHash: string
+
+    @Column({
+        generatedType: "VIRTUAL",
+        asExpression: `"firstName" || ' ' || "lastName"`,
+    })
+    virtualFullName: string
+
+    @Column({
+        generatedType: "VIRTUAL",
+        asExpression: `md5(coalesce("firstName",'0'))`,
+        type: "varchar",
+        length: 255,
+        nullable: true,
+    })
+    virtualNameHash: string
 }
