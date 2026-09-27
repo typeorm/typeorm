@@ -343,6 +343,7 @@ export class PostgresDriver implements Driver {
     maxAliasLength = 63
 
     isGeneratedColumnsSupported: boolean = false
+    isVirtualGeneratedColumnsSupported: boolean = false
 
     cteCapabilities: CteCapabilities = {
         enabled: true,
@@ -456,6 +457,10 @@ export class PostgresDriver implements Driver {
         this.isGeneratedColumnsSupported = VersionUtils.isGreaterOrEqual(
             this.version,
             "12.0",
+        )
+        this.isVirtualGeneratedColumnsSupported = VersionUtils.isGreaterOrEqual(
+            this.version,
+            "18.0",
         )
 
         await release()

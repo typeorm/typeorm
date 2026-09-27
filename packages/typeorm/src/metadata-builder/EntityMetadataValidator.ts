@@ -9,6 +9,7 @@ import { NoConnectionOptionError } from "../error/NoConnectionOptionError"
 import { InitializedRelationError } from "../error/InitializedRelationError"
 import { TypeORMError } from "../error"
 import { DriverUtils } from "../driver/DriverUtils"
+import { VersionUtils } from "../util/VersionUtils"
 
 /// todo: add check if there are multiple tables with the same name
 /// todo: add checks when generated column / table names are too long for the specific driver
@@ -185,18 +186,25 @@ export class EntityMetadataValidator {
                 )
         }
 
-        // Postgres supports only STORED generated columns.
         if (driver.options.type === "postgres") {
-            const virtualColumn = entityMetadata.columns.find(
-                (column) =>
-                    column.asExpression &&
-                    (!column.generatedType ||
-                        column.generatedType === "VIRTUAL"),
-            )
-            if (virtualColumn)
-                throw new TypeORMError(
-                    `Column "${virtualColumn.propertyName}" of Entity "${entityMetadata.name}" is defined as VIRTUAL, but Postgres supports only STORED generated columns.`,
-                )
+            const version = driver.version
+            console.log("Postgres version: ", version)
+            if (version) {
+                const isBelowVersion18 =
+                    VersionUtils.isGreaterOrEqual(version, "18") === false
+                if (isBelowVersion18) {
+                    const virtualColumn = entityMetadata.columns.find(
+                        (column) =>
+                            column.generatedType === "VIRTUAL" &&
+                            column.asExpression,
+                    )
+                    if (virtualColumn) {
+                        throw new TypeORMError(
+                            `Column "${virtualColumn.propertyName}" of Entity "${entityMetadata.name}" is defined as VIRTUAL, but Postgres version ${version} supports only STORED generated columns.`,
+                        )
+                    }
+                }
+            }
         }
 
         // check if relations are all without initialized properties
