@@ -31,19 +31,4 @@ export class Post {
         nullable: true,
     })
     storedNameHash: string
-
-    @Column({
-        generatedType: "VIRTUAL",
-        asExpression: `"firstName" || ' ' || "lastName"`,
-    })
-    virtualFullName: string
-
-    @Column({
-        generatedType: "VIRTUAL",
-        asExpression: `md5(coalesce("firstName",'0'))`,
-        type: "varchar",
-        length: 255,
-        nullable: true,
-    })
-    virtualNameHash: string
 }
