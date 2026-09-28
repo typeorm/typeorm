@@ -20,7 +20,7 @@ import { Post } from "./entity/Post"
 
 describe("database schema > generated columns > postgres", () => {
     describe("VIRTUAL", () => {
-        let dataSources: DataSource[]
+        let dataSources: DataSource[] = []
         before(async function () {
             const options = setupSingleTestingConnection("postgres", {
                 entities: [Robot],

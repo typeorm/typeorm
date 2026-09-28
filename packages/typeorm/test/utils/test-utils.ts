@@ -504,6 +504,10 @@ export async function closeTestingConnections(connections: DataSource[]) {
  * Reloads all databases for all given connections.
  */
 export async function reloadTestingDatabases(connections: DataSource[]) {
+    if (!connections || connections.length === 0) {
+        return
+    }
+
     GeneratedColumnReplacerSubscriber.globalIncrementValues = {}
     await Promise.all(
         connections.map((connection) => connection.synchronize(true)),
