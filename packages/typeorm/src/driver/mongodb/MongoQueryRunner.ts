@@ -714,6 +714,12 @@ export class MongoQueryRunner implements QueryRunner {
         }
         this.isReleased = true
 
+        if (abortError && cleanupError) {
+            throw new AggregateError(
+                [abortError, cleanupError],
+                "MongoDB query runner release failed during abort and session cleanup.",
+            )
+        }
         if (abortError) throw abortError
         if (cleanupError) throw cleanupError
     }
@@ -789,18 +795,22 @@ export class MongoQueryRunner implements QueryRunner {
             throw new TransactionNotStartedError()
         }
 
-        let rollbackError: Error | undefined
+        let beforeError: Error | undefined
+        let abortError: Error | undefined
         let cleanupError: Error | undefined
+        let afterError: Error | undefined
+        let aborted = false
         try {
             await this.broadcaster.broadcast("BeforeTransactionRollback")
         } catch (error) {
-            rollbackError = this.normalizeError(error)
+            beforeError = this.normalizeError(error)
         }
 
         try {
             await this.session.abortTransaction()
+            aborted = true
         } catch (error) {
-            rollbackError ??= this.normalizeError(error)
+            abortError = this.normalizeError(error)
         }
 
         this.isTransactionActive = false
@@ -810,9 +820,45 @@ export class MongoQueryRunner implements QueryRunner {
             cleanupError = this.normalizeError(error)
         }
 
-        if (rollbackError) throw rollbackError
-        if (cleanupError) throw cleanupError
-        await this.broadcaster.broadcast("AfterTransactionRollback")
+        // A completed abort must be observable even when a hook or cleanup failed.
+        if (aborted) {
+            try {
+                await this.broadcaster.broadcast("AfterTransactionRollback")
+            } catch (error) {
+                afterError = this.normalizeError(error)
+            }
+        }
+
+        const errors = [
+            beforeError,
+            abortError,
+            cleanupError,
+            afterError,
+        ].filter((error): error is Error => !!error)
+        const primaryError =
+            errors.length > 1
+                ? new AggregateError(
+                      errors,
+                      "MongoDB rollback failed at multiple stages.",
+                  )
+                : errors[0]
+        for (const [stage, error] of [
+            ["native abort", abortError],
+            ["session cleanup", cleanupError],
+            ["after-rollback subscriber", afterError],
+        ] as const) {
+            if (!error || error === primaryError) continue
+            try {
+                this.dataSource.logger.log(
+                    "warn",
+                    `MongoDB ${stage} also failed during rollback: ${error.stack ?? error.message}`,
+                    this,
+                )
+            } catch {
+                // A logger failure must not hide the primary rollback error.
+            }
+        }
+        if (primaryError) throw primaryError
     }
 
     /**
@@ -1764,11 +1810,15 @@ export class MongoQueryRunner implements QueryRunner {
      * @param error Session cleanup error.
      */
     protected logCleanupError(action: string, error: unknown): void {
-        this.dataSource.logger.log(
-            "warn",
-            `MongoDB ${action}, but session cleanup failed: ${this.normalizeError(error).message}`,
-            this,
-        )
+        try {
+            this.dataSource.logger.log(
+                "warn",
+                `MongoDB ${action}, but session cleanup failed: ${this.normalizeError(error).message}`,
+                this,
+            )
+        } catch {
+            // Logging cannot change the outcome of a completed commit.
+        }
     }
 
     /**

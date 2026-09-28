@@ -12,7 +12,10 @@ import type { EntityMetadata } from "../../../../../src/metadata/EntityMetadata"
 import type * as yargs from "yargs"
 import type { MongoDriver } from "../../../../../src/driver/mongodb/MongoDriver"
 import type { MongoQueryRunner } from "../../../../../src/driver/mongodb/MongoQueryRunner"
-import type { TransactionOptions } from "../../../../../src/driver/mongodb/typings"
+import type {
+    ClientSession,
+    TransactionOptions,
+} from "../../../../../src/driver/mongodb/typings"
 import type { MongoEntityManager } from "../../../../../src/entity-manager/MongoEntityManager"
 import {
     closeTestingConnections,
@@ -317,6 +320,43 @@ describe("mongodb > transactions", () => {
             }),
         ))
 
+    it("reports a committed transaction and its after-commit event when cleanup logging throws", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const client = (dataSource.driver as MongoDriver)
+                    .databaseConnection!
+                const session = client.startSession()
+                const startSession = sinon
+                    .stub(client, "startSession")
+                    .returns(session)
+                const endSession = sinon
+                    .stub(session, "endSession")
+                    .rejects(new Error("session cleanup failed"))
+                const warning = sinon
+                    .stub(dataSource.logger, "log")
+                    .throws(new Error("logger failed"))
+                try {
+                    await dataSource.transaction(async (manager) => {
+                        await manager
+                            .getMongoRepository(TransactionDocument)
+                            .insertOne({ name: "committed despite logger" })
+                    })
+                    expect(warning.calledOnce).to.be.true
+                    expect(transactionEvents).to.include("after commit")
+                } finally {
+                    warning.restore()
+                    startSession.restore()
+                    endSession.restore()
+                    await session.endSession()
+                }
+                expect(
+                    await dataSource
+                        .getMongoRepository(TransactionDocument)
+                        .count(),
+                ).to.equal(1)
+            }),
+        ))
+
     it("preserves the callback error when rollback fails", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
@@ -376,20 +416,134 @@ describe("mongodb > transactions", () => {
                     .stub(session, "abortTransaction")
                     .rejects(new Error("abort failed"))
                 beforeRollbackError = new Error("subscriber failed")
+                const callbackError = new Error("callback failed")
+                const warning = sinon.spy(dataSource.logger, "log")
 
                 try {
-                    await dataSource
-                        .transaction(() => {
-                            throw new Error("callback failed")
+                    try {
+                        await dataSource.transaction(() => {
+                            throw callbackError
                         })
-                        .should.be.rejectedWith("callback failed")
+                        expect.fail("transaction should reject")
+                    } catch (error) {
+                        expect(error).to.equal(callbackError)
+                    }
+                    expect(
+                        warning.calledWithMatch(
+                            "warn",
+                            sinon.match(/subscriber failed[\s\S]*abort failed/),
+                        ),
+                    ).to.be.true
                 } finally {
+                    warning.restore()
                     startSession.restore()
                     abortTransaction.restore()
                 }
 
                 expect(abortTransaction.called).to.be.true
                 expect(endSession.calledOnce).to.be.true
+            }),
+        ))
+
+    it("broadcasts after-rollback when a before hook fails but native abort succeeds", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const runner = dataSource.createQueryRunner()
+                const beforeError = new Error("before rollback failed")
+                beforeRollbackError = beforeError
+                try {
+                    await runner.startTransaction()
+                    await runner.manager
+                        .getMongoRepository(TransactionDocument)
+                        .insertOne({ name: "rolled back" })
+                    try {
+                        await runner.rollbackTransaction()
+                        expect.fail("rollback should report the hook failure")
+                    } catch (error) {
+                        expect(error).to.equal(beforeError)
+                    }
+                    expect(transactionEvents).to.include("after rollback")
+                    expect(runner.isTransactionActive).to.be.false
+                    expect(
+                        await dataSource
+                            .getMongoRepository(TransactionDocument)
+                            .count(),
+                    ).to.equal(0)
+                } finally {
+                    await runner.release()
+                }
+            }),
+        ))
+
+    it("broadcasts after-rollback when session cleanup fails after abort", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const client = (dataSource.driver as MongoDriver)
+                    .databaseConnection!
+                const session = client.startSession()
+                const startSession = sinon
+                    .stub(client, "startSession")
+                    .returns(session)
+                const endSession = sinon
+                    .stub(session, "endSession")
+                    .rejects(new Error("session cleanup failed"))
+                const runner = dataSource.createQueryRunner()
+                try {
+                    await runner.startTransaction()
+                    await runner
+                        .rollbackTransaction()
+                        .should.be.rejectedWith("session cleanup failed")
+                    expect(transactionEvents).to.include("after rollback")
+                } finally {
+                    startSession.restore()
+                    endSession.restore()
+                    await session.endSession()
+                    await runner.release()
+                }
+            }),
+        ))
+
+    it("exposes both failures when a before-rollback hook and native abort fail", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const warning = sinon
+                    .stub(dataSource.logger, "log")
+                    .throws(new Error("logging failed"))
+                const runner =
+                    dataSource.createQueryRunner() as MongoQueryRunner
+                const beforeError = new Error("before rollback failed")
+                beforeRollbackError = beforeError
+                await runner.startTransaction()
+                const session = Reflect.get(runner, "session") as ClientSession
+                const abortError = new Error("native abort failed")
+                const abortTransaction = sinon
+                    .stub(session, "abortTransaction")
+                    .rejects(abortError)
+                try {
+                    try {
+                        await runner.rollbackTransaction()
+                        expect.fail("rollback should report both failures")
+                    } catch (error) {
+                        expect(error).to.be.instanceOf(AggregateError)
+                        expect((error as AggregateError).errors).to.deep.equal([
+                            beforeError,
+                            abortError,
+                        ])
+                    }
+                    expect(abortTransaction.called).to.be.true
+                    expect(transactionEvents).not.to.include("after rollback")
+                    expect(
+                        warning.calledWithMatch(
+                            "warn",
+                            sinon.match(/native abort failed/),
+                            runner,
+                        ),
+                    ).to.be.true
+                } finally {
+                    warning.restore()
+                    abortTransaction.restore()
+                    await runner.release()
+                }
             }),
         ))
 
@@ -568,6 +722,41 @@ describe("mongodb > transactions", () => {
 
                 expect(endSession.calledOnce).to.be.true
                 expect(queryRunner.isReleased).to.be.true
+            }),
+        ))
+
+    it("exposes both abort and session cleanup failures during manual release", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const runner =
+                    dataSource.createQueryRunner() as MongoQueryRunner
+                await runner.startTransaction()
+                const session = Reflect.get(runner, "session") as ClientSession
+                const abortError = new Error("abort failed")
+                const cleanupError = new Error("session cleanup failed")
+                const abort = sinon
+                    .stub(session, "abortTransaction")
+                    .rejects(abortError)
+                const end = sinon
+                    .stub(session, "endSession")
+                    .rejects(cleanupError)
+                try {
+                    try {
+                        await runner.release()
+                        expect.fail("release should report both failures")
+                    } catch (error) {
+                        expect(error).to.be.instanceOf(AggregateError)
+                        expect((error as AggregateError).errors).to.deep.equal([
+                            abortError,
+                            cleanupError,
+                        ])
+                    }
+                    expect(runner.isReleased).to.be.true
+                } finally {
+                    abort.restore()
+                    end.restore()
+                    await session.endSession()
+                }
             }),
         ))
 

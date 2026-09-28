@@ -103,8 +103,11 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
 
             throw new QueryFailedError(query, parameters, err)
         } finally {
-            await broadcasterResult.wait()
-            await statement.finalizeAsync()
+            try {
+                await broadcasterResult.wait()
+            } finally {
+                await statement.finalizeAsync()
+            }
         }
     }
 }

@@ -163,10 +163,19 @@ export class MongoEntityManager extends EntityManager {
                     await queryRunner.rollbackTransaction()
                 } catch (rollbackError) {
                     const failure = this.normalizeError(rollbackError)
+                    const details =
+                        failure instanceof AggregateError
+                            ? failure.errors
+                                  .map((error) => {
+                                      const cause = this.normalizeError(error)
+                                      return cause.stack ?? cause.message
+                                  })
+                                  .join("\n")
+                            : (failure.stack ?? failure.message)
                     try {
                         this.dataSource.logger.log(
                             "warn",
-                            `MongoDB transaction rollback failed after another error: ${failure.stack ?? failure.message}`,
+                            `MongoDB transaction rollback failed after another error: ${details}`,
                             queryRunner,
                         )
                     } catch {

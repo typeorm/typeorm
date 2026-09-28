@@ -30,6 +30,10 @@ export class BroadcasterResult {
 
     /** Invoke deferred hooks once, in registration order, stopping at the first failure. */
     wait(): Promise<BroadcasterResult> {
+        if (!this.sequential) {
+            // Callers such as Expo may add another event after an earlier wait.
+            return Promise.all(this.promises).then(() => this)
+        }
         this.waitPromise ??= (async () => {
             for (const callback of this.deferred) {
                 const result = callback()
