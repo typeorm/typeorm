@@ -188,7 +188,6 @@ export class EntityMetadataValidator {
 
         if (driver.options.type === "postgres") {
             const version = driver.version
-            console.log("Postgres version: ", version)
             if (version) {
                 const isBelowVersion18 =
                     VersionUtils.isGreaterOrEqual(version, "18") === false
