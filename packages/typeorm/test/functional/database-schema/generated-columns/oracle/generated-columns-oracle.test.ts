@@ -93,7 +93,6 @@ describe("database schema > generated columns > oracle", () => {
                 table = await queryRunner.getTable("post")
                 expect(table!.findColumnByName("virtualColumn")).to.be.undefined
 
-                // check if generated column records removed from typeorm_metadata table
                 const metadataRecords = await queryRunner.query(
                     `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" = 'virtualColumn'`,
                 )
@@ -113,7 +112,6 @@ describe("database schema > generated columns > oracle", () => {
                 expect(table!.findColumnByName("virtualFullName")).to.be
                     .undefined
 
-                // check if generated column records removed from typeorm_metadata table
                 const metadataRecords = await queryRunner.query(
                     `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" = 'virtualFullName'`,
                 )
@@ -170,7 +168,6 @@ describe("database schema > generated columns > oracle", () => {
                 expect(name!.generatedType).to.be.undefined
                 expect(name!.asExpression).to.be.undefined
 
-                // check if generated column records removed from typeorm_metadata table
                 const metadataRecords = await queryRunner.query(
                     `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" = 'name'`,
                 )
@@ -220,7 +217,6 @@ describe("database schema > generated columns > oracle", () => {
                     `CONCAT("firstName", "lastName")`,
                 )
 
-                // check if generated column records removed from typeorm_metadata table
                 let metadataRecords = await queryRunner.query(
                     `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" = 'virtualFullName'`,
                 )
@@ -266,7 +262,6 @@ describe("database schema > generated columns > oracle", () => {
                     `CONCAT("firstName", "lastName")`,
                 )
 
-                // check if generated column records removed from typeorm_metadata table
                 let metadataRecords = await queryRunner.query(
                     `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post'`,
                 )
@@ -305,7 +300,6 @@ describe("database schema > generated columns > oracle", () => {
 
                 await queryRunner.dropTable(table!)
 
-                // check if generated column records removed from typeorm_metadata table
                 let metadataRecords = await queryRunner.query(
                     `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post'`,
                 )

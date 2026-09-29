@@ -146,7 +146,6 @@ describe("database schema > generated columns > mysql", () => {
                 expect(table!.findColumnByName("storedColumn")).to.be.undefined
                 expect(table!.findColumnByName("virtualColumn")).to.be.undefined
 
-                // check if generated column records removed from typeorm_metadata table
                 const metadataRecords = await queryRunner.query(
                     `SELECT * FROM \`typeorm_metadata\` WHERE \`table\` = 'post' AND \`name\` IN ('storedColumn', 'virtualColumn')`,
                 )
@@ -169,7 +168,6 @@ describe("database schema > generated columns > mysql", () => {
                 expect(table!.findColumnByName("virtualFullName")).to.be
                     .undefined
 
-                // check if generated column records removed from typeorm_metadata table
                 const metadataRecords = await queryRunner.query(
                     `SELECT * FROM \`typeorm_metadata\` WHERE \`table\` = 'post' AND \`name\` IN ('storedFullName', 'virtualFullName')`,
                 )
@@ -234,7 +232,6 @@ describe("database schema > generated columns > mysql", () => {
                 expect(name!.generatedType).to.be.undefined
                 expect(name!.asExpression).to.be.undefined
 
-                // check if generated column records removed from typeorm_metadata table
                 const metadataRecords = await queryRunner.query(
                     `SELECT * FROM \`typeorm_metadata\` WHERE \`table\` = 'post' AND \`name\` = 'name'`,
                 )
@@ -286,7 +283,6 @@ describe("database schema > generated columns > mysql", () => {
                     "CONCAT(`firstName`,' ',`lastName`)",
                 )
 
-                // check if generated column records removed from typeorm_metadata table
                 let metadataRecords = await queryRunner.query(
                     `SELECT * FROM \`typeorm_metadata\` WHERE \`table\` = 'post' AND \`name\` = 'storedFullName'`,
                 )
@@ -309,7 +305,6 @@ describe("database schema > generated columns > mysql", () => {
                     "CONCAT(`firstName`,' ',`lastName`)",
                 )
 
-                // check if generated column records removed from typeorm_metadata table
                 metadataRecords = await queryRunner.query(
                     `SELECT * FROM \`typeorm_metadata\` WHERE \`table\` = 'post' AND \`name\` = 'renamedStoredFullName'`,
                 )
@@ -347,7 +342,6 @@ describe("database schema > generated columns > mysql", () => {
                 )
                 storedFullName.generatedType!.should.be.equal("STORED")
 
-                // check if generated column records removed from typeorm_metadata table
                 let metadataRecords = await queryRunner.query(
                     `SELECT * FROM \`typeorm_metadata\` WHERE \`table\` = 'post'`,
                 )
@@ -381,7 +375,6 @@ describe("database schema > generated columns > mysql", () => {
                     "STORED",
                 )
 
-                // check if generated column records removed from typeorm_metadata table
                 metadataRecords = await queryRunner.query(
                     `SELECT * FROM \`typeorm_metadata\` WHERE \`table\` = 'renamedPost'`,
                 )
@@ -405,7 +398,6 @@ describe("database schema > generated columns > mysql", () => {
 
                 await queryRunner.dropTable(table!)
 
-                // check if generated column records removed from typeorm_metadata table
                 let metadataRecords = await queryRunner.query(
                     `SELECT * FROM \`typeorm_metadata\` WHERE \`table\` = 'post'`,
                 )

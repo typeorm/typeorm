@@ -20,7 +20,15 @@ describe("database schema > generated columns > mssql", () => {
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
+    after(async () => {
+        await Promise.all(
+            dataSources.map(async (dataSource) => {
+                await using queryRunner = dataSource.createQueryRunner()
+                await queryRunner.dropDatabase("test_database", true)
+            }),
+        )
+        await closeTestingConnections(dataSources)
+    })
 
     it("should not generate queries when no model changes", () =>
         Promise.all(
@@ -138,7 +146,6 @@ describe("database schema > generated columns > mssql", () => {
                 expect(table!.findColumnByName("storedColumn")).to.be.undefined
                 expect(table!.findColumnByName("virtualColumn")).to.be.undefined
 
-                // check if generated column records removed from typeorm_metadata table
                 const metadataRecords = await queryRunner.query(
                     `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" IN ('storedColumn', 'virtualColumn')`,
                 )
@@ -161,7 +168,6 @@ describe("database schema > generated columns > mssql", () => {
                 expect(table!.findColumnByName("virtualFullName")).to.be
                     .undefined
 
-                // check if generated column records removed from typeorm_metadata table
                 const metadataRecords = await queryRunner.query(
                     `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" IN ('storedFullName', 'virtualFullName')`,
                 )
@@ -225,7 +231,6 @@ describe("database schema > generated columns > mssql", () => {
                 expect(name!.generatedType).to.be.undefined
                 expect(name!.asExpression).to.be.undefined
 
-                // check if generated column records removed from typeorm_metadata table
                 const metadataRecords = await queryRunner.query(
                     `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" = 'name'`,
                 )
@@ -369,7 +374,6 @@ describe("database schema > generated columns > mssql", () => {
 
                 await queryRunner.dropTable(table!)
 
-                // check if generated column records removed from typeorm_metadata table
                 let metadataRecords = await queryRunner.query(
                     `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post'`,
                 )

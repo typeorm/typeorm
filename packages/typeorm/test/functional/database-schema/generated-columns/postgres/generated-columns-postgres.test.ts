@@ -122,7 +122,6 @@ describe("database schema > generated columns > postgres", () => {
                 table = await queryRunner.getTable("post")
                 expect(table!.findColumnByName("column")).to.be.undefined
 
-                // check if generated column records removed from typeorm_metadata table
                 const metadataRecords = await queryRunner.query(
                     `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" = 'storedColumn'`,
                 )
@@ -142,7 +141,6 @@ describe("database schema > generated columns > postgres", () => {
                 expect(table!.findColumnByName("storedFullName")).to.be
                     .undefined
 
-                // check if generated column records removed from typeorm_metadata table
                 const metadataRecords = await queryRunner.query(
                     `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" = 'storedFullName'`,
                 )
@@ -198,7 +196,6 @@ describe("database schema > generated columns > postgres", () => {
                 expect(name!.generatedType).to.be.undefined
                 expect(name!.asExpression).to.be.undefined
 
-                // check if generated column records removed from typeorm_metadata table
                 const metadataRecords = await queryRunner.query(
                     `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" = 'name'`,
                 )
@@ -231,7 +228,7 @@ describe("database schema > generated columns > postgres", () => {
                 const changedName = name.clone()
                 changedName.name = "nameChanged"
 
-                await queryRunner.renameColumn(table!, name, "nameChanged")
+                await queryRunner.renameColumn(table!, name, changedName)
 
                 table = await queryRunner.getTable("post")
                 expect(table!.findColumnByName("name")).to.be.undefined
@@ -242,7 +239,6 @@ describe("database schema > generated columns > postgres", () => {
                     `"firstName" || "lastName"`,
                 )
 
-                // check if generated column records removed from typeorm_metadata table
                 let metadataRecords = await queryRunner.query(
                     `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" = 'name'`,
                 )
@@ -286,7 +282,6 @@ describe("database schema > generated columns > postgres", () => {
                     `' ' || COALESCE("firstName", '') || ' ' || COALESCE("lastName", '')`,
                 )
 
-                // check if generated column records removed from typeorm_metadata table
                 let metadataRecords = await queryRunner.query(
                     `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post'`,
                 )
@@ -326,7 +321,6 @@ describe("database schema > generated columns > postgres", () => {
 
                 await queryRunner.dropTable(table!)
 
-                // check if generated column records removed from typeorm_metadata table
                 let metadataRecords = await queryRunner.query(
                     `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post'`,
                 )

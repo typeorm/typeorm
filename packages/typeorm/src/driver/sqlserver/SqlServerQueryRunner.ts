@@ -938,8 +938,10 @@ export class SqlServerQueryRunner
         const hasGeneratedColumns = oldTable.columns.some(
             (col) => col.generatedType,
         )
+        let updateMetadataQuery: Query | undefined
+        let revertMetadataQuery: Query | undefined
         if (hasGeneratedColumns) {
-            const updateQuery = this.updateTypeormMetadataSql({
+            updateMetadataQuery = this.updateTypeormMetadataSql({
                 database: dbName,
                 schema: schemaName,
                 table: oldTableName,
@@ -947,16 +949,13 @@ export class SqlServerQueryRunner
                 valueToSet: { table: newTableName },
             })
 
-            const revertUpdateQuery = this.updateTypeormMetadataSql({
+            revertMetadataQuery = this.updateTypeormMetadataSql({
                 database: dbName,
                 schema: schemaName,
                 table: newTableName,
                 type: MetadataTableType.GENERATED_COLUMN,
                 valueToSet: { table: oldTableName },
             })
-
-            upQueries.push(updateQuery)
-            downQueries.push(revertUpdateQuery)
         }
 
         // rename primary key constraint
@@ -1121,6 +1120,9 @@ export class SqlServerQueryRunner
             upQueries.push(new Query(`USE "${currentDB}"`))
             downQueries.push(new Query(`USE "${dbName}"`))
         }
+
+        if (updateMetadataQuery) upQueries.push(updateMetadataQuery)
+        if (revertMetadataQuery) downQueries.push(revertMetadataQuery)
 
         await this.executeQueries(upQueries, downQueries)
 
@@ -1438,8 +1440,10 @@ export class SqlServerQueryRunner
                     ),
                 )
 
+                let updateMetadataQuery: Query | undefined
+                let revertMetadataQuery: Query | undefined
                 if (oldColumn.generatedType) {
-                    const updateQuery = this.updateTypeormMetadataSql({
+                    updateMetadataQuery = this.updateTypeormMetadataSql({
                         database: dbName,
                         schema: schemaName,
                         table: tableName,
@@ -1447,7 +1451,7 @@ export class SqlServerQueryRunner
                         name: oldColumn.name,
                         valueToSet: { name: newColumn.name },
                     })
-                    const revertUpdateQuery = this.updateTypeormMetadataSql({
+                    revertMetadataQuery = this.updateTypeormMetadataSql({
                         database: dbName,
                         schema: schemaName,
                         table: tableName,
@@ -1455,8 +1459,6 @@ export class SqlServerQueryRunner
                         name: newColumn.name,
                         valueToSet: { name: oldColumn.name },
                     })
-                    upQueries.push(updateQuery)
-                    downQueries.push(revertUpdateQuery)
                 }
                 // rename column primary key constraint
                 if (
@@ -1734,6 +1736,9 @@ export class SqlServerQueryRunner
                     upQueries.push(new Query(`USE "${currentDB}"`))
                     downQueries.push(new Query(`USE "${dbName}"`))
                 }
+
+                if (updateMetadataQuery) upQueries.push(updateMetadataQuery)
+                if (revertMetadataQuery) downQueries.push(revertMetadataQuery)
 
                 // rename old column in the Table object
                 const oldTableColumn = clonedTable.columns.find(

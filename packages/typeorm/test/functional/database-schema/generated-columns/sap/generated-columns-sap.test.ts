@@ -151,7 +151,6 @@ describe("database schema > generated columns > sap", () => {
                         .undefined
                     expect(table?.findColumnByName("nameHash")).to.be.undefined
 
-                    // check if generated column records removed from typeorm_metadata table
                     const metadataRecords = await queryRunner.query(
                         `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" IN ('nameWithoutSpace', 'nameWithSpace', 'nameHash')`,
                     )
@@ -177,7 +176,6 @@ describe("database schema > generated columns > sap", () => {
                     expect(table?.findColumnByName("fullName")).to.be.undefined
                     expect(table?.findColumnByName("name")).to.be.undefined
 
-                    // check if generated column records removed from typeorm_metadata table
                     const metadataRecords = await queryRunner.query(
                         `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" IN ('fullName', 'name')`,
                     )
@@ -249,7 +247,6 @@ describe("database schema > generated columns > sap", () => {
                     name = table?.findColumnByName("name")
                     expect(name?.asExpression).to.be.undefined
 
-                    // check if generated column records removed from typeorm_metadata table
                     const metadataRecords = await queryRunner.query(
                         `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" = 'name'`,
                     )
@@ -410,7 +407,6 @@ describe("database schema > generated columns > sap", () => {
 
                     if (table) await queryRunner.dropTable(table)
 
-                    // check if generated column records removed from typeorm_metadata table
                     let metadataRecords = await queryRunner.query(
                         `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post'`,
                     )
