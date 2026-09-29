@@ -2367,10 +2367,82 @@ export class PostgresQueryRunner
                 )
             }
 
-            // Only for Postgres 17+ as it supports changing the expression of a generated column without dropping it
-            // This is only for 'STORED' generated columns, as DROP EXPRESSION is not supported for 'VIRTUAL' generated columns
-            // See https://www.postgresql.org/docs/18/sql-altertable.html#SQL-ALTERTABLE-DESC-DROP-EXPRESSION
-            // Parent [if] block already checks for version < 17, so this block will only run for version >= 17
+            if (oldColumn.generatedType !== newColumn.generatedType) {
+                if (
+                    !newColumn.generatedType ||
+                    newColumn.generatedType === "VIRTUAL"
+                ) {
+                    const tableNameWithSchema = (
+                        await this.getTableNameWithSchema(table.name)
+                    ).split(".")
+                    const tableName = tableNameWithSchema[1]
+                    const schema = tableNameWithSchema[0]
+
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} RENAME COLUMN "${oldColumn.name}" TO "TEMP_OLD_${
+                                oldColumn.name
+                            }"`,
+                        ),
+                    )
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ADD ${this.buildCreateColumnSql(
+                                table,
+                                newColumn,
+                            )}`,
+                        ),
+                    )
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} DROP COLUMN "TEMP_OLD_${oldColumn.name}"`,
+                        ),
+                    )
+                    upQueries.push(
+                        this.deleteTypeormMetadataSql({
+                            database: this.driver.database,
+                            schema,
+                            table: tableName,
+                            type: MetadataTableType.GENERATED_COLUMN,
+                            name: oldColumn.name,
+                        }),
+                    )
+
+                    downQueries.push(
+                        this.insertTypeormMetadataSql({
+                            database: this.driver.database,
+                            schema,
+                            table: tableName,
+                            type: MetadataTableType.GENERATED_COLUMN,
+                            name: oldColumn.name,
+                            value: oldColumn.asExpression,
+                        }),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ADD ${this.buildCreateColumnSql(
+                                table,
+                                oldColumn,
+                            )}`,
+                        ),
+                    )
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} DROP COLUMN "${newColumn.name}"`,
+                        ),
+                    )
+                }
+            }
             if (oldColumn.asExpression !== newColumn.asExpression) {
                 upQueries.push(
                     new Query(
@@ -5231,6 +5303,12 @@ export class PostgresQueryRunner
                 throw new TypeORMError(
                     `Changing generated column type from ${oldColumn.generatedType} to ${newColumn.generatedType} is not supported in PostgreSQL version ${version}.`,
                 )
+            } else if (
+                oldColumn.generatedType === "STORED" &&
+                (!newColumn.generatedType ||
+                    newColumn.generatedType === "VIRTUAL")
+            ) {
+                return false
             }
             return true
         } else if (oldColumn.asExpression !== newColumn.asExpression) {
