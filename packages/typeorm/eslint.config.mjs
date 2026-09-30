@@ -10,6 +10,7 @@ const __dirname = import.meta.dirname
 export default defineConfig([
     globalIgnores([
         "build/**",
+        "coverage/**",
         "node_modules/**",
         "src/driver/mongodb/{typings.ts,bson.typings.ts}",
         "temp/**",
