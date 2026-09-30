@@ -1218,11 +1218,10 @@ export class CockroachDriver implements Driver {
      * @param pool
      */
     protected async closePool(pool: any): Promise<void> {
-        await Promise.all(
-            this.connectedQueryRunners.map((queryRunner) =>
-                queryRunner.release(),
-            ),
-        )
+        while (this.connectedQueryRunners.length) {
+            await this.connectedQueryRunners[0].release()
+        }
+
         return new Promise<void>((ok, fail) => {
             pool.end((err: any) => (err ? fail(err) : ok()))
         })
