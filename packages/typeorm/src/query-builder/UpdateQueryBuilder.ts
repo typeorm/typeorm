@@ -601,6 +601,9 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                             }
 
                             const paramName = this.createParameter(value)
+                            const physicalColumn = column.resolveDriverColumn(
+                                this.dataSource.driver,
+                            )
 
                             let expression: string
                             if (
@@ -610,7 +613,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                                     this.dataSource.driver.options.type ===
                                         "aurora-mysql") &&
                                 this.dataSource.driver.spatialTypes.indexOf(
-                                    column.type,
+                                    physicalColumn.type,
                                 ) !== -1
                             ) {
                                 const useLegacy = (
@@ -630,23 +633,23 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                                     this.dataSource.driver,
                                 ) &&
                                 this.dataSource.driver.spatialTypes.indexOf(
-                                    column.type,
+                                    physicalColumn.type,
                                 ) !== -1
                             ) {
                                 if (column.srid != null) {
-                                    expression = `ST_SetSRID(ST_GeomFromGeoJSON(${paramName}), ${column.srid})::${column.type}`
+                                    expression = `ST_SetSRID(ST_GeomFromGeoJSON(${paramName}), ${column.srid})::${physicalColumn.type}`
                                 } else {
-                                    expression = `ST_GeomFromGeoJSON(${paramName})::${column.type}`
+                                    expression = `ST_GeomFromGeoJSON(${paramName})::${physicalColumn.type}`
                                 }
                             } else if (
                                 this.dataSource.driver.options.type ===
                                     "mssql" &&
                                 this.dataSource.driver.spatialTypes.indexOf(
-                                    column.type,
+                                    physicalColumn.type,
                                 ) !== -1
                             ) {
                                 expression =
-                                    column.type +
+                                    physicalColumn.type +
                                     "::STGeomFromText(" +
                                     paramName +
                                     ", " +
