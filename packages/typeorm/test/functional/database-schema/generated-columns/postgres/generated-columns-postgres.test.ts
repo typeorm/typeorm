@@ -1,241 +1,360 @@
 import "reflect-metadata"
-import type { DataSource } from "../../../../../src"
+import { DataSource } from "../../../../../src"
 import { TableColumn } from "../../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
+    setupSingleTestingConnection,
 } from "../../../../utils/test-utils"
-import { expect } from "chai"
-import type { PostgresDriver } from "../../../../../src/driver/postgres/PostgresDriver"
+import { VersionUtils } from "../../../../../src/util/VersionUtils"
+import { Robot } from "./entity/Robot"
+import {
+    addAndRevert,
+    changeAndRevert,
+    changeType,
+    checkGeneratedColumn,
+    dropAndRevert,
+} from "./helper"
+import { Post } from "./entity/Post"
 
 describe("database schema > generated columns > postgres", () => {
-    let dataSources: DataSource[]
-    before(async function () {
-        dataSources = await createTestingConnections({
-            entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["postgres"],
-            schemaCreate: false,
-            dropSchema: true,
+    describe("VIRTUAL", () => {
+        let dataSources: DataSource[] = []
+        before(async function () {
+            const options = setupSingleTestingConnection("postgres", {
+                entities: [Robot],
+                schemaCreate: true,
+                dropSchema: true,
+            })
+
+            if (!options) return
+
+            dataSources = [new DataSource(options)]
+            try {
+                await dataSources[0].initialize()
+            } catch (err) {
+                const version = dataSources[0].driver.version
+                const isVirtualColumnsSupported = VersionUtils.isGreaterOrEqual(
+                    version,
+                    "18.0",
+                )
+                if (!isVirtualColumnsSupported) {
+                    this.skip()
+                } else {
+                    throw err
+                }
+            }
         })
 
-        // generated columns supported from Postgres 12
-        if (
-            dataSources[0] &&
-            !(dataSources[0].driver as PostgresDriver)
-                .isGeneratedColumnsSupported
-        ) {
-            this.skip()
-            return
-        }
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
+
+        it("should not generate queries when no model changes", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const sqlInMemory = await dataSource.driver
+                        .createSchemaBuilder()
+                        .log()
+
+                    sqlInMemory.upQueries.length.should.be.equal(0)
+                    sqlInMemory.downQueries.length.should.be.equal(0)
+                }),
+            ))
+
+        it("should create table with generated columns", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await using queryRunner = dataSource.createQueryRunner()
+                    const table = await queryRunner.getTable("robot")
+
+                    checkGeneratedColumn(
+                        table!,
+                        "storedFullName",
+                        `"name" || '-' || "model"`,
+                        "STORED",
+                    )
+                    checkGeneratedColumn(
+                        table!,
+                        "virtualFullName",
+                        `"name" || '---' || "model"`,
+                        "VIRTUAL",
+                    )
+                }),
+            ))
+
+        it("should add generated column and revert add", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await using queryRunner = dataSource.createQueryRunner()
+
+                    const table = await queryRunner.getTable("robot")
+
+                    await addAndRevert(
+                        queryRunner,
+                        table,
+                        "robot",
+                        new TableColumn({
+                            name: "addedVirtualFullName",
+                            type: "varchar",
+                            asExpression: `"name" || ' ' || "model"`,
+                            generatedType: "VIRTUAL",
+                        }),
+                    )
+                }),
+            ))
+
+        it("should drop generated column and revert drop", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await using queryRunner = dataSource.createQueryRunner()
+
+                    const table = await queryRunner.getTable("robot")
+
+                    await dropAndRevert(
+                        queryRunner,
+                        table,
+                        "robot",
+                        "storedFullName",
+                        "STORED",
+                        `"name" || '-' || "model"`,
+                    )
+                }),
+            ))
+
+        it("should change generated column expression and revert change", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await using queryRunner = dataSource.createQueryRunner()
+
+                    const table = await queryRunner.getTable("robot")
+
+                    const version = dataSource.driver.version
+                    const isBelowVersion17 =
+                        VersionUtils.isGreaterOrEqual(version, "17") === false
+
+                    await changeAndRevert(
+                        table,
+                        "robot",
+                        queryRunner,
+                        "virtualFullName",
+                        `"name"`,
+                        isBelowVersion17,
+                    )
+                }),
+            ))
+
+        it("should change generated column type and revert change", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await using queryRunner = dataSource.createQueryRunner()
+
+                    const table = await queryRunner.getTable("robot")
+
+                    await changeType(
+                        table,
+                        "robot",
+                        queryRunner,
+                        "virtualFullName",
+                        "STORED",
+                    )
+                    await changeType(
+                        table,
+                        "robot",
+                        queryRunner,
+                        "virtualFullName",
+                        undefined,
+                    )
+                }),
+            ))
+        it("should remove data from 'typeorm_metadata' when table dropped", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await using queryRunner = dataSource.createQueryRunner()
+                    const table = await queryRunner.getTable("robot")
+                    const generatedColumns = table!.columns.filter(
+                        (it) => it.generatedType,
+                    )
+
+                    await queryRunner.dropTable(table!)
+
+                    // check if generated column records removed from typeorm_metadata table
+                    let metadataRecords = await queryRunner.query(
+                        `SELECT * FROM "typeorm_metadata" WHERE "table" = 'robot'`,
+                    )
+                    metadataRecords.length.should.be.equal(0)
+
+                    // revert changes
+                    await queryRunner.executeMemoryDownSql()
+
+                    metadataRecords = await queryRunner.query(
+                        `SELECT * FROM "typeorm_metadata" WHERE "table" = 'robot'`,
+                    )
+                    metadataRecords.length.should.be.equal(
+                        generatedColumns.length,
+                    )
+                }),
+            ))
     })
-    beforeEach(() => reloadTestingDatabases(dataSources))
-    after(() => closeTestingConnections(dataSources))
 
-    it("should not generate queries when no model changes", () =>
-        Promise.all(
-            dataSources.map(async (dataSource) => {
-                const sqlInMemory = await dataSource.driver
-                    .createSchemaBuilder()
-                    .log()
+    describe("STORED", () => {
+        let dataSources: DataSource[]
+        before(async function () {
+            dataSources = await createTestingConnections({
+                entities: [Post],
+                enabledDrivers: ["postgres"],
+                schemaCreate: false,
+                dropSchema: true,
+            })
+        })
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
 
-                sqlInMemory.upQueries.length.should.be.equal(0)
-                sqlInMemory.downQueries.length.should.be.equal(0)
-            }),
-        ))
+        it("should not generate queries when no model changes", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const sqlInMemory = await dataSource.driver
+                        .createSchemaBuilder()
+                        .log()
 
-    it("should create table with generated columns", () =>
-        Promise.all(
-            dataSources.map(async (dataSource) => {
-                const queryRunner = dataSource.createQueryRunner()
-                const table = await queryRunner.getTable("post")
-                const storedFullName =
-                    table!.findColumnByName("storedFullName")!
-                const name = table!.findColumnByName("name")!
-                const nameHash = table!.findColumnByName("nameHash")!
+                    sqlInMemory.upQueries.length.should.be.equal(0)
+                    sqlInMemory.downQueries.length.should.be.equal(0)
+                }),
+            ))
 
-                storedFullName.asExpression!.should.be.equal(
-                    `' ' || COALESCE("firstName", '') || ' ' || COALESCE("lastName", '')`,
-                )
-                storedFullName.generatedType!.should.be.equal("STORED")
+        it("should create table with generated columns", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await using queryRunner = dataSource.createQueryRunner()
+                    const table = await queryRunner.getTable("post")
 
-                name.generatedType!.should.be.equal("STORED")
-                name.asExpression!.should.be.equal(`"firstName" || "lastName"`)
+                    checkGeneratedColumn(
+                        table!,
+                        "storedFullName",
+                        `"firstName" || "lastName"`,
+                        "STORED",
+                    )
+                    checkGeneratedColumn(
+                        table!,
+                        "storedNameHash",
+                        `md5(coalesce("firstName",'0'))`,
+                        "STORED",
+                    )
+                }),
+            ))
 
-                nameHash.generatedType!.should.be.equal("STORED")
-                nameHash.asExpression!.should.be.equal(
-                    `md5(coalesce("firstName",'0'))`,
-                )
-                nameHash.length!.should.be.equal("255")
-                nameHash.isNullable.should.be.true
+        it("should add generated column and revert add", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await using queryRunner = dataSource.createQueryRunner()
 
-                await queryRunner.release()
-            }),
-        ))
+                    const table = await queryRunner.getTable("post")
 
-    it("should add generated column and revert add", () =>
-        Promise.all(
-            dataSources.map(async (dataSource) => {
-                const queryRunner = dataSource.createQueryRunner()
+                    await addAndRevert(
+                        queryRunner,
+                        table,
+                        "post",
+                        new TableColumn({
+                            name: "addedStoredFullName",
+                            type: "varchar",
+                            asExpression: `"firstName" || "lastName"`,
+                            generatedType: "STORED",
+                        }),
+                    )
+                }),
+            ))
 
-                let table = await queryRunner.getTable("post")
+        it("should drop generated column and revert drop", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await using queryRunner = dataSource.createQueryRunner()
 
-                let storedColumn = new TableColumn({
-                    name: "storedColumn",
-                    type: "varchar",
-                    length: "200",
-                    generatedType: "STORED",
-                    asExpression: `"firstName" || "lastName"`,
-                })
+                    const table = await queryRunner.getTable("post")
 
-                await queryRunner.addColumn(table!, storedColumn)
+                    await dropAndRevert(
+                        queryRunner,
+                        table,
+                        "post",
+                        "storedFullName",
+                        "STORED",
+                        `"firstName" || "lastName"`,
+                    )
+                }),
+            ))
 
-                table = await queryRunner.getTable("post")
+        it("should change generated column expression and revert change", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await using queryRunner = dataSource.createQueryRunner()
 
-                storedColumn = table!.findColumnByName("storedColumn")!
-                storedColumn.should.be.exist
-                storedColumn!.generatedType!.should.be.equal("STORED")
-                storedColumn!.asExpression!.should.be.equal(
-                    `"firstName" || "lastName"`,
-                )
+                    const table = await queryRunner.getTable("post")
 
-                // revert changes
-                await queryRunner.executeMemoryDownSql()
+                    const version = dataSource.driver.version
+                    const isBelowVersion17 =
+                        VersionUtils.isGreaterOrEqual(version, "17") === false
 
-                table = await queryRunner.getTable("post")
-                expect(table!.findColumnByName("column")).to.be.undefined
+                    await changeAndRevert(
+                        table,
+                        "post",
+                        queryRunner,
+                        "storedFullName",
+                        `"firstName" || ' ' || "lastName"`,
+                        isBelowVersion17,
+                    )
+                }),
+            ))
 
-                // check if generated column records removed from typeorm_metadata table
-                const metadataRecords = await queryRunner.query(
-                    `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" = 'storedColumn'`,
-                )
-                metadataRecords.length.should.be.equal(0)
+        it("should change generated column type and revert change", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await using queryRunner = dataSource.createQueryRunner()
 
-                await queryRunner.release()
-            }),
-        ))
+                    const table = await queryRunner.getTable("post")
 
-    it("should drop generated column and revert drop", () =>
-        Promise.all(
-            dataSources.map(async (dataSource) => {
-                const queryRunner = dataSource.createQueryRunner()
+                    await changeType(
+                        table,
+                        "post",
+                        queryRunner,
+                        "storedFullName",
+                        "VIRTUAL",
+                    )
+                    await changeType(
+                        table,
+                        "post",
+                        queryRunner,
+                        "storedFullName",
+                        undefined,
+                    )
+                }),
+            ))
 
-                let table = await queryRunner.getTable("post")
-                await queryRunner.dropColumn(table!, "storedFullName")
+        it("should remove data from 'typeorm_metadata' when table dropped", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await using queryRunner = dataSource.createQueryRunner()
+                    const table = await queryRunner.getTable("post")
+                    const generatedColumns = table!.columns.filter(
+                        (it) => it.generatedType,
+                    )
 
-                table = await queryRunner.getTable("post")
-                expect(table!.findColumnByName("storedFullName")).to.be
-                    .undefined
+                    await queryRunner.dropTable(table!)
 
-                // check if generated column records removed from typeorm_metadata table
-                const metadataRecords = await queryRunner.query(
-                    `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" = 'storedFullName'`,
-                )
-                metadataRecords.length.should.be.equal(0)
+                    // check if generated column records removed from typeorm_metadata table
+                    let metadataRecords = await queryRunner.query(
+                        `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post'`,
+                    )
+                    metadataRecords.length.should.be.equal(0)
 
-                // revert changes
-                await queryRunner.executeMemoryDownSql()
+                    // revert changes
+                    await queryRunner.executeMemoryDownSql()
 
-                table = await queryRunner.getTable("post")
-
-                const storedFullName =
-                    table!.findColumnByName("storedFullName")!
-                storedFullName.should.be.exist
-                storedFullName!.generatedType!.should.be.equal("STORED")
-                storedFullName!.asExpression!.should.be.equal(
-                    `' ' || COALESCE("firstName", '') || ' ' || COALESCE("lastName", '')`,
-                )
-
-                await queryRunner.release()
-            }),
-        ))
-
-    it("should change generated column and revert change", () =>
-        Promise.all(
-            dataSources.map(async (dataSource) => {
-                const queryRunner = dataSource.createQueryRunner()
-
-                let table = await queryRunner.getTable("post")
-
-                let storedFullName = table!.findColumnByName("storedFullName")!
-                const changedStoredFullName = storedFullName.clone()
-                changedStoredFullName.asExpression = `'Mr.' || ' ' || COALESCE("firstName", '') || ' ' || COALESCE("lastName", '')`
-
-                let name = table!.findColumnByName("name")!
-                const changedName = name.clone()
-                changedName.generatedType = undefined
-                changedName.asExpression = undefined
-
-                await queryRunner.changeColumns(table!, [
-                    {
-                        oldColumn: storedFullName,
-                        newColumn: changedStoredFullName,
-                    },
-                    { oldColumn: name, newColumn: changedName },
-                ])
-
-                table = await queryRunner.getTable("post")
-
-                storedFullName = table!.findColumnByName("storedFullName")!
-                storedFullName!.asExpression!.should.be.equal(
-                    `'Mr.' || ' ' || COALESCE("firstName", '') || ' ' || COALESCE("lastName", '')`,
-                )
-
-                name = table!.findColumnByName("name")!
-                expect(name!.generatedType).to.be.undefined
-                expect(name!.asExpression).to.be.undefined
-
-                // check if generated column records removed from typeorm_metadata table
-                const metadataRecords = await queryRunner.query(
-                    `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post' AND "name" = 'name'`,
-                )
-                metadataRecords.length.should.be.equal(0)
-
-                // revert changes
-                await queryRunner.executeMemoryDownSql()
-
-                table = await queryRunner.getTable("post")
-
-                storedFullName = table!.findColumnByName("storedFullName")!
-                storedFullName!.asExpression!.should.be.equal(
-                    `' ' || COALESCE("firstName", '') || ' ' || COALESCE("lastName", '')`,
-                )
-
-                name = table!.findColumnByName("name")!
-
-                name.generatedType!.should.be.equal("STORED")
-                name.asExpression!.should.be.equal(`"firstName" || "lastName"`)
-
-                await queryRunner.release()
-            }),
-        ))
-
-    it("should remove data from 'typeorm_metadata' when table dropped", () =>
-        Promise.all(
-            dataSources.map(async (dataSource) => {
-                const queryRunner = dataSource.createQueryRunner()
-                const table = await queryRunner.getTable("post")
-                const generatedColumns = table!.columns.filter(
-                    (it) => it.generatedType,
-                )
-
-                await queryRunner.dropTable(table!)
-
-                // check if generated column records removed from typeorm_metadata table
-                let metadataRecords = await queryRunner.query(
-                    `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post'`,
-                )
-                metadataRecords.length.should.be.equal(0)
-
-                // revert changes
-                await queryRunner.executeMemoryDownSql()
-
-                metadataRecords = await queryRunner.query(
-                    `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post'`,
-                )
-                metadataRecords.length.should.be.equal(generatedColumns.length)
-
-                await queryRunner.release()
-            }),
-        ))
+                    metadataRecords = await queryRunner.query(
+                        `SELECT * FROM "typeorm_metadata" WHERE "table" = 'post'`,
+                    )
+                    metadataRecords.length.should.be.equal(
+                        generatedColumns.length,
+                    )
+                }),
+            ))
+    })
 })

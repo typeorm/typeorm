@@ -602,8 +602,7 @@ export class PostgresQueryRunner
 
         // if table have column with generated type, we must add the expression to the metadata table
         const generatedColumns = table.columns.filter(
-            (column) =>
-                column.generatedType === "STORED" && column.asExpression,
+            (column) => column.generatedType && column.asExpression,
         )
         for (const column of generatedColumns) {
             const tableNameWithSchema = (
@@ -1195,7 +1194,7 @@ export class PostgresQueryRunner
             )
         }
 
-        if (column.generatedType === "STORED" && column.asExpression) {
+        if (column.generatedType && column.asExpression) {
             const tableNameWithSchema = (
                 await this.getTableNameWithSchema(table.name)
             ).split(".")
@@ -1330,10 +1329,11 @@ export class PostgresQueryRunner
             oldColumn.type !== newColumn.type ||
             oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
-            (!oldColumn.generatedType &&
-                newColumn.generatedType === "STORED") ||
-            (oldColumn.asExpression !== newColumn.asExpression &&
-                newColumn.generatedType === "STORED")
+            this.isDropRequiredForGeneratedColumn(
+                oldColumn,
+                newColumn,
+                this.driver.version ?? (await this.getVersion()),
+            )
         ) {
             // To avoid data conversion, we just recreate column
             await this.dropColumn(table, oldColumn)
@@ -2367,13 +2367,11 @@ export class PostgresQueryRunner
                 )
             }
 
-            if (newColumn.generatedType !== oldColumn.generatedType) {
-                // Convert generated column data to normal column
+            if (oldColumn.generatedType !== newColumn.generatedType) {
                 if (
                     !newColumn.generatedType ||
                     newColumn.generatedType === "VIRTUAL"
                 ) {
-                    // We can copy the generated data to the new column
                     const tableNameWithSchema = (
                         await this.getTableNameWithSchema(table.name)
                     ).split(".")
@@ -2401,13 +2399,6 @@ export class PostgresQueryRunner
                     )
                     upQueries.push(
                         new Query(
-                            `UPDATE ${this.escapePath(table)} SET "${
-                                newColumn.name
-                            }" = "TEMP_OLD_${oldColumn.name}"`,
-                        ),
-                    )
-                    upQueries.push(
-                        new Query(
                             `ALTER TABLE ${this.escapePath(
                                 table,
                             )} DROP COLUMN "TEMP_OLD_${oldColumn.name}"`,
@@ -2422,7 +2413,7 @@ export class PostgresQueryRunner
                             name: oldColumn.name,
                         }),
                     )
-                    // However, we can't copy it back on downgrade. It needs to regenerate.
+
                     downQueries.push(
                         this.insertTypeormMetadataSql({
                             database: this.driver.database,
@@ -2450,16 +2441,40 @@ export class PostgresQueryRunner
                             )} DROP COLUMN "${newColumn.name}"`,
                         ),
                     )
-                    // downQueries.push(
-                    //     this.deleteTypeormMetadataSql({
-                    //         database: this.driver.database,
-                    //         schema,
-                    //         table: tableName,
-                    //         type: MetadataTableType.GENERATED_COLUMN,
-                    //         name: newColumn.name,
-                    //     }),
-                    // )
                 }
+            }
+            if (oldColumn.asExpression !== newColumn.asExpression) {
+                upQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET EXPRESSION AS (${newColumn.asExpression})`,
+                    ),
+                )
+                upQueries.push(
+                    this.updateTypeormMetadataSql({
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        valueToSet: { value: newColumn.asExpression },
+                        database: this.driver.database,
+                        schema: table.schema,
+                        table: table.name,
+                        name: newColumn.name,
+                    }),
+                )
+
+                downQueries.push(
+                    new Query(
+                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET EXPRESSION AS (${oldColumn.asExpression})`,
+                    ),
+                )
+                downQueries.push(
+                    this.updateTypeormMetadataSql({
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        valueToSet: { value: oldColumn.asExpression },
+                        database: this.driver.database,
+                        schema: table.schema,
+                        table: table.name,
+                        name: oldColumn.name,
+                    }),
+                )
             }
         }
 
@@ -2655,7 +2670,7 @@ export class PostgresQueryRunner
             }
         }
 
-        if (column.generatedType === "STORED") {
+        if (column.generatedType) {
             const tableNameWithSchema = (
                 await this.getTableNameWithSchema(table.name)
             ).split(".")
@@ -3666,7 +3681,7 @@ export class PostgresQueryRunner
             .join(" OR ")
         const columnsSql =
             `SELECT columns.*, pg_catalog.col_description((quote_ident(table_catalog) || '.' || quote_ident(table_schema) || '.' || quote_ident(table_name))::regclass::oid, ordinal_position) AS description, ` +
-            `('"' || "udt_schema" || '"."' || "udt_name" || '"')::"regtype"::text AS "regtype", pg_catalog.format_type("col_attr"."atttypid", "col_attr"."atttypmod") AS "format_type" ` +
+            `('"' || "udt_schema" || '"."' || "udt_name" || '"')::"regtype"::text AS "regtype", pg_catalog.format_type("col_attr"."atttypid", "col_attr"."atttypmod") AS "format_type", col_attr.attgenerated AS generated_type ` +
             `FROM "information_schema"."columns" ` +
             `LEFT JOIN "pg_catalog"."pg_attribute" AS "col_attr" ON "col_attr"."attname" = "columns"."column_name" ` +
             `AND "col_attr"."attrelid" = ( ` +
@@ -4160,7 +4175,11 @@ export class PostgresQueryRunner
                                 dbColumn["generation_expression"]
                             ) {
                                 // In postgres there is no VIRTUAL generated column type
-                                tableColumn.generatedType = "STORED"
+                                tableColumn.generatedType = undefined
+                                if (dbColumn["generated_type"] === "s")
+                                    tableColumn.generatedType = "STORED"
+                                else if (dbColumn["generated_type"] === "v")
+                                    tableColumn.generatedType = "VIRTUAL"
                                 // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
                                 const asExpressionQuery =
                                     this.selectTypeormMetadataSql({
@@ -5191,8 +5210,8 @@ export class PostgresQueryRunner
         }
 
         // Postgres only supports the stored generated column type
-        if (column.generatedType === "STORED" && column.asExpression) {
-            c += ` GENERATED ALWAYS AS (${column.asExpression}) STORED`
+        if (column.generatedType && column.asExpression) {
+            c += ` GENERATED ALWAYS AS (${column.asExpression}) ${column.generatedType}`
         }
 
         if (column.charset) c += ' CHARACTER SET "' + column.charset + '"'
@@ -5265,5 +5284,40 @@ export class PostgresQueryRunner
 
         table.comment = newTable.comment
         this.replaceCachedTable(table, newTable)
+    }
+
+    private isDropRequiredForGeneratedColumn(
+        oldColumn: TableColumn,
+        newColumn: TableColumn,
+        version: string,
+    ) {
+        // PostgreSQL 17+ supports setting generated column expression
+        const isBelowVersion17 =
+            VersionUtils.isGreaterOrEqual(version, "17") === false
+        if (oldColumn.generatedType !== newColumn.generatedType) {
+            if (
+                !this.driver.isVirtualGeneratedColumnsSupported &&
+                (oldColumn.generatedType === "VIRTUAL" ||
+                    newColumn.generatedType === "VIRTUAL")
+            ) {
+                throw new TypeORMError(
+                    `Changing generated column type from ${oldColumn.generatedType} to ${newColumn.generatedType} is not supported in PostgreSQL version ${version}.`,
+                )
+            } else if (
+                oldColumn.generatedType === "STORED" &&
+                (!newColumn.generatedType ||
+                    newColumn.generatedType === "VIRTUAL")
+            ) {
+                return false
+            }
+            return true
+        } else if (oldColumn.asExpression !== newColumn.asExpression) {
+            if (isBelowVersion17 || oldColumn.generatedType === "VIRTUAL") {
+                return true
+            } else {
+                return false
+            }
+        }
+        return false
     }
 }

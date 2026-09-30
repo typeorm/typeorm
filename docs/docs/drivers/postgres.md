@@ -193,3 +193,13 @@ await dataSource.manager
     .from("thing")
     .getMany()
 ```
+
+### Generated columns
+
+TypeORM supports the following generated column types for PostgreSQL and CockroachDB:
+
+- PostgreSQL:
+    - `STORED` generated columns are supported on PostgreSQL 12+.
+    - `VIRTUAL` generated columns are supported on PostgreSQL 18+.
+- CockroachDB:
+    - Both `STORED` and `VIRTUAL` generated columns are supported.
