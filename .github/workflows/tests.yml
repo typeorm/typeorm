@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: detect-changes
         with:
           filters: |
@@ -144,7 +144,7 @@ jobs:
       - uses: ./.github/actions/setup-node
       - run: pnpm exec c8 pnpm test
         working-directory: packages/codemod
-      - uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8.2.1
+      - uses: SonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4 # v8.2.2
         if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         with:
           projectBaseDir: packages/codemod
@@ -165,7 +165,7 @@ jobs:
       - run: pnpm run package
       - run: pnpm exec c8 pnpm test
         working-directory: packages/legacy-naming-strategies
-      - uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8.2.1
+      - uses: SonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4 # v8.2.2
         if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         with:
           projectBaseDir: packages/legacy-naming-strategies
@@ -185,7 +185,7 @@ jobs:
           pattern: coverage-*
           path: packages/typeorm/coverage/
 
-      - uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8.2.1
+      - uses: SonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4 # v8.2.2
         if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         with:
           projectBaseDir: packages/typeorm
