@@ -48,7 +48,7 @@ const config: Config = {
                       "data-project-color": "#d94400",
                       "data-project-logo":
                           "https://typeorm.io/img/typeorm-icon-colored.png",
-                      "data-mcp-subdomain": "typeorm.mcp.kapa.ai",
+                      "data-mcp-subdomain": "typeorm",
                       "data-mcp-server-name": "TypeORM MCP",
                       async: true,
                   },
