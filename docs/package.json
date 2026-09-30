@@ -35,6 +35,7 @@
     "clsx": "^2.1.1",
     "docusaurus-lunr-search": "^3.6.0",
     "lucide-react": "^1.23.0",
+    "lunr": "^2.3.9",
     "prism-react-renderer": "^2.4.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
@@ -45,7 +46,13 @@
     "@docusaurus/types": "3.10.1",
     "typescript": "~5.9.3"
   },
+  "packageManager": "pnpm@10.34.4",
   "engines": {
     "node": ">=20.0"
+  },
+  "pnpm": {
+    "ignoredBuiltDependencies": [
+      "core-js"
+    ]
   }
 }
