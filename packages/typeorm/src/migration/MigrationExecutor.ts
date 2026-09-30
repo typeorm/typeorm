@@ -549,8 +549,6 @@ export class MigrationExecutor {
         if (this.dataSource.driver.options.type === "mongodb") {
             return
         }
-        // Always verify the table exists (it may be dropped between calls on a
-        // long-lived executor); the ensured flag only skips the column checks.
         const tableExist = await queryRunner.hasTable(this.migrationsTable) // todo: table name should be configurable
         if (!tableExist) {
             await queryRunner.createTable(
