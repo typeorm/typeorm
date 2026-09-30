@@ -11,6 +11,7 @@ import {
 } from "../../../utils/test-utils"
 import { CreatePost1730000000001 } from "./migration/1730000000001-CreatePost"
 
+// Regression coverage for https://github.com/typeorm/typeorm/issues/3375
 describe("migrations > checksum and executedAt metadata", () => {
     let dataSources: DataSource[]
 
@@ -218,6 +219,39 @@ describe("migrations > checksum and executedAt metadata", () => {
                 // insertMigration() records the row only; it does not run up().
                 const checksum = rows[0].checksum ?? rows[0].CHECKSUM
                 expect(checksum == null || checksum === "").to.equal(true)
+            }),
+        ))
+
+    it("re-upgrades a migrations table recreated with the legacy schema", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const executor = new MigrationExecutor(dataSource)
+                const migration = new Migration(
+                    undefined,
+                    1730000000001,
+                    "CreatePost1730000000001",
+                    new CreatePost1730000000001(),
+                )
+
+                await createLegacyMigrationsTable(dataSource)
+                await executor.insertMigration(migration)
+
+                const migrationsTable =
+                    await createLegacyMigrationsTable(dataSource)
+                await executor.insertMigration(migration)
+
+                const inspectRunner = dataSource.createQueryRunner()
+                const table = await inspectRunner.getTable(migrationsTable)
+                await inspectRunner.release()
+                expect(table?.findColumnByName("executedAt")).to.not.equal(
+                    undefined,
+                )
+                expect(table?.findColumnByName("checksum")).to.not.equal(
+                    undefined,
+                )
+                expect(table?.findColumnByName("executedBy")).to.not.equal(
+                    undefined,
+                )
             }),
         ))
 

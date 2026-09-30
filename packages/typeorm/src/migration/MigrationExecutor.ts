@@ -55,7 +55,6 @@ export class MigrationExecutor {
     private readonly migrationsSchema?: string
     private readonly migrationsTable: string
     private readonly migrationsTableName: string
-    private migrationsTableColumnsEnsured = false
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -614,7 +613,6 @@ export class MigrationExecutor {
                     ],
                 }),
             )
-            this.migrationsTableColumnsEnsured = true
         } else {
             await this.ensureMigrationsTableColumns(queryRunner)
         }
@@ -1121,10 +1119,6 @@ export class MigrationExecutor {
     protected async ensureMigrationsTableColumns(
         queryRunner: QueryRunner,
     ): Promise<void> {
-        if (this.migrationsTableColumnsEnsured) {
-            return
-        }
-
         // Read the table once and diff in memory instead of issuing one
         // hasColumn round-trip per column on every startup.
         const table = await queryRunner.getTable(this.migrationsTable)
@@ -1158,7 +1152,5 @@ export class MigrationExecutor {
         if (missingColumns.length > 0) {
             await queryRunner.addColumns(this.migrationsTable, missingColumns)
         }
-
-        this.migrationsTableColumnsEnsured = true
     }
 }
