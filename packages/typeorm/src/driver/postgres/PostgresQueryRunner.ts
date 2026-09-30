@@ -3788,624 +3788,563 @@ export class PostgresQueryRunner
         const dbIndices: ObjectLiteral[] = await this.query(indicesSql)
         const dbForeignKeys: ObjectLiteral[] = await this.query(foreignKeysSql)
 
+        const tables: Table[] = []
+
         // create tables for loaded tables
-        return Promise.all(
-            dbTables.map(async (dbTable) => {
-                const table = new Table()
+        for (const dbTable of dbTables) {
+            const table = new Table()
 
-                const getSchemaFromKey = (dbObject: any, key: string) => {
-                    return dbObject[key] === currentSchema &&
-                        (!this.driver.options.schema ||
-                            this.driver.options.schema === currentSchema)
-                        ? undefined
-                        : dbObject[key]
-                }
-                // We do not need to join schema name, when database is by default.
-                const schema = getSchemaFromKey(dbTable, "table_schema")
-                table.database = currentDatabase
-                table.schema = dbTable["table_schema"]
-                table.comment = dbTable["table_comment"]
-                table.name = this.driver.buildTableName(
-                    dbTable["table_name"],
-                    schema,
-                )
+            const getSchemaFromKey = (dbObject: any, key: string) => {
+                return dbObject[key] === currentSchema &&
+                    (!this.driver.options.schema ||
+                        this.driver.options.schema === currentSchema)
+                    ? undefined
+                    : dbObject[key]
+            }
+            // We do not need to join schema name, when database is by default.
+            const schema = getSchemaFromKey(dbTable, "table_schema")
+            table.database = currentDatabase
+            table.schema = dbTable["table_schema"]
+            table.comment = dbTable["table_comment"]
+            table.name = this.driver.buildTableName(
+                dbTable["table_name"],
+                schema,
+            )
 
-                // create columns from the loaded columns
-                table.columns = await Promise.all(
-                    dbColumns
-                        .filter(
-                            (dbColumn) =>
-                                dbColumn["table_name"] ===
-                                    dbTable["table_name"] &&
-                                dbColumn["table_schema"] ===
-                                    dbTable["table_schema"],
-                        )
-                        .map(async (dbColumn) => {
-                            const columnConstraints = dbConstraints.filter(
-                                (dbConstraint) => {
-                                    return (
-                                        dbConstraint["table_name"] ===
-                                            dbColumn["table_name"] &&
-                                        dbConstraint["table_schema"] ===
-                                            dbColumn["table_schema"] &&
-                                        dbConstraint["column_name"] ===
-                                            dbColumn["column_name"]
-                                    )
-                                },
-                            )
-
-                            const tableColumn = new TableColumn()
-                            tableColumn.name = dbColumn["column_name"]
-                            tableColumn.type = dbColumn["regtype"].toLowerCase()
-
-                            if (
-                                tableColumn.type === "vector" ||
-                                tableColumn.type === "halfvec"
-                            ) {
-                                const lengthMatch = dbColumn[
-                                    "format_type"
-                                ].match(/^(?:vector|halfvec)\((\d+)\)$/)
-                                if (lengthMatch?.[1]) {
-                                    tableColumn.length = lengthMatch[1]
-                                }
-                            }
-
-                            if (
-                                tableColumn.type === "numeric" ||
-                                tableColumn.type === "numeric[]" ||
-                                tableColumn.type === "decimal" ||
-                                tableColumn.type === "float"
-                            ) {
-                                let numericPrecision =
-                                    dbColumn["numeric_precision"]
-                                let numericScale = dbColumn["numeric_scale"]
-                                if (dbColumn["data_type"] === "ARRAY") {
-                                    const numericSize = dbColumn[
-                                        "format_type"
-                                    ].match(
-                                        /^numeric\(([0-9]+),([0-9]+)\)\[\]$/,
-                                    )
-                                    if (numericSize) {
-                                        numericPrecision = +numericSize[1]
-                                        numericScale = +numericSize[2]
-                                    }
-                                }
-                                // If one of these properties was set, and another was not, Postgres sets '0' in to unspecified property
-                                // we set 'undefined' in to unspecified property to avoid changing column on sync
-                                if (
-                                    numericPrecision !== null &&
-                                    !this.isDefaultColumnPrecision(
-                                        table,
-                                        tableColumn,
-                                        numericPrecision,
-                                    )
-                                ) {
-                                    tableColumn.precision = numericPrecision
-                                } else if (
-                                    numericScale !== null &&
-                                    !this.isDefaultColumnScale(
-                                        table,
-                                        tableColumn,
-                                        numericScale,
-                                    )
-                                ) {
-                                    tableColumn.precision = undefined
-                                }
-                                if (
-                                    numericScale !== null &&
-                                    !this.isDefaultColumnScale(
-                                        table,
-                                        tableColumn,
-                                        numericScale,
-                                    )
-                                ) {
-                                    tableColumn.scale = numericScale
-                                } else if (
-                                    numericPrecision !== null &&
-                                    !this.isDefaultColumnPrecision(
-                                        table,
-                                        tableColumn,
-                                        numericPrecision,
-                                    )
-                                ) {
-                                    tableColumn.scale = undefined
-                                }
-                            }
-
-                            if (
-                                tableColumn.type === "interval" ||
-                                tableColumn.type === "time without time zone" ||
-                                tableColumn.type === "time with time zone" ||
-                                tableColumn.type ===
-                                    "timestamp without time zone" ||
-                                tableColumn.type === "timestamp with time zone"
-                            ) {
-                                tableColumn.precision =
-                                    !this.isDefaultColumnPrecision(
-                                        table,
-                                        tableColumn,
-                                        dbColumn["datetime_precision"],
-                                    )
-                                        ? dbColumn["datetime_precision"]
-                                        : undefined
-                            }
-
-                            // check if column has user-defined data type.
-                            // NOTE: if ENUM type defined with "array:true" it comes with ARRAY type instead of USER-DEFINED
-                            if (
-                                dbColumn["data_type"] === "USER-DEFINED" ||
-                                dbColumn["data_type"] === "ARRAY"
-                            ) {
-                                const { name } =
-                                    await this.getUserDefinedTypeName(
-                                        table,
-                                        tableColumn,
-                                    )
-
-                                // check if `enumName` is specified by user
-                                const builtEnumName = this.buildEnumName(
-                                    table,
-                                    tableColumn,
-                                    false,
-                                    true,
-                                )
-                                const enumName =
-                                    builtEnumName !== name ? name : undefined
-
-                                // check if type is ENUM
-                                const sql =
-                                    `SELECT "e"."enumlabel" AS "value" FROM "pg_enum" "e" ` +
-                                    `INNER JOIN "pg_type" "t" ON "t"."oid" = "e"."enumtypid" ` +
-                                    `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
-                                    `WHERE "n"."nspname" = '${
-                                        dbTable["table_schema"]
-                                    }' AND "t"."typname" = '${
-                                        enumName ?? name
-                                    }' ` +
-                                    `ORDER BY "e"."enumsortorder"`
-                                const results: ObjectLiteral[] =
-                                    await this.query(sql)
-
-                                if (results.length) {
-                                    tableColumn.type = "enum"
-                                    tableColumn.enum = results.map(
-                                        (result) => result["value"],
-                                    )
-                                    tableColumn.enumName = enumName
-                                }
-
-                                if (dbColumn["data_type"] === "ARRAY") {
-                                    tableColumn.isArray = true
-                                    const type = tableColumn.type.replace(
-                                        "[]",
-                                        "",
-                                    )
-                                    tableColumn.type =
-                                        this.dataSource.driver.normalizeType({
-                                            type: type,
-                                        })
-                                }
-                            }
-
-                            if (
-                                tableColumn.type === "geometry" ||
-                                tableColumn.type === "geography"
-                            ) {
-                                const sql =
-                                    `SELECT * FROM (` +
-                                    `SELECT "f_table_schema" "table_schema", "f_table_name" "table_name", ` +
-                                    `"f_${tableColumn.type}_column" "column_name", "srid", "type", "coord_dimension" ` +
-                                    `FROM "${tableColumn.type}_columns"` +
-                                    `) AS _ ` +
-                                    `WHERE "column_name" = '${dbColumn["column_name"]}' AND ` +
-                                    `"table_schema" = '${dbColumn["table_schema"]}' AND ` +
-                                    `"table_name" = '${dbColumn["table_name"]}'`
-
-                                const results: ObjectLiteral[] =
-                                    await this.query(sql)
-
-                                if (results.length > 0) {
-                                    // "geometry_columns" folds the Z dimension into
-                                    // "coord_dimension" and only keeps the M suffix in
-                                    // "type", while "geography_columns" reports the
-                                    // full suffix in "type", so the suffix is only
-                                    // appended when it is missing.
-                                    let spatialFeatureType: string =
-                                        results[0].type
-                                    const upperType =
-                                        spatialFeatureType.toUpperCase()
-                                    if (
-                                        results[0].coord_dimension === 3 &&
-                                        !upperType.endsWith("Z") &&
-                                        !upperType.endsWith("M")
-                                    ) {
-                                        spatialFeatureType += "Z"
-                                    } else if (
-                                        results[0].coord_dimension === 4 &&
-                                        !upperType.endsWith("Z") &&
-                                        !upperType.endsWith("M")
-                                    ) {
-                                        spatialFeatureType += "ZM"
-                                    }
-                                    tableColumn.spatialFeatureType =
-                                        spatialFeatureType
-                                    tableColumn.srid = results[0].srid
-                                }
-                            }
-
-                            // check only columns that have length property
-                            if (
-                                this.driver.withLengthColumnTypes.indexOf(
-                                    tableColumn.type as ColumnType,
-                                ) !== -1
-                            ) {
-                                let length
-                                if (tableColumn.isArray) {
-                                    const match = /\((\d+)\)/.exec(
-                                        dbColumn["format_type"],
-                                    )
-                                    length = match ? match[1] : undefined
-                                } else if (
-                                    dbColumn["character_maximum_length"]
-                                ) {
-                                    length =
-                                        dbColumn[
-                                            "character_maximum_length"
-                                        ].toString()
-                                }
-                                if (length) {
-                                    tableColumn.length =
-                                        !this.isDefaultColumnLength(
-                                            table,
-                                            tableColumn,
-                                            length,
-                                        )
-                                            ? length
-                                            : ""
-                                }
-                            }
-                            tableColumn.isNullable =
-                                dbColumn["is_nullable"] === "YES"
-
-                            const primaryConstraint = columnConstraints.find(
-                                (constraint) =>
-                                    constraint["constraint_type"] === "PRIMARY",
-                            )
-                            if (primaryConstraint) {
-                                tableColumn.isPrimary = true
-                                // find another columns involved in primary key constraint
-                                const anotherPrimaryConstraints =
-                                    dbConstraints.filter(
-                                        (constraint) =>
-                                            constraint["table_name"] ===
-                                                dbColumn["table_name"] &&
-                                            constraint["table_schema"] ===
-                                                dbColumn["table_schema"] &&
-                                            constraint["column_name"] !==
-                                                dbColumn["column_name"] &&
-                                            constraint["constraint_type"] ===
-                                                "PRIMARY",
-                                    )
-
-                                // collect all column names
-                                const columnNames =
-                                    anotherPrimaryConstraints.map(
-                                        (constraint) =>
-                                            constraint["column_name"],
-                                    )
-                                columnNames.push(dbColumn["column_name"])
-
-                                // build default primary key constraint name
-                                const pkName =
-                                    this.dataSource.namingStrategy.primaryKeyName(
-                                        table,
-                                        columnNames,
-                                    )
-
-                                // if primary key has user-defined constraint name, write it in table column
-                                if (
-                                    primaryConstraint["constraint_name"] !==
-                                    pkName
-                                ) {
-                                    tableColumn.primaryKeyConstraintName =
-                                        primaryConstraint["constraint_name"]
-                                }
-                            }
-
-                            const uniqueConstraints = columnConstraints.filter(
-                                (constraint) =>
-                                    constraint["constraint_type"] === "UNIQUE",
-                            )
-                            const isConstraintComposite =
-                                uniqueConstraints.every((uniqueConstraint) => {
-                                    return dbConstraints.some(
-                                        (dbConstraint) =>
-                                            dbConstraint["constraint_type"] ===
-                                                "UNIQUE" &&
-                                            dbConstraint["constraint_name"] ===
-                                                uniqueConstraint[
-                                                    "constraint_name"
-                                                ] &&
-                                            dbConstraint["column_name"] !==
-                                                dbColumn["column_name"],
-                                    )
-                                })
-                            tableColumn.isUnique =
-                                uniqueConstraints.length > 0 &&
-                                !isConstraintComposite
-
-                            if (dbColumn.is_identity === "YES") {
-                                // Postgres 10+ Identity column
-                                tableColumn.isGenerated = true
-                                tableColumn.generationStrategy = "identity"
-                                tableColumn.generatedIdentity =
-                                    dbColumn.identity_generation
-                            } else if (
-                                dbColumn["column_default"] !== null &&
-                                dbColumn["column_default"] !== undefined
-                            ) {
-                                const serialDefaultName = `nextval('${this.buildSequenceName(
-                                    table,
-                                    dbColumn["column_name"],
-                                )}'::regclass)`
-                                const serialDefaultPath = `nextval('${this.buildSequencePath(
-                                    table,
-                                    dbColumn["column_name"],
-                                )}'::regclass)`
-
-                                const defaultWithoutQuotes = dbColumn[
-                                    "column_default"
-                                ].replaceAll('"', "")
-
-                                if (
-                                    defaultWithoutQuotes ===
-                                        serialDefaultName ||
-                                    defaultWithoutQuotes === serialDefaultPath
-                                ) {
-                                    tableColumn.isGenerated = true
-                                    tableColumn.generationStrategy = "increment"
-                                } else if (
-                                    dbColumn["column_default"] ===
-                                        "gen_random_uuid()" ||
-                                    /^uuid_generate_v\d\(\)/.test(
-                                        dbColumn["column_default"],
-                                    )
-                                ) {
-                                    if (tableColumn.type === "uuid") {
-                                        tableColumn.isGenerated = true
-                                        tableColumn.generationStrategy = "uuid"
-                                    } else {
-                                        tableColumn.default =
-                                            dbColumn["column_default"]
-                                    }
-                                } else if (
-                                    dbColumn["column_default"] === "now()" ||
-                                    dbColumn["column_default"].indexOf(
-                                        "'now'::text",
-                                    ) !== -1
-                                ) {
-                                    tableColumn.default =
-                                        dbColumn["column_default"]
-                                } else {
-                                    tableColumn.default = dbColumn[
-                                        "column_default"
-                                    ].replaceAll(/::[\w\s.[\]\-"]+/g, "")
-                                    tableColumn.default =
-                                        tableColumn.default.replace(
-                                            /^(-?\d+)$/,
-                                            "'$1'",
-                                        )
-                                }
-                            }
-
-                            if (
-                                dbColumn["is_generated"] === "ALWAYS" &&
-                                dbColumn["generation_expression"]
-                            ) {
-                                // In postgres there is no VIRTUAL generated column type
-                                tableColumn.generatedType = "STORED"
-                                // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
-                                const asExpressionQuery =
-                                    this.selectTypeormMetadataSql({
-                                        database: currentDatabase,
-                                        schema: dbTable["table_schema"],
-                                        table: dbTable["table_name"],
-                                        type: MetadataTableType.GENERATED_COLUMN,
-                                        name: tableColumn.name,
-                                    })
-
-                                const results = await this.query(
-                                    asExpressionQuery.query,
-                                    asExpressionQuery.parameters,
-                                )
-                                if (results[0]?.value) {
-                                    tableColumn.asExpression = results[0].value
-                                } else {
-                                    tableColumn.asExpression = ""
-                                }
-                            }
-
-                            tableColumn.comment =
-                                dbColumn["description"] ?? undefined
-                            if (dbColumn["character_set_name"])
-                                tableColumn.charset =
-                                    dbColumn["character_set_name"]
-                            if (dbColumn["collation_name"])
-                                tableColumn.collation =
-                                    dbColumn["collation_name"]
-                            return tableColumn
-                        }),
-                )
-
-                // find unique constraints of table, group them by constraint name and build TableUnique.
-                const tableUniqueConstraints = OrmUtils.uniq(
-                    dbConstraints.filter((dbConstraint) => {
+            // create columns from the loaded columns
+            for (const dbColumn of dbColumns.filter(
+                (dbColumn) =>
+                    dbColumn["table_name"] === dbTable["table_name"] &&
+                    dbColumn["table_schema"] === dbTable["table_schema"],
+            )) {
+                const columnConstraints = dbConstraints.filter(
+                    (dbConstraint) => {
                         return (
                             dbConstraint["table_name"] ===
-                                dbTable["table_name"] &&
+                                dbColumn["table_name"] &&
                             dbConstraint["table_schema"] ===
-                                dbTable["table_schema"] &&
-                            dbConstraint["constraint_type"] === "UNIQUE"
+                                dbColumn["table_schema"] &&
+                            dbConstraint["column_name"] ===
+                                dbColumn["column_name"]
                         )
-                    }),
-                    (dbConstraint) => dbConstraint["constraint_name"],
+                    },
                 )
 
-                table.uniques = tableUniqueConstraints.map((constraint) => {
-                    const uniques = dbConstraints.filter(
-                        (dbC) =>
-                            dbC["constraint_name"] ===
-                            constraint["constraint_name"],
+                const tableColumn = new TableColumn()
+                tableColumn.name = dbColumn["column_name"]
+                tableColumn.type = dbColumn["regtype"].toLowerCase()
+
+                if (
+                    tableColumn.type === "vector" ||
+                    tableColumn.type === "halfvec"
+                ) {
+                    const lengthMatch = dbColumn["format_type"].match(
+                        /^(?:vector|halfvec)\((\d+)\)$/,
                     )
-                    return new TableUnique({
-                        name: constraint["constraint_name"],
-                        columnNames: uniques.map((u) => u["column_name"]),
-                        deferrable: constraint["deferrable"]
-                            ? constraint["deferred"]
+                    if (lengthMatch?.[1]) {
+                        tableColumn.length = lengthMatch[1]
+                    }
+                }
+
+                if (
+                    tableColumn.type === "numeric" ||
+                    tableColumn.type === "numeric[]" ||
+                    tableColumn.type === "decimal" ||
+                    tableColumn.type === "float"
+                ) {
+                    let numericPrecision = dbColumn["numeric_precision"]
+                    let numericScale = dbColumn["numeric_scale"]
+                    if (dbColumn["data_type"] === "ARRAY") {
+                        const numericSize = dbColumn["format_type"].match(
+                            /^numeric\(([0-9]+),([0-9]+)\)\[\]$/,
+                        )
+                        if (numericSize) {
+                            numericPrecision = +numericSize[1]
+                            numericScale = +numericSize[2]
+                        }
+                    }
+                    // If one of these properties was set, and another was not, Postgres sets '0' in to unspecified property
+                    // we set 'undefined' in to unspecified property to avoid changing column on sync
+                    if (
+                        numericPrecision !== null &&
+                        !this.isDefaultColumnPrecision(
+                            table,
+                            tableColumn,
+                            numericPrecision,
+                        )
+                    ) {
+                        tableColumn.precision = numericPrecision
+                    } else if (
+                        numericScale !== null &&
+                        !this.isDefaultColumnScale(
+                            table,
+                            tableColumn,
+                            numericScale,
+                        )
+                    ) {
+                        tableColumn.precision = undefined
+                    }
+                    if (
+                        numericScale !== null &&
+                        !this.isDefaultColumnScale(
+                            table,
+                            tableColumn,
+                            numericScale,
+                        )
+                    ) {
+                        tableColumn.scale = numericScale
+                    } else if (
+                        numericPrecision !== null &&
+                        !this.isDefaultColumnPrecision(
+                            table,
+                            tableColumn,
+                            numericPrecision,
+                        )
+                    ) {
+                        tableColumn.scale = undefined
+                    }
+                }
+
+                if (
+                    tableColumn.type === "interval" ||
+                    tableColumn.type === "time without time zone" ||
+                    tableColumn.type === "time with time zone" ||
+                    tableColumn.type === "timestamp without time zone" ||
+                    tableColumn.type === "timestamp with time zone"
+                ) {
+                    tableColumn.precision = !this.isDefaultColumnPrecision(
+                        table,
+                        tableColumn,
+                        dbColumn["datetime_precision"],
+                    )
+                        ? dbColumn["datetime_precision"]
+                        : undefined
+                }
+
+                // check if column has user-defined data type.
+                // NOTE: if ENUM type defined with "array:true" it comes with ARRAY type instead of USER-DEFINED
+                if (
+                    dbColumn["data_type"] === "USER-DEFINED" ||
+                    dbColumn["data_type"] === "ARRAY"
+                ) {
+                    const { name } = await this.getUserDefinedTypeName(
+                        table,
+                        tableColumn,
+                    )
+
+                    // check if `enumName` is specified by user
+                    const builtEnumName = this.buildEnumName(
+                        table,
+                        tableColumn,
+                        false,
+                        true,
+                    )
+                    const enumName = builtEnumName !== name ? name : undefined
+
+                    // check if type is ENUM
+                    const sql =
+                        `SELECT "e"."enumlabel" AS "value" FROM "pg_enum" "e" ` +
+                        `INNER JOIN "pg_type" "t" ON "t"."oid" = "e"."enumtypid" ` +
+                        `INNER JOIN "pg_namespace" "n" ON "n"."oid" = "t"."typnamespace" ` +
+                        `WHERE "n"."nspname" = '${
+                            dbTable["table_schema"]
+                        }' AND "t"."typname" = '${enumName ?? name}' ` +
+                        `ORDER BY "e"."enumsortorder"`
+                    const results: ObjectLiteral[] = await this.query(sql)
+
+                    if (results.length) {
+                        tableColumn.type = "enum"
+                        tableColumn.enum = results.map(
+                            (result) => result["value"],
+                        )
+                        tableColumn.enumName = enumName
+                    }
+
+                    if (dbColumn["data_type"] === "ARRAY") {
+                        tableColumn.isArray = true
+                        const type = tableColumn.type.replace("[]", "")
+                        tableColumn.type = this.dataSource.driver.normalizeType(
+                            {
+                                type: type,
+                            },
+                        )
+                    }
+                }
+
+                if (
+                    tableColumn.type === "geometry" ||
+                    tableColumn.type === "geography"
+                ) {
+                    const sql =
+                        `SELECT * FROM (` +
+                        `SELECT "f_table_schema" "table_schema", "f_table_name" "table_name", ` +
+                        `"f_${tableColumn.type}_column" "column_name", "srid", "type", "coord_dimension" ` +
+                        `FROM "${tableColumn.type}_columns"` +
+                        `) AS _ ` +
+                        `WHERE "column_name" = '${dbColumn["column_name"]}' AND ` +
+                        `"table_schema" = '${dbColumn["table_schema"]}' AND ` +
+                        `"table_name" = '${dbColumn["table_name"]}'`
+
+                    const results: ObjectLiteral[] = await this.query(sql)
+
+                    if (results.length > 0) {
+                        // "geometry_columns" folds the Z dimension into
+                        // "coord_dimension" and only keeps the M suffix in
+                        // "type", while "geography_columns" reports the
+                        // full suffix in "type", so the suffix is only
+                        // appended when it is missing.
+                        let spatialFeatureType: string = results[0].type
+                        const upperType = spatialFeatureType.toUpperCase()
+                        if (
+                            results[0].coord_dimension === 3 &&
+                            !upperType.endsWith("Z") &&
+                            !upperType.endsWith("M")
+                        ) {
+                            spatialFeatureType += "Z"
+                        } else if (
+                            results[0].coord_dimension === 4 &&
+                            !upperType.endsWith("Z") &&
+                            !upperType.endsWith("M")
+                        ) {
+                            spatialFeatureType += "ZM"
+                        }
+                        tableColumn.spatialFeatureType = spatialFeatureType
+                        tableColumn.srid = results[0].srid
+                    }
+                }
+
+                // check only columns that have length property
+                if (
+                    this.driver.withLengthColumnTypes.indexOf(
+                        tableColumn.type as ColumnType,
+                    ) !== -1
+                ) {
+                    let length
+                    if (tableColumn.isArray) {
+                        const match = /\((\d+)\)/.exec(dbColumn["format_type"])
+                        length = match ? match[1] : undefined
+                    } else if (dbColumn["character_maximum_length"]) {
+                        length = dbColumn["character_maximum_length"].toString()
+                    }
+                    if (length) {
+                        tableColumn.length = !this.isDefaultColumnLength(
+                            table,
+                            tableColumn,
+                            length,
+                        )
+                            ? length
+                            : ""
+                    }
+                }
+                tableColumn.isNullable = dbColumn["is_nullable"] === "YES"
+
+                const primaryConstraint = columnConstraints.find(
+                    (constraint) => constraint["constraint_type"] === "PRIMARY",
+                )
+                if (primaryConstraint) {
+                    tableColumn.isPrimary = true
+                    // find another columns involved in primary key constraint
+                    const anotherPrimaryConstraints = dbConstraints.filter(
+                        (constraint) =>
+                            constraint["table_name"] ===
+                                dbColumn["table_name"] &&
+                            constraint["table_schema"] ===
+                                dbColumn["table_schema"] &&
+                            constraint["column_name"] !==
+                                dbColumn["column_name"] &&
+                            constraint["constraint_type"] === "PRIMARY",
+                    )
+
+                    // collect all column names
+                    const columnNames = anotherPrimaryConstraints.map(
+                        (constraint) => constraint["column_name"],
+                    )
+                    columnNames.push(dbColumn["column_name"])
+
+                    // build default primary key constraint name
+                    const pkName =
+                        this.dataSource.namingStrategy.primaryKeyName(
+                            table,
+                            columnNames,
+                        )
+
+                    // if primary key has user-defined constraint name, write it in table column
+                    if (primaryConstraint["constraint_name"] !== pkName) {
+                        tableColumn.primaryKeyConstraintName =
+                            primaryConstraint["constraint_name"]
+                    }
+                }
+
+                const uniqueConstraints = columnConstraints.filter(
+                    (constraint) => constraint["constraint_type"] === "UNIQUE",
+                )
+                const isConstraintComposite = uniqueConstraints.every(
+                    (uniqueConstraint) => {
+                        return dbConstraints.some(
+                            (dbConstraint) =>
+                                dbConstraint["constraint_type"] === "UNIQUE" &&
+                                dbConstraint["constraint_name"] ===
+                                    uniqueConstraint["constraint_name"] &&
+                                dbConstraint["column_name"] !==
+                                    dbColumn["column_name"],
+                        )
+                    },
+                )
+                tableColumn.isUnique =
+                    uniqueConstraints.length > 0 && !isConstraintComposite
+
+                if (dbColumn.is_identity === "YES") {
+                    // Postgres 10+ Identity column
+                    tableColumn.isGenerated = true
+                    tableColumn.generationStrategy = "identity"
+                    tableColumn.generatedIdentity = dbColumn.identity_generation
+                } else if (
+                    dbColumn["column_default"] !== null &&
+                    dbColumn["column_default"] !== undefined
+                ) {
+                    const serialDefaultName = `nextval('${this.buildSequenceName(
+                        table,
+                        dbColumn["column_name"],
+                    )}'::regclass)`
+                    const serialDefaultPath = `nextval('${this.buildSequencePath(
+                        table,
+                        dbColumn["column_name"],
+                    )}'::regclass)`
+
+                    const defaultWithoutQuotes = dbColumn[
+                        "column_default"
+                    ].replaceAll('"', "")
+
+                    if (
+                        defaultWithoutQuotes === serialDefaultName ||
+                        defaultWithoutQuotes === serialDefaultPath
+                    ) {
+                        tableColumn.isGenerated = true
+                        tableColumn.generationStrategy = "increment"
+                    } else if (
+                        dbColumn["column_default"] === "gen_random_uuid()" ||
+                        /^uuid_generate_v\d\(\)/.test(
+                            dbColumn["column_default"],
+                        )
+                    ) {
+                        if (tableColumn.type === "uuid") {
+                            tableColumn.isGenerated = true
+                            tableColumn.generationStrategy = "uuid"
+                        } else {
+                            tableColumn.default = dbColumn["column_default"]
+                        }
+                    } else if (
+                        dbColumn["column_default"] === "now()" ||
+                        dbColumn["column_default"].indexOf("'now'::text") !== -1
+                    ) {
+                        tableColumn.default = dbColumn["column_default"]
+                    } else {
+                        tableColumn.default = dbColumn[
+                            "column_default"
+                        ].replaceAll(/::[\w\s.[\]\-"]+/g, "")
+                        tableColumn.default = tableColumn.default.replace(
+                            /^(-?\d+)$/,
+                            "'$1'",
+                        )
+                    }
+                }
+
+                if (
+                    dbColumn["is_generated"] === "ALWAYS" &&
+                    dbColumn["generation_expression"]
+                ) {
+                    // In postgres there is no VIRTUAL generated column type
+                    tableColumn.generatedType = "STORED"
+                    // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
+                    const asExpressionQuery = this.selectTypeormMetadataSql({
+                        database: currentDatabase,
+                        schema: dbTable["table_schema"],
+                        table: dbTable["table_name"],
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        name: tableColumn.name,
+                    })
+
+                    const results = await this.query(
+                        asExpressionQuery.query,
+                        asExpressionQuery.parameters,
+                    )
+                    if (results[0]?.value) {
+                        tableColumn.asExpression = results[0].value
+                    } else {
+                        tableColumn.asExpression = ""
+                    }
+                }
+
+                tableColumn.comment = dbColumn["description"] ?? undefined
+                if (dbColumn["character_set_name"])
+                    tableColumn.charset = dbColumn["character_set_name"]
+                if (dbColumn["collation_name"])
+                    tableColumn.collation = dbColumn["collation_name"]
+                table.columns.push(tableColumn)
+            }
+
+            // find unique constraints of table, group them by constraint name and build TableUnique.
+            const tableUniqueConstraints = OrmUtils.uniq(
+                dbConstraints.filter((dbConstraint) => {
+                    return (
+                        dbConstraint["table_name"] === dbTable["table_name"] &&
+                        dbConstraint["table_schema"] ===
+                            dbTable["table_schema"] &&
+                        dbConstraint["constraint_type"] === "UNIQUE"
+                    )
+                }),
+                (dbConstraint) => dbConstraint["constraint_name"],
+            )
+
+            table.uniques = tableUniqueConstraints.map((constraint) => {
+                const uniques = dbConstraints.filter(
+                    (dbC) =>
+                        dbC["constraint_name"] ===
+                        constraint["constraint_name"],
+                )
+                return new TableUnique({
+                    name: constraint["constraint_name"],
+                    columnNames: uniques.map((u) => u["column_name"]),
+                    deferrable: constraint["deferrable"]
+                        ? constraint["deferred"]
+                        : undefined,
+                })
+            })
+
+            // find check constraints of table, group them by constraint name and build TableCheck.
+            const tableCheckConstraints = OrmUtils.uniq(
+                dbConstraints.filter((dbConstraint) => {
+                    return (
+                        dbConstraint["table_name"] === dbTable["table_name"] &&
+                        dbConstraint["table_schema"] ===
+                            dbTable["table_schema"] &&
+                        dbConstraint["constraint_type"] === "CHECK"
+                    )
+                }),
+                (dbConstraint) => dbConstraint["constraint_name"],
+            )
+
+            table.checks = tableCheckConstraints.map((constraint) => {
+                const checks = dbConstraints.filter(
+                    (dbC) =>
+                        dbC["constraint_name"] ===
+                        constraint["constraint_name"],
+                )
+                return new TableCheck({
+                    name: constraint["constraint_name"],
+                    columnNames: checks.map((c) => c["column_name"]),
+                    expression: constraint["expression"].replace(
+                        /^\s*CHECK\s*\((.*)\)\s*$/i,
+                        "$1",
+                    ),
+                })
+            })
+
+            // find exclusion constraints of table, group them by constraint name and build TableExclusion.
+            const tableExclusionConstraints = OrmUtils.uniq(
+                dbConstraints.filter((dbConstraint) => {
+                    return (
+                        dbConstraint["table_name"] === dbTable["table_name"] &&
+                        dbConstraint["table_schema"] ===
+                            dbTable["table_schema"] &&
+                        dbConstraint["constraint_type"] === "EXCLUDE"
+                    )
+                }),
+                (dbConstraint) => dbConstraint["constraint_name"],
+            )
+
+            table.exclusions = tableExclusionConstraints.map((constraint) => {
+                return new TableExclusion({
+                    name: constraint["constraint_name"],
+                    expression: constraint["expression"].slice(8), // trim EXCLUDE from start of expression
+                })
+            })
+
+            // find foreign key constraints of table, group them by constraint name and build TableForeignKey.
+            const tableForeignKeyConstraints = OrmUtils.uniq(
+                dbForeignKeys.filter((dbForeignKey) => {
+                    return (
+                        dbForeignKey["table_name"] === dbTable["table_name"] &&
+                        dbForeignKey["table_schema"] === dbTable["table_schema"]
+                    )
+                }),
+                (dbForeignKey) => dbForeignKey["constraint_name"],
+            )
+
+            table.foreignKeys = tableForeignKeyConstraints.map(
+                (dbForeignKey) => {
+                    const foreignKeys = dbForeignKeys.filter(
+                        (dbFk) =>
+                            dbFk["constraint_name"] ===
+                            dbForeignKey["constraint_name"],
+                    )
+
+                    // if referenced table located in currently used schema, we don't need to concat schema name to table name.
+                    const schema = getSchemaFromKey(
+                        dbForeignKey,
+                        "referenced_table_schema",
+                    )
+                    const referencedTableName = this.driver.buildTableName(
+                        dbForeignKey["referenced_table_name"],
+                        schema,
+                    )
+
+                    return new TableForeignKey({
+                        name: dbForeignKey["constraint_name"],
+                        columnNames: foreignKeys.map(
+                            (dbFk) => dbFk["column_name"],
+                        ),
+                        referencedSchema:
+                            dbForeignKey["referenced_table_schema"],
+                        referencedTableName: referencedTableName,
+                        referencedColumnNames: foreignKeys.map(
+                            (dbFk) => dbFk["referenced_column_name"],
+                        ),
+                        onDelete: dbForeignKey["on_delete"],
+                        onUpdate: dbForeignKey["on_update"],
+                        deferrable: dbForeignKey["deferrable"]
+                            ? dbForeignKey["deferred"]
                             : undefined,
                     })
-                })
+                },
+            )
 
-                // find check constraints of table, group them by constraint name and build TableCheck.
-                const tableCheckConstraints = OrmUtils.uniq(
-                    dbConstraints.filter((dbConstraint) => {
-                        return (
-                            dbConstraint["table_name"] ===
-                                dbTable["table_name"] &&
-                            dbConstraint["table_schema"] ===
-                                dbTable["table_schema"] &&
-                            dbConstraint["constraint_type"] === "CHECK"
-                        )
-                    }),
-                    (dbConstraint) => dbConstraint["constraint_name"],
-                )
-
-                table.checks = tableCheckConstraints.map((constraint) => {
-                    const checks = dbConstraints.filter(
-                        (dbC) =>
-                            dbC["constraint_name"] ===
-                            constraint["constraint_name"],
+            // find index constraints of table, group them by constraint name and build TableIndex.
+            const tableIndexConstraints = OrmUtils.uniq(
+                dbIndices.filter((dbIndex) => {
+                    return (
+                        dbIndex["table_name"] === dbTable["table_name"] &&
+                        dbIndex["table_schema"] === dbTable["table_schema"]
                     )
-                    return new TableCheck({
-                        name: constraint["constraint_name"],
-                        columnNames: checks.map((c) => c["column_name"]),
-                        expression: constraint["expression"].replace(
-                            /^\s*CHECK\s*\((.*)\)\s*$/i,
-                            "$1",
-                        ),
-                    })
+                }),
+                (dbIndex) => dbIndex["constraint_name"],
+            )
+
+            table.indices = tableIndexConstraints.map((constraint) => {
+                const indices = dbIndices.filter((index) => {
+                    return (
+                        index["table_schema"] === constraint["table_schema"] &&
+                        index["table_name"] === constraint["table_name"] &&
+                        index["constraint_name"] ===
+                            constraint["constraint_name"]
+                    )
                 })
-
-                // find exclusion constraints of table, group them by constraint name and build TableExclusion.
-                const tableExclusionConstraints = OrmUtils.uniq(
-                    dbConstraints.filter((dbConstraint) => {
-                        return (
-                            dbConstraint["table_name"] ===
-                                dbTable["table_name"] &&
-                            dbConstraint["table_schema"] ===
-                                dbTable["table_schema"] &&
-                            dbConstraint["constraint_type"] === "EXCLUDE"
-                        )
-                    }),
-                    (dbConstraint) => dbConstraint["constraint_name"],
-                )
-
-                table.exclusions = tableExclusionConstraints.map(
-                    (constraint) => {
-                        return new TableExclusion({
-                            name: constraint["constraint_name"],
-                            expression: constraint["expression"].slice(8), // trim EXCLUDE from start of expression
-                        })
-                    },
-                )
-
-                // find foreign key constraints of table, group them by constraint name and build TableForeignKey.
-                const tableForeignKeyConstraints = OrmUtils.uniq(
-                    dbForeignKeys.filter((dbForeignKey) => {
-                        return (
-                            dbForeignKey["table_name"] ===
-                                dbTable["table_name"] &&
-                            dbForeignKey["table_schema"] ===
-                                dbTable["table_schema"]
-                        )
-                    }),
-                    (dbForeignKey) => dbForeignKey["constraint_name"],
-                )
-
-                table.foreignKeys = tableForeignKeyConstraints.map(
-                    (dbForeignKey) => {
-                        const foreignKeys = dbForeignKeys.filter(
-                            (dbFk) =>
-                                dbFk["constraint_name"] ===
-                                dbForeignKey["constraint_name"],
-                        )
-
-                        // if referenced table located in currently used schema, we don't need to concat schema name to table name.
-                        const schema = getSchemaFromKey(
-                            dbForeignKey,
-                            "referenced_table_schema",
-                        )
-                        const referencedTableName = this.driver.buildTableName(
-                            dbForeignKey["referenced_table_name"],
-                            schema,
-                        )
-
-                        return new TableForeignKey({
-                            name: dbForeignKey["constraint_name"],
-                            columnNames: foreignKeys.map(
-                                (dbFk) => dbFk["column_name"],
-                            ),
-                            referencedSchema:
-                                dbForeignKey["referenced_table_schema"],
-                            referencedTableName: referencedTableName,
-                            referencedColumnNames: foreignKeys.map(
-                                (dbFk) => dbFk["referenced_column_name"],
-                            ),
-                            onDelete: dbForeignKey["on_delete"],
-                            onUpdate: dbForeignKey["on_update"],
-                            deferrable: dbForeignKey["deferrable"]
-                                ? dbForeignKey["deferred"]
-                                : undefined,
-                        })
-                    },
-                )
-
-                // find index constraints of table, group them by constraint name and build TableIndex.
-                const tableIndexConstraints = OrmUtils.uniq(
-                    dbIndices.filter((dbIndex) => {
-                        return (
-                            dbIndex["table_name"] === dbTable["table_name"] &&
-                            dbIndex["table_schema"] === dbTable["table_schema"]
-                        )
-                    }),
-                    (dbIndex) => dbIndex["constraint_name"],
-                )
-
-                table.indices = tableIndexConstraints.map((constraint) => {
-                    const indices = dbIndices.filter((index) => {
-                        return (
-                            index["table_schema"] ===
-                                constraint["table_schema"] &&
-                            index["table_name"] === constraint["table_name"] &&
-                            index["constraint_name"] ===
-                                constraint["constraint_name"]
-                        )
-                    })
-                    return new TableIndex(<TableIndexOptions>{
-                        table: table,
-                        name: constraint["constraint_name"],
-                        columnNames: indices.map((i) => i["column_name"]),
-                        isUnique: constraint["is_unique"] === "TRUE",
-                        where: constraint["condition"],
-                        isSpatial: constraint["index_type"] === "gist",
-                        type: constraint["index_type"],
-                        isFulltext: false,
-                    })
+                return new TableIndex(<TableIndexOptions>{
+                    table: table,
+                    name: constraint["constraint_name"],
+                    columnNames: indices.map((i) => i["column_name"]),
+                    isUnique: constraint["is_unique"] === "TRUE",
+                    where: constraint["condition"],
+                    isSpatial: constraint["index_type"] === "gist",
+                    type: constraint["index_type"],
+                    isFulltext: false,
                 })
+            })
 
-                return table
-            }),
-        )
+            tables.push(table)
+        }
+
+        return tables
     }
 
     /**

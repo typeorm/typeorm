@@ -103,4 +103,32 @@ describe("database schema > enums", () => {
                 expect(sqlInMemory.downQueries).to.have.length(0)
             }),
         ))
+
+    // see https://github.com/typeorm/typeorm/issues/12914
+    it("should not run queries concurrently when loading enum columns", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (dataSource.options.type !== "postgres") return
+
+                await using queryRunner = dataSource.createQueryRunner()
+                const query = queryRunner.query.bind(queryRunner)
+                let running = 0
+                let maxRunning = 0
+                queryRunner.query = async (
+                    ...args: Parameters<typeof query>
+                ) => {
+                    running++
+                    maxRunning = Math.max(maxRunning, running)
+                    try {
+                        return await query(...args)
+                    } finally {
+                        running--
+                    }
+                }
+
+                await queryRunner.getTables()
+
+                expect(maxRunning).to.equal(1)
+            }),
+        ))
 })
