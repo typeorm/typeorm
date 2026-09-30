@@ -58,6 +58,7 @@ jobs:
               "mariadb" \
               "mysql" \
               "postgres" \
+              "postgres-js" \
               "sqljs" \
             > ormconfig.json
 

@@ -26,6 +26,7 @@ export class InitCommand implements yargs.CommandModule {
                 describe: "Database type you'll use in your project.",
                 choices: [
                     "postgres",
+                    "postgres-js",
                     "mysql",
                     "mariadb",
                     "better-sqlite3",
@@ -196,8 +197,9 @@ export class InitCommand implements yargs.CommandModule {
                 break
 
             case "postgres":
+            case "postgres-js":
                 dbSettings = [
-                    'type: "postgres"',
+                    `type: "${database}"`,
                     'host: "localhost"',
                     "port: 5432",
                     'username: "root"',
@@ -604,6 +606,7 @@ AppDataSource.initialize().then(async () => {
 
 `
             case "postgres":
+            case "postgres-js":
                 return `services:
 
   postgres:
@@ -744,6 +747,10 @@ Steps to run this project:
             case "cockroachdb":
                 packageJson.dependencies["pg"] =
                     ourPackageJson.devDependencies.pg
+                break
+            case "postgres-js":
+                packageJson.dependencies.postgres =
+                    ourPackageJson.devDependencies.postgres
                 break
             case "better-sqlite3":
                 packageJson.dependencies["better-sqlite3"] =

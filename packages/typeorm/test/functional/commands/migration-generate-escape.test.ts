@@ -46,7 +46,11 @@ describe("commands - migration generate - template literal escaping", () => {
     ): Promise<string | undefined> {
         const driver = dataSource.driver.options.type
 
-        if (driver === "postgres" || driver === "cockroachdb") {
+        if (
+            driver === "postgres" ||
+            driver === "postgres-js" ||
+            driver === "cockroachdb"
+        ) {
             await dataSource.query(
                 `COMMENT ON COLUMN "post"."title" IS '${comment}'`,
             )
@@ -77,7 +81,11 @@ describe("commands - migration generate - template literal escaping", () => {
             string | undefined
         createFileStub.resetHistory()
 
-        if (driver === "postgres" || driver === "cockroachdb") {
+        if (
+            driver === "postgres" ||
+            driver === "postgres-js" ||
+            driver === "cockroachdb"
+        ) {
             await dataSource.query(`COMMENT ON COLUMN "post"."title" IS NULL`)
         } else {
             await dataSource.query(

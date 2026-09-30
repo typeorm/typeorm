@@ -397,7 +397,11 @@ export class RelationIdLoader {
         // Avoid concurrent queries on the same pg client; see #12238.
         // CockroachDB uses the pg package over a single connection too.
         const driverType = this.dataSource.options.type
-        if (driverType === "postgres" || driverType === "cockroachdb") {
+        if (
+            driverType === "postgres" ||
+            driverType === "postgres-js" ||
+            driverType === "cockroachdb"
+        ) {
             const results: RelationIdLoadResult[] = []
             for (const relationIdAttr of this.relationIdAttributes) {
                 results.push(await loadRelationIdAttribute(relationIdAttr))

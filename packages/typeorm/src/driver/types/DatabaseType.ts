@@ -16,6 +16,7 @@ export type DatabaseType =
     | "nativescript"
     | "oracle"
     | "postgres"
+    | "postgres-js"
     | "react-native"
     | "sap"
     | "spanner"

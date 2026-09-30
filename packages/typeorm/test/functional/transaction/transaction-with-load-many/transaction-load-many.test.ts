@@ -17,6 +17,10 @@ describe("transaction > transaction with load many", () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
             enabledDrivers: ["postgres", "mariadb", "mysql"],
+            // This test counts pg/mysql pool acquire events directly. The
+            // Postgres.js path verifies connection affinity by backend PID in
+            // the connector integration suite instead of exposing pg's pool API.
+            disabledDrivers: ["postgres-js"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
@@ -32,7 +36,10 @@ describe("transaction > transaction with load many", () => {
                 if (DriverUtils.isMySQLFamily(driver)) {
                     const pool = (driver as MysqlDriver).pool
                     pool.on("acquire", () => acquireCount++)
-                } else if (driver.options.type === "postgres") {
+                } else if (
+                    driver.options.type === "postgres" ||
+                    driver.options.type === "postgres-js"
+                ) {
                     const pool = (driver as PostgresDriver).master
                     pool.on("acquire", () => acquireCount++)
                 }

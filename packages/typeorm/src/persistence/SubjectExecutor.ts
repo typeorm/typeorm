@@ -640,7 +640,11 @@ export class SubjectExecutor {
         // Avoid concurrent queries on the same pg client; see #12238.
         // CockroachDB uses the pg package over a single connection too.
         const driverType = this.queryRunner.dataSource.options.type
-        if (driverType === "postgres" || driverType === "cockroachdb") {
+        if (
+            driverType === "postgres" ||
+            driverType === "postgres-js" ||
+            driverType === "cockroachdb"
+        ) {
             for (const subject of remainingSubjects) {
                 await updateSubject(subject)
             }
@@ -826,7 +830,11 @@ export class SubjectExecutor {
         // Avoid concurrent queries on the same pg client; see #12238.
         // CockroachDB uses the pg package over a single connection too.
         const driverType = this.queryRunner.dataSource.options.type
-        if (driverType === "postgres" || driverType === "cockroachdb") {
+        if (
+            driverType === "postgres" ||
+            driverType === "postgres-js" ||
+            driverType === "cockroachdb"
+        ) {
             for (const subject of this.softRemoveSubjects) {
                 await softRemoveSubject(subject)
             }
@@ -937,7 +945,11 @@ export class SubjectExecutor {
         // Avoid concurrent queries on the same pg client; see #12238.
         // CockroachDB uses the pg package over a single connection too.
         const driverType = this.queryRunner.dataSource.options.type
-        if (driverType === "postgres" || driverType === "cockroachdb") {
+        if (
+            driverType === "postgres" ||
+            driverType === "postgres-js" ||
+            driverType === "cockroachdb"
+        ) {
             for (const subject of this.recoverSubjects) {
                 await recoverSubject(subject)
             }

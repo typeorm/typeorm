@@ -41,7 +41,10 @@ describe("query runner > rename table", () => {
                 }
 
                 // check if sequence "faculty_id_seq" exist
-                if (dataSource.driver.options.type === "postgres") {
+                if (
+                    dataSource.driver.options.type === "postgres" ||
+                    dataSource.driver.options.type === "postgres-js"
+                ) {
                     const facultySeq = await queryRunner.query(
                         sequenceQuery("faculty_id_seq"),
                     )
@@ -55,7 +58,10 @@ describe("query runner > rename table", () => {
                 expect(table).to.exist
 
                 // check if sequence "faculty_id_seq" was renamed to "question_id_seq"
-                if (dataSource.driver.options.type === "postgres") {
+                if (
+                    dataSource.driver.options.type === "postgres" ||
+                    dataSource.driver.options.type === "postgres-js"
+                ) {
                     const facultySeq = await queryRunner.query(
                         sequenceQuery("faculty_id_seq"),
                     )
@@ -71,7 +77,10 @@ describe("query runner > rename table", () => {
                 expect(table).to.exist
 
                 // check if sequence "question_id_seq" was renamed to "answer_id_seq"
-                if (dataSource.driver.options.type === "postgres") {
+                if (
+                    dataSource.driver.options.type === "postgres" ||
+                    dataSource.driver.options.type === "postgres-js"
+                ) {
                     const questionSeq = await queryRunner.query(
                         sequenceQuery("question_id_seq"),
                     )
@@ -88,7 +97,10 @@ describe("query runner > rename table", () => {
                 expect(table).to.exist
 
                 // check if sequence "answer_id_seq" was renamed to "faculty_id_seq"
-                if (dataSource.driver.options.type === "postgres") {
+                if (
+                    dataSource.driver.options.type === "postgres" ||
+                    dataSource.driver.options.type === "postgres-js"
+                ) {
                     const answerSeq = await queryRunner.query(
                         sequenceQuery("answer_id_seq"),
                     )
@@ -183,6 +195,7 @@ describe("query runner > rename table", () => {
                     await queryRunner.createSchema("testDB.testSchema", true)
                 } else if (
                     dataSource.driver.options.type === "postgres" ||
+                    dataSource.driver.options.type === "postgres-js" ||
                     dataSource.driver.options.type === "sap"
                 ) {
                     questionTableName = "testSchema.question"

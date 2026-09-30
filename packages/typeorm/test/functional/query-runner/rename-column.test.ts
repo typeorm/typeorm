@@ -132,7 +132,10 @@ describe("query runner > rename column", () => {
                     categoryTableName = "testDB.testSchema.category"
                     await queryRunner.createDatabase("testDB", true)
                     await queryRunner.createSchema("testDB.testSchema", true)
-                } else if (dataSource.driver.options.type === "postgres") {
+                } else if (
+                    dataSource.driver.options.type === "postgres" ||
+                    dataSource.driver.options.type === "postgres-js"
+                ) {
                     questionTableName = "testSchema.question"
                     categoryTableName = "testSchema.category"
                     await queryRunner.createSchema("testSchema", true)

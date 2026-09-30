@@ -61,7 +61,10 @@ describe("query builder > order-by", () => {
     it("should be always in right order(custom order)", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                if (!(dataSource.driver.options.type === "postgres"))
+                if (!(
+                    dataSource.driver.options.type === "postgres" ||
+                    dataSource.driver.options.type === "postgres-js"
+                ))
                     // NULLS FIRST / LAST only supported by postgres
                     return
 

@@ -1144,6 +1144,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             case "ilike":
                 if (
                     driver.options.type === "postgres" ||
+                    driver.options.type === "postgres-js" ||
                     driver.options.type === "cockroachdb"
                 ) {
                     return `${condition.parameters[0]} ILIKE ${condition.parameters[1]}`

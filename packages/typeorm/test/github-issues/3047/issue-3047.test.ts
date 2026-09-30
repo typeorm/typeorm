@@ -71,7 +71,10 @@ describe("github issues > #3047 Mysqsl on duplicate key update use current value
         Promise.all(
             dataSources.map(async (connection) => {
                 try {
-                    if (connection.driver.options.type === "postgres") {
+                    if (
+                        connection.driver.options.type === "postgres" ||
+                        connection.driver.options.type === "postgres-js"
+                    ) {
                         const UserRepository =
                             connection.manager.getRepository(User)
 

@@ -32,7 +32,17 @@ import type { IsolationLevel } from "../types/IsolationLevel"
 import type { UpsertType } from "../types/UpsertType"
 import type { PostgresConnectionCredentialsOptions } from "./PostgresConnectionCredentialsOptions"
 import type { PostgresDataSourceOptions } from "./PostgresDataSourceOptions"
+import type { PostgresJsDataSourceOptions } from "./PostgresJsDataSourceOptions"
+import {
+    PostgresJsJsonParameter,
+    PostgresJsPool,
+    PostgresJsQueryStream,
+    type PostgresJsFactory,
+} from "./PostgresJsPool"
 import { PostgresQueryRunner } from "./PostgresQueryRunner"
+
+type PostgresDriverOptions =
+    PostgresDataSourceOptions | PostgresJsDataSourceOptions
 
 /**
  * Organizes communication with PostgreSQL DBMS.
@@ -105,7 +115,7 @@ export class PostgresDriver implements Driver {
     /**
      * DataSource options.
      */
-    options: PostgresDataSourceOptions
+    options: PostgresDriverOptions
 
     /**
      * Version of Postgres. Requires a SQL query to the DB, so it is set on the first
@@ -361,7 +371,7 @@ export class PostgresDriver implements Driver {
         }
 
         this.dataSource = dataSource
-        this.options = dataSource.options as PostgresDataSourceOptions
+        this.options = dataSource.options as PostgresDriverOptions
         this.isReplicated = this.options.replication ? true : false
         if (this.options.useUTC) {
             process.env.PGTZ = "UTC"
@@ -722,7 +732,7 @@ export class PostgresDriver implements Driver {
      */
     async disconnect(): Promise<void> {
         if (!this.master) {
-            throw new ConnectionIsNotSetError("postgres")
+            throw new ConnectionIsNotSetError(this.options.type)
         }
 
         await this.closePool(this.master)
@@ -763,6 +773,7 @@ export class PostgresDriver implements Driver {
         if (value === null || value === undefined) return value
 
         if (columnMetadata.type === Boolean) {
+            if (this.options.type === "postgres-js") return value === true
             return value === true ? 1 : 0
         } else if (columnMetadata.type === "date") {
             return DateUtils.mixedDateToDateString(value, {
@@ -799,10 +810,16 @@ export class PostgresDriver implements Driver {
             }
             return value
         } else if (
-            ["json", "jsonb", ...this.spatialTypes].indexOf(
-                columnMetadata.type,
-            ) >= 0
+            columnMetadata.type === "json" ||
+            columnMetadata.type === "jsonb"
         ) {
+            if (this.options.type === "postgres-js") {
+                return columnMetadata.isArray
+                    ? value
+                    : new PostgresJsJsonParameter(value)
+            }
+            return JSON.stringify(value)
+        } else if (this.spatialTypes.indexOf(columnMetadata.type) >= 0) {
             return JSON.stringify(value)
         } else if (
             columnMetadata.type === "vector" ||
@@ -930,8 +947,19 @@ export class PostgresDriver implements Driver {
         } else if (columnMetadata.type === "simple-json") {
             value = DateUtils.stringToSimpleJson(value)
         } else if (columnMetadata.type === "cube") {
-            value = value.replaceAll(/[()\s]+/g, "") // remove whitespace
-            if (columnMetadata.isArray) {
+            if (columnMetadata.isArray && Array.isArray(value)) {
+                value = value.map((cube) => {
+                    if (cube === null || cube === undefined) return undefined
+                    return String(cube)
+                        .replaceAll(/[()\s]+/g, "")
+                        .split(",")
+                        .filter(Boolean)
+                        .map(Number)
+                })
+            } else {
+                value = value.replaceAll(/[()\s]+/g, "") // remove whitespace
+            }
+            if (columnMetadata.isArray && !Array.isArray(value)) {
                 /**
                  * Strips these groups from `{"1,2,3","",NULL}`:
                  * 1. ["1,2,3", undefined]  <- cube of arity 3
@@ -953,7 +981,7 @@ export class PostgresDriver implements Driver {
                         value.push(undefined)
                     }
                 }
-            } else {
+            } else if (!columnMetadata.isArray) {
                 value = value.split(",").filter(Boolean).map(Number)
             }
         } else if (
@@ -1687,6 +1715,10 @@ export class PostgresDriver implements Driver {
      * Loads postgres query stream package.
      */
     loadStreamDependency() {
+        if (this.options.type === "postgres-js") {
+            return PostgresJsQueryStream
+        }
+
         try {
             return PlatformTools.load("pg-query-stream")
         } catch {
@@ -1705,6 +1737,19 @@ export class PostgresDriver implements Driver {
      * If driver dependency is not given explicitly, then try to load it via "require".
      */
     protected loadDependencies(): void {
+        if (this.options.type === "postgres-js") {
+            try {
+                this.postgres =
+                    this.options.driver ?? PlatformTools.load("postgres")
+            } catch {
+                throw new DriverPackageNotInstalledError(
+                    "Postgres.js",
+                    "postgres",
+                )
+            }
+            return
+        }
+
         try {
             const postgres = this.options.driver ?? PlatformTools.load("pg")
             this.postgres = postgres
@@ -1727,11 +1772,56 @@ export class PostgresDriver implements Driver {
      * @param credentials
      */
     protected async createPool(
-        options: PostgresDataSourceOptions,
+        options: PostgresDriverOptions,
         credentials: PostgresConnectionCredentialsOptions,
     ): Promise<any> {
         const { logger } = this.dataSource
         credentials = Object.assign({}, credentials)
+
+        if (options.type === "postgres-js") {
+            const pool = new PostgresJsPool(
+                this.postgres as PostgresJsFactory,
+                options,
+                credentials,
+                (message) => logger.log("warn", message),
+            )
+
+            return new Promise((ok, fail) => {
+                pool.connect((err, connection, release) => {
+                    if (err) return fail(err)
+
+                    if (options.logNotifications) {
+                        connection?.on("notice", (msg) => {
+                            if (msg && typeof msg === "object") {
+                                logger.log(
+                                    "info",
+                                    String(
+                                        (msg as Record<string, unknown>)
+                                            .message,
+                                    ),
+                                )
+                            }
+                        })
+                        connection?.on("notification", (msg) => {
+                            if (msg && typeof msg === "object") {
+                                const notification = msg as Record<
+                                    string,
+                                    unknown
+                                >
+                                logger.log(
+                                    "info",
+                                    `Received NOTIFY on channel ${String(
+                                        notification.channel,
+                                    )}: ${String(notification.payload)}.`,
+                                )
+                            }
+                        })
+                    }
+                    release?.()
+                    ok(pool)
+                })
+            })
+        }
 
         // build connection options for the driver
         // See: https://github.com/brianc/node-postgres/tree/master/packages/pg-pool#create

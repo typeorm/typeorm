@@ -59,6 +59,7 @@ export class DriverFactory {
             case "oracle":
                 return new OracleDriver(dataSource)
             case "postgres":
+            case "postgres-js":
                 return new PostgresDriver(dataSource)
             case "react-native":
                 return new ReactNativeDriver(dataSource)
@@ -84,6 +85,7 @@ export class DriverFactory {
                     "nativescript",
                     "oracle",
                     "postgres",
+                    "postgres-js",
                     "react-native",
                     "sap",
                     "spanner",

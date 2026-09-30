@@ -17,6 +17,7 @@ const driversSupportingSchema = Object.freeze({
     cockroachdb: true,
     mssql: true,
     postgres: true,
+    "postgres-js": true,
     spanner: true,
     oracle: false,
     sap: false,

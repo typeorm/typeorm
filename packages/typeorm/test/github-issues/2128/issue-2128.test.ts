@@ -43,7 +43,8 @@ describe("github issues > #2128 skip preparePersistentValue for value functions"
                     .update(Post)
                     .set({
                         meta: () =>
-                            connection.driver.options.type === "postgres"
+                            connection.driver.options.type === "postgres" ||
+                            connection.driver.options.type === "postgres-js"
                                 ? `'${metaAddition}'::JSONB || meta::JSONB`
                                 : `JSON_MERGE('${metaAddition}', meta)`,
                     })

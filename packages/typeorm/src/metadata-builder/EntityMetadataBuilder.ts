@@ -758,7 +758,10 @@ export class EntityMetadataBuilder {
             })
 
         // Only PostgreSQL supports exclusion constraints.
-        if (this.dataSource.driver.options.type === "postgres") {
+        if (
+            this.dataSource.driver.options.type === "postgres" ||
+            this.dataSource.driver.options.type === "postgres-js"
+        ) {
             entityMetadata.exclusions = this.metadataArgsStorage
                 .filterExclusions(entityMetadata.inheritanceTree)
                 .map((args) => {

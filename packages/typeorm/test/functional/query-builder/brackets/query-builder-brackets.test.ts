@@ -55,7 +55,10 @@ describe("query builder > brackets", () => {
                 .disableEscaping()
                 .getSql()
 
-            if (dataSource.driver.options.type === "postgres") {
+            if (
+                dataSource.driver.options.type === "postgres" ||
+                dataSource.driver.options.type === "postgres-js"
+            ) {
                 expect(sql).to.be.equal(
                     "SELECT user.id AS user_id, user.firstName AS user_firstName, " +
                         "user.lastName AS user_lastName, user.isAdmin AS user_isAdmin " +

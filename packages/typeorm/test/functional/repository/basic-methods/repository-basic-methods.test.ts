@@ -610,7 +610,11 @@ describe("repository > basic methods", () => {
         it("should skip update when nothing has changed", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    if (!(dataSource.driver.options.type === "postgres")) return
+                    if (!(
+                        dataSource.driver.options.type === "postgres" ||
+                        dataSource.driver.options.type === "postgres-js"
+                    ))
+                        return
 
                     const postObjects = dataSource.getRepository(Post)
                     const externalId1 = "external-skip-update-nothing-changed1"

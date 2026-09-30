@@ -454,7 +454,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             await Promise.all(dropQueries)
         }
-        if (this.dataSource.options.type === "postgres") {
+        if (
+            this.dataSource.options.type === "postgres" ||
+            this.dataSource.options.type === "postgres-js"
+        ) {
             const postgresQueryRunner: PostgresQueryRunner = <
                 PostgresQueryRunner
             >this.queryRunner
@@ -553,7 +556,11 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
     protected async dropOldExclusions(): Promise<void> {
         // Only PostgreSQL supports exclusion constraints
-        if (!(this.dataSource.driver.options.type === "postgres")) return
+        if (
+            this.dataSource.driver.options.type !== "postgres" &&
+            this.dataSource.driver.options.type !== "postgres-js"
+        )
+            return
 
         for (const metadata of this.entityToSyncMetadatas) {
             const table = this.tables.find(
@@ -597,6 +604,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (
                 DriverUtils.isMySQLFamily(this.dataSource.driver) ||
                 this.dataSource.driver.options.type === "postgres" ||
+                this.dataSource.driver.options.type === "postgres-js" ||
                 this.dataSource.driver.options.type === "sap"
             ) {
                 const newComment = metadata.comment
@@ -1011,7 +1019,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
     protected async createNewViewIndices(): Promise<void> {
         // Only PostgreSQL supports indices for materialized views.
         if (
-            this.dataSource.options.type !== "postgres" ||
+            (this.dataSource.options.type !== "postgres" &&
+                this.dataSource.options.type !== "postgres-js") ||
             !DriverUtils.isPostgresFamily(this.dataSource.driver)
         ) {
             return
@@ -1147,7 +1156,11 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
      */
     protected async createNewExclusions(): Promise<void> {
         // Only PostgreSQL supports exclusion constraints
-        if (!(this.dataSource.driver.options.type === "postgres")) return
+        if (
+            this.dataSource.driver.options.type !== "postgres" &&
+            this.dataSource.driver.options.type !== "postgres-js"
+        )
+            return
 
         for (const metadata of this.entityToSyncMetadatas) {
             const table = this.tables.find(

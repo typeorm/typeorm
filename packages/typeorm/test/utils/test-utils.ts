@@ -235,9 +235,9 @@ export function setupTestingConnections(
                 return false
 
             if (options?.enabledDrivers?.length)
-                return (
-                    options.enabledDrivers.indexOf(connectionOptions.type!) !==
-                    -1
+                return isTestingConnectionTypeEnabled(
+                    connectionOptions.type!,
+                    options.enabledDrivers,
                 ) // ! is temporary
 
             if (connectionOptions.disabledIfNotEnabledImplicitly === true)
@@ -290,6 +290,25 @@ export function setupTestingConnections(
 
             return newOptions
         })
+}
+
+/**
+ * Selects configured test clients while treating Postgres.js as a client
+ * variant of PostgreSQL dialect suites. Explicit Postgres.js suites stay exact.
+ *
+ * @param connectionType Configured connection type.
+ * @param enabledDrivers Types declared by the test suite.
+ * @returns Whether the configured connection should run.
+ */
+export function isTestingConnectionTypeEnabled(
+    connectionType: DatabaseType,
+    enabledDrivers: DatabaseType[],
+): boolean {
+    return (
+        enabledDrivers.includes(connectionType) ||
+        (connectionType === "postgres-js" &&
+            enabledDrivers.includes("postgres"))
+    )
 }
 
 class GeneratedColumnReplacerSubscriber implements EntitySubscriberInterface {

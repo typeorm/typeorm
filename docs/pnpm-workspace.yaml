@@ -1,0 +1,3 @@
+# Keep documentation installs separate from the repository workspace.
+packages:
+    - "."

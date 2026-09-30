@@ -12,6 +12,8 @@ describe("github issues > #6699 MaxListenersExceededWarning occurs on Postgres",
         dataSources = await createTestingConnections({
             entities: [],
             enabledDrivers: ["postgres"],
+            // This regression asserts the pg Client EventEmitter API directly.
+            disabledDrivers: ["postgres-js"],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
