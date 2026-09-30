@@ -739,7 +739,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // if table had columns with generated type, we must remove the expression from the metadata table
         const generatedColumns = table.columns.filter(
-            (column) => column.generatedType && column.asExpression,
+            (column) => column.generatedType,
         )
 
         for (const column of generatedColumns) {
@@ -748,16 +748,17 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 type: MetadataTableType.GENERATED_COLUMN,
                 name: column.name,
             })
-
-            const insertQuery = this.insertTypeormMetadataSql({
-                table: table.name,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression,
-            })
-
             upQueries.push(deleteQuery)
-            downQueries.push(insertQuery)
+
+            if (column.asExpression) {
+                const insertQuery = this.insertTypeormMetadataSql({
+                    table: table.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                    value: column.asExpression,
+                })
+                downQueries.push(insertQuery)
+            }
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -1199,21 +1200,23 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             ),
         )
 
-        if (column.generatedType && column.asExpression) {
+        if (column.generatedType) {
             const deleteQuery = this.deleteTypeormMetadataSql({
                 table: table.name,
                 type: MetadataTableType.GENERATED_COLUMN,
                 name: column.name,
             })
-            const insertQuery = this.insertTypeormMetadataSql({
-                table: table.name,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression,
-            })
-
             upQueries.push(deleteQuery)
-            downQueries.push(insertQuery)
+
+            if (column.asExpression) {
+                const insertQuery = this.insertTypeormMetadataSql({
+                    table: table.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                    value: column.asExpression,
+                })
+                downQueries.push(insertQuery)
+            }
         }
 
         await this.executeQueries(upQueries, downQueries)
