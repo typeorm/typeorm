@@ -50,7 +50,6 @@ const config: Config = {
                           "https://typeorm.io/img/typeorm-icon-colored.png",
                       "data-mcp-enabled": "true",
                       "data-mcp-server-url": "https://typeorm.mcp.kapa.ai",
-                      "data-mcp-server-name": "TypeORM MCP",
                       async: true,
                   },
               ]
