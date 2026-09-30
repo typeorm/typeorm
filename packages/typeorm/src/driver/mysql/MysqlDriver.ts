@@ -699,7 +699,11 @@ export class MysqlDriver implements Driver {
             if (typeof value === "string") {
                 try {
                     // Try to parse it - if it fails, it's already a parsed string value
-                    const parsed = JSON.parse(value)
+                    let parsed = JSON.parse(value)
+                    if (typeof parsed === "string") {
+                        value = parsed
+                        parsed = JSON.parse(parsed)
+                    }
                     value = parsed
                 } catch {
                     // It's a string that's not valid JSON, which means mysql2
