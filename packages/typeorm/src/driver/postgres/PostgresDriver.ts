@@ -1267,7 +1267,71 @@ export class PostgresDriver implements Driver {
         const columnDefault = this.lowerDefaultValueIfNecessary(
             this.normalizeDefault(columnMetadata),
         )
-        return columnDefault === tableColumn.default
+        if (columnDefault === tableColumn.default) return true
+        if (columnDefault === undefined || tableColumn.default === undefined)
+            return false
+
+        // Normalize typecasts (e.g. ARRAY[]::enum_def[], 'VALUE'::enum_def, '{}'::text[])
+        // PostgresQueryRunner strips /::[\w\s.[\]\-"]+/g from pg_catalog defaults,
+        // but columnDefault in metadata may still retain explicit type casts.
+        const cleanColumnDefault = this.stripTypeCasts(columnDefault)
+        const cleanTableDefault = this.stripTypeCasts(tableColumn.default)
+
+        // Compare with quote-aware lowercasing to preserve casing of quoted literals
+        // (e.g. 'ACTIVE' !== 'active', but ARRAY[] === array[])
+        if (
+            cleanColumnDefault === cleanTableDefault ||
+            this.lowerDefaultValueIfNecessary(cleanColumnDefault) ===
+                this.lowerDefaultValueIfNecessary(cleanTableDefault)
+        ) {
+            return true
+        }
+
+        // For array columns, treat empty array representations as equivalent ('{}' <=> 'array[]')
+        if (columnMetadata.isArray) {
+            const isEmptyArray = (val: string) => {
+                const lower = this.lowerDefaultValueIfNecessary(val)?.trim()
+                return (
+                    lower === "'{}'" ||
+                    lower === "{}" ||
+                    lower === "array[]" ||
+                    lower === "array[]::text[]"
+                )
+            }
+            if (
+                isEmptyArray(cleanColumnDefault) &&
+                isEmptyArray(cleanTableDefault)
+            ) {
+                return true
+            }
+        }
+
+        return false
+    }
+
+    /**
+     * Strips PostgreSQL type casts and outer parentheses from default value strings
+     * while preserving content inside single-quoted string literals.
+     */
+    private stripTypeCasts(value: string): string {
+        if (!value) return value
+
+        // Unroll outer parentheses if present (e.g. ('now'::text))
+        let trimmed = value.trim()
+        if (trimmed.startsWith("(") && trimmed.endsWith(")")) {
+            trimmed = trimmed.slice(1, -1).trim()
+        }
+
+        // Split by single quote: even indices are outside quotes, odd indices are inside quotes
+        return trimmed
+            .split(`'`)
+            .map((v, i) => {
+                return i % 2 === 0
+                    ? v.replaceAll(/::[\w\s.[\]\-"]+/g, "")
+                    : v
+            })
+            .join(`'`)
+            .trim()
     }
 
     /**
