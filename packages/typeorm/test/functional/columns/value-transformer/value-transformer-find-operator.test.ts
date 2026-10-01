@@ -42,7 +42,8 @@ describe("columns > value-transformer > find-operator", () => {
 
     it("should transform the FindOperator value", () => {
         const testTransformer = new PairTransformer()
-        const testFindOperator = Equal<Pair[]>([{ key: "key", value: "value" }])
+        const originalValue: Pair[] = [{ key: "key", value: "value" }]
+        const testFindOperator = Equal<Pair[]>(originalValue)
 
         const result: FindOperator<string[]> =
             ApplyValueTransformers.transformTo(
@@ -51,7 +52,11 @@ describe("columns > value-transformer > find-operator", () => {
             )
 
         expect(result).to.be.instanceof(FindOperator)
-        expect(result).to.eql(testFindOperator)
         expect(result.value).to.eql(["key:value"])
+        // ApplyValueTransformers.transformTo no longer mutates the input
+        // operator in place (#11733); it returns a transformed clone, so
+        // the original instance keeps its raw value.
+        expect(result).to.not.equal(testFindOperator)
+        expect(testFindOperator.value).to.eql(originalValue)
     })
 })
