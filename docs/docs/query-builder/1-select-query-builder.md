@@ -867,6 +867,56 @@ const stream = await dataSource
     .stream()
 ```
 
+### Streaming entities
+
+If you want hydrated entities rather than raw rows, use `streamEntities`.
+It groups the streamed rows into entities the same way `getMany` does,
+without holding the whole result set in memory:
+
+```typescript
+const posts = dataSource
+    .getRepository(Post)
+    .createQueryBuilder("post")
+    .leftJoinAndSelect("post.comments", "comment")
+    .orderBy("post.id", "ASC")
+    .streamEntities()
+
+for await (const post of posts) {
+    console.log(post.comments.length)
+}
+```
+
+A root entity is only complete once all of its joined rows have arrived, so
+the query has to be ordered by the root primary key. That ordering is not
+applied for you — an unordered query throws, rather than silently returning
+an entity whose collection is split in half.
+
+Rows are buffered until a chunk can be closed on an entity boundary. Pass
+`chunkSize` to change how many rows are accumulated first; it is a minimum,
+since a chunk always closes at the next boundary at or after it:
+
+```typescript
+.streamEntities({ chunkSize: 500 })
+```
+
+Two differences from `getMany` are worth knowing. `afterLoad` subscribers
+are broadcast once per chunk rather than once for the whole result, and some
+query shapes are rejected instead of being silently mishandled, because each
+needs a pass over the complete result set that streaming never has:
+
+- the `"query"` relation load strategy
+- relation id loading, from either `loadRelationIdAndMap` or a `@RelationId`
+  decorator
+- `skip`/`take` combined with a join, where the limit would apply to joined
+  rows rather than to entities
+- optimistic locks, and `afterLoad` listeners or subscribers, which would be
+  broadcast while the stream is paused — call `.callListeners(false)` to
+  stream without them
+
+A pessimistic lock is allowed, but only inside a transaction: either one that
+is already active on the query runner, or one this stream starts itself with
+`.useTransaction(true)`.
+
 ## Using pagination
 
 Most of the time when you develop an application, you need pagination functionality.

@@ -2017,6 +2017,256 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     }
 
     /**
+     * Streams entities, hydrated the same way `getMany()` hydrates them, instead
+     * of the raw alias-prefixed driver rows returned by `stream()`.
+     *
+     * Rows are buffered until a chunk can be closed on a root-entity boundary,
+     * then transformed and yielded. Because a root entity is only complete once
+     * every one of its joined rows has arrived, the query must be ordered by the
+     * root primary key; otherwise rows for one entity can be interleaved with
+     * another's and the grouping would be wrong. That ordering is not applied
+     * implicitly — it has to be requested, so the query plan stays the caller's.
+     *
+     * Some query shapes are rejected rather than silently mishandled, because
+     * they need a pass over the complete result set that streaming never has:
+     * the "query" relation load strategy, relation id loading, "skip"/"take"
+     * combined with joins, and locking.
+     *
+     * Note that "afterLoad" subscribers are broadcast per chunk rather than once
+     * for the whole result set, which is an intentional difference from
+     * `getMany()`.
+     *
+     * @param options
+     * @param options.chunkSize minimum number of rows to accumulate before a
+     * chunk is closed at the next root-entity boundary. Defaults to 1000.
+     */
+    streamEntities(options?: {
+        chunkSize?: number
+    }): AsyncIterableIterator<Entity> {
+        // validated here so that misuse throws at the call site, and again when
+        // iteration starts, since the builder can be mutated in between
+        this.assertStreamable(options)
+        return this.streamEntitiesInternal(options)
+    }
+
+    /**
+     * Validates that this query can be streamed as entities, and resolves the
+     * values streaming needs.
+     *
+     * @param options same options object passed to `streamEntities`
+     * @param options.chunkSize
+     * @returns the root primary key aliases and the resolved chunk size
+     */
+    protected assertStreamable(options?: { chunkSize?: number }): {
+        primaryKeyAliases: string[]
+        chunkSize: number
+    } {
+        if (!this.expressionMap.mainAlias)
+            throw new TypeORMError(
+                `Alias is not set. Use "from" method to set an alias.`,
+            )
+
+        const mainAlias = this.expressionMap.mainAlias
+        if (!mainAlias.hasMetadata)
+            throw new TypeORMError(
+                `"streamEntities" can only be used when selecting from an entity. Use "stream" for raw results.`,
+            )
+
+        const metadata = mainAlias.metadata
+        if (metadata.primaryColumns.length === 0)
+            throw new TypeORMError(
+                `"streamEntities" requires ${metadata.name} to have a primary column, because rows are grouped into entities by primary key.`,
+            )
+
+        const relationLoadStrategy =
+            this.findOptions.relationLoadStrategy ??
+            this.expressionMap.relationLoadStrategy
+        if (relationLoadStrategy === "query")
+            throw new TypeORMError(
+                `"streamEntities" does not support the "query" relation load strategy, because those relations are loaded in a second pass over the complete result set, which streaming never materialises. Use the "join" strategy, or "stream" for raw rows.`,
+            )
+
+        if (
+            this.expressionMap.callListeners === true &&
+            this.hasAfterLoadHandlers(metadata)
+        )
+            throw new TypeORMError(
+                `"streamEntities" cannot run "afterLoad" listeners or subscribers, because they are broadcast while the stream is paused between chunks and any query they make would run on the connection that is still streaming. Call ".callListeners(false)" to stream without them.`,
+            )
+
+        if (this.expressionMap.lockMode === "optimistic")
+            throw new OptimisticLockCanNotBeUsedError()
+
+        if (
+            (this.expressionMap.lockMode === "pessimistic_read" ||
+                this.expressionMap.lockMode === "pessimistic_write" ||
+                this.expressionMap.lockMode === "for_no_key_update" ||
+                this.expressionMap.lockMode === "for_key_share") &&
+            !this.queryRunner?.isTransactionActive &&
+            this.expressionMap.useTransaction !== true
+        )
+            throw new PessimisticLockTransactionRequiredError()
+
+        // loading relation ids issues its own query, and at an intermediate
+        // chunk boundary that query would run on the connection whose raw
+        // stream is still open — a second command on one client deadlocks on
+        // postgres and cockroach
+        if (
+            this.expressionMap.relationIdAttributes.length > 0 ||
+            metadata.relationIds.length > 0
+        )
+            throw new TypeORMError(
+                `"streamEntities" does not support relation id loading, whether from a @RelationId decorator or loadRelationIdAndMap, because loading those ids issues a second query on the connection that is still streaming. Load the relation with a join instead.`,
+            )
+
+        // entity-level pagination rewrites the query into a distinct-root
+        // subquery, which streaming skips; a row-level LIMIT would cut a
+        // to-many collection in half and yield fewer entities than asked for
+        if (
+            (this.expressionMap.skip !== undefined ||
+                this.expressionMap.take !== undefined) &&
+            this.expressionMap.joinAttributes.length > 0
+        )
+            throw new TypeORMError(
+                `"streamEntities" does not support "skip"/"take" together with joins, because the limit would apply to joined rows rather than to entities.`,
+            )
+
+        const primaryKeyAliases = metadata.primaryColumns.map((column) =>
+            DriverUtils.buildAlias(
+                this.dataSource.driver,
+                undefined,
+                mainAlias.name,
+                column.databaseName,
+            ),
+        )
+
+        this.assertOrderedByPrimaryKey(metadata, mainAlias.name)
+
+        const chunkSize = options?.chunkSize ?? 1000
+        // NaN and Infinity both slip past a "< 1" test and make the boundary
+        // threshold unreachable, buffering the whole result set
+        if (!Number.isInteger(chunkSize) || chunkSize < 1)
+            throw new TypeORMError(`"chunkSize" must be a positive integer.`)
+
+        return { primaryKeyAliases, chunkSize }
+    }
+
+    /**
+     * Does the actual streaming and chunked hydration.
+     *
+     * Kept separate from `streamEntities` so that misuse throws when the method
+     * is called rather than on first iteration — the body of an async generator
+     * does not run until something pulls from it, which would otherwise defer
+     * every validation error above.
+     *
+     * @param options same options object passed to `streamEntities`
+     * @param options.chunkSize
+     */
+    protected async *streamEntitiesInternal(options?: {
+        chunkSize?: number
+    }): AsyncIterableIterator<Entity> {
+        // re-validated here because the builder may have been mutated between
+        // the call to "streamEntities" and the first pull from this generator
+        const { primaryKeyAliases, chunkSize } = this.assertStreamable(options)
+
+        this.expressionMap.queryEntity = true
+        const [sql, parameters] = this.getQueryAndParameters()
+        const queryRunner = this.obtainQueryRunner()
+        const releaseQueryRunner = queryRunner !== this.queryRunner
+        let transactionStartedByUs: boolean = false
+        let rawStream: ReadStream | undefined
+
+        try {
+            if (
+                this.expressionMap.useTransaction === true &&
+                queryRunner.isTransactionActive === false
+            ) {
+                await queryRunner.startTransaction()
+                transactionStartedByUs = true
+            }
+
+            // deliberately no onEnd/onError release callbacks: the last chunk
+            // is hydrated after the stream has already ended, and that
+            // hydration still needs the query runner. Cleanup happens in
+            // "finally" instead, which also covers a consumer that stops
+            // iterating early.
+            rawStream = await queryRunner.stream(sql, parameters)
+
+            const relationIdLoader = new RelationIdLoader(
+                this.dataSource,
+                queryRunner,
+                this.expressionMap.relationIdAttributes,
+                this.expressionMap.withDeleted,
+            )
+
+            let buffer: any[] = []
+            let bufferedRootId: string | undefined
+
+            for await (const rawResult of rawStream) {
+                // serialised rather than joined on a separator, so that a key
+                // value containing the separator cannot collide with the next
+                // entity and merge two roots into one chunk boundary
+                const keyValues = primaryKeyAliases.map(
+                    (alias) => rawResult[alias],
+                )
+                if (keyValues.some((value) => value === undefined))
+                    throw new TypeORMError(
+                        `"streamEntities" could not find the root primary key in a streamed row, so entity boundaries cannot be detected. Select the primary key under its default alias.`,
+                    )
+                const rootId = JSON.stringify(keyValues)
+
+                // only close a chunk on a root boundary, so every group inside
+                // it is complete
+                if (
+                    buffer.length >= chunkSize &&
+                    bufferedRootId !== undefined &&
+                    rootId !== bufferedRootId
+                ) {
+                    yield* await this.hydrateStreamedChunk(
+                        buffer,
+                        relationIdLoader,
+                        queryRunner,
+                    )
+                    buffer = []
+                }
+
+                bufferedRootId = rootId
+                buffer.push(rawResult)
+            }
+
+            if (buffer.length > 0) {
+                yield* await this.hydrateStreamedChunk(
+                    buffer,
+                    relationIdLoader,
+                    queryRunner,
+                )
+            }
+
+            if (transactionStartedByUs) {
+                await queryRunner.commitTransaction()
+            }
+        } catch (error) {
+            if (transactionStartedByUs) {
+                try {
+                    await queryRunner.rollbackTransaction()
+                } catch (rollbackError) {}
+            }
+            throw error
+        } finally {
+            // a consumer that breaks out of the iteration closes this generator
+            // without the stream having ended, so the driver stream stays open
+            // and a transaction we started stays unresolved
+            rawStream?.destroy()
+            if (transactionStartedByUs && queryRunner.isTransactionActive) {
+                try {
+                    await queryRunner.rollbackTransaction()
+                } catch (rollbackError) {}
+            }
+            if (releaseQueryRunner) await queryRunner.release()
+        }
+    }
+
+    /**
      * Enables or disables query result caching.
      */
     cache(enabled: boolean): this
@@ -3852,6 +4102,134 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         })
 
         return [selectString, orderByObject]
+    }
+
+    /**
+     * Ensures the query is ordered by the root primary key, which chunked
+     * streaming relies on to know that every row of a root entity has arrived
+     * before the chunk containing it is closed.
+     *
+     * @param metadata metadata of the root entity
+     * @param aliasName alias of the root entity
+     */
+    /**
+     * Whether loading this query would broadcast an "afterLoad" event to any
+     * listener or subscriber.
+     *
+     * Mirrors what the broadcaster actually does: the load event is broadcast
+     * for the root entity and recursively for each joined relation, and a
+     * subscriber only receives it when its "listenTo" covers that entity.
+     *
+     * @param metadata metadata of the root entity
+     * @returns true when at least one handler would run
+     */
+    protected hasAfterLoadHandlers(metadata: EntityMetadata): boolean {
+        const loaded: EntityMetadata[] = [metadata]
+        for (const join of this.expressionMap.joinAttributes) {
+            if (join.metadata && !loaded.includes(join.metadata))
+                loaded.push(join.metadata)
+        }
+
+        return loaded.some(
+            (loadedMetadata) =>
+                loadedMetadata.afterLoadListeners.length > 0 ||
+                this.dataSource.subscribers.some(
+                    (subscriber) =>
+                        !!subscriber.afterLoad &&
+                        (!subscriber.listenTo?.() ||
+                            subscriber.listenTo() === Object ||
+                            subscriber.listenTo() === loadedMetadata.target ||
+                            subscriber
+                                .listenTo()
+                                .isPrototypeOf(loadedMetadata.target)),
+                ),
+        )
+    }
+
+    protected assertOrderedByPrimaryKey(
+        metadata: EntityMetadata,
+        aliasName: string,
+    ): void {
+        // order-by criteria resolve by property path or by database name, and
+        // a naming strategy can make those differ, so accept either form
+        const byCriteria = new Map<string, string>()
+        for (const column of metadata.primaryColumns) {
+            byCriteria.set(
+                `${aliasName}.${column.propertyPath}`,
+                column.propertyPath,
+            )
+            byCriteria.set(
+                `${aliasName}.${column.databaseName}`,
+                column.propertyPath,
+            )
+        }
+
+        const leading = Object.keys(this.expressionMap.allOrderBys).slice(
+            0,
+            metadata.primaryColumns.length,
+        )
+        const covered = new Set(
+            leading
+                .map((key) => byCriteria.get(key))
+                .filter((path): path is string => path !== undefined),
+        )
+
+        const orderedByPrimaryKey =
+            covered.size === metadata.primaryColumns.length
+
+        if (!orderedByPrimaryKey) {
+            const suggestion = metadata.primaryColumns
+                .map((column) => `"${aliasName}.${column.propertyPath}"`)
+                .join(", then ")
+            throw new TypeORMError(
+                `"streamEntities" requires the query to be ordered by the root primary key so that rows of one entity are not interleaved with another's. ` +
+                    `Add .orderBy(${suggestion}) before streaming.`,
+            )
+        }
+    }
+
+    /**
+     * Transforms one buffered chunk of raw rows into entities.
+     *
+     * The chunk must contain every row of each root entity it covers, otherwise
+     * a to-many relation would be split across two chunks and hydrated twice,
+     * each time with only part of its collection.
+     *
+     * @param rawResults buffered raw rows, closed on a root-entity boundary
+     * @param relationIdLoader loader reused across chunks
+     * @param queryRunner query runner used to broadcast load events
+     */
+    protected async hydrateStreamedChunk(
+        rawResults: any[],
+        relationIdLoader: RelationIdLoader,
+        queryRunner: QueryRunner,
+    ): Promise<Entity[]> {
+        if (rawResults.length === 0) return []
+
+        const rawRelationIdResults = await relationIdLoader.load(rawResults)
+        const transformer = new RawSqlResultsToEntityTransformer(
+            this.expressionMap,
+            this.dataSource.driver,
+            rawRelationIdResults,
+            this.queryRunner,
+        )
+        const entities = transformer.transform(
+            rawResults,
+            this.expressionMap.mainAlias!,
+        )
+
+        if (
+            this.expressionMap.callListeners === true &&
+            this.expressionMap.mainAlias!.hasMetadata
+        ) {
+            await queryRunner.broadcaster.broadcast(
+                "Load",
+                this.expressionMap.mainAlias!.metadata,
+                entities,
+            )
+        }
+
+        return entities
     }
 
     /**
