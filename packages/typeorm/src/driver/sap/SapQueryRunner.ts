@@ -963,7 +963,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         // rename primary key constraint
-        if (newTable.primaryColumns.length > 0) {
+        if (
+            newTable.primaryColumns.length > 0 &&
+            !newTable.primaryColumns[0].primaryKeyConstraintName
+        ) {
             const columnNames = newTable.primaryColumns.map(
                 (column) => column.name,
             )
@@ -1015,13 +1018,25 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // recreate foreign keys with new constraint names
         newTable.foreignKeys.forEach((foreignKey) => {
-            // replace constraint name
-            foreignKey.name = this.dataSource.namingStrategy.foreignKeyName(
-                newTable,
+            // build the auto-generated name for comparison
+            const defaultFkName = this.dataSource.namingStrategy.foreignKeyName(
+                oldTable,
                 foreignKey.columnNames,
                 this.getTablePath(foreignKey),
                 foreignKey.referencedColumnNames,
             )
+
+            // Only rename constraint if it has the default (auto-generated) name
+            if (foreignKey.name === defaultFkName) {
+                // replace constraint name
+                foreignKey.name =
+                    this.dataSource.namingStrategy.foreignKeyName(
+                        newTable,
+                        foreignKey.columnNames,
+                        this.getTablePath(foreignKey),
+                        foreignKey.referencedColumnNames,
+                    )
+            }
 
             // create new FK's
             upQueries.push(this.createForeignKeySql(newTable, foreignKey))
@@ -1396,7 +1411,10 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     ),
                 )
 
-                if (oldColumn.isPrimary === true) {
+                if (
+                    oldColumn.isPrimary === true &&
+                    !clonedTable.primaryColumns[0].primaryKeyConstraintName
+                ) {
                     const primaryColumns = clonedTable.primaryColumns
 
                     // build old primary constraint name
@@ -1481,6 +1499,16 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
                 // rename index constraints
                 clonedTable.findColumnIndices(oldColumn).forEach((index) => {
+                    const oldIndexName =
+                        this.dataSource.namingStrategy.indexName(
+                            clonedTable,
+                            index.columnNames,
+                            index.where,
+                        )
+
+                    // Skip renaming if Index has user defined constraint name
+                    if (index.name !== oldIndexName) return
+
                     // build new constraint name
                     index.columnNames.splice(
                         index.columnNames.indexOf(oldColumn.name),
@@ -1510,6 +1538,17 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 clonedTable
                     .findColumnForeignKeys(oldColumn)
                     .forEach((foreignKey) => {
+                        const oldForeignKeyName =
+                            this.dataSource.namingStrategy.foreignKeyName(
+                                clonedTable,
+                                foreignKey.columnNames,
+                                this.getTablePath(foreignKey),
+                                foreignKey.referencedColumnNames,
+                            )
+
+                        // Skip renaming if foreign key has user defined constraint name
+                        if (foreignKey.name !== oldForeignKeyName) return
+
                         // build new constraint name
                         foreignKey.columnNames.splice(
                             foreignKey.columnNames.indexOf(oldColumn.name),
@@ -2197,10 +2236,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         // if table already have primary columns, we must drop them.
         const primaryColumns = clonedTable.primaryColumns
         if (primaryColumns.length > 0) {
-            const pkName = this.dataSource.namingStrategy.primaryKeyName(
-                clonedTable,
-                primaryColumns.map((column) => column.name),
-            )
+            const pkName =
+                primaryColumns[0].primaryKeyConstraintName ??
+                this.dataSource.namingStrategy.primaryKeyName(
+                    clonedTable,
+                    primaryColumns.map((column) => column.name),
+                )
             const columnNamesString = primaryColumns
                 .map((column) => `"${column.name}"`)
                 .join(", ")
@@ -2227,10 +2268,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 column.isPrimary = true
             })
 
-        const pkName = this.dataSource.namingStrategy.primaryKeyName(
-            clonedTable,
-            columnNames,
-        )
+        const pkName =
+            primaryColumns[0].primaryKeyConstraintName ??
+            this.dataSource.namingStrategy.primaryKeyName(
+                clonedTable,
+                columnNames,
+            )
         const columnNamesString = columnNames
             .map((columnName) => `"${columnName}"`)
             .join(", ")
@@ -3637,12 +3680,20 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      *
      * @param table
      * @param columnNames
+     * @param constraintName
      */
-    protected createPrimaryKeySql(table: Table, columnNames: string[]): Query {
-        const primaryKeyName = this.dataSource.namingStrategy.primaryKeyName(
-            table,
-            columnNames,
-        )
+    protected createPrimaryKeySql(
+        table: Table,
+        columnNames: string[],
+        constraintName?: string,
+    ): Query {
+        const primaryKeyName =
+            constraintName ??
+            table.primaryColumns[0].primaryKeyConstraintName ??
+            this.dataSource.namingStrategy.primaryKeyName(
+                table,
+                columnNames,
+            )
         const columnNamesString = columnNames
             .map((columnName) => `"${columnName}"`)
             .join(", ")
@@ -3660,10 +3711,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected dropPrimaryKeySql(table: Table): Query {
         const columnNames = table.primaryColumns.map((column) => column.name)
-        const primaryKeyName = this.dataSource.namingStrategy.primaryKeyName(
-            table,
-            columnNames,
-        )
+        const primaryKeyName =
+            table.primaryColumns[0].primaryKeyConstraintName ??
+            this.dataSource.namingStrategy.primaryKeyName(
+                table,
+                columnNames,
+            )
         return new Query(
             `ALTER TABLE ${this.escapePath(
                 table,
