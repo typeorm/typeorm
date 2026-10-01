@@ -786,6 +786,7 @@ export class EntityManager {
                 !conflictColumns.includes(col) &&
                 col.isUpdate !== false &&
                 !col.generatedType &&
+                !col.isVersion &&
                 entities.some(
                     (entity) =>
                         typeof col.getEntityValue(entity) !== "undefined",

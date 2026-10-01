@@ -614,6 +614,32 @@ export class InsertQueryBuilder<
                         query += ` ${conflictTarget} DO UPDATE SET `
 
                         if (this.expressionMap.mainAlias!.hasMetadata) {
+                            const versionColumn =
+                                this.expressionMap.mainAlias!.metadata
+                                    .versionColumn
+                            if (
+                                versionColumn &&
+                                !overwrite?.includes(versionColumn.databaseName)
+                            ) {
+                                const versionExpression =
+                                    DriverUtils.isPostgresFamily(
+                                        this.dataSource.driver,
+                                    )
+                                        ? `${this.escape(
+                                              this.alias,
+                                          )}.${this.escape(
+                                              versionColumn.databaseName,
+                                          )}`
+                                        : this.escape(
+                                              versionColumn.databaseName,
+                                          )
+                                updatePart.push(
+                                    `${this.escape(
+                                        versionColumn.databaseName,
+                                    )} = ${versionExpression} + 1`,
+                                )
+                            }
+
                             updatePart.push(
                                 ...this.expressionMap
                                     .mainAlias!.metadata.columns.filter(
@@ -683,6 +709,8 @@ export class InsertQueryBuilder<
             ) {
                 if (this.expressionMap.onUpdate) {
                     const { overwrite, columns } = this.expressionMap.onUpdate
+                    const versionColumn =
+                        this.expressionMap.mainAlias!.metadata.versionColumn
 
                     if (Array.isArray(overwrite) && overwrite.length === 0) {
                         // No columns to update — degrade to INSERT IGNORE
@@ -702,6 +730,15 @@ export class InsertQueryBuilder<
                                     )} = VALUES(${this.escape(column)})`,
                             )
                             .join(", ")
+                        if (
+                            this.expressionMap.mainAlias!.hasMetadata &&
+                            versionColumn &&
+                            !overwrite.includes(versionColumn.databaseName)
+                        ) {
+                            query += `, ${this.escape(
+                                versionColumn.databaseName,
+                            )} = ${this.escape(versionColumn.databaseName)} + 1`
+                        }
                         query += " "
                     } else if (Array.isArray(columns)) {
                         query += " ON DUPLICATE KEY UPDATE "
@@ -711,6 +748,15 @@ export class InsertQueryBuilder<
                                     `${this.escape(column)} = :${column}`,
                             )
                             .join(", ")
+                        if (
+                            this.expressionMap.mainAlias!.hasMetadata &&
+                            versionColumn &&
+                            !columns.includes(versionColumn.databaseName)
+                        ) {
+                            query += `, ${this.escape(
+                                versionColumn.databaseName,
+                            )} = ${this.escape(versionColumn.databaseName)} + 1`
+                        }
                         query += " "
                     }
                 }
