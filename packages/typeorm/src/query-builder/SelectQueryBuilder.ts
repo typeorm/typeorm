@@ -3549,14 +3549,19 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 this.dataSource,
                 queryRunner,
             )
-                .select(`DISTINCT ${querySelects.join(", ")}`)
-                .addSelect(selects)
+                // Apply DISTINCT only on primary keys, not on ORDER BY columns.
+                // This fixes the bug where DISTINCT on ORDER BY columns from to-many joins
+                // causes child rows to multiply, resulting in incorrect LIMIT counts.
+                // By wrapping in a subquery and applying DISTINCT only on PKs, each parent
+                // entity is deduplicated before pagination, and ORDER BY is applied in the
+                // outer query (which can reference columns from the inner subquery).
+                .select(querySelects.join(", "))
                 .from(
-                    `(${originalQuery
+                    `(${`SELECT DISTINCT ${querySelects.join(", ")}, ${selects.join(", ")} FROM (${originalQuery
                         .orderBy()
-                        .timeTravelQuery(false) // set it to "false" since time travel clause must appear at the very end and applies to the entire SELECT clause.
-                        .getQuery()})`,
-                    "distinctAlias",
+                        .timeTravelQuery(false)
+                        .getQuery()}) AS distinctAlias`})`,
+                    "ids_alias",
                 )
                 .timeTravelQuery(originalQueryTimeTravel)
                 .offset(this.expressionMap.skip)
