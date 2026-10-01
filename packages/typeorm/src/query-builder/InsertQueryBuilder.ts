@@ -615,7 +615,7 @@ export class InsertQueryBuilder<
 
                         if (this.expressionMap.mainAlias!.hasMetadata) {
                             const versionColumn =
-                                this.expressionMap.mainAlias!.metadata
+                                this.expressionMap.mainAlias?.metadata
                                     .versionColumn
                             if (
                                 versionColumn &&
@@ -625,9 +625,7 @@ export class InsertQueryBuilder<
                                     DriverUtils.isPostgresFamily(
                                         this.dataSource.driver,
                                     )
-                                        ? `${this.escape(
-                                              this.alias,
-                                          )}.${this.escape(
+                                        ? `${tableOrAliasName}.${this.escape(
                                               versionColumn.databaseName,
                                           )}`
                                         : this.escape(
@@ -710,7 +708,7 @@ export class InsertQueryBuilder<
                 if (this.expressionMap.onUpdate) {
                     const { overwrite, columns } = this.expressionMap.onUpdate
                     const versionColumn =
-                        this.expressionMap.mainAlias!.metadata.versionColumn
+                        this.expressionMap.mainAlias?.metadata.versionColumn
 
                     if (Array.isArray(overwrite) && overwrite.length === 0) {
                         // No columns to update — degrade to INSERT IGNORE
@@ -731,7 +729,7 @@ export class InsertQueryBuilder<
                             )
                             .join(", ")
                         if (
-                            this.expressionMap.mainAlias!.hasMetadata &&
+                            this.expressionMap.mainAlias?.hasMetadata &&
                             versionColumn &&
                             !overwrite.includes(versionColumn.databaseName)
                         ) {
@@ -749,7 +747,7 @@ export class InsertQueryBuilder<
                             )
                             .join(", ")
                         if (
-                            this.expressionMap.mainAlias!.hasMetadata &&
+                            this.expressionMap.mainAlias?.hasMetadata &&
                             versionColumn &&
                             !columns.includes(versionColumn.databaseName)
                         ) {
@@ -1084,7 +1082,19 @@ export class InsertQueryBuilder<
         const tableName = this.getTableName(this.getMainTableName())
         const tableAlias = this.escape(this.alias)
         const columns = this.getInsertedColumns()
-        const columnsExpression = this.createColumnNamesExpression()
+        const insertColumns =
+            this.dataSource.driver.options.type === "mssql"
+                ? columns.filter(
+                      (column) =>
+                          !(
+                              column.isGenerated &&
+                              column.generationStrategy === "increment"
+                          ),
+                  )
+                : columns
+        const columnsExpression = insertColumns
+            .map((column) => this.escape(column.databaseName))
+            .join(", ")
 
         let query = `MERGE INTO ${tableName} ${this.escape(this.alias)}`
 
@@ -1162,7 +1172,6 @@ export class InsertQueryBuilder<
             }
         } else if (this.expressionMap.onUpdate) {
             const { conflict, indexPredicate } = this.expressionMap.onUpdate
-
             if (indexPredicate) {
                 throw new TypeORMError(
                     `indexPredicate option is not supported by upsert type "merge-into"`,
@@ -1218,6 +1227,22 @@ export class InsertQueryBuilder<
                             )} = ${mergeSourceAlias}.${this.escape(column)}`,
                     )
                     .join(", ")
+
+                const versionColumn =
+                    this.expressionMap.mainAlias?.metadata.versionColumn
+                if (
+                    overwrite.length > 0 &&
+                    versionColumn &&
+                    !overwrite.includes(versionColumn.databaseName)
+                ) {
+                    updateExpression += `${
+                        updateExpression.trim() ? ", " : ""
+                    }${tableAlias}.${this.escape(
+                        versionColumn.databaseName,
+                    )} = ${tableAlias}.${this.escape(
+                        versionColumn.databaseName,
+                    )} + 1`
+                }
             }
 
             if (Array.isArray(overwrite) && skipUpdateIfNoValuesChanged) {
@@ -1255,8 +1280,10 @@ export class InsertQueryBuilder<
             }
         }
 
-        const valuesExpression =
-            this.createMergeIntoInsertValuesExpression(mergeSourceAlias)
+        const valuesExpression = this.createMergeIntoInsertValuesExpression(
+            mergeSourceAlias,
+            insertColumns,
+        )
         const returningExpression =
             this.dataSource.driver.options.type === "mssql"
                 ? this.createReturningExpression("insert")
@@ -1457,16 +1484,16 @@ export class InsertQueryBuilder<
      * Creates list of values needs to be inserted in the VALUES expression.
      *
      * @param mergeSourceAlias
+     * @param insertColumns
      */
     protected createMergeIntoInsertValuesExpression(
         mergeSourceAlias: string,
+        insertColumns: ColumnMetadata[] = this.getInsertedColumns(),
     ): string {
-        const columns = this.getInsertedColumns()
-
         let expression = ""
         // if column metadatas are given then apply all necessary operations with values
-        if (columns.length > 0) {
-            columns.forEach((column, columnIndex) => {
+        if (insertColumns.length > 0) {
+            insertColumns.forEach((column, columnIndex) => {
                 if (columnIndex === 0) {
                     expression += "("
                 }
@@ -1484,7 +1511,7 @@ export class InsertQueryBuilder<
                     )}`
                 }
 
-                if (columnIndex === columns.length - 1) {
+                if (columnIndex === insertColumns.length - 1) {
                     expression += ")"
                 } else {
                     expression += ", "

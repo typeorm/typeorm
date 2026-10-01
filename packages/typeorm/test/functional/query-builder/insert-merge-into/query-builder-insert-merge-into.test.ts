@@ -6,6 +6,7 @@ import {
 } from "../../../utils/test-utils"
 import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
+import { IdentityPost } from "./entity/IdentityPost"
 import { expect } from "chai"
 import { MoreThan } from "../../../../src"
 
@@ -131,6 +132,29 @@ describe("query builder > insert > merge into", () => {
                         date: new Date("06 Aug 2020 00:12:00 GMT"),
                     })
             }),
+        ))
+
+    it("should omit identity column from merge insert projection", () =>
+        Promise.all(
+            dataSources
+                .filter((dataSource) => dataSource.options.type === "mssql")
+                .map(async (dataSource) => {
+                    const repository = dataSource.getRepository(IdentityPost)
+                    const post = await repository.save(
+                        repository.create({
+                            title: "About post",
+                            email: "post@example.com",
+                        }),
+                    )
+
+                    post.title = "Updated post"
+                    await repository.upsert(post, ["email"])
+
+                    const loadedPost = await repository.findOneByOrFail({
+                        id: post.id,
+                    })
+                    expect(loadedPost.title).to.equal("Updated post")
+                }),
         ))
 
     it("should perform insertion using overwrite condition and skipping update on no change", () =>
