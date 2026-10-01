@@ -786,6 +786,7 @@ export class EntityManager {
                 !conflictColumns.includes(col) &&
                 col.isUpdate !== false &&
                 !col.generatedType &&
+                !col.isGenerated &&
                 !col.isVersion &&
                 entities.some(
                     (entity) =>
