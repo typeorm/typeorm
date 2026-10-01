@@ -683,11 +683,99 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             : await this.getCachedTable(oldTableOrName)
         const newTable = oldTable.clone()
 
-        let { database, tableName: oldTableName } =
+        const { database, tableName: oldTableName } =
             this.driver.parseTableName(oldTable)
-        database ??= await this.getCurrentDatabase()
 
         newTable.name = database ? `${database}.${newTableName}` : newTableName
+
+        // generated foreign key names, mapped to their names after the rename
+        const renamedForeignKeyNames = new Map<string, string>()
+        newTable.foreignKeys.forEach((foreignKey) => {
+            const generatedName = this.dataSource.namingStrategy.foreignKeyName(
+                oldTable,
+                foreignKey.columnNames,
+                this.getTablePath(foreignKey),
+                foreignKey.referencedColumnNames,
+            )
+            if (foreignKey.name !== generatedName) return
+            renamedForeignKeyNames.set(
+                generatedName,
+                this.dataSource.namingStrategy.foreignKeyName(
+                    newTable,
+                    foreignKey.columnNames,
+                    this.getTablePath(foreignKey),
+                    foreignKey.referencedColumnNames,
+                ),
+            )
+        })
+
+        // Same-named foreign key indexes are omitted from Table.indices, so
+        // load their structure before renaming the table, together with any
+        // index already holding a name they would be renamed to. In sql-memory
+        // mode a table created by the planned sql does not exist yet, so the
+        // live database cannot describe it; MySQL then still manages those
+        // indexes with the constraint.
+        const oldTablePath = this.escapePath(oldTable)
+        const createdInPlannedSql =
+            this.sqlMemoryMode &&
+            this.sqlInMemory.upQueries.some(
+                ({ query }) =>
+                    query.startsWith(`CREATE TABLE ${oldTablePath} (`) ||
+                    (query.startsWith("RENAME TABLE ") &&
+                        query.endsWith(` TO ${oldTablePath}`)),
+            )
+        let foreignKeyIndices: ObjectLiteral[] = []
+        if (renamedForeignKeyNames.size > 0 && !createdInPlannedSql) {
+            const indexNames = [
+                ...renamedForeignKeyNames.keys(),
+                ...renamedForeignKeyNames.values(),
+            ]
+            const currentDatabase =
+                database ?? (await this.getCurrentDatabase())
+            const placeholders = indexNames.map(() => "?").join(", ")
+            foreignKeyIndices = await this.query(
+                `SELECT \`INDEX_NAME\`, \`SEQ_IN_INDEX\`, \`COLUMN_NAME\`, \`NON_UNIQUE\`, \`INDEX_TYPE\`, \`SUB_PART\`, \`COLLATION\`, \`INDEX_COMMENT\` ` +
+                    `FROM \`INFORMATION_SCHEMA\`.\`STATISTICS\` ` +
+                    `WHERE \`TABLE_SCHEMA\` = ? AND \`TABLE_NAME\` = ? ` +
+                    `AND \`INDEX_NAME\` IN (${placeholders}) ` +
+                    `ORDER BY \`INDEX_NAME\`, \`SEQ_IN_INDEX\``,
+                [currentDatabase, oldTableName, ...indexNames],
+            )
+        }
+
+        const generatedForeignKeyIndexNames = new Set(
+            newTable.foreignKeys
+                .filter((foreignKey) => {
+                    const newName = renamedForeignKeyNames.get(foreignKey.name!)
+                    // an index already named like the renamed foreign key
+                    // cannot be replaced, so keep the support index as it is
+                    if (
+                        !newName ||
+                        foreignKeyIndices.some(
+                            (index) => index["INDEX_NAME"] === newName,
+                        )
+                    )
+                        return false
+
+                    const indexColumns = foreignKeyIndices.filter(
+                        (index) => index["INDEX_NAME"] === foreignKey.name,
+                    )
+                    return (
+                        indexColumns.length === foreignKey.columnNames.length &&
+                        indexColumns.every(
+                            (index, position) =>
+                                index["COLUMN_NAME"] ===
+                                    foreignKey.columnNames[position] &&
+                                Number(index["NON_UNIQUE"]) === 1 &&
+                                index["INDEX_TYPE"] === "BTREE" &&
+                                index["SUB_PART"] === null &&
+                                index["COLLATION"] === "A" &&
+                                !index["INDEX_COMMENT"],
+                        )
+                    )
+                })
+                .map((foreignKey) => foreignKey.name!),
+        )
 
         // rename table
         upQueries.push(
@@ -779,16 +867,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // rename foreign key constraint
         newTable.foreignKeys.forEach((foreignKey) => {
-            const oldForeignKeyName =
-                this.dataSource.namingStrategy.foreignKeyName(
-                    oldTable,
-                    foreignKey.columnNames,
-                    this.getTablePath(foreignKey),
-                    foreignKey.referencedColumnNames,
-                )
+            const newForeignKeyName = renamedForeignKeyNames.get(
+                foreignKey.name!,
+            )
 
             // Skip renaming if foreign key has user defined constraint name
-            if (foreignKey.name !== oldForeignKeyName) return
+            if (!newForeignKeyName) return
 
             // build new constraint name
             const columnNames = foreignKey.columnNames
@@ -797,31 +881,34 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             const referencedColumnNames = foreignKey.referencedColumnNames
                 .map((column) => `\`${column}\``)
                 .join(",")
-            const newForeignKeyName =
-                this.dataSource.namingStrategy.foreignKeyName(
-                    newTable,
-                    foreignKey.columnNames,
-                    this.getTablePath(foreignKey),
-                    foreignKey.referencedColumnNames,
-                )
 
             // build queries
-            let up =
-                `ALTER TABLE ${this.escapePath(newTable)} DROP FOREIGN KEY \`${
-                    foreignKey.name
-                }\`, ADD CONSTRAINT \`${newForeignKeyName}\` FOREIGN KEY (${columnNames}) ` +
+            const renameGeneratedIndex = generatedForeignKeyIndexNames.has(
+                foreignKey.name!,
+            )
+
+            let up = `ALTER TABLE ${this.escapePath(
+                newTable,
+            )} DROP FOREIGN KEY \`${foreignKey.name}\``
+            if (renameGeneratedIndex) {
+                up += `, DROP INDEX \`${foreignKey.name}\`, ADD INDEX \`${newForeignKeyName}\` (${columnNames})`
+            }
+            up +=
+                `, ADD CONSTRAINT \`${newForeignKeyName}\` FOREIGN KEY (${columnNames}) ` +
                 `REFERENCES ${this.escapePath(
                     this.getTablePath(foreignKey),
                 )}(${referencedColumnNames})`
             if (foreignKey.onDelete) up += ` ON DELETE ${foreignKey.onDelete}`
             if (foreignKey.onUpdate) up += ` ON UPDATE ${foreignKey.onUpdate}`
 
-            let down =
-                `ALTER TABLE ${this.escapePath(
-                    newTable,
-                )} DROP FOREIGN KEY \`${newForeignKeyName}\`, ADD CONSTRAINT \`${
-                    foreignKey.name
-                }\` FOREIGN KEY (${columnNames}) ` +
+            let down = `ALTER TABLE ${this.escapePath(
+                newTable,
+            )} DROP FOREIGN KEY \`${newForeignKeyName}\``
+            if (renameGeneratedIndex) {
+                down += `, DROP INDEX \`${newForeignKeyName}\`, ADD INDEX \`${foreignKey.name}\` (${columnNames})`
+            }
+            down +=
+                `, ADD CONSTRAINT \`${foreignKey.name}\` FOREIGN KEY (${columnNames}) ` +
                 `REFERENCES ${this.escapePath(
                     this.getTablePath(foreignKey),
                 )}(${referencedColumnNames})`
