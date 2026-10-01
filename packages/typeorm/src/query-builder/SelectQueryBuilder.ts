@@ -3540,6 +3540,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             )
 
             const originalQuery = this.clone()
+            this.selectOrderByColumnsForPagination(originalQuery)
 
             // preserve original timeTravel value since we set it to "false" in subquery
             const originalQueryTimeTravel =
@@ -3755,6 +3756,54 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         return {
             raw: rawResults,
             entities: entities,
+        }
+    }
+
+    /**
+     * Makes sure the given pagination sub-query selects every column the query
+     * is ordered by.
+     *
+     * Pagination wraps the query into a DISTINCT query that orders by the
+     * columns of the sub-query, so a column that is ordered by but not selected
+     * - a relation joined only to order by it, or a column left out of a
+     * partial selection - has nothing to reference in the outer query.
+     *
+     * @param query - the sub-query used by the pagination query
+     */
+    protected selectOrderByColumnsForPagination(
+        query: SelectQueryBuilder<any>,
+    ): void {
+        for (const orderCriteria of Object.keys(
+            this.expressionMap.allOrderBys,
+        )) {
+            if (orderCriteria.indexOf(".") === -1) continue
+
+            const criteriaParts = orderCriteria.split(".")
+            const aliasName = criteriaParts[0]
+            const propertyPath = criteriaParts.slice(1).join(".")
+            const alias = this.expressionMap.aliases.find(
+                (queryAlias) =>
+                    queryAlias.name === aliasName && queryAlias.hasMetadata,
+            )
+            if (!alias) continue
+
+            const column =
+                alias.metadata.findColumnWithPropertyPath(propertyPath) ??
+                alias.metadata.findColumnWithDatabaseName(propertyPath)
+            if (!column) continue
+
+            const selection = `${aliasName}.${column.propertyPath}`
+            const isSelectedColumn = this.expressionMap.selects.some(
+                (select) => select.selection === selection,
+            )
+            const isSelectedThroughAlias =
+                column.isSelect &&
+                this.expressionMap.selects.some(
+                    (select) => select.selection === aliasName,
+                )
+            if (isSelectedColumn || isSelectedThroughAlias) continue
+
+            query.addSelect(selection)
         }
     }
 
