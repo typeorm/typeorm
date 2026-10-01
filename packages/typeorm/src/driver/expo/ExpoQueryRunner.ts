@@ -8,6 +8,18 @@ import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
 import type { ExpoDriver } from "./ExpoDriver"
 
+/**
+ * The part of the expo-sqlite prepared statement this runner uses.
+ */
+interface PreparedStatement {
+    executeAsync(parameters?: any[] | ObjectLiteral): Promise<{
+        changes: number
+        lastInsertRowId: number
+        getAllAsync(): Promise<any[]>
+    }>
+    finalizeAsync(): Promise<void>
+}
+
 export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
     driver: ExpoDriver
 
@@ -43,8 +55,11 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
 
         const queryStartTime = Date.now()
 
-        const statement = await databaseConnection.prepareAsync(query)
+        let statement: PreparedStatement | undefined
         try {
+            statement = (await databaseConnection.prepareAsync(
+                query,
+            )) as PreparedStatement
             const rawResult = await statement.executeAsync(parameters)
 
             const maxQueryExecutionTime =
@@ -104,7 +119,7 @@ export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
             throw new QueryFailedError(query, parameters, err)
         } finally {
             await broadcasterResult.wait()
-            await statement.finalizeAsync()
+            await statement?.finalizeAsync()
         }
     }
 }
