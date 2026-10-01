@@ -150,13 +150,14 @@ export class RelationLoader {
         )
 
         if (columns.length === 1) {
+            const paramName = joinAliasName + "_" + columns[0].propertyName
             qb.where(
-                `${joinAliasName}.${columns[0].propertyPath} IN (:...${
-                    joinAliasName + "_" + columns[0].propertyName
-                })`,
+                DriverUtils.isPostgresFamily(this.dataSource.driver)
+                    ? `${joinAliasName}.${columns[0].propertyPath} = ANY(:${paramName})`
+                    : `${joinAliasName}.${columns[0].propertyPath} IN (:...${paramName})`,
             )
             qb.setParameter(
-                joinAliasName + "_" + columns[0].propertyName,
+                paramName,
                 entities.map((entity) =>
                     columns[0].getEntityValue(entity, true),
                 ),
@@ -233,13 +234,14 @@ export class RelationLoader {
         const aliasName = qb.expressionMap.mainAlias!.name
 
         if (columns.length === 1) {
+            const paramName = aliasName + "_" + columns[0].propertyName
             qb.where(
-                `${aliasName}.${columns[0].propertyPath} IN (:...${
-                    aliasName + "_" + columns[0].propertyName
-                })`,
+                DriverUtils.isPostgresFamily(this.dataSource.driver)
+                    ? `${aliasName}.${columns[0].propertyPath} = ANY(:${paramName})`
+                    : `${aliasName}.${columns[0].propertyPath} IN (:...${paramName})`,
             )
             qb.setParameter(
-                aliasName + "_" + columns[0].propertyName,
+                paramName,
                 entities.map((entity) =>
                     columns[0].referencedColumn!.getEntityValue(entity, true),
                 ),
@@ -326,8 +328,11 @@ export class RelationLoader {
 
         const mainAlias = qb.expressionMap.mainAlias!.name
         const joinAlias = relation.junctionEntityMetadata!.tableName
+        const isAny = DriverUtils.isPostgresFamily(this.dataSource.driver)
         const joinColumnConditions = relation.joinColumns.map((joinColumn) => {
-            return `${joinAlias}.${joinColumn.propertyName} IN (:...${joinColumn.propertyName})`
+            return isAny
+                ? `${joinAlias}.${joinColumn.propertyName} = ANY(:${joinColumn.propertyName})`
+                : `${joinAlias}.${joinColumn.propertyName} IN (:...${joinColumn.propertyName})`
         })
         const inverseJoinColumnConditions = relation.inverseJoinColumns.map(
             (inverseJoinColumn) => {
@@ -394,10 +399,13 @@ export class RelationLoader {
                 } = ${mainAlias}.${joinColumn.referencedColumn!.propertyName}`
             },
         )
+        const isAny = DriverUtils.isPostgresFamily(this.dataSource.driver)
         const inverseJoinColumnConditions =
             relation.inverseRelation!.inverseJoinColumns.map(
                 (inverseJoinColumn) => {
-                    return `${joinAlias}.${inverseJoinColumn.propertyName} IN (:...${inverseJoinColumn.propertyName})`
+                    return isAny
+                        ? `${joinAlias}.${inverseJoinColumn.propertyName} = ANY(:${inverseJoinColumn.propertyName})`
+                        : `${joinAlias}.${inverseJoinColumn.propertyName} IN (:...${inverseJoinColumn.propertyName})`
                 },
             )
         const parameters = relation.inverseRelation!.inverseJoinColumns.reduce(
