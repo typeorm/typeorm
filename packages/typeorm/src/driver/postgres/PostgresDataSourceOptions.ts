@@ -103,6 +103,18 @@ export interface PostgresDataSourceOptions
     readonly parseInt8?: boolean
 
     /**
+     * Return `date` and `date[]` values as `YYYY-MM-DD` strings instead of JavaScript `Date` objects.
+     *
+     * TypeORM hydrates entity `date` columns as strings, but node-postgres parses `date` values into
+     * `Date` objects at local midnight, so raw results (`query()`, `getRawMany()`, `stream()`) and
+     * `date` array columns receive `Date` objects. Enabling dateAsString returns strings in all of
+     * these cases, which is also the default of pg-types 4.
+     *
+     * @see [node-postgres date parsing discussion](https://github.com/brianc/node-postgres/issues/1844)
+     */
+    readonly dateAsString?: boolean
+
+    /**
      * List of additional Postgres extensions to be installed in the database.
      */
     readonly extensions?: string[]
