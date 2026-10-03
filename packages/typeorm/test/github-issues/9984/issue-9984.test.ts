@@ -26,15 +26,18 @@ describe("github issues > #9984 TransactionRetryWithProtoRefreshError should be 
                 // the injected errors stop after a few retries within the
                 // same transaction, using the cockroach_restart savepoint
                 const queryRunner = dataSource.createQueryRunner()
-                const post = new Post()
-                post.name = "post"
+                let post: Post
                 let attempts = 0
                 try {
                     await queryRunner.query(
                         "SET inject_retry_errors_enabled = true",
                     )
-                    await queryRunner.manager.transaction((manager) => {
+                    post = await queryRunner.manager.transaction((manager) => {
                         attempts++
+                        // create the entity inside the callback so a failed
+                        // attempt does not leave state on it for the next one
+                        const post = new Post()
+                        post.name = "post"
                         return manager.save(post)
                     })
                 } finally {
