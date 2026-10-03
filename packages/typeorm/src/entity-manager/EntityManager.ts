@@ -154,17 +154,38 @@ export class EntityManager {
         const queryRunner =
             this.queryRunner ?? this.dataSource.createQueryRunner()
 
+        // a nested transaction is only a savepoint, so only the outermost
+        // transaction can be retried
+        const isNested = queryRunner.isTransactionActive
+
         try {
-            await queryRunner.startTransaction(isolation)
-            const result = await runInTransaction(queryRunner.manager)
-            await queryRunner.commitTransaction()
-            return result
-        } catch (err) {
-            try {
-                // we throw original error even if rollback thrown an error
-                await queryRunner.rollbackTransaction()
-            } catch (rollbackError) {}
-            throw err
+            for (let attempt = 1; ; attempt++) {
+                try {
+                    await queryRunner.startTransaction(isolation)
+                    const result = await runInTransaction(queryRunner.manager)
+                    await queryRunner.commitTransaction()
+                    return result
+                } catch (err) {
+                    try {
+                        await queryRunner.rollbackTransaction()
+                    } catch (rollbackError) {
+                        // we throw original error even if rollback thrown an error
+                        throw err
+                    }
+
+                    const retryDelay = isNested
+                        ? undefined
+                        : this.dataSource.driver.getTransactionRetryDelay?.(
+                              err,
+                              attempt,
+                          )
+                    if (retryDelay === undefined) throw err
+
+                    await new Promise((resolve) =>
+                        setTimeout(resolve, retryDelay),
+                    )
+                }
+            }
         } finally {
             if (!this.queryRunner)
                 // if we used a new query runner provider then release it

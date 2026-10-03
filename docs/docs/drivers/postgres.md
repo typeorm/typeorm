@@ -44,7 +44,7 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 
 - `poolErrorHandler` - A function that gets called when the underlying pool emits `'error'` event. Takes a single parameter (error instance) and defaults to logging with `warn` level.
 
-- `maxTransactionRetries` - A maximum number of transaction retries in case of a 40001 error. Defaults to 5.
+- `maxTransactionRetries` - A maximum number of retries of a `transaction()` callback in case of a 40001 serialization error. Each retry rolls back and re-runs the whole callback, so it must be safe to run more than once (e.g. no non-transactional side effects). Transactions controlled manually with `startTransaction()` / `commitTransaction()` are never retried and the error is thrown instead. Defaults to 5.
 
 - `logNotifications` - A boolean to determine whether postgres server [notice messages](https://www.postgresql.org/docs/current/plpgsql-errors-and-messages.html) and [notification events](https://www.postgresql.org/docs/current/sql-notify.html) should be included in client's logs with `info` level (default: `false`).
 

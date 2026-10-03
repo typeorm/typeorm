@@ -1115,6 +1115,27 @@ export class CockroachDriver implements Driver {
         return this.parametersPrefix + (index + 1)
     }
 
+    /**
+     * Returns the delay before retrying a transaction that failed with a
+     * 40001 serialization error, using exponential backoff with jitter.
+     *
+     * @param error
+     * @param attempt
+     * @see https://www.cockroachlabs.com/docs/stable/transaction-retry-error-reference
+     */
+    getTransactionRetryDelay(
+        error: unknown,
+        attempt: number,
+    ): number | undefined {
+        const err = error as { code?: string; driverError?: { code?: string } }
+        const code = err?.driverError?.code ?? err?.code
+        if (code !== "40001") return undefined
+        if (attempt > (this.options.maxTransactionRetries ?? 5))
+            return undefined
+
+        return 2 ** attempt * 0.1 * (Math.random() + 0.5) * 1000
+    }
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
