@@ -1,14 +1,16 @@
 import { expect } from "chai"
-import type { DataSource } from "../../../src"
-import { QueryFailedError } from "../../../src"
+import type { DataSource } from "../../../../src"
+import { QueryFailedError } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
+} from "../../../utils/test-utils"
 import { Post } from "./entity/Post"
 
-describe("github issues > #11772 CockroachDB automatic transaction retry logic might lead to inconsistency", () => {
+// https://github.com/typeorm/typeorm/issues/11772
+// https://github.com/typeorm/typeorm/issues/9984
+describe("transaction > cockroachdb retry", () => {
     let dataSources: DataSource[]
 
     before(async () => {
@@ -203,6 +205,68 @@ describe("github issues > #11772 CockroachDB automatic transaction retry logic m
 
                 expect(isSerializationError(error)).to.be.true
                 expect(await dataSource.manager.count(Post)).to.equal(0)
+            }),
+        ))
+
+    it("should retry the transaction callback until injected retry errors stop", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // the injected errors stop after a few retries within the
+                // same transaction, using the cockroach_restart savepoint
+                const queryRunner = dataSource.createQueryRunner()
+                let attempts = 0
+                try {
+                    await queryRunner.query(
+                        "SET inject_retry_errors_enabled = true",
+                    )
+                    await queryRunner.manager.transaction((manager) => {
+                        attempts++
+                        return manager.save(Post, {
+                            id: 1,
+                            version: 1,
+                            views: 0,
+                        })
+                    })
+                } finally {
+                    await queryRunner.query(
+                        "SET inject_retry_errors_enabled = false",
+                    )
+                    await queryRunner.release()
+                }
+
+                expect(attempts).to.be.greaterThan(1)
+                expect(await dataSource.manager.count(Post)).to.equal(1)
+            }),
+        ))
+
+    it("should commit concurrent conflicting transactions by retrying them", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await dataSource.manager.insert(Post, {
+                    id: 1,
+                    version: 1,
+                    views: 0,
+                })
+
+                await Promise.all(
+                    [1, 2, 3].map((i) =>
+                        dataSource.manager.transaction(async (manager) => {
+                            const post = await manager.findOneByOrFail(Post, {
+                                id: 1,
+                            })
+                            await manager.update(
+                                Post,
+                                { id: 1 },
+                                { version: i + 1, views: post.views + 1 },
+                            )
+                        }),
+                    ),
+                )
+
+                const post = await dataSource.manager.findOneByOrFail(Post, {
+                    id: 1,
+                })
+                expect(post.views).to.equal(3)
             }),
         ))
 
