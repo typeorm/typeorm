@@ -244,6 +244,47 @@ describe("github issues > #11772 CockroachDB automatic transaction retry logic m
             }),
         ))
 
+    it("should retry the outermost transaction when the outer callback queries before the nested one", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await dataSource.manager.insert(Post, {
+                    id: 1,
+                    version: 1,
+                    views: 0,
+                })
+
+                let outerAttempts = 0
+                let innerAttempts = 0
+                await dataSource.manager.transaction(async (outer) => {
+                    outerAttempts++
+                    // after a retry error CockroachDB rejects rolling back to a
+                    // savepoint created after the transaction did some work
+                    await outer.findOneByOrFail(Post, { id: 1 })
+                    await outer.transaction(async (inner) => {
+                        innerAttempts++
+                        const post = await inner.findOneByOrFail(Post, {
+                            id: 1,
+                        })
+                        if (innerAttempts === 1)
+                            await concurrentUpdate(dataSource, { views: 1 })
+                        await inner.update(
+                            Post,
+                            { id: 1 },
+                            { views: post.views + 1 },
+                        )
+                    })
+                })
+
+                expect(outerAttempts).to.equal(2)
+                expect(innerAttempts).to.equal(2)
+
+                const post = await dataSource.manager.findOneByOrFail(Post, {
+                    id: 1,
+                })
+                expect(post.views).to.equal(2)
+            }),
+        ))
+
     describe("with maxTransactionRetries set to 0", () => {
         let noRetryDataSources: DataSource[]
 

@@ -237,14 +237,21 @@ export class CockroachQueryRunner
         await this.broadcaster.broadcast("BeforeTransactionRollback")
 
         if (this.transactionDepth > 1) {
-            await this.query(
-                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
-            )
+            try {
+                await this.query(
+                    `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
+                )
+            } finally {
+                // CockroachDB rejects rolling back to a savepoint after a
+                // retry error, so leave the savepoint level anyway to let the
+                // outer level roll back the whole transaction
+                this.transactionDepth -= 1
+            }
         } else {
             await this.query("ROLLBACK")
             this.isTransactionActive = false
+            this.transactionDepth -= 1
         }
-        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
