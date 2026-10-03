@@ -248,6 +248,23 @@ const dataSource = new DataSource({
 
 When set, all transactions started without an explicit isolation level will use this default. An explicit isolation level passed to `transaction()` or `startTransaction()` will override the default.
 
+## Retrying transactions in CockroachDB
+
+CockroachDB can abort a transaction with a `40001` serialization error when it conflicts with a concurrent one. When this happens inside `transaction()`, TypeORM rolls back the work done so far (keeping the same CockroachDB transaction, as CockroachDB [recommends](https://www.cockroachlabs.com/docs/stable/advanced-client-side-transaction-retries)) and calls your callback again, up to `maxTransactionRetries` times (default: 5), waiting a bit longer before each retry. Because the whole callback runs again, it must be safe to run more than once: avoid side effects that aren't part of the transaction, such as sending emails or calling external APIs. Also create or load entities inside the callback instead of reusing objects created outside it: an attempt that fails can leave fields such as generated ids or version columns set on those objects, even though its database work was rolled back, and the next attempt would start from that changed state.
+
+Only `transaction()` retries. The `40001` error is thrown to your code, which has to handle it, in these cases:
+
+- transactions controlled manually with `QueryRunner` (see below),
+- the transactions TypeORM opens on its own for `save()`, `remove()`, `softRemove()` and `recover()`, and for insert, update, delete and soft-delete query builders.
+
+If you need these operations to be retried, run them inside `transaction()`:
+
+```typescript
+await dataSource.transaction(async (manager) => {
+    await manager.save(user)
+})
+```
+
 ## Using `QueryRunner` to create and control state of single database connection
 
 `QueryRunner` provides a single database connection.

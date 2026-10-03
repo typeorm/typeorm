@@ -51,6 +51,12 @@ export class CockroachDriver implements Driver {
         "SERIALIZABLE",
     ]
 
+    /**
+     * Default number of transaction retries after a 40001 error, used when
+     * `maxTransactionRetries` is not set.
+     */
+    static readonly defaultMaxTransactionRetries = 5
+
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
@@ -1113,6 +1119,51 @@ export class CockroachDriver implements Driver {
      */
     createParameter(parameterName: string, index: number): string {
         return this.parametersPrefix + (index + 1)
+    }
+
+    /**
+     * Restarts a transaction that failed with a 40001 serialization error
+     * through the `cockroach_restart` savepoint, then waits with exponential
+     * backoff and jitter before it is retried.
+     *
+     * @param queryRunner
+     * @param error
+     * @param attempt
+     * @see https://www.cockroachlabs.com/docs/stable/transaction-retry-error-reference
+     */
+    async retryTransaction(
+        queryRunner: QueryRunner,
+        error: unknown,
+        attempt: number,
+    ): Promise<boolean> {
+        const err = error as {
+            code?: string
+            message?: string
+            driverError?: { code?: string }
+        }
+        const code = err?.driverError?.code ?? err?.code
+        if (code !== "40001") return false
+        if (
+            attempt >
+            (this.options.maxTransactionRetries ??
+                CockroachDriver.defaultMaxTransactionRetries)
+        )
+            return false
+
+        try {
+            await (queryRunner as CockroachQueryRunner).restartTransaction()
+        } catch {
+            return false
+        }
+
+        const delay = 2 ** attempt * 0.1 * (Math.random() + 0.5) * 1000
+        this.dataSource.logger.log(
+            "warn",
+            `Retrying transaction (retry ${attempt}) in ${Math.round(delay)}ms after error: ${err?.message}`,
+            queryRunner,
+        )
+        await new Promise((resolve) => setTimeout(resolve, delay))
+        return true
     }
 
     // -------------------------------------------------------------------------

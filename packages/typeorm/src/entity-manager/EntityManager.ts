@@ -154,17 +154,36 @@ export class EntityManager {
         const queryRunner =
             this.queryRunner ?? this.dataSource.createQueryRunner()
 
+        // a nested transaction is only a savepoint, so only the outermost
+        // transaction can be retried
+        const isNested = queryRunner.isTransactionActive
+
         try {
-            await queryRunner.startTransaction(isolation)
-            const result = await runInTransaction(queryRunner.manager)
-            await queryRunner.commitTransaction()
-            return result
-        } catch (err) {
-            try {
-                // we throw original error even if rollback thrown an error
-                await queryRunner.rollbackTransaction()
-            } catch (rollbackError) {}
-            throw err
+            for (let attempt = 1; ; attempt++) {
+                try {
+                    if (attempt === 1)
+                        await queryRunner.startTransaction(isolation)
+                    const result = await runInTransaction(queryRunner.manager)
+                    await queryRunner.commitTransaction()
+                    return result
+                } catch (err) {
+                    if (
+                        !isNested &&
+                        (await this.dataSource.driver.retryTransaction?.(
+                            queryRunner,
+                            err,
+                            attempt,
+                        ))
+                    )
+                        continue
+
+                    try {
+                        // we throw original error even if rollback thrown an error
+                        await queryRunner.rollbackTransaction()
+                    } catch (rollbackError) {}
+                    throw err
+                }
+            }
         } finally {
             if (!this.queryRunner)
                 // if we used a new query runner provider then release it
