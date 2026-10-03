@@ -184,3 +184,14 @@ export { EntitySchemaOptions } from "./entity-schema/EntitySchemaOptions"
 export { InstanceChecker } from "./util/InstanceChecker"
 export { TreeRepositoryUtils } from "./util/TreeRepositoryUtils"
 export { DateUtils } from "./util/DateUtils"
+
+// PostgreSQL dialect and native client integration
+export { AbstractPostgresDialect } from "./driver/postgres-abstract/AbstractPostgresDialect"
+export { PostgresDialect } from "./driver/postgres/PostgresDialect"
+export { PgDriverAdapter } from "./driver/postgres/PgDriverAdapter"
+export type {
+    PostgresDriverAdapter,
+    PostgresConnectionRelease,
+} from "./driver/postgres/PostgresDriverAdapter"
+export type { PostgresDataSourceOptions } from "./driver/postgres/PostgresDataSourceOptions"
+export type { PostgresConnectionCredentialsOptions } from "./driver/postgres/PostgresConnectionCredentialsOptions"

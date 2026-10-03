@@ -58,6 +58,40 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 
 Additional options can be added to the `extra` object and will be passed directly to the client library. See more in `pg`'s documentation for [Pool](https://node-postgres.com/apis/pool#new-pool) and [Client](https://node-postgres.com/apis/client#new-client).
 
+## PostgreSQL client adapters
+
+The `postgres` data source uses PostgreSQL SQL semantics independently of its native client. By default, `PgDriverAdapter` uses `pg` (or its native implementation when configured). Existing `driver` and `nativeDriver` options still override those native modules.
+
+To supply another client integration, implement the exported `PostgresDriverAdapter` interface and pass an instance as `adapter`:
+
+```typescript
+import { DataSource } from "typeorm"
+import type { PostgresDriverAdapter } from "typeorm"
+
+function createDataSource(adapter: PostgresDriverAdapter) {
+    return new DataSource({
+        type: "postgres",
+        host: "localhost",
+        database: "example",
+        adapter,
+    })
+}
+```
+
+A supplied adapter bypasses TypeORM's loading of `pg`, `pg-native`, and `pg-query-stream`. The adapter supplies its own dependencies. This option applies to `postgres`; CockroachDB and Aurora retain their existing clients.
+
+The adapter contract has these responsibilities:
+
+- `createPool(options, credentials, logger)` creates and checks a native pool, cleaning it up if creation fails. TypeORM calls it separately for master and each replica. Pool sizing, credentials, TLS, client-specific options and pool errors belong to the adapter; TypeORM adds no pool of its own.
+- `acquire(pool)` reserves a connection and returns `[connection, release]`. Pool and connection handles are opaque. One query runner keeps the same connection for all its queries, including transactions and savepoints. `release(error?)` may be asynchronous; an error means a broken connection must not be reused.
+- `query(connection, sql, parameters)` executes on that reserved connection, binds positional parameters, and returns the native result. SQL errors must reject, leaving a usable transaction connection available for rollback. Subscribers receive the native result in `AfterQueryEvent.rawResults`.
+- `normalizeResult(nativeResult)` returns a `QueryResult`. Set `records` to returned rows and `affected` to the affected count. For compatibility, `raw` is the row array for SELECT/INSERT and `[rows, affected]` for UPDATE/DELETE. Keep native parsing compatible with PostgreSQL value conversion, including timestamps, JSON, arrays, binary values and 64-bit integers.
+- Optional `onError(connection, listener)` reports fatal connection errors and returns an unsubscribe function. TypeORM releases the broken connection once and removes the listener.
+- Optional `stream(connection, sql, parameters)` returns a readable row stream supporting backpressure and cancellation on destruction. Without this method, streaming fails before connection acquisition. A directly created query runner must be released by its owner; QueryBuilder-owned streams release on end, error or close. Stream setup failure releases a nontransaction connection; an active transaction remains available for rollback.
+- `closePool(pool)` closes client resources. TypeORM attempts to close every pool, including pools created before a later initialization failure.
+
+`PostgresDialect` contains PostgreSQL SQL, type conversion and schema capabilities. It shares common SQL helpers with CockroachDB through `AbstractPostgresDialect`; their different type/default behavior remains separate. These classes, `PgDriverAdapter`, the adapter interface, credentials/options types and connection-release type are exported from `typeorm` for integration authors.
+
 ## Column Types
 
 ### Column types for `postgres`
