@@ -178,6 +178,34 @@ describe("github issues > #11772 CockroachDB automatic transaction retry logic m
             }),
         ))
 
+    it("should surface the 40001 error from transactions opened by save()", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                let error: unknown
+                try {
+                    await queryRunner.query(
+                        "SET inject_retry_errors_enabled = true",
+                    )
+                    await queryRunner.manager.save(Post, {
+                        id: 1,
+                        version: 1,
+                        views: 0,
+                    })
+                } catch (err) {
+                    error = err
+                } finally {
+                    await queryRunner.query(
+                        "SET inject_retry_errors_enabled = false",
+                    )
+                    await queryRunner.release()
+                }
+
+                expect(isSerializationError(error)).to.be.true
+                expect(await dataSource.manager.count(Post)).to.equal(0)
+            }),
+        ))
+
     it("should retry only the outermost transaction when transactions are nested", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
