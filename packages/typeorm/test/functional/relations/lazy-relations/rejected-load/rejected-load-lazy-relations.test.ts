@@ -17,7 +17,7 @@ describe("relations > lazy relations > rejected load", () => {
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["better-sqlite3"],
+            enabledDrivers: ["mysql", "postgres"],
             schemaCreate: true,
             dropSchema: true,
         })
