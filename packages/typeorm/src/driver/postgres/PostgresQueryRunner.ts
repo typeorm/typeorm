@@ -6,7 +6,6 @@ import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyR
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
 import type { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
-import { QueryResult } from "../../query-runner/QueryResult"
 import type { QueryRunner } from "../../query-runner/QueryRunner"
 import type { TableIndexOptions } from "../../schema-builder/options/TableIndexOptions"
 import { Table } from "../../schema-builder/table/Table"
@@ -54,12 +53,14 @@ export class PostgresQueryRunner
     /**
      * Promise used to obtain a database connection for a first time.
      */
-    protected databaseConnectionPromise: Promise<any>
+    protected databaseConnectionPromise?: Promise<any>
 
     /**
      * Special callback provided by a driver used to release a created connection.
      */
-    protected releaseCallback?: (err: any) => void
+    protected releaseCallback?: (err?: Error) => void | Promise<void>
+
+    private releasePromise?: Promise<void>
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -82,55 +83,55 @@ export class PostgresQueryRunner
      * Returns obtained database connection.
      */
     connect(): Promise<any> {
-        if (this.databaseConnection)
+        if (this.isReleased)
+            return Promise.reject(new QueryRunnerAlreadyReleasedError())
+        if (this.databaseConnection !== undefined)
             return Promise.resolve(this.databaseConnection)
-
         if (this.databaseConnectionPromise)
             return this.databaseConnectionPromise
-
-        if (this.mode === "slave" && this.driver.isReplicated) {
-            this.databaseConnectionPromise = this.driver
-                .obtainSlaveConnection()
-                .then(([connection, release]: any[]) => {
-                    this.driver.connectedQueryRunners.push(this)
-                    this.databaseConnection = connection
-
-                    const onErrorCallback = (err: Error) =>
-                        this.releasePostgresConnection(err)
-                    this.releaseCallback = (err?: Error) => {
-                        this.databaseConnection.removeListener(
-                            "error",
-                            onErrorCallback,
-                        )
-                        release(err)
+        const acquire =
+            this.mode === "slave" && this.driver.isReplicated
+                ? this.driver.obtainSlaveConnection()
+                : this.driver.obtainMasterConnection()
+        this.databaseConnectionPromise = acquire
+            .then(async ([connection, release]) => {
+                let unsubscribe: (() => void) | undefined
+                this.releaseCallback = async (error?: Error) => {
+                    try {
+                        unsubscribe?.()
+                    } finally {
+                        await release(error)
                     }
-                    this.databaseConnection.on("error", onErrorCallback)
-
-                    return this.databaseConnection
-                })
-        } else {
-            // master
-            this.databaseConnectionPromise = this.driver
-                .obtainMasterConnection()
-                .then(([connection, release]: any[]) => {
-                    this.driver.connectedQueryRunners.push(this)
-                    this.databaseConnection = connection
-
-                    const onErrorCallback = (err: Error) =>
-                        this.releasePostgresConnection(err)
-                    this.releaseCallback = (err?: Error) => {
-                        this.databaseConnection.removeListener(
-                            "error",
-                            onErrorCallback,
-                        )
-                        release(err)
-                    }
-                    this.databaseConnection.on("error", onErrorCallback)
-
-                    return this.databaseConnection
-                })
-        }
-
+                }
+                if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
+                try {
+                    unsubscribe = this.driver.adapter.onError?.(
+                        connection,
+                        (error) => {
+                            void this.releasePostgresConnection(error).catch(
+                                (releaseError: unknown) => {
+                                    this.driver.dataSource.logger.log(
+                                        "warn",
+                                        `Postgres connection release failed: ${String(releaseError)}`,
+                                    )
+                                },
+                            )
+                        },
+                    )
+                } catch (error) {
+                    const cleanup = this.releaseCallback
+                    this.releaseCallback = undefined
+                    await cleanup(error instanceof Error ? error : undefined)
+                    throw error
+                }
+                this.databaseConnection = connection
+                this.driver.connectedQueryRunners.push(this)
+                return connection
+            })
+            .catch((error: unknown) => {
+                this.databaseConnectionPromise = undefined
+                throw error
+            })
         return this.databaseConnectionPromise
     }
 
@@ -140,22 +141,25 @@ export class PostgresQueryRunner
      *
      * @param err
      */
-    private async releasePostgresConnection(err?: Error) {
-        if (this.isReleased) {
-            return
-        }
-
+    private releasePostgresConnection(err?: Error): Promise<void> {
+        if (this.releasePromise) return this.releasePromise
         this.isReleased = true
-        if (this.releaseCallback) {
-            this.releaseCallback(err)
-            this.releaseCallback = undefined
-        }
-
-        const index = this.driver.connectedQueryRunners.indexOf(this)
-
-        if (index !== -1) {
-            this.driver.connectedQueryRunners.splice(index, 1)
-        }
+        this.releasePromise = (async () => {
+            try {
+                // A pending acquire may still produce a connection that needs releasing.
+                await this.databaseConnectionPromise?.catch(() => undefined)
+                const release = this.releaseCallback
+                this.releaseCallback = undefined
+                await release?.(err)
+            } finally {
+                this.databaseConnection = undefined
+                this.databaseConnectionPromise = undefined
+                const index = this.driver.connectedQueryRunners.indexOf(this)
+                if (index !== -1)
+                    this.driver.connectedQueryRunners.splice(index, 1)
+            }
+        })()
+        return this.releasePromise
     }
 
     /**
@@ -271,7 +275,11 @@ export class PostgresQueryRunner
 
         try {
             const queryStartTime = Date.now()
-            const raw = await databaseConnection.query(query, parameters)
+            const raw = await this.driver.adapter.query(
+                databaseConnection,
+                query,
+                parameters,
+            )
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
@@ -299,32 +307,8 @@ export class PostgresQueryRunner
                     this,
                 )
 
-            const result = new QueryResult()
-            if (raw) {
-                if (raw.hasOwnProperty("rows")) {
-                    result.records = raw.rows
-                }
-
-                if (raw.hasOwnProperty("rowCount")) {
-                    result.affected = raw.rowCount
-                }
-
-                switch (raw.command) {
-                    case "DELETE":
-                    case "UPDATE":
-                        // for UPDATE and DELETE query additionally return number of affected rows
-                        result.raw = [raw.rows, raw.rowCount]
-                        break
-                    default:
-                        result.raw = raw.rows
-                }
-
-                if (!useStructuredResult) {
-                    return result.raw
-                }
-            }
-
-            return result
+            const result = this.driver.adapter.normalizeResult(raw)
+            return useStructuredResult || !raw ? result : result.raw
         } catch (err) {
             this.driver.dataSource.logger.logQueryError(
                 err,
@@ -362,18 +346,38 @@ export class PostgresQueryRunner
         onEnd?: Function,
         onError?: Function,
     ): Promise<ReadStream> {
-        const QueryStream = this.driver.loadStreamDependency()
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
-
+        if (!this.driver.adapter?.stream)
+            throw new TypeORMError(
+                "The selected PostgreSQL adapter does not support streaming.",
+            )
         const databaseConnection = await this.connect()
         this.driver.dataSource.logger.logQuery(query, parameters, this)
-        const stream = databaseConnection.query(
-            new QueryStream(query, parameters),
-        )
-        if (onEnd) stream.on("end", onEnd)
-        if (onError) stream.on("error", onError)
-
-        return stream
+        try {
+            const stream = await this.driver.adapter.stream(
+                databaseConnection,
+                query,
+                parameters,
+            )
+            if (onEnd) {
+                let ended = false
+                const end = () => {
+                    if (ended) return
+                    ended = true
+                    onEnd()
+                }
+                stream.once("end", end)
+                stream.once("close", end)
+            }
+            if (onError) stream.on("error", onError as (error: Error) => void)
+            return stream
+        } catch (error) {
+            if (!this.isTransactionActive)
+                await this.releasePostgresConnection(
+                    error instanceof Error ? error : undefined,
+                )
+            throw error
+        }
     }
 
     /**
