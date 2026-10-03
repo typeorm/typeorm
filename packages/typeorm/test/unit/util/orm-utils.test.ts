@@ -147,7 +147,11 @@ describe(`OrmUtils`, () => {
             a["a"] = a
             b["a"] = a
 
-            expect(OrmUtils.mergeDeep({}, a))
+            const result: Record<string, unknown> = OrmUtils.mergeDeep({}, a)
+
+            // the memo rewires each cycle into the result instead of recursing
+            expect(result.a).to.not.equal(a)
+            expect(result.a).to.equal((result.a as Record<string, unknown>).a)
         })
 
         it("should reference copy complex instances of classes.", () => {
