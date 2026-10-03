@@ -3,7 +3,6 @@ import { DataSource } from "../../../../src/data-source/DataSource"
 import type { DataSourceOptions } from "../../../../src/data-source/DataSourceOptions"
 import {
     closeTestingConnections,
-    createTestingConnections,
     setupTestingConnections,
 } from "../../../utils/test-utils"
 
@@ -12,11 +11,46 @@ describe("DataSource > connection pool statistics", () => {
     let dataSources: DataSource[]
 
     before(async () => {
-        dataSources = await createTestingConnections({
+        const options = setupTestingConnections({
             enabledDrivers: ["postgres", "cockroachdb", "mssql", "oracle"],
             entities: [],
-            driverSpecific: { poolSize: 1 },
         })
+        dataSources = []
+        for (const connectionOptions of options) {
+            let dataSource: DataSource
+            if (connectionOptions.type === "mssql") {
+                const pool = {
+                    ...connectionOptions.pool,
+                    ...connectionOptions.extra?.pool,
+                    max: 1,
+                    min: 0,
+                }
+                dataSource = new DataSource({
+                    ...connectionOptions,
+                    pool,
+                    extra: { ...connectionOptions.extra, pool },
+                })
+            } else if (
+                connectionOptions.type === "postgres" ||
+                connectionOptions.type === "cockroachdb" ||
+                connectionOptions.type === "oracle"
+            ) {
+                dataSource = new DataSource({
+                    ...connectionOptions,
+                    poolSize: 1,
+                    extra: {
+                        ...connectionOptions.extra,
+                        ...(connectionOptions.type === "oracle"
+                            ? { poolMax: 1, poolMin: 0 }
+                            : { max: 1 }),
+                    },
+                })
+            } else {
+                continue
+            }
+            await dataSource.initialize()
+            dataSources.push(dataSource)
+        }
     })
     after(() => closeTestingConnections(dataSources))
 
@@ -55,13 +89,19 @@ describe("DataSource > connection pool statistics", () => {
             const heldRunner = dataSource.createQueryRunner("master")
             const waitingRunner = dataSource.createQueryRunner("master")
             let pending: Promise<unknown> | undefined
+            let acquisitionFinished = false
             try {
                 await heldRunner.connect()
                 await heldRunner.startTransaction()
-                pending = waitingRunner.startTransaction()
-                // Allow drivers that defer checkout to the next event-loop turn
-                // to register the pending acquisition.
-                await new Promise<void>((resolve) => setImmediate(resolve))
+                pending = waitingRunner.startTransaction().finally(() => {
+                    acquisitionFinished = true
+                })
+                while (
+                    !acquisitionFinished &&
+                    dataSource.getPoolStats()!.waiting === 0
+                ) {
+                    await new Promise<void>((resolve) => setImmediate(resolve))
+                }
                 expect(dataSource.getPoolStats()).to.deep.equal({
                     total: 1,
                     active: 1,
