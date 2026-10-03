@@ -248,6 +248,12 @@ const dataSource = new DataSource({
 
 When set, all transactions started without an explicit isolation level will use this default. An explicit isolation level passed to `transaction()` or `startTransaction()` will override the default.
 
+## Retrying transactions in CockroachDB
+
+CockroachDB can abort a transaction with a `40001` serialization error when it conflicts with a concurrent one. When this happens inside `transaction()`, TypeORM rolls back and calls your callback again, up to `maxTransactionRetries` times (default: 5), waiting a bit longer before each retry. Because the whole callback runs again, it must be safe to run more than once: avoid side effects that aren't part of the transaction, such as sending emails or calling external APIs.
+
+Transactions controlled manually with `QueryRunner` (see below) are never retried: the `40001` error is thrown, and your application needs to roll back and run its transaction logic again.
+
 ## Using `QueryRunner` to create and control state of single database connection
 
 `QueryRunner` provides a single database connection.

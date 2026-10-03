@@ -302,4 +302,14 @@ export interface Driver {
         indexA: IndexMetadata,
         indexB: TableIndex,
     ) => boolean
+
+    /**
+     * Returns the delay in milliseconds before a transaction that failed with
+     * the given error is retried, or undefined if it must not be retried.
+     * Retrying re-runs the whole transaction callback.
+     */
+    getTransactionRetryDelay?: (
+        error: unknown,
+        attempt: number,
+    ) => number | undefined
 }

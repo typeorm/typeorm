@@ -60,25 +60,6 @@ export class CockroachQueryRunner
      */
     protected releaseCallback?: (err: any) => void
 
-    /**
-     * Stores all executed queries to be able to run them again if transaction fails.
-     */
-    protected queries: {
-        query: string
-        parameters?: any[]
-        useStructuredResult: boolean
-    }[] = []
-
-    /**
-     * Indicates if running queries must be stored
-     */
-    protected storeQueries: boolean = false
-
-    /**
-     * Current number of transaction retries in case of 40001 error.
-     */
-    protected transactionRetries: number = 0
-
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -198,7 +179,6 @@ export class CockroachQueryRunner
         )
 
         this.isTransactionActive = true
-        this.transactionRetries = 0
         try {
             await this.broadcaster.broadcast("BeforeTransactionStart")
         } catch (err) {
@@ -219,7 +199,6 @@ export class CockroachQueryRunner
         }
 
         this.transactionDepth += 1
-        this.storeQueries = true
 
         await this.broadcaster.broadcast("AfterTransactionStart")
     }
@@ -239,12 +218,9 @@ export class CockroachQueryRunner
             )
             this.transactionDepth -= 1
         } else {
-            this.storeQueries = false
             await this.query("RELEASE SAVEPOINT cockroach_restart")
             await this.query("COMMIT")
-            this.queries = []
             this.isTransactionActive = false
-            this.transactionRetries = 0
             this.transactionDepth -= 1
         }
 
@@ -265,11 +241,8 @@ export class CockroachQueryRunner
                 `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
             )
         } else {
-            this.storeQueries = false
             await this.query("ROLLBACK")
-            this.queries = []
             this.isTransactionActive = false
-            this.transactionRetries = 0
         }
         this.transactionDepth -= 1
 
@@ -299,10 +272,6 @@ export class CockroachQueryRunner
 
         const broadcasterResult = new BroadcasterResult()
         const queryStartTime = Date.now()
-
-        if (this.isTransactionActive && this.storeQueries) {
-            this.queries.push({ query, parameters, useStructuredResult })
-        }
 
         try {
             const raw = await new Promise<any>((ok, fail) => {
@@ -365,57 +334,22 @@ export class CockroachQueryRunner
                 return result.raw
             }
         } catch (err) {
-            if (
-                err.code === "40001" &&
-                this.isTransactionActive &&
-                this.transactionRetries <
-                    (this.driver.options.maxTransactionRetries ?? 5)
-            ) {
-                this.transactionRetries += 1
-                this.storeQueries = false
-                await this.query("ROLLBACK TO SAVEPOINT cockroach_restart")
-                const sleepTime =
-                    2 ** this.transactionRetries *
-                    0.1 *
-                    (Math.random() + 0.5) *
-                    1000
-                await new Promise((resolve) => setTimeout(resolve, sleepTime))
-
-                let result = undefined
-                for (const q of this.queries) {
-                    this.driver.dataSource.logger.logQuery(
-                        `Retrying transaction for query "${q.query}"`,
-                        q.parameters,
-                        this,
-                    )
-                    result = await this.query(
-                        q.query,
-                        q.parameters,
-                        q.useStructuredResult,
-                    )
-                }
-                this.transactionRetries = 0
-                this.storeQueries = true
-
-                return result
-            } else {
-                this.driver.dataSource.logger.logQueryError(
-                    err,
-                    query,
-                    parameters,
-                    this,
-                )
-                this.broadcaster.broadcastAfterQueryEvent(
-                    broadcasterResult,
-                    query,
-                    parameters,
-                    false,
-                    undefined,
-                    undefined,
-                    err,
-                )
-                throw new QueryFailedError(query, parameters, err)
-            }
+            this.driver.dataSource.logger.logQueryError(
+                err,
+                query,
+                parameters,
+                this,
+            )
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                false,
+                undefined,
+                undefined,
+                err,
+            )
+            throw new QueryFailedError(query, parameters, err)
         } finally {
             await broadcasterResult.wait()
         }

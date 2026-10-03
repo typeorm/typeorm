@@ -70,7 +70,10 @@ export interface CockroachDataSourceOptions
     readonly poolErrorHandler?: (err: any) => any
 
     /**
-     * Max number of transaction retries in case of 40001 error.
+     * Max number of times a transaction started with `transaction()` is retried
+     * after a 40001 serialization error. Each retry re-runs the whole callback,
+     * so it must be safe to run more than once. Manually controlled
+     * transactions are never retried. Defaults to 5.
      */
     readonly maxTransactionRetries?: number
 }
