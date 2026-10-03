@@ -304,12 +304,14 @@ export interface Driver {
     ) => boolean
 
     /**
-     * Returns the delay in milliseconds before a transaction that failed with
-     * the given error is retried, or undefined if it must not be retried.
-     * Retrying re-runs the whole transaction callback.
+     * Prepares a transaction that failed with the given error to be retried by
+     * `EntityManager.transaction()`, which then re-runs the whole callback.
+     * Returns true once the transaction has been restarted, or false if it
+     * must be rolled back and the error thrown instead.
      */
-    getTransactionRetryDelay?: (
+    retryTransaction?: (
+        queryRunner: QueryRunner,
         error: unknown,
         attempt: number,
-    ) => number | undefined
+    ) => Promise<boolean>
 }

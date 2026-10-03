@@ -269,10 +269,15 @@ export class CockroachQueryRunner
         if (!this.isTransactionActive) throw new TransactionNotStartedError()
 
         await this.broadcaster.broadcast("BeforeTransactionRollback")
-        await this.query("ROLLBACK TO SAVEPOINT cockroach_restart")
-        // nested savepoints are discarded together with the work
-        this.transactionDepth = 1
-        await this.broadcaster.broadcast("AfterTransactionRollback")
+        try {
+            await this.query("ROLLBACK TO SAVEPOINT cockroach_restart")
+            // nested savepoints are discarded together with the work
+            this.transactionDepth = 1
+        } finally {
+            // keep the rollback events paired even if the restart fails and
+            // the caller falls back to a full rollback
+            await this.broadcaster.broadcast("AfterTransactionRollback")
+        }
 
         await this.broadcaster.broadcast("BeforeTransactionStart")
         await this.broadcaster.broadcast("AfterTransactionStart")
