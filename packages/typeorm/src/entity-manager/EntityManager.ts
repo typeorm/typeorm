@@ -161,34 +161,47 @@ export class EntityManager {
         try {
             for (let attempt = 1; ; attempt++) {
                 try {
-                    await queryRunner.startTransaction(isolation)
+                    if (attempt === 1)
+                        await queryRunner.startTransaction(isolation)
                     const result = await runInTransaction(queryRunner.manager)
                     await queryRunner.commitTransaction()
                     return result
                 } catch (err) {
-                    try {
-                        await queryRunner.rollbackTransaction()
-                    } catch (rollbackError) {
-                        // we throw original error even if rollback thrown an error
-                        throw err
+                    const retryDelay =
+                        isNested || !queryRunner.restartTransaction
+                            ? undefined
+                            : this.dataSource.driver.getTransactionRetryDelay?.(
+                                  err,
+                                  attempt,
+                              )
+
+                    if (retryDelay !== undefined) {
+                        let restarted = false
+                        try {
+                            await queryRunner.restartTransaction!()
+                            restarted = true
+                        } catch (restartError) {
+                            // roll back the whole transaction below instead
+                        }
+
+                        if (restarted) {
+                            this.dataSource.logger.log(
+                                "warn",
+                                `Retrying transaction (retry ${attempt}) in ${Math.round(retryDelay)}ms after error: ${err.message}`,
+                                queryRunner,
+                            )
+                            await new Promise((resolve) =>
+                                setTimeout(resolve, retryDelay),
+                            )
+                            continue
+                        }
                     }
 
-                    const retryDelay = isNested
-                        ? undefined
-                        : this.dataSource.driver.getTransactionRetryDelay?.(
-                              err,
-                              attempt,
-                          )
-                    if (retryDelay === undefined) throw err
-
-                    this.dataSource.logger.log(
-                        "warn",
-                        `Retrying transaction (retry ${attempt}) in ${Math.round(retryDelay)}ms after error: ${err.message}`,
-                        queryRunner,
-                    )
-                    await new Promise((resolve) =>
-                        setTimeout(resolve, retryDelay),
-                    )
+                    try {
+                        // we throw original error even if rollback thrown an error
+                        await queryRunner.rollbackTransaction()
+                    } catch (rollbackError) {}
+                    throw err
                 }
             }
         } finally {
