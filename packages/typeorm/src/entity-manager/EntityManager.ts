@@ -181,6 +181,11 @@ export class EntityManager {
                           )
                     if (retryDelay === undefined) throw err
 
+                    this.dataSource.logger.log(
+                        "warn",
+                        `Retrying transaction (retry ${attempt}) in ${Math.round(retryDelay)}ms after error: ${err.message}`,
+                        queryRunner,
+                    )
                     await new Promise((resolve) =>
                         setTimeout(resolve, retryDelay),
                     )
