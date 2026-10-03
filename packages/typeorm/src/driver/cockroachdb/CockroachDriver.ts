@@ -1136,13 +1136,7 @@ export class CockroachDriver implements Driver {
         error: unknown,
         attempt: number,
     ): Promise<boolean> {
-        const err = error as {
-            code?: string
-            message?: string
-            driverError?: { code?: string }
-        }
-        const code = err?.driverError?.code ?? err?.code
-        if (code !== "40001") return false
+        if (!this.isTransactionRetryError(error)) return false
         if (
             attempt >
             (this.options.maxTransactionRetries ??
@@ -1152,14 +1146,19 @@ export class CockroachDriver implements Driver {
 
         try {
             await (queryRunner as CockroachQueryRunner).restartTransaction()
-        } catch {
+        } catch (restartError) {
+            this.dataSource.logger.log(
+                "warn",
+                `Could not restart transaction for a retry: ${restartError.message}`,
+                queryRunner,
+            )
             return false
         }
 
         const delay = 2 ** attempt * 0.1 * (Math.random() + 0.5) * 1000
         this.dataSource.logger.log(
             "warn",
-            `Retrying transaction (retry ${attempt}) in ${Math.round(delay)}ms after error: ${err?.message}`,
+            `Retrying transaction (retry ${attempt}) in ${Math.round(delay)}ms after error: ${(error as Error).message}`,
             queryRunner,
         )
         await new Promise((resolve) => setTimeout(resolve, delay))
@@ -1169,6 +1168,16 @@ export class CockroachDriver implements Driver {
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Returns true if the given error is a 40001 transaction retry error.
+     *
+     * @param error
+     */
+    isTransactionRetryError(error: unknown): boolean {
+        const err = error as { code?: string; driverError?: { code?: string } }
+        return (err?.driverError?.code ?? err?.code) === "40001"
+    }
 
     /**
      * Loads postgres query stream package.

@@ -241,17 +241,21 @@ export class CockroachQueryRunner
                 await this.query(
                     `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
                 )
-            } finally {
+            } catch (err) {
+                if (!this.driver.isTransactionRetryError(err)) throw err
+
                 // CockroachDB rejects rolling back to a savepoint after a
                 // retry error, so leave the savepoint level anyway to let the
-                // outer level roll back the whole transaction
+                // outer level restart or roll back the whole transaction
                 this.transactionDepth -= 1
+                await this.broadcaster.broadcast("AfterTransactionRollback")
+                throw err
             }
         } else {
             await this.query("ROLLBACK")
             this.isTransactionActive = false
-            this.transactionDepth -= 1
         }
+        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
@@ -261,6 +265,8 @@ export class CockroachQueryRunner
      * savepoint so it can be retried. Unlike a full rollback, this keeps the
      * same CockroachDB transaction, and with it the priority it gained, which
      * lowers the chance of it being starved under contention.
+     * If the restart fails, the whole transaction is rolled back and the error
+     * is thrown.
      * Error will be thrown if transaction was not started.
      *
      * @see https://www.cockroachlabs.com/docs/stable/advanced-client-side-transaction-retries
@@ -271,13 +277,18 @@ export class CockroachQueryRunner
         await this.broadcaster.broadcast("BeforeTransactionRollback")
         try {
             await this.query("ROLLBACK TO SAVEPOINT cockroach_restart")
-            // nested savepoints are discarded together with the work
-            this.transactionDepth = 1
-        } finally {
-            // keep the rollback events paired even if the restart fails and
-            // the caller falls back to a full rollback
+        } catch (err) {
+            // roll back the whole transaction instead, within the same
+            // rollback events
+            await this.query("ROLLBACK")
+            this.isTransactionActive = false
+            this.transactionDepth = 0
             await this.broadcaster.broadcast("AfterTransactionRollback")
+            throw err
         }
+        // nested savepoints are discarded together with the work
+        this.transactionDepth = 1
+        await this.broadcaster.broadcast("AfterTransactionRollback")
 
         await this.broadcaster.broadcast("BeforeTransactionStart")
         await this.broadcaster.broadcast("AfterTransactionStart")

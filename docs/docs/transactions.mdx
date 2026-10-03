@@ -261,6 +261,7 @@ If you need these operations to be retried, run them inside `transaction()`:
 
 ```typescript
 await dataSource.transaction(async (manager) => {
+    const user = manager.create(User, { firstName: "Timber" })
     await manager.save(user)
 })
 ```

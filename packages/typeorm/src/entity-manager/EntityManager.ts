@@ -167,15 +167,20 @@ export class EntityManager {
                     await queryRunner.commitTransaction()
                     return result
                 } catch (err) {
-                    if (
-                        !isNested &&
-                        (await this.dataSource.driver.retryTransaction?.(
-                            queryRunner,
-                            err,
-                            attempt,
-                        ))
-                    )
-                        continue
+                    let retry = false
+                    if (!isNested) {
+                        try {
+                            retry =
+                                (await this.dataSource.driver.retryTransaction?.(
+                                    queryRunner,
+                                    err,
+                                    attempt,
+                                )) ?? false
+                        } catch (retryError) {
+                            // roll back and throw the original error below
+                        }
+                    }
+                    if (retry) continue
 
                     try {
                         // we throw original error even if rollback thrown an error

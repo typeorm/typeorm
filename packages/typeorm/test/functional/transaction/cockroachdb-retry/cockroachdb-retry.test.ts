@@ -1,6 +1,7 @@
 import { expect } from "chai"
-import type { DataSource } from "../../../../src"
-import { QueryFailedError } from "../../../../src"
+import sinon from "sinon"
+import type { DataSource, EntitySubscriberInterface } from "../../../../src"
+import { EventSubscriber, QueryFailedError } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -11,16 +12,35 @@ import { Post } from "./entity/Post"
 // https://github.com/typeorm/typeorm/issues/11772
 // https://github.com/typeorm/typeorm/issues/9984
 describe("transaction > cockroachdb retry", () => {
+    const beforeTransactionRollback = sinon.spy()
+    const afterTransactionRollback = sinon.spy()
+
+    @EventSubscriber()
+    class RollbackSubscriber implements EntitySubscriberInterface {
+        beforeTransactionRollback() {
+            beforeTransactionRollback()
+        }
+
+        afterTransactionRollback() {
+            afterTransactionRollback()
+        }
+    }
+
     let dataSources: DataSource[]
 
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [Post],
+            subscribers: [RollbackSubscriber],
             enabledDrivers: ["cockroachdb"],
         })
     })
 
-    beforeEach(() => reloadTestingDatabases(dataSources))
+    beforeEach(async () => {
+        beforeTransactionRollback.resetHistory()
+        afterTransactionRollback.resetHistory()
+        await reloadTestingDatabases(dataSources)
+    })
     after(() => closeTestingConnections(dataSources))
 
     // Commits a write to the post outside the running transaction, on another
@@ -346,6 +366,106 @@ describe("transaction > cockroachdb retry", () => {
                     id: 1,
                 })
                 expect(post.views).to.equal(2)
+            }),
+        ))
+
+    it("should broadcast paired rollback events when a nested savepoint cannot be rolled back", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await dataSource.manager.insert(Post, {
+                    id: 1,
+                    version: 1,
+                    views: 0,
+                })
+
+                let innerAttempts = 0
+                await dataSource.manager.transaction(async (outer) => {
+                    // makes CockroachDB reject rolling back to the nested
+                    // savepoint after the retry error
+                    await outer.findOneByOrFail(Post, { id: 1 })
+                    await outer.transaction(async (inner) => {
+                        innerAttempts++
+                        await inner.findOneByOrFail(Post, { id: 1 })
+                        if (innerAttempts === 1)
+                            await concurrentUpdate(dataSource, { views: 1 })
+                        await inner.update(Post, { id: 1 }, { views: 2 })
+                    })
+                })
+
+                expect(beforeTransactionRollback.callCount).to.equal(2)
+                expect(afterTransactionRollback.callCount).to.equal(2)
+            }),
+        ))
+
+    it("should not commit a nested transaction whose rollback failed for another reason", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                const query = sinon.stub(queryRunner, "query").callThrough()
+                query
+                    .withArgs("ROLLBACK TO SAVEPOINT typeorm_1")
+                    .rejects(new Error("rollback failed"))
+                try {
+                    await queryRunner.manager.transaction(async (outer) => {
+                        await outer
+                            .transaction(async (inner) => {
+                                await inner.insert(Post, {
+                                    id: 1,
+                                    version: 1,
+                                    views: 0,
+                                })
+                                throw new Error("inner failed")
+                            })
+                            .catch(() => undefined)
+                    })
+                } finally {
+                    query.restore()
+                    while (queryRunner.isTransactionActive)
+                        await queryRunner.rollbackTransaction()
+                    await queryRunner.release()
+                }
+
+                expect(await dataSource.manager.count(Post)).to.equal(0)
+            }),
+        ))
+
+    it("should roll back and throw the original error when retrying fails unexpectedly", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await dataSource.manager.insert(Post, {
+                    id: 1,
+                    version: 1,
+                    views: 0,
+                })
+
+                const log = sinon
+                    .stub(dataSource.logger, "log")
+                    .throws(new Error("logger failed"))
+                const queryRunner = dataSource.createQueryRunner()
+                let attempts = 0
+                let error: unknown
+                try {
+                    await queryRunner.manager.transaction(async (manager) => {
+                        attempts++
+                        await manager.findOneByOrFail(Post, { id: 1 })
+                        await concurrentUpdate(dataSource, { version: 99 })
+                        await manager.update(Post, { id: 1 }, { version: 2 })
+                    })
+                } catch (err) {
+                    error = err
+                } finally {
+                    log.restore()
+                }
+
+                expect(attempts).to.equal(1)
+                expect(isSerializationError(error)).to.be.true
+                expect(queryRunner.isTransactionActive).to.be.false
+                await queryRunner.release()
+
+                const post = await dataSource.manager.findOneByOrFail(Post, {
+                    id: 1,
+                })
+                expect(post.version).to.equal(99)
             }),
         ))
 
