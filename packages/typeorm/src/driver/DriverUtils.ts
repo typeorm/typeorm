@@ -1,4 +1,5 @@
 import type { Driver } from "./Driver"
+import type { PoolStats } from "./types/PoolStats"
 import { hash, shorten } from "../util/StringUtils"
 import { VersionUtils } from "../util/VersionUtils"
 
@@ -9,6 +10,27 @@ export class DriverUtils {
     // -------------------------------------------------------------------------
     // Public Static Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Sums pool statistics, omitting metrics unavailable from any pool.
+     *
+     * @param pools Statistics for each pool.
+     * @returns Aggregated statistics, or undefined if there are no pools.
+     */
+    static aggregatePoolStats(pools: PoolStats[]): PoolStats | undefined {
+        if (pools.length === 0) return undefined
+
+        const stats: PoolStats = {}
+        for (const metric of ["total", "active", "idle", "waiting"] as const) {
+            if (pools.every((pool) => pool[metric] !== undefined)) {
+                stats[metric] = pools.reduce(
+                    (sum, pool) => sum + pool[metric]!,
+                    0,
+                )
+            }
+        }
+        return stats
+    }
 
     /**
      * Returns true if given driver is SQLite-based driver.

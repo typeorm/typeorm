@@ -17,6 +17,7 @@ import { DateUtils } from "../../util/DateUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
 import type { Driver } from "../Driver"
+import type { PoolStats } from "../types/PoolStats"
 import { DriverUtils } from "../DriverUtils"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { CteCapabilities } from "../types/CteCapabilities"
@@ -380,6 +381,24 @@ export class SqlServerDriver implements Driver {
         return new Promise<void>((ok, fail) => {
             pool.close((err: any) => (err ? fail(err) : ok()))
         })
+    }
+
+    /**
+     * Returns statistics for the primary and replica connection pools.
+     *
+     * @returns Current pool statistics, or undefined if no pool exists.
+     */
+    getPoolStats(): PoolStats | undefined {
+        if (!this.master) return undefined
+
+        return DriverUtils.aggregatePoolStats(
+            [this.master, ...this.slaves].map((pool) => ({
+                total: pool.size,
+                active: pool.borrowed,
+                idle: pool.available,
+                waiting: pool.pending,
+            })),
+        )
     }
 
     /**
