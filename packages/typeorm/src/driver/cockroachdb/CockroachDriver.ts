@@ -51,6 +51,12 @@ export class CockroachDriver implements Driver {
         "SERIALIZABLE",
     ]
 
+    /**
+     * Default number of transaction retries after a 40001 error, used when
+     * `maxTransactionRetries` is not set.
+     */
+    static readonly defaultMaxTransactionRetries = 5
+
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
@@ -1130,7 +1136,11 @@ export class CockroachDriver implements Driver {
         const err = error as { code?: string; driverError?: { code?: string } }
         const code = err?.driverError?.code ?? err?.code
         if (code !== "40001") return undefined
-        if (attempt > (this.options.maxTransactionRetries ?? 5))
+        if (
+            attempt >
+            (this.options.maxTransactionRetries ??
+                CockroachDriver.defaultMaxTransactionRetries)
+        )
             return undefined
 
         return 2 ** attempt * 0.1 * (Math.random() + 0.5) * 1000

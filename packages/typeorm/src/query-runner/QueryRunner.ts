@@ -108,6 +108,14 @@ export interface QueryRunner extends AsyncDisposable {
     rollbackTransaction(): Promise<void>
 
     /**
+     * Rolls back all work done in the transaction and restarts it, keeping the
+     * same database transaction so it can be retried.
+     * Only implemented by drivers that support retrying transactions.
+     * Error will be thrown if transaction was not started.
+     */
+    restartTransaction?(): Promise<void>
+
+    /**
      * Executes a given SQL query and returns raw database results.
      *
      * Note: Parameters may be named if using mysql2 with extra.namedPlaceholders set:

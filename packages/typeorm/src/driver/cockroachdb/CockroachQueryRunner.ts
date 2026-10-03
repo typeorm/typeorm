@@ -257,6 +257,28 @@ export class CockroachQueryRunner
     }
 
     /**
+     * Rolls back all work done in the transaction to the `cockroach_restart`
+     * savepoint so it can be retried. Unlike a full rollback, this keeps the
+     * same CockroachDB transaction, and with it the priority it gained, which
+     * lowers the chance of it being starved under contention.
+     * Error will be thrown if transaction was not started.
+     *
+     * @see https://www.cockroachlabs.com/docs/stable/advanced-client-side-transaction-retries
+     */
+    async restartTransaction(): Promise<void> {
+        if (!this.isTransactionActive) throw new TransactionNotStartedError()
+
+        await this.broadcaster.broadcast("BeforeTransactionRollback")
+        await this.query("ROLLBACK TO SAVEPOINT cockroach_restart")
+        // nested savepoints are discarded together with the work
+        this.transactionDepth = 1
+        await this.broadcaster.broadcast("AfterTransactionRollback")
+
+        await this.broadcaster.broadcast("BeforeTransactionStart")
+        await this.broadcaster.broadcast("AfterTransactionStart")
+    }
+
+    /**
      * Executes a given SQL query.
      *
      * @param query
