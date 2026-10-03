@@ -1122,28 +1122,48 @@ export class CockroachDriver implements Driver {
     }
 
     /**
-     * Returns the delay before retrying a transaction that failed with a
-     * 40001 serialization error, using exponential backoff with jitter.
+     * Restarts a transaction that failed with a 40001 serialization error
+     * through the `cockroach_restart` savepoint, then waits with exponential
+     * backoff and jitter before it is retried.
      *
+     * @param queryRunner
      * @param error
      * @param attempt
      * @see https://www.cockroachlabs.com/docs/stable/transaction-retry-error-reference
      */
-    getTransactionRetryDelay(
+    async retryTransaction(
+        queryRunner: QueryRunner,
         error: unknown,
         attempt: number,
-    ): number | undefined {
-        const err = error as { code?: string; driverError?: { code?: string } }
+    ): Promise<boolean> {
+        const err = error as {
+            code?: string
+            message?: string
+            driverError?: { code?: string }
+        }
         const code = err?.driverError?.code ?? err?.code
-        if (code !== "40001") return undefined
+        if (code !== "40001") return false
         if (
             attempt >
             (this.options.maxTransactionRetries ??
                 CockroachDriver.defaultMaxTransactionRetries)
         )
-            return undefined
+            return false
 
-        return 2 ** attempt * 0.1 * (Math.random() + 0.5) * 1000
+        try {
+            await (queryRunner as CockroachQueryRunner).restartTransaction()
+        } catch {
+            return false
+        }
+
+        const delay = 2 ** attempt * 0.1 * (Math.random() + 0.5) * 1000
+        this.dataSource.logger.log(
+            "warn",
+            `Retrying transaction (retry ${attempt}) in ${Math.round(delay)}ms after error: ${err?.message}`,
+            queryRunner,
+        )
+        await new Promise((resolve) => setTimeout(resolve, delay))
+        return true
     }
 
     // -------------------------------------------------------------------------
