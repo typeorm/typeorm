@@ -19,6 +19,38 @@ const isInitialized: boolean = dataSource.isInitialized
 const driver: Driver = dataSource.driver
 ```
 
+- `getPoolStats` - Returns a synchronous snapshot of the local connection pools.
+  Requires an initialized data source; throws if called before `initialize()` or after `destroy()`.
+  With replication, the statistics are summed across the primary and all replica pools.
+  Reading statistics does not acquire a connection or execute a query.
+
+```typescript
+import type { PoolStats } from "typeorm"
+
+const stats: PoolStats | undefined = dataSource.getPoolStats()
+// { total: 10, active: 3, idle: 7, waiting: 2 }
+```
+
+Each metric is optional. A missing metric means it is unavailable, while `0` means
+it is supported and currently zero. `total` is the current pool size, not the
+configured maximum. `active` counts connections in use, including connections
+held by query runners or transactions, rather than queries currently executing.
+PostgreSQL and CockroachDB also count connections being created in `active`.
+`idle` counts connections available for checkout, and
+`waiting` counts requests waiting to acquire a connection.
+
+| Driver                  | Metrics                                                               |
+| ----------------------- | --------------------------------------------------------------------- |
+| PostgreSQL, CockroachDB | `total`, `active`, `idle`, `waiting`                                  |
+| SQL Server              | `total`, `active`, `idle`, `waiting`                                  |
+| Oracle                  | `total`, `active`, `idle`; `waiting` when pool statistics are enabled |
+
+SQL Server's `total` also includes connections being created. Oracle exposes
+`waiting` only when `extra.enableStatistics` is enabled on every pool. Other drivers,
+including the Aurora Data API drivers, currently return `undefined` because pool
+statistics are not exposed through this API. No server session statistics are
+queried.
+
 - `manager` - `EntityManager` used to work with entities.
   Learn more about [Entity Manager](../working-with-entity-manager/1-working-with-entity-manager.md) and [Repository](../working-with-entity-manager/2-working-with-repository.md).
 

@@ -19,6 +19,7 @@ import type { CteCapabilities } from "./types/CteCapabilities"
 import type { DataTypeDefaults } from "./types/DataTypeDefaults"
 import type { MappedColumnTypes } from "./types/MappedColumnTypes"
 import type { ReplicationMode } from "./types/ReplicationMode"
+import type { PoolStats } from "./types/PoolStats"
 import type { ReturningType } from "./types/ReturningType"
 import type { UpsertType } from "./types/UpsertType"
 
@@ -157,6 +158,14 @@ export interface Driver {
      * Closes connection with database and releases all resources.
      */
     disconnect(): Promise<void>
+
+    /**
+     * Returns a snapshot of pool statistics, aggregated across primary and
+     * replica pools. Returns undefined if pool statistics are unavailable.
+     *
+     * @returns Current pool statistics, or undefined if unsupported.
+     */
+    getPoolStats?(): PoolStats | undefined
 
     /**
      * Synchronizes database schema (creates tables, indices, etc).

@@ -18,6 +18,7 @@ import { InstanceChecker } from "../../util/InstanceChecker"
 import { ObjectUtils } from "../../util/ObjectUtils"
 import { OrmUtils } from "../../util/OrmUtils"
 import type { Driver } from "../Driver"
+import type { PoolStats } from "../types/PoolStats"
 import { DriverUtils } from "../DriverUtils"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { CteCapabilities } from "../types/CteCapabilities"
@@ -380,6 +381,27 @@ export class CockroachDriver implements Driver {
         await Promise.all(this.slaves.map((slave) => this.closePool(slave)))
         this.master = undefined
         this.slaves = []
+    }
+
+    /**
+     * Returns statistics for the primary and replica connection pools.
+     *
+     * @returns Current pool statistics, or undefined if no pool exists.
+     */
+    getPoolStats(): PoolStats | undefined {
+        if (!this.master) return undefined
+
+        return DriverUtils.aggregatePoolStats(
+            [this.master, ...this.slaves].map((pool) => {
+                const { totalCount, idleCount, waitingCount } = pool
+                return {
+                    total: totalCount,
+                    active: totalCount - idleCount,
+                    idle: idleCount,
+                    waiting: waitingCount,
+                }
+            }),
+        )
     }
 
     /**
