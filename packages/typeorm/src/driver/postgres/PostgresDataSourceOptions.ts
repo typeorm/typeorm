@@ -1,3 +1,4 @@
+import type { PostgresDriverAdapter } from "./PostgresDriverAdapter"
 import type { BaseDataSourceOptions } from "../../data-source/BaseDataSourceOptions"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { PostgresConnectionCredentialsOptions } from "./PostgresConnectionCredentialsOptions"
@@ -22,6 +23,9 @@ export interface PostgresDataSourceOptions
      * This defaults to `require("pg")`.
      */
     readonly driver?: any
+
+    /** Native client integration. Defaults to the pg adapter. */
+    readonly adapter?: PostgresDriverAdapter
 
     /**
      * The driver object

@@ -1,3 +1,4 @@
+import { AbstractPostgresDialect } from "../postgres-abstract/AbstractPostgresDialect"
 import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import type { DataSource } from "../../data-source/DataSource"
 import { TypeORMError } from "../../error"
@@ -8,13 +9,9 @@ import type { EntityMetadata } from "../../metadata/EntityMetadata"
 import { PlatformTools } from "../../platform/PlatformTools"
 import type { QueryRunner } from "../../query-runner/QueryRunner"
 import { RdbmsSchemaBuilder } from "../../schema-builder/RdbmsSchemaBuilder"
-import type { Table } from "../../schema-builder/table/Table"
 import type { TableColumn } from "../../schema-builder/table/TableColumn"
-import type { TableForeignKey } from "../../schema-builder/table/TableForeignKey"
-import type { View } from "../../schema-builder/view/View"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DateUtils } from "../../util/DateUtils"
-import { InstanceChecker } from "../../util/InstanceChecker"
 import { ObjectUtils } from "../../util/ObjectUtils"
 import { OrmUtils } from "../../util/OrmUtils"
 import type { Driver } from "../Driver"
@@ -24,7 +21,6 @@ import type { CteCapabilities } from "../types/CteCapabilities"
 import type { DataTypeDefaults } from "../types/DataTypeDefaults"
 import type { MappedColumnTypes } from "../types/MappedColumnTypes"
 import type { ReplicationMode } from "../types/ReplicationMode"
-import type { ReturningType } from "../types/ReturningType"
 import type { IsolationLevel } from "../types/IsolationLevel"
 import type { UpsertType } from "../types/UpsertType"
 import type { CockroachConnectionCredentialsOptions } from "./CockroachConnectionCredentialsOptions"
@@ -34,7 +30,7 @@ import { CockroachQueryRunner } from "./CockroachQueryRunner"
 /**
  * Organizes communication with Cockroach DBMS.
  */
-export class CockroachDriver implements Driver {
+export class CockroachDriver extends AbstractPostgresDialect implements Driver {
     // -------------------------------------------------------------------------
     // Static Properties
     // -------------------------------------------------------------------------
@@ -287,6 +283,7 @@ export class CockroachDriver implements Driver {
     // -------------------------------------------------------------------------
 
     constructor(dataSource: DataSource) {
+        super()
         this.dataSource = dataSource
         this.options = dataSource.options as CockroachDataSourceOptions
         this.isReplicated = this.options.replication ? true : false
@@ -537,141 +534,6 @@ export class CockroachDriver implements Driver {
     }
 
     /**
-     * Replaces parameters in the given sql with special escaping character
-     * and an array of parameter names to be passed to a query.
-     *
-     * @param sql
-     * @param parameters
-     */
-    escapeQueryWithParameters(
-        sql: string,
-        parameters: ObjectLiteral,
-    ): [string, any[]] {
-        const escapedParameters: any[] = []
-        if (!parameters || !Object.keys(parameters).length)
-            return [sql, escapedParameters]
-
-        const parameterIndexMap = new Map<string, number>()
-        sql = sql.replaceAll(
-            /:(\.\.\.)?([A-Za-z0-9_.]+)/g,
-            (full, isArray: string, key: string): string => {
-                if (!parameters.hasOwnProperty(key)) {
-                    return full
-                }
-
-                if (parameterIndexMap.has(key)) {
-                    return this.parametersPrefix + parameterIndexMap.get(key)
-                }
-
-                const value: any = parameters[key]
-
-                if (isArray) {
-                    return value
-                        .map((v: any) => {
-                            escapedParameters.push(v)
-                            return this.createParameter(
-                                key,
-                                escapedParameters.length - 1,
-                            )
-                        })
-                        .join(", ")
-                }
-
-                if (typeof value === "function") {
-                    return value()
-                }
-
-                escapedParameters.push(value)
-                parameterIndexMap.set(key, escapedParameters.length)
-                return this.createParameter(key, escapedParameters.length - 1)
-            },
-        ) // todo: make replace only in value statements, otherwise problems
-        return [sql, escapedParameters]
-    }
-
-    /**
-     * Escapes a column name.
-     *
-     * @param columnName
-     */
-    escape(columnName: string): string {
-        return `"${columnName.replaceAll('"', '""')}"`
-    }
-
-    /**
-     * Build full table name with schema name and table name.
-     * E.g. myDB.mySchema.myTable
-     *
-     * @param tableName
-     * @param schema
-     */
-    buildTableName(tableName: string, schema?: string): string {
-        const tablePath = [tableName]
-
-        if (schema) {
-            tablePath.unshift(schema)
-        }
-
-        return tablePath.join(".")
-    }
-
-    /**
-     * Parse a target table name or other types and return a normalized table definition.
-     *
-     * @param target
-     */
-    parseTableName(
-        target: EntityMetadata | Table | View | TableForeignKey | string,
-    ): { database?: string; schema?: string; tableName: string } {
-        const driverDatabase = this.database
-        const driverSchema = this.schema
-
-        if (InstanceChecker.isTable(target) || InstanceChecker.isView(target)) {
-            // name is sometimes a path
-            const parsed = this.parseTableName(target.name)
-
-            return {
-                database: target.database ?? parsed.database ?? driverDatabase,
-                schema: target.schema ?? parsed.schema ?? driverSchema,
-                tableName: parsed.tableName,
-            }
-        }
-
-        if (InstanceChecker.isTableForeignKey(target)) {
-            // referencedTableName is sometimes a path
-            const parsed = this.parseTableName(target.referencedTableName)
-
-            return {
-                database:
-                    target.referencedDatabase ??
-                    parsed.database ??
-                    driverDatabase,
-                schema:
-                    target.referencedSchema ?? parsed.schema ?? driverSchema,
-                tableName: parsed.tableName,
-            }
-        }
-
-        if (InstanceChecker.isEntityMetadata(target)) {
-            // EntityMetadata tableName is never a path
-
-            return {
-                database: target.database ?? driverDatabase,
-                schema: target.schema ?? driverSchema,
-                tableName: target.tableName,
-            }
-        }
-
-        const parts = target.split(".")
-
-        return {
-            database: driverDatabase,
-            schema: (parts.length > 1 ? parts[0] : undefined) ?? driverSchema,
-            tableName: parts.length > 1 ? parts[1] : parts[0],
-        }
-    }
-
-    /**
      * Creates a database type from a given column metadata.
      *
      * @param column
@@ -893,26 +755,6 @@ export class CockroachDriver implements Driver {
     }
 
     /**
-     * Normalizes "isUnique" value of the column.
-     *
-     * @param column
-     */
-    normalizeIsUnique(column: ColumnMetadata): boolean {
-        return column.entityMetadata.uniques.some(
-            (uq) => uq.columns.length === 1 && uq.columns[0] === column,
-        )
-    }
-
-    /**
-     * Returns default column lengths, which is required on column creation.
-     *
-     * @param column
-     */
-    getColumnLength(column: ColumnMetadata): string {
-        return column.length ? column.length.toString() : ""
-    }
-
-    /**
      * Creates column type definition including length, precision and scale
      *
      * @param column
@@ -1069,50 +911,6 @@ export class CockroachDriver implements Driver {
                 tableColumn.srid !== columnMetadata.srid
             )
         })
-    }
-
-    private lowerDefaultValueIfNecessary(value: string | undefined) {
-        if (!value) {
-            return value
-        }
-        return value
-            .split(`'`)
-            .map((v, i) => {
-                return i % 2 === 1 ? v : v.toLowerCase()
-            })
-            .join(`'`)
-    }
-    /**
-     * Returns true if driver supports RETURNING / OUTPUT statement.
-     *
-     * @param _returningType
-     */
-    isReturningSqlSupported(_returningType: ReturningType): boolean {
-        return true
-    }
-
-    /**
-     * Returns true if driver supports uuid values generation on its own.
-     */
-    isUUIDGenerationSupported(): boolean {
-        return true
-    }
-
-    /**
-     * Returns true if driver supports fulltext indices.
-     */
-    isFullTextColumnTypeSupported(): boolean {
-        return false
-    }
-
-    /**
-     * Creates an escaped parameter.
-     *
-     * @param parameterName
-     * @param index
-     */
-    createParameter(parameterName: string, index: number): string {
-        return this.parametersPrefix + (index + 1)
     }
 
     // -------------------------------------------------------------------------
