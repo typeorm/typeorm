@@ -605,32 +605,31 @@ export class PostgresQueryRunner
             (column) =>
                 column.generatedType === "STORED" && column.asExpression,
         )
-        for (const column of generatedColumns) {
-            const tableNameWithSchema = (
-                await this.getTableNameWithSchema(table.name)
-            ).split(".")
-            const tableName = tableNameWithSchema[1]
-            const schema = tableNameWithSchema[0]
+        if (generatedColumns.length > 0) {
+            const parsedTableName = this.driver.parseTableName(table)
+            parsedTableName.schema ??= await this.getCurrentSchema()
 
-            const insertQuery = this.insertTypeormMetadataSql({
-                database: this.driver.database,
-                schema,
-                table: tableName,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression,
-            })
+            for (const column of generatedColumns) {
+                const insertQuery = this.insertTypeormMetadataSql({
+                    database: this.driver.database,
+                    schema: parsedTableName.schema,
+                    table: parsedTableName.tableName,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                    value: column.asExpression,
+                })
 
-            const deleteQuery = this.deleteTypeormMetadataSql({
-                database: this.driver.database,
-                schema,
-                table: tableName,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-            })
+                const deleteQuery = this.deleteTypeormMetadataSql({
+                    database: this.driver.database,
+                    schema: parsedTableName.schema,
+                    table: parsedTableName.tableName,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                })
 
-            upQueries.push(insertQuery)
-            downQueries.push(deleteQuery)
+                upQueries.push(insertQuery)
+                downQueries.push(deleteQuery)
+            }
         }
 
         upQueries.push(this.createTableSql(table, createForeignKeys))
@@ -718,34 +717,34 @@ export class PostgresQueryRunner
 
         // if table had columns with generated type, we must remove the expression from the metadata table
         const generatedColumns = table.columns.filter(
-            (column) => column.generatedType && column.asExpression,
+            (column) => column.generatedType,
         )
-        for (const column of generatedColumns) {
-            const tableNameWithSchema = (
-                await this.getTableNameWithSchema(table.name)
-            ).split(".")
-            const tableName = tableNameWithSchema[1]
-            const schema = tableNameWithSchema[0]
+        if (generatedColumns.length > 0) {
+            const parsedTableName = this.driver.parseTableName(table)
+            parsedTableName.schema ??= await this.getCurrentSchema()
 
-            const deleteQuery = this.deleteTypeormMetadataSql({
-                database: this.driver.database,
-                schema,
-                table: tableName,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-            })
+            for (const column of generatedColumns) {
+                const deleteQuery = this.deleteTypeormMetadataSql({
+                    database: this.driver.database,
+                    schema: parsedTableName.schema,
+                    table: parsedTableName.tableName,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                })
+                upQueries.push(deleteQuery)
 
-            const insertQuery = this.insertTypeormMetadataSql({
-                database: this.driver.database,
-                schema,
-                table: tableName,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression,
-            })
-
-            upQueries.push(deleteQuery)
-            downQueries.push(insertQuery)
+                if (column.asExpression) {
+                    const insertQuery = this.insertTypeormMetadataSql({
+                        database: this.driver.database,
+                        schema: parsedTableName.schema,
+                        table: parsedTableName.tableName,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        name: column.name,
+                        value: column.asExpression,
+                    })
+                    downQueries.push(insertQuery)
+                }
+            }
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -818,8 +817,9 @@ export class PostgresQueryRunner
             : await this.getCachedTable(oldTableOrName)
         const newTable = oldTable.clone()
 
-        const { schema: schemaName, tableName: oldTableName } =
+        let { schema: schemaName, tableName: oldTableName } =
             this.driver.parseTableName(oldTable)
+        schemaName ??= await this.getCurrentSchema()
 
         newTable.name = schemaName
             ? `${schemaName}.${newTableName}`
@@ -839,6 +839,29 @@ export class PostgresQueryRunner
                 )} RENAME TO "${oldTableName}"`,
             ),
         )
+
+        const hasGeneratedColumns = oldTable.columns.some(
+            (col) => col.generatedType === "STORED",
+        )
+        if (hasGeneratedColumns) {
+            const updateQuery = this.updateTypeormMetadataSql({
+                database: this.driver.database,
+                schema: schemaName,
+                table: oldTableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                valueToSet: { table: newTableName },
+            })
+            const revertUpdateQuery = this.updateTypeormMetadataSql({
+                database: this.driver.database,
+                schema: schemaName,
+                table: newTableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                valueToSet: { table: oldTableName },
+            })
+
+            upQueries.push(updateQuery)
+            downQueries.push(revertUpdateQuery)
+        }
 
         // rename column primary key constraint if it has default constraint name
         if (
@@ -1196,16 +1219,13 @@ export class PostgresQueryRunner
         }
 
         if (column.generatedType === "STORED" && column.asExpression) {
-            const tableNameWithSchema = (
-                await this.getTableNameWithSchema(table.name)
-            ).split(".")
-            const tableName = tableNameWithSchema[1]
-            const schema = tableNameWithSchema[0]
+            const parsedTableName = this.driver.parseTableName(table)
+            parsedTableName.schema ??= await this.getCurrentSchema()
 
             const insertQuery = this.insertTypeormMetadataSql({
                 database: this.driver.database,
-                schema,
-                table: tableName,
+                schema: parsedTableName.schema,
+                table: parsedTableName.tableName,
                 type: MetadataTableType.GENERATED_COLUMN,
                 name: column.name,
                 value: column.asExpression,
@@ -1213,8 +1233,8 @@ export class PostgresQueryRunner
 
             const deleteQuery = this.deleteTypeormMetadataSql({
                 database: this.driver.database,
-                schema,
-                table: tableName,
+                schema: parsedTableName.schema,
+                table: parsedTableName.tableName,
                 type: MetadataTableType.GENERATED_COLUMN,
                 name: column.name,
             })
@@ -1358,6 +1378,31 @@ export class PostgresQueryRunner
                         }" TO "${oldColumn.name}"`,
                     ),
                 )
+
+                if (oldColumn.generatedType === "STORED") {
+                    const parsedTableName = this.driver.parseTableName(table)
+                    parsedTableName.schema ??= await this.getCurrentSchema()
+
+                    const updateQuery = this.updateTypeormMetadataSql({
+                        database: this.driver.database,
+                        schema: parsedTableName.schema,
+                        table: parsedTableName.tableName,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        name: oldColumn.name,
+                        valueToSet: { name: newColumn.name },
+                    })
+                    const revertUpdateQuery = this.updateTypeormMetadataSql({
+                        database: this.driver.database,
+                        schema: parsedTableName.schema,
+                        table: parsedTableName.tableName,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        name: newColumn.name,
+                        valueToSet: { name: oldColumn.name },
+                    })
+
+                    upQueries.push(updateQuery)
+                    downQueries.push(revertUpdateQuery)
+                }
 
                 // rename ENUM type
                 if (
@@ -2374,12 +2419,6 @@ export class PostgresQueryRunner
                     newColumn.generatedType === "VIRTUAL"
                 ) {
                     // We can copy the generated data to the new column
-                    const tableNameWithSchema = (
-                        await this.getTableNameWithSchema(table.name)
-                    ).split(".")
-                    const tableName = tableNameWithSchema[1]
-                    const schema = tableNameWithSchema[0]
-
                     upQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(
@@ -2413,11 +2452,15 @@ export class PostgresQueryRunner
                             )} DROP COLUMN "TEMP_OLD_${oldColumn.name}"`,
                         ),
                     )
+
+                    const parsedTableName = this.driver.parseTableName(table)
+                    parsedTableName.schema ??= await this.getCurrentSchema()
+
                     upQueries.push(
                         this.deleteTypeormMetadataSql({
                             database: this.driver.database,
-                            schema,
-                            table: tableName,
+                            schema: parsedTableName.schema,
+                            table: parsedTableName.tableName,
                             type: MetadataTableType.GENERATED_COLUMN,
                             name: oldColumn.name,
                         }),
@@ -2426,8 +2469,8 @@ export class PostgresQueryRunner
                     downQueries.push(
                         this.insertTypeormMetadataSql({
                             database: this.driver.database,
-                            schema,
-                            table: tableName,
+                            schema: parsedTableName.schema,
+                            table: parsedTableName.tableName,
                             type: MetadataTableType.GENERATED_COLUMN,
                             name: oldColumn.name,
                             value: oldColumn.asExpression,
@@ -2656,29 +2699,29 @@ export class PostgresQueryRunner
         }
 
         if (column.generatedType === "STORED") {
-            const tableNameWithSchema = (
-                await this.getTableNameWithSchema(table.name)
-            ).split(".")
-            const tableName = tableNameWithSchema[1]
-            const schema = tableNameWithSchema[0]
+            const parsedTableName = this.driver.parseTableName(table)
+            parsedTableName.schema ??= await this.getCurrentSchema()
+
             const deleteQuery = this.deleteTypeormMetadataSql({
                 database: this.driver.database,
-                schema,
-                table: tableName,
+                schema: parsedTableName.schema,
+                table: parsedTableName.tableName,
                 type: MetadataTableType.GENERATED_COLUMN,
                 name: column.name,
             })
-            const insertQuery = this.insertTypeormMetadataSql({
-                database: this.driver.database,
-                schema,
-                table: tableName,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression,
-            })
-
             upQueries.push(deleteQuery)
-            downQueries.push(insertQuery)
+
+            if (column.asExpression) {
+                const insertQuery = this.insertTypeormMetadataSql({
+                    database: this.driver.database,
+                    schema: parsedTableName.schema,
+                    table: parsedTableName.tableName,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                    value: column.asExpression,
+                })
+                downQueries.push(insertQuery)
+            }
         }
 
         await this.executeQueries(upQueries, downQueries)
