@@ -336,7 +336,7 @@ or some of them require increment to be a primary key).
 
 Vector columns are supported on MariaDB/MySQL, Microsoft SQL Server, PostgreSQL (via [`pgvector`](https://github.com/pgvector/pgvector) extension) and SAP HANA Cloud, enabling storing and querying vector embeddings for similarity search and machine learning applications.
 
-TypeORM supports both `vector` and `halfvec` column types across databases:
+TypeORM supports `vector`, `halfvec`, `bit`, and `sparsevec` column types across databases:
 
 - `vector` - stores vectors as 4-byte floats (single precision)
     - MariaDB/MySQL: native `vector` type
@@ -346,6 +346,10 @@ TypeORM supports both `vector` and `halfvec` column types across databases:
 - `halfvec` - stores vectors as 2-byte floats (half precision) for memory efficiency
     - PostgreSQL: `halfvec` type, available via `pgvector` extension
     - SAP HANA Cloud: alias for `half_vector` type
+- `bit` - stores binary vectors for use with Hamming and Jaccard distance operators
+    - PostgreSQL: native `bit(n)` type, supported by `pgvector` for distance operations
+- `sparsevec` - stores sparse vectors where only non-zero elements are specified
+    - PostgreSQL: `sparsevec` type, available via `pgvector` extension
 
 You can specify the number of vector dimensions using the `length` option:
 
@@ -366,6 +370,14 @@ export class Post {
     // Half-precision vector with 4 dimensions: halfvec(4) (works on PostgreSQL and SAP HANA only)
     @Column("halfvec", { length: 4 })
     halfvec_embedding: number[] | Buffer
+
+    // Bit vector with 8 bits: bit(8) (works on PostgreSQL only)
+    @Column("bit", { length: 8 })
+    bit_embedding: string
+
+    // Sparse vector with 5 dimensions: sparsevec(5) (works on PostgreSQL only)
+    @Column("sparsevec", { length: 5 })
+    sparse_embedding: string
 }
 ```
 

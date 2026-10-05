@@ -200,4 +200,51 @@ describe("columns > vector type > similarity operations", () => {
                 expect(foundPostWithMalformedHalfvec).to.be.null
             }),
         ))
+
+    it("should perform bit similarity search using Hamming distance", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                await postRepository.clear()
+
+                await postRepository.save([
+                    { bit_embedding: "10101010" },
+                    { bit_embedding: "10101011" },
+                    { bit_embedding: "01010101" },
+                    { bit_embedding: "11111111" },
+                ])
+
+                const results = await dataSource.query(
+                    `SELECT id, bit_embedding FROM "post" ORDER BY bit_embedding <~> $1::bit(8) LIMIT 2`,
+                    ["10101010"],
+                )
+
+                expect(results.length).to.equal(2)
+                // "10101010" should be exact match, "10101011" differs by 1 bit
+                expect(results[0].bit_embedding).to.equal("10101010")
+                expect(results[1].bit_embedding).to.equal("10101011")
+            }),
+        ))
+
+    it("should perform sparsevec similarity search using L2 distance", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getRepository(Post)
+                await postRepository.clear()
+
+                await postRepository.save([
+                    { sparse_embedding: "{1:1.0,2:1.0}/5" },
+                    { sparse_embedding: "{1:1.0,2:2.0}/5" },
+                    { sparse_embedding: "{1:5.0,2:5.0}/5" },
+                    { sparse_embedding: "{1:2.0,2:2.0}/5" },
+                ])
+
+                const results = await dataSource.query(
+                    `SELECT id, sparse_embedding FROM "post" ORDER BY sparse_embedding <-> $1::sparsevec(5) LIMIT 2`,
+                    ["{1:1.0,2:1.5}/5"],
+                )
+
+                expect(results.length).to.equal(2)
+            }),
+        ))
 })
