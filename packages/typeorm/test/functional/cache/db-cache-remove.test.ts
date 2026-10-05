@@ -12,13 +12,13 @@ describe("database cache > remove error cleanup", () => {
     let dataSources: DataSource[]
 
     before(async () => {
-        dataSources = await Promise.all(
-            setupTestingConnections({
-                enabledDrivers: ["postgres"],
-                cache: true,
-            })
-                .filter((options) => options.type === "postgres")
-                .map((options) =>
+        dataSources = setupTestingConnections({
+            enabledDrivers: ["postgres"],
+            cache: true,
+        })
+            .filter((options) => options.type === "postgres")
+            .map(
+                (options) =>
                     new DataSource({
                         ...options,
                         poolSize: 1,
@@ -27,9 +27,9 @@ describe("database cache > remove error cleanup", () => {
                             max: 1,
                             connectionTimeoutMillis: 1000,
                         },
-                    }).initialize(),
-                ),
-        )
+                    }),
+            )
+        for (const dataSource of dataSources) await dataSource.initialize()
     })
     beforeEach(() =>
         Promise.all(
@@ -42,7 +42,13 @@ describe("database cache > remove error cleanup", () => {
         it(`should ${suppliedRunner ? "retain" : "release"} the runner after a database error`, () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    await dataSource.query('DROP TABLE "query-result-cache"')
+                    const schema = dataSource.driver.schema
+                    const tableName =
+                        dataSource.driver.escape("query-result-cache")
+                    const tablePath = schema
+                        ? `${dataSource.driver.escape(schema)}.${tableName}`
+                        : tableName
+                    await dataSource.query(`DROP TABLE ${tablePath}`)
                     const createRunner = sinon.spy(
                         dataSource,
                         "createQueryRunner",
