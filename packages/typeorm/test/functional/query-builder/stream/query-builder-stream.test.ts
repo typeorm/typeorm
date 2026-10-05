@@ -1,10 +1,11 @@
 import "reflect-metadata"
 import { expect } from "chai"
 import sinon from "sinon"
-import type { DataSource, QueryRunner } from "../../../../src"
+import { DataSource } from "../../../../src"
+import type { QueryRunner } from "../../../../src"
 import {
     closeTestingConnections,
-    createTestingConnections,
+    setupTestingConnections,
 } from "../../../utils/test-utils"
 
 // Regression for https://github.com/typeorm/typeorm/issues/12934
@@ -12,13 +13,21 @@ describe("query builder > stream connection ownership", () => {
     let dataSources: DataSource[]
 
     before(async () => {
-        dataSources = await createTestingConnections({
-            enabledDrivers: ["postgres"],
-            driverSpecific: {
-                poolSize: 1,
-                extra: { max: 1, connectionTimeoutMillis: 1000 },
-            },
-        })
+        dataSources = await Promise.all(
+            setupTestingConnections({ enabledDrivers: ["postgres"] })
+                .filter((options) => options.type === "postgres")
+                .map((options) =>
+                    new DataSource({
+                        ...options,
+                        poolSize: 1,
+                        extra: {
+                            ...options.extra,
+                            max: 1,
+                            connectionTimeoutMillis: 1000,
+                        },
+                    }).initialize(),
+                ),
+        )
     })
     after(() => closeTestingConnections(dataSources))
 
