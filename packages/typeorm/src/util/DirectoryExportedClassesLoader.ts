@@ -1,3 +1,4 @@
+import path from "path"
 import { globSync } from "tinyglobby"
 import type { Logger } from "../logger/Logger"
 import { PlatformTools } from "../platform/PlatformTools"
@@ -43,7 +44,11 @@ export async function importClassesFromDirectories(
     }
 
     const allFiles = directories.reduce((allDirs, dir) => {
-        return allDirs.concat(globSync(PlatformTools.pathNormalize(dir)))
+        // the cwd may contain glob characters, e.g. "~/Dropbox (Team)/app"
+        const pattern = path.isAbsolute(dir)
+            ? path.relative(process.cwd(), dir)
+            : dir
+        return allDirs.concat(globSync(PlatformTools.pathNormalize(pattern)))
     }, [] as string[])
 
     if (directories.length > 0 && allFiles.length === 0) {
