@@ -1999,7 +1999,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 releaseFn,
             )
             // pg-query-stream finishes cleanup before close; other drivers may not.
-            if (this.dataSource.options.type === "postgres")
+            if (
+                this.dataSource.options.type === "postgres" ||
+                this.dataSource.options.type === "cockroachdb"
+            )
                 results.once("close", releaseFn)
 
             // close transaction if we started it

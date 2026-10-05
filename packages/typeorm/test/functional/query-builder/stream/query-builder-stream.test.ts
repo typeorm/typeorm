@@ -13,10 +13,16 @@ describe("query builder > stream connection ownership", () => {
     let dataSources: DataSource[]
 
     before(async () => {
-        dataSources = await Promise.all(
-            setupTestingConnections({ enabledDrivers: ["postgres"] })
-                .filter((options) => options.type === "postgres")
-                .map((options) =>
+        dataSources = setupTestingConnections({
+            enabledDrivers: ["postgres", "cockroachdb"],
+        })
+            .filter(
+                (options) =>
+                    options.type === "postgres" ||
+                    options.type === "cockroachdb",
+            )
+            .map(
+                (options) =>
                     new DataSource({
                         ...options,
                         poolSize: 1,
@@ -25,9 +31,9 @@ describe("query builder > stream connection ownership", () => {
                             max: 1,
                             connectionTimeoutMillis: 1000,
                         },
-                    }).initialize(),
-                ),
-        )
+                    }),
+            )
+        for (const dataSource of dataSources) await dataSource.initialize()
     })
     after(() => closeTestingConnections(dataSources))
 
@@ -89,8 +95,12 @@ describe("query builder > stream connection ownership", () => {
                                 suppliedRunner ? 0 : 1,
                             )
                             const result = suppliedRunner
-                                ? await queryRunner!.query("SELECT 1 AS value")
-                                : await dataSource.query("SELECT 1 AS value")
+                                ? await queryRunner!.query(
+                                      "SELECT 1::int4 AS value",
+                                  )
+                                : await dataSource.query(
+                                      "SELECT 1::int4 AS value",
+                                  )
                             expect(result).to.deep.equal([{ value: 1 }])
                         } finally {
                             createRunner.restore()
