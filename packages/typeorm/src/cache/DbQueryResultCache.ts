@@ -356,11 +356,17 @@ export class DbQueryResultCache implements QueryResultCache {
         } catch (error) {
             // A failed deletion can leave other queries using the same runner.
             await Promise.allSettled(removals)
-            throw error
-        } finally {
             if (!queryRunner) {
-                await _queryRunner.release()
+                try {
+                    await _queryRunner.release()
+                } catch {
+                    // Preserve the deletion error if cleanup also fails.
+                }
             }
+            throw error
+        }
+        if (!queryRunner) {
+            await _queryRunner.release()
         }
     }
 

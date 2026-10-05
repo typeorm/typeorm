@@ -85,4 +85,31 @@ describe("DbQueryResultCache > remove", () => {
         expect(await removal).to.equal(firstError)
         expect(release.callCount).to.equal(1)
     })
+
+    for (const deletionFails of [false, true]) {
+        for (const releaseThrows of [false, true]) {
+            it(`should report the ${deletionFails ? "deletion" : "release"} error when release ${releaseThrows ? "throws" : "rejects"}`, async () => {
+                const dataSource = new DataSource({ type: "postgres" })
+                const queryRunner = dataSource.createQueryRunner()
+                const deletionError = new Error("delete failed")
+                const releaseError = new Error("release failed")
+                const query = sinon.stub(queryRunner, "query")
+                if (deletionFails) query.rejects(deletionError)
+                else query.resolves(new QueryResult())
+                const release = sinon.stub(queryRunner, "release")
+                if (releaseThrows) release.throws(releaseError)
+                else release.rejects(releaseError)
+                sinon.stub(dataSource, "createQueryRunner").returns(queryRunner)
+
+                const error = await new DbQueryResultCache(dataSource)
+                    .remove(["first"])
+                    .catch((error) => error)
+
+                expect(error).to.equal(
+                    deletionFails ? deletionError : releaseError,
+                )
+                expect(release.callCount).to.equal(1)
+            })
+        }
+    }
 })
