@@ -12,6 +12,12 @@ import type { Alias } from "../Alias"
 import type { QueryExpressionMap } from "../QueryExpressionMap"
 import type { RelationIdLoadResult } from "../relation-id/RelationIdLoadResult"
 
+interface ParentRowRelationId {
+    rawKey: string
+    properties: string[]
+    referencedColumn: ColumnMetadata
+}
+
 /**
  * Transforms raw sql results returned from the database into entity object.
  * Entity is constructed based on its entity metadata.
@@ -30,6 +36,10 @@ export class RawSqlResultsToEntityTransformer {
         string,
         Map<EntityMetadata, [string, ColumnMetadata][]>
     >
+    private relationIdsCache: Map<
+        string,
+        ({ loadedIndex: number } | ParentRowRelationId)[]
+    >
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -47,6 +57,7 @@ export class RawSqlResultsToEntityTransformer {
         )
         this.aliasCache = new Map()
         this.columnsCache = new Map()
+        this.relationIdsCache = new Map()
     }
 
     // -------------------------------------------------------------------------
@@ -358,16 +369,21 @@ export class RawSqlResultsToEntityTransformer {
         metadata: EntityMetadata,
     ): boolean {
         let hasData = false
-        for (const [
-            index,
-            rawRelationIdResult,
-        ] of this.rawRelationIdResults.entries()) {
-            if (
-                rawRelationIdResult.relationIdAttribute.parentAlias !==
-                alias.name
-            )
+        for (const relationId of this.getRelationIdsToProcess(alias.name)) {
+            if (!("loadedIndex" in relationId)) {
+                if (
+                    this.transformParentRowRelationId(
+                        rawSqlResults,
+                        entity,
+                        relationId,
+                    )
+                )
+                    hasData = true
                 continue
+            }
 
+            const index = relationId.loadedIndex
+            const rawRelationIdResult = this.rawRelationIdResults[index]
             const relation = rawRelationIdResult.relationIdAttribute.relation
             const valueMap = this.createValueMapFromJoinColumns(
                 relation,
@@ -424,6 +440,81 @@ export class RawSqlResultsToEntityTransformer {
         }
 
         return hasData
+    }
+
+    private getRelationIdsToProcess(aliasName: string) {
+        let relationIds = this.relationIdsCache.get(aliasName)
+        if (!relationIds) {
+            relationIds = []
+            for (const relationIdAttr of this.expressionMap
+                .relationIdAttributes) {
+                if (relationIdAttr.parentAlias !== aliasName) continue
+
+                const loadedIndex = this.rawRelationIdResults.findIndex(
+                    (rawRelationIdResult) =>
+                        rawRelationIdResult.relationIdAttribute ===
+                        relationIdAttr,
+                )
+                if (loadedIndex !== -1) {
+                    relationIds.push({ loadedIndex })
+                } else if (relationIdAttr.isReadFromParentRow) {
+                    const joinColumn = relationIdAttr.relation.joinColumns[0]
+                    relationIds.push({
+                        rawKey: this.buildAlias(
+                            aliasName,
+                            joinColumn.databaseName,
+                        ),
+                        properties:
+                            relationIdAttr.mapToPropertyPropertyPath.split("."),
+                        referencedColumn: joinColumn.referencedColumn!,
+                    })
+                }
+            }
+            this.relationIdsCache.set(aliasName, relationIds)
+        }
+        return relationIds
+    }
+
+    /**
+     * Sets a relation id held by the parent row, building its value the way
+     * the relation id loader and prepareDataForTransformRelationIds do.
+     *
+     * @param rawSqlResults raw rows of the entity being transformed
+     * @param entity entity the relation id is set on
+     * @param relationId where the relation id is read and mapped to
+     * @returns true when the relation id was set
+     */
+    protected transformParentRowRelationId(
+        rawSqlResults: ObjectLiteral[],
+        entity: ObjectLiteral,
+        relationId: ParentRowRelationId,
+    ): boolean {
+        const { rawKey, properties, referencedColumn } = relationId
+        const value = referencedColumn.getEntityValue(
+            OrmUtils.mergeDeep(
+                {},
+                referencedColumn.createValueMap(
+                    this.driver.prepareHydratedValue(
+                        rawSqlResults[0][rawKey],
+                        referencedColumn,
+                    ),
+                ),
+            ),
+        )
+        if (value === undefined) return false
+
+        let target = entity
+        for (const property of properties.slice(0, -1)) {
+            if (
+                typeof target[property] !== "object" ||
+                target[property] === null
+            ) {
+                target[property] = {}
+            }
+            target = target[property]
+        }
+        target[properties[properties.length - 1]] = value
+        return true
     }
 
     private getColumnsToProcess(aliasName: string, metadata: EntityMetadata) {
