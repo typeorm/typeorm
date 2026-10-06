@@ -10,6 +10,7 @@
   "license": "MIT",
   "scripts": {
     "changelog": "standard-changelog",
+    "check:manifests": "node scripts/check-publishable-manifests.mjs",
     "compile": "pnpm --filter typeorm run compile",
     "docs:dev": "cd docs && pnpm run start",
     "format": "prettier --cache --write .",
