@@ -1987,17 +1987,23 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             }
 
             const releaseFn = () => {
-                if (queryRunner !== this.queryRunner)
+                if (queryRunner !== this.queryRunner && !queryRunner.isReleased)
                     // means we created our own query runner
                     return queryRunner.release()
                 return
             }
-            const results = queryRunner.stream(
+            const results = await queryRunner.stream(
                 sql,
                 parameters,
                 releaseFn,
                 releaseFn,
             )
+            // pg-query-stream finishes cleanup before close; other drivers may not.
+            if (
+                this.dataSource.options.type === "postgres" ||
+                this.dataSource.options.type === "cockroachdb"
+            )
+                results.once("close", releaseFn)
 
             // close transaction if we started it
             if (transactionStartedByUs) {
