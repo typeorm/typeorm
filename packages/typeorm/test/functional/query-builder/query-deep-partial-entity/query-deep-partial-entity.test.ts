@@ -23,9 +23,10 @@ type Same<A, B> =
         ? true
         : false
 
+// the argument is checked when the test file is compiled
 const sameAsLegacy = <T>(
     _same: Same<QueryDeepPartialEntity<T>, LegacyQueryDeepPartialEntity<T>>,
-) => undefined
+) => true
 
 // same shape as `JsonValue` of the `type-fest` package
 type JsonPrimitive = string | number | boolean | null
@@ -39,6 +40,10 @@ type JsonValue = JsonPrimitive | JsonObject | JsonArray
 type Nested = { name: string; children: Nested[] | string }
 
 type Tuple = [string, Tuple] | string
+
+// arrays that contain themselves directly
+type ArrayTree = { price: number } | ArrayTree[]
+type ReadonlyArrayTree = { price: number } | readonly ReadonlyArrayTree[]
 
 class Address {
     street: string
@@ -119,21 +124,52 @@ describe("query builder > query deep partial entity", () => {
     })
 
     it("should keep resolving types without cycles to the same type as before", () => {
-        sameAsLegacy<User>(true)
-        sameAsLegacy<Address>(true)
-        sameAsLegacy<Photo[]>(true)
-        sameAsLegacy<{ a: { b: { c: { d: string[] } } } }>(true)
-        sameAsLegacy<{ a?: { b: string } | null; c: [string, { d: Date }] }>(
-            true,
-        )
-        sameAsLegacy<any>(true)
-        sameAsLegacy<unknown>(true)
-        sameAsLegacy<ObjectLiteral>(true)
-        sameAsLegacy<Record<string, { a: number[] }>>(true)
-        sameAsLegacy<Category>(true)
-        sameAsLegacy<{ a: Address; b: Address; c: Address[] }>(true)
+        const checks = [
+            sameAsLegacy<User>(true),
+            sameAsLegacy<Address>(true),
+            sameAsLegacy<Photo[]>(true),
+            sameAsLegacy<{ a: { b: { c: { d: string[] } } } }>(true),
+            sameAsLegacy<{
+                a?: { b: string } | null
+                c: [string, { d: Date }]
+            }>(true),
+            sameAsLegacy<any>(true),
+            sameAsLegacy<unknown>(true),
+            sameAsLegacy<ObjectLiteral>(true),
+            sameAsLegacy<Record<string, { a: number[] }>>(true),
+            sameAsLegacy<Category>(true),
+            sameAsLegacy<{ a: Address; b: Address; c: Address[] }>(true),
+        ]
 
-        expect(true).to.equal(true)
+        expect(checks).to.have.lengthOf(11)
+    })
+
+    it("should keep objects and SQL expressions partial in arrays that are nested in arrays", () => {
+        const nested: QueryDeepPartialEntity<{ items: ArrayTree }> = {
+            items: [[{ price: () => "price + 1" }]],
+        }
+        const readonlyNested: QueryDeepPartialEntity<{
+            items: ReadonlyArrayTree
+        }> = { items: [[{ price: () => "price + 1" }]] }
+
+        expect(nested.items).to.have.nested.property("[0][0].price")
+        expect(readonlyNested.items).to.have.nested.property("[0][0].price")
+    })
+
+    it("should keep arrays as declared after they are nested in themselves twice", () => {
+        const plain: QueryDeepPartialEntity<{ items: ArrayTree }> = {
+            items: [[[{ price: 1 }]]],
+        }
+        const expression: QueryDeepPartialEntity<{ items: ArrayTree }> = {
+            // known limit: the expansion of a self-containing array type ends
+            // at the third level, below it SQL expression functions are not
+            // accepted
+            // @ts-expect-error a function is not assignable to `price`
+            items: [[[{ price: () => "price + 1" }]]],
+        }
+
+        expect(plain.items).to.have.nested.property("[0][0][0].price", 1)
+        expect(expression.items).to.have.lengthOf(1)
     })
 
     it("should keep entities that contain themselves through objects partial on every level", () => {
@@ -155,7 +191,13 @@ describe("query builder > query deep partial entity", () => {
             data: new Date(),
         }
 
+        const wrongNested: QueryDeepPartialEntity<JsonEntity> = {
+            // @ts-expect-error a Date is not a JSON value, in nested arrays too
+            data: [[new Date()]],
+        }
+
         expect(wrong).to.be.an("object")
         expect(wrongJson).to.be.an("object")
+        expect(wrongNested).to.be.an("object")
     })
 })
