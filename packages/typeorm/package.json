@@ -76,7 +76,7 @@
     "typeorm-ts-node-esm": "./cli-ts-node-esm.js"
   },
   "scripts": {
-    "compile": "gulp clean && tsc",
+    "compile": "gulp clean:compiled && tsc",
     "lint": "eslint",
     "package": "gulp package",
     "test": "pnpm run compile && pnpm run test:fast --",
