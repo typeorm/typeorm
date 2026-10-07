@@ -26,4 +26,5 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy docs/build --project-name=typeorm
+          workingDirectory: docs
+          command: pages deploy build --project-name=typeorm

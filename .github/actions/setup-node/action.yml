@@ -13,6 +13,10 @@ inputs:
     description: Download build artifact
     required: false
     default: "false"
+  ignore-workspace:
+    description: Ignore the repository workspace when installing dependencies
+    required: false
+    default: "false"
 
 runs:
   using: composite
@@ -24,7 +28,7 @@ runs:
         node-version: ${{ inputs.node-version }}
         cache: pnpm
 
-    - run: pnpm install --frozen-lockfile
+    - run: pnpm install --frozen-lockfile ${{ inputs.ignore-workspace == 'true' && '--ignore-workspace' || '' }}
       shell: bash
       working-directory: ${{ inputs.working-directory || '.' }}
 
