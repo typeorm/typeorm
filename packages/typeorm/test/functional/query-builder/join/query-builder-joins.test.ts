@@ -1,11 +1,14 @@
 import "reflect-metadata"
 import { expect } from "chai"
+import sinon from "sinon"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import type { DataSource } from "../../../../src/data-source/DataSource"
+import type { QueryRunner } from "../../../../src/query-runner/QueryRunner"
+import { Like } from "../../../../src/find-options/operator/Like"
 import { Tag } from "./entity/Tag"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
@@ -1807,6 +1810,328 @@ describe("query builder > joins", () => {
                     result[0].compositePKCategories.forEach((category) => {
                         expect(category.name).to.be.a("string")
                     })
+                }),
+            ))
+    })
+
+    describe("github issues > #5694 skip and take with joins that cannot repeat the root row", () => {
+        const savePostsWithTags = async (dataSource: DataSource) => {
+            const tags: Tag[] = []
+            for (let index = 1; index <= 4; index++) {
+                const tag = new Tag()
+                tag.name = `tag #${index}`
+                tags.push(await dataSource.manager.save(tag))
+            }
+
+            const category1 = new Category()
+            category1.name = "category #1"
+            await dataSource.manager.save(category1)
+
+            const category2 = new Category()
+            category2.name = "category #2"
+            await dataSource.manager.save(category2)
+
+            for (let index = 1; index <= 4; index++) {
+                const author = new User()
+                author.name = `author #${index}`
+                await dataSource.manager.save(author)
+
+                const post = new Post()
+                post.title = `post #${index}`
+                post.tag = tags[index - 1]
+                post.author = author
+                post.categories = [category1, category2]
+                await dataSource.manager.save(post)
+            }
+        }
+
+        const spyQueries = async <T>(
+            dataSource: DataSource,
+            run: (queryRunner: QueryRunner) => Promise<T>,
+        ): Promise<{ result: T; queries: string[] }> => {
+            const queryRunner = dataSource.createQueryRunner()
+            const querySpy = sinon.spy(queryRunner, "query")
+            try {
+                const result = await run(queryRunner)
+                return {
+                    result,
+                    queries: querySpy.getCalls().map((call) => call.args[0]),
+                }
+            } finally {
+                querySpy.restore()
+                await queryRunner.release()
+            }
+        }
+
+        it("should paginate many-to-one and one-to-one joins in a single query", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await savePostsWithTags(dataSource)
+
+                    const { result: posts, queries } = await spyQueries(
+                        dataSource,
+                        (queryRunner) =>
+                            dataSource.manager
+                                .createQueryBuilder(Post, "post")
+                                .innerJoinAndSelect("post.tag", "tag")
+                                .leftJoinAndSelect("post.author", "author")
+                                .orderBy("post.id")
+                                .skip(1)
+                                .take(2)
+                                .setQueryRunner(queryRunner)
+                                .getMany(),
+                    )
+
+                    expect(queries).to.have.lengthOf(1)
+                    expect(posts.map((post) => post.title)).to.eql([
+                        "post #2",
+                        "post #3",
+                    ])
+                    expect(posts.map((post) => post.tag.name)).to.eql([
+                        "tag #2",
+                        "tag #3",
+                    ])
+                    expect(posts.map((post) => post.author.name)).to.eql([
+                        "author #2",
+                        "author #3",
+                    ])
+                }),
+            ))
+
+        it("should keep the two-query pagination for many-to-many joins", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await savePostsWithTags(dataSource)
+
+                    const { result: posts, queries } = await spyQueries(
+                        dataSource,
+                        (queryRunner) =>
+                            dataSource.manager
+                                .createQueryBuilder(Post, "post")
+                                .leftJoinAndSelect(
+                                    "post.categories",
+                                    "category",
+                                )
+                                .orderBy("post.id")
+                                .take(2)
+                                .setQueryRunner(queryRunner)
+                                .getMany(),
+                    )
+
+                    expect(queries).to.have.lengthOf(2)
+                    expect(posts.map((post) => post.title)).to.eql([
+                        "post #1",
+                        "post #2",
+                    ])
+                    posts.forEach((post) =>
+                        expect(post.categories).to.have.lengthOf(2),
+                    )
+                }),
+            ))
+
+        it("should count without a distinct pagination query on many-to-one joins", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await savePostsWithTags(dataSource)
+
+                    const {
+                        result: [posts, count],
+                        queries,
+                    } = await spyQueries(dataSource, (queryRunner) =>
+                        dataSource.manager
+                            .createQueryBuilder(Post, "post")
+                            .innerJoinAndSelect("post.tag", "tag")
+                            .orderBy("post.id")
+                            .take(2)
+                            .setQueryRunner(queryRunner)
+                            .getManyAndCount(),
+                    )
+
+                    expect(count).to.equal(4)
+                    expect(posts.map((post) => post.title)).to.eql([
+                        "post #1",
+                        "post #2",
+                    ])
+                    expect(posts.map((post) => post.tag.name)).to.eql([
+                        "tag #1",
+                        "tag #2",
+                    ])
+                    expect(queries).to.have.lengthOf(2)
+                    queries.forEach((query) =>
+                        expect(query).to.not.contain("SELECT DISTINCT"),
+                    )
+                }),
+            ))
+
+        it("should map limit and offset literally on many-to-one joins", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await savePostsWithTags(dataSource)
+
+                    const { result: posts, queries } = await spyQueries(
+                        dataSource,
+                        (queryRunner) => {
+                            const queryBuilder = dataSource.manager
+                                .createQueryBuilder(Post, "post")
+                                .innerJoinAndSelect("post.tag", "tag")
+                                .orderBy("post.id")
+                                .limit(2)
+                                .offset(1)
+                                .setQueryRunner(queryRunner)
+
+                            expect(queryBuilder.getSql()).to.match(
+                                /LIMIT 2|FETCH NEXT 2 ROWS ONLY/,
+                            )
+                            return queryBuilder.getMany()
+                        },
+                    )
+
+                    expect(queries).to.have.lengthOf(1)
+                    expect(posts.map((post) => post.title)).to.eql([
+                        "post #2",
+                        "post #3",
+                    ])
+                }),
+            ))
+
+        it("should keep the two-query pagination when limit and take are both set", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await savePostsWithTags(dataSource)
+
+                    const { result: posts, queries } = await spyQueries(
+                        dataSource,
+                        (queryRunner) =>
+                            dataSource.manager
+                                .createQueryBuilder(Post, "post")
+                                .innerJoinAndSelect("post.tag", "tag")
+                                .orderBy("post.id")
+                                .limit(3)
+                                .take(2)
+                                .setQueryRunner(queryRunner)
+                                .getMany(),
+                    )
+
+                    expect(queries).to.have.lengthOf(2)
+                    expect(posts.map((post) => post.title)).to.eql([
+                        "post #1",
+                        "post #2",
+                    ])
+                }),
+            ))
+
+        it("should order by the primary key when paginating many-to-one joins without an order", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await savePostsWithTags(dataSource)
+
+                    const { result: posts, queries } = await spyQueries(
+                        dataSource,
+                        (queryRunner) =>
+                            dataSource.manager
+                                .createQueryBuilder(Post, "post")
+                                .innerJoinAndSelect("post.tag", "tag")
+                                .skip(1)
+                                .take(2)
+                                .setQueryRunner(queryRunner)
+                                .getMany(),
+                    )
+
+                    expect(queries).to.have.lengthOf(1)
+                    expect(queries[0]).to.match(
+                        /ORDER BY [^,]*\bpost\W+\.\W*id\W* ASC/i,
+                    )
+                    expect(posts.map((post) => post.title)).to.eql([
+                        "post #2",
+                        "post #3",
+                    ])
+                    expect(
+                        dataSource.manager
+                            .createQueryBuilder(Post, "post")
+                            .take(2)
+                            .getQuery(),
+                    ).to.not.match(/ORDER BY [^(]/i)
+                }),
+            ))
+
+        it("should order by the primary key after the user order when paginating many-to-one joins", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await savePostsWithTags(dataSource)
+
+                    const { result: posts, queries } = await spyQueries(
+                        dataSource,
+                        (queryRunner) =>
+                            dataSource.manager
+                                .createQueryBuilder(Post, "post")
+                                .innerJoinAndSelect("post.tag", "tag")
+                                .orderBy("post.title", "DESC")
+                                .take(2)
+                                .setQueryRunner(queryRunner)
+                                .getMany(),
+                    )
+
+                    expect(queries).to.have.lengthOf(1)
+                    expect(queries[0]).to.match(
+                        /ORDER BY .*title\W* DESC, .*\bpost\W+\.\W*id\W* ASC/i,
+                    )
+                    expect(posts.map((post) => post.title)).to.eql([
+                        "post #4",
+                        "post #3",
+                    ])
+                }),
+            ))
+
+        it("should not order by the primary key when paginating grouped, distinct or aggregated many-to-one joins", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const grouped = dataSource.manager
+                        .createQueryBuilder(Post, "post")
+                        .innerJoin("post.tag", "tag")
+                        .select("tag.name", "name")
+                        .addSelect("COUNT(*)", "cnt")
+                        .groupBy("tag.name")
+                        .take(2)
+                        .getQuery()
+                    const distinct = dataSource.manager
+                        .createQueryBuilder(Post, "post")
+                        .innerJoin("post.tag", "tag")
+                        .select("tag.name", "name")
+                        .distinct(true)
+                        .take(2)
+                        .getQuery()
+
+                    const aggregated = dataSource.manager
+                        .createQueryBuilder(Post, "post")
+                        .innerJoin("post.tag", "tag")
+                        .select("COUNT(*)", "cnt")
+                        .take(1)
+                        .getQuery()
+
+                    expect(grouped).to.not.match(/ORDER BY [^(]/i)
+                    expect(distinct).to.not.match(/ORDER BY [^(]/i)
+                    expect(aggregated).to.not.match(/ORDER BY [^(]/i)
+                }),
+            ))
+
+        it("should return the lowest primary key from findOne with a where on a many-to-one relation", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await savePostsWithTags(dataSource)
+
+                    const { result: post, queries } = await spyQueries(
+                        dataSource,
+                        (queryRunner) =>
+                            queryRunner.manager.findOne(Post, {
+                                where: { tag: { name: Like("tag #%") } },
+                            }),
+                    )
+
+                    expect(queries).to.have.lengthOf(1)
+                    expect(queries[0]).to.match(
+                        /ORDER BY [^,]*\bPost\W+\.\W*id\W* ASC/i,
+                    )
+                    expect(post!.title).to.equal("post #1")
                 }),
             ))
     })

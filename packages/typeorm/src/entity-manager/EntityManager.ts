@@ -23,6 +23,7 @@ import type { InsertResult } from "../query-builder/result/InsertResult"
 import type { UpdateResult } from "../query-builder/result/UpdateResult"
 import type { DeleteResult } from "../query-builder/result/DeleteResult"
 import type { FindOptionsWhere } from "../find-options/FindOptionsWhere"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
 import type { IsolationLevel } from "../driver/types/IsolationLevel"
 import { ObjectUtils } from "../util/ObjectUtils"
 import type { UpsertOptions } from "../repository/UpsertOptions"
@@ -1324,7 +1325,9 @@ export class EntityManager {
         return this.createQueryBuilder<Entity>(entityClass, metadata.name)
             .setFindOptions({
                 ...options,
-                take: 1,
+                take: this.wherePinsEveryPrimaryColumn(metadata, options.where)
+                    ? undefined
+                    : 1,
             })
             .getOne()
     }
@@ -1346,9 +1349,30 @@ export class EntityManager {
         return this.createQueryBuilder<Entity>(entityClass, metadata.name)
             .setFindOptions({
                 where,
-                take: 1,
+                take: this.wherePinsEveryPrimaryColumn(metadata, where)
+                    ? undefined
+                    : 1,
             })
             .getOne()
+    }
+
+    private wherePinsEveryPrimaryColumn<Entity extends ObjectLiteral>(
+        metadata: EntityMetadata,
+        where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): boolean {
+        if (Array.isArray(where) || metadata.primaryColumns.length === 0)
+            return false
+
+        return metadata.primaryColumns.every((column) => {
+            const value: unknown = column.getEntityValue(where)
+            return (
+                typeof value === "string" ||
+                typeof value === "number" ||
+                typeof value === "bigint" ||
+                typeof value === "boolean" ||
+                value instanceof Date
+            )
+        })
     }
 
     /**
