@@ -261,7 +261,13 @@ export class ActionLog {
 
 Here is an example if you want to define your entities, and you don't want those to cause errors in some environments.
 In this situation we have Action.ts and Person.ts importing each other for a many-to-many relationship.
-We use import type so that we can use the type information without any JavaScript code being generated.
+
+There are two approaches to handle circular dependencies in ESM projects:
+
+### Approach 1: Using `import type` with string-based entity references
+
+We use `import type` so that we can use the type information without any JavaScript code being generated.
+This approach works with all relation types but is particularly useful for `@ManyToMany` relations:
 
 ```typescript
 import { Entity, PrimaryColumn, Column, ManytoMany } from "typeorm"
@@ -296,3 +302,29 @@ export class Person {
     log: ActionLog
 }
 ```
+
+### Approach 2: Using the `Relation` wrapper type
+
+For `@OneToOne`, `@ManyToOne`, and `@OneToMany` relations, you can use the `Relation` wrapper type instead of the `import type` approach.
+This is documented in the [Getting Started guide](/docs/getting-started.md#relations-in-esm-projects) and is the recommended approach for these relation types:
+
+```typescript
+import {
+    Entity,
+    Column,
+    PrimaryGeneratedColumn,
+    OneToOne,
+    JoinColumn,
+    Relation,
+} from "typeorm"
+import { Photo } from "./Photo"
+
+@Entity()
+export class PhotoMetadata {
+    @OneToOne(() => Photo, (photo) => photo.metadata)
+    @JoinColumn()
+    photo: Relation<Photo>
+}
+```
+
+> **Note:** Both approaches are valid. The `Relation` wrapper is generally preferred for `@OneToOne`, `@ManyToOne`, and `@OneToMany` relations, while the `import type` with string-based approach is useful for `@ManyToMany` relations or when you need more control over the relation setup.
