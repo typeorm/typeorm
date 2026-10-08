@@ -1,5 +1,7 @@
 import "reflect-metadata"
 import "../../../utils/test-setup"
+import { expect } from "chai"
+import sinon from "sinon"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -18,8 +20,6 @@ import type { FindManyOptions } from "../../../../src/find-options/FindManyOptio
 import { Post as CompositeKeyPost } from "../../query-builder/relation-id/one-to-many/multiple-pk/entity/Post"
 import { Category as CompositeKeyCategory } from "../../query-builder/relation-id/one-to-many/multiple-pk/entity/Category"
 import { PostCategory } from "../../view-entity/general/entity/PostCategory"
-import { expect } from "chai"
-import sinon from "sinon"
 
 const spyQueries = async <T>(
     dataSource: DataSource,
