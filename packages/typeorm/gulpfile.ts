@@ -136,10 +136,20 @@ function copyLicense() {
 // Tasks
 // -------------------------------------------------------------------------
 
+// `compile` writes ./build/compiled and `package` writes ./build/package plus
+// the ./build/browser sources it compiles from. Each cleans only what it owns,
+// so one can run after the other without discarding its output.
+const packageOutputs = ["./build/browser", "./build/package"]
+
 gulp.task(
     "package",
     gulp.series(
-        () => fs.rm("./build", { recursive: true, force: true }),
+        () =>
+            Promise.all(
+                packageOutputs.map((dir) =>
+                    fs.rm(dir, { recursive: true, force: true }),
+                ),
+            ),
         gulp.parallel(browserCopySources, browserCopyTemplates),
         gulp.parallel(nodeCompile, browserCompile),
         gulp.parallel(
@@ -150,6 +160,10 @@ gulp.task(
             browserCopyShims,
         ),
     ),
+)
+
+gulp.task("clean:compiled", () =>
+    fs.rm("./build/compiled", { recursive: true, force: true }),
 )
 
 gulp.task("clean", () => fs.rm("./build", { recursive: true, force: true }))
