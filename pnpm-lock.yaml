@@ -193,6 +193,9 @@ importers:
       '@google-cloud/spanner':
         specifier: ^8.11.0
         version: 8.11.0
+      '@js-temporal/polyfill':
+        specifier: ^0.5.1
+        version: 0.5.1
       '@sap/hana-client':
         specifier: ^2.29.27
         version: 2.29.27
@@ -1018,6 +1021,10 @@ packages:
 
   '@js-sdsl/ordered-map@4.4.2':
     resolution: {integrity: sha512-iUKgm52T8HOE/makSxjqoWhe95ZJA1/G1sYsGev2JDKUSS14KAgg1LHb+Ba+IPow0xflbnSkOsZcO08C7w1gYw==}
+
+  '@js-temporal/polyfill@0.5.1':
+    resolution: {integrity: sha512-hloP58zRVCRSpgDxmqCWJNlizAlUgJFqG2ypq79DCvyv9tHjRYMDOcPFjzfl/A1/YxDvRCZz8wvZvmapQnKwFQ==}
+    engines: {node: '>=12'}
 
   '@kwsites/file-exists@1.1.1':
     resolution: {integrity: sha512-m9/5YGR18lIwxSFDwfE3oA7bWuq9kdau6ugN4H2rJeyhFQZcG9AgSHkQtSD15a8WvTgfz9aikZMrKPHvbpqFiw==}
@@ -2772,6 +2779,9 @@ packages:
   js-yaml@4.3.2:
     resolution: {integrity: sha512-SFNOvSJ+Dgf/9An904Yx+CgSlIPCkIpao4qo51lpee25TIRejdH3rhR4EZMGoNx3/TP3O+wzWuiTFl4sqbltzA==}
     hasBin: true
+
+  jsbi@4.3.2:
+    resolution: {integrity: sha512-9fqMSQbhJykSeii05nxKl4m6Eqn2P6rOlYiS+C5Dr/HPIU/7yZxu5qzbs40tgaFORiw2Amd0mirjxatXYMkIew==}
 
   jscodeshift@17.4.0:
     resolution: {integrity: sha512-i3ESKiiTsGynxzTg5BhsZViD0ai72/6SsI1efDZxG6/5KCoElsmquxtyhXK5lpEgoO7MTNpYkjFEdEL97SkBNg==}
@@ -5190,6 +5200,10 @@ snapshots:
 
   '@js-sdsl/ordered-map@4.4.2': {}
 
+  '@js-temporal/polyfill@0.5.1':
+    dependencies:
+      jsbi: 4.3.2
+
   '@kwsites/file-exists@1.1.1':
     dependencies:
       debug: 4.4.3(supports-color@8.1.1)
@@ -7054,6 +7068,8 @@ snapshots:
   js-yaml@4.3.2:
     dependencies:
       argparse: 2.0.1
+
+  jsbi@4.3.2: {}
 
   jscodeshift@17.4.0:
     dependencies:

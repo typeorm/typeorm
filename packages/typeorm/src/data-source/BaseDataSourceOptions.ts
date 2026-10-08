@@ -41,6 +41,13 @@ export interface BaseDataSourceOptions {
     readonly isolationLevel?: IsolationLevel
 
     /**
+     * Temporal implementation used for columns opted into the `temporal` option (TC39 Temporal).
+     * Pass the native `Temporal` or a polyfill (e.g. `@js-temporal/polyfill`).
+     * When omitted, TypeORM falls back to `globalThis.Temporal`; if neither is available, Temporal features are disabled.
+     */
+    readonly temporal?: unknown
+
+    /**
      * Migrations to be loaded for this connection.
      * Accepts both migration classes and glob patterns representing migration files.
      */
