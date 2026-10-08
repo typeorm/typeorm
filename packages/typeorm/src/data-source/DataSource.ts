@@ -392,10 +392,8 @@ export class DataSource {
         if (!this.isInitialized) throw new CannotExecuteNotConnectedError()
 
         const migrationExecutor = new MigrationExecutor(this)
-        migrationExecutor.transaction =
-            options?.transaction ??
-            this.options?.migrationsTransactionMode ??
-            "all"
+        if (options?.transaction)
+            migrationExecutor.transaction = options.transaction
         migrationExecutor.fake = options?.fake ?? false
 
         const successMigrations =
@@ -418,7 +416,8 @@ export class DataSource {
         if (!this.isInitialized) throw new CannotExecuteNotConnectedError()
 
         const migrationExecutor = new MigrationExecutor(this)
-        migrationExecutor.transaction = options?.transaction ?? "all"
+        if (options?.transaction)
+            migrationExecutor.transaction = options.transaction
         migrationExecutor.fake = options?.fake ?? false
 
         await migrationExecutor.undoLastMigration()

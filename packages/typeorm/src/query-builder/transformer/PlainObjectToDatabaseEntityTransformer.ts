@@ -1,6 +1,7 @@
 import type { ObjectLiteral } from "../../common/ObjectLiteral"
 import type { EntityMetadata } from "../../metadata/EntityMetadata"
 import type { EntityManager } from "../../entity-manager/EntityManager"
+import { isActiveMongoTransaction } from "../../driver/mongodb/isActiveMongoTransaction"
 import type { MongoEntityManager } from "../../entity-manager/MongoEntityManager"
 import type { RelationMetadata } from "../../metadata/RelationMetadata"
 
@@ -131,28 +132,32 @@ export class PlainObjectToDatabaseEntityTransformer {
         // load all entities and store them in the load map
         const isMongoDb =
             this.manager.dataSource.driver.options.type === "mongodb"
-        await Promise.all(
-            loadMap.groupByTargetIds().map(async (targetWithIds) => {
-                let entities: ObjectLiteral[]
-                if (isMongoDb) {
-                    const mongoManager = this
-                        .manager as unknown as MongoEntityManager
-                    entities = await mongoManager.findByIds(
-                        targetWithIds.target,
-                        targetWithIds.ids,
-                    )
-                } else {
-                    entities = await this.manager
-                        .getRepository<ObjectLiteral>(
-                            targetWithIds.target as any,
-                        )
-                        .createQueryBuilder()
-                        .whereInIds(targetWithIds.ids)
-                        .getMany()
-                }
-                loadMap.fillEntities(targetWithIds.target, entities)
-            }),
-        )
+        const loadTarget = async (
+            targetWithIds: ReturnType<LoadMap["groupByTargetIds"]>[number],
+        ) => {
+            let entities: ObjectLiteral[]
+            if (isMongoDb) {
+                const mongoManager = this
+                    .manager as unknown as MongoEntityManager
+                entities = await mongoManager.findByIds(
+                    targetWithIds.target,
+                    targetWithIds.ids,
+                )
+            } else {
+                entities = await this.manager
+                    .getRepository<ObjectLiteral>(targetWithIds.target as any)
+                    .createQueryBuilder()
+                    .whereInIds(targetWithIds.ids)
+                    .getMany()
+            }
+            loadMap.fillEntities(targetWithIds.target, entities)
+        }
+        const targets = loadMap.groupByTargetIds()
+        if (isActiveMongoTransaction(this.manager.queryRunner)) {
+            for (const target of targets) await loadTarget(target)
+        } else {
+            await Promise.all(targets.map(loadTarget))
+        }
 
         // go through each item in the load map and set their entity relationship using metadata stored in load map
         loadMap.loadMapItems.forEach((loadMapItem) => {

@@ -22,7 +22,7 @@ export class MigrationExecutor {
      *   none: all migrations are run without a transaction
      *   each: each migration is run in a separate transaction
      */
-    transaction: "all" | "none" | "each" = "all"
+    transaction: "all" | "none" | "each"
 
     /**
      * Option to fake-run or fake-revert a migration, adding to the
@@ -50,6 +50,9 @@ export class MigrationExecutor {
         protected dataSource: DataSource,
         protected queryRunner?: QueryRunner,
     ) {
+        this.transaction =
+            dataSource.options.migrationsTransactionMode ??
+            (dataSource.driver.options.type === "mongodb" ? "none" : "all")
         const { schema } = this.dataSource.driver.options as any
         const database = this.dataSource.driver.database
         this.migrationsDatabase = database
@@ -684,10 +687,7 @@ export class MigrationExecutor {
         }
         if (this.dataSource.driver.options.type === "mongodb") {
             const mongoRunner = queryRunner as MongoQueryRunner
-            await mongoRunner.databaseConnection
-                .db(this.dataSource.driver.database!)
-                .collection(this.migrationsTableName)
-                .insertOne(values)
+            await mongoRunner.insertOne(this.migrationsTableName, values)
         } else {
             const qb = queryRunner.manager.createQueryBuilder()
             await qb
@@ -730,10 +730,7 @@ export class MigrationExecutor {
 
         if (this.dataSource.driver.options.type === "mongodb") {
             const mongoRunner = queryRunner as MongoQueryRunner
-            await mongoRunner.databaseConnection
-                .db(this.dataSource.driver.database!)
-                .collection(this.migrationsTableName)
-                .deleteOne(conditions)
+            await mongoRunner.deleteOne(this.migrationsTableName, conditions)
         } else {
             const qb = queryRunner.manager.createQueryBuilder()
             await qb
