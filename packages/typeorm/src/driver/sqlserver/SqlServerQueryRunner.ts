@@ -225,8 +225,13 @@ export class SqlServerQueryRunner
 
         const release = await this.lock.acquire()
 
-        this.driver.dataSource.logger.logQuery(query, parameters, this)
-        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
+        try {
+            this.driver.dataSource.logger.logQuery(query, parameters, this)
+            await this.broadcaster.broadcast("BeforeQuery", query, parameters)
+        } catch (error) {
+            release()
+            throw error
+        }
 
         const broadcasterResult = new BroadcasterResult()
         const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime
@@ -347,9 +352,11 @@ export class SqlServerQueryRunner
 
             throw err
         } finally {
-            await broadcasterResult.wait()
-
-            release()
+            try {
+                await broadcasterResult.wait()
+            } finally {
+                release()
+            }
         }
     }
 
