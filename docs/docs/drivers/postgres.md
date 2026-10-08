@@ -44,7 +44,7 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 
 - `poolErrorHandler` - A function that gets called when the underlying pool emits `'error'` event. Takes a single parameter (error instance) and defaults to logging with `warn` level.
 
-- `maxTransactionRetries` - A maximum number of transaction retries in case of a 40001 error. Defaults to 5.
+- `maxTransactionRetries` - CockroachDB only. A maximum number of retries of a `transaction()` callback in case of a 40001 serialization error. The `postgres` driver never retries, even though it can also raise 40001 errors in `SERIALIZABLE` transactions. Each retry rolls back to the start of the transaction and re-runs the whole callback, so it must be safe to run more than once (e.g. no non-transactional side effects). Other transactions are never retried and the error is thrown instead: those controlled manually with `startTransaction()` / `commitTransaction()`, and those TypeORM opens on its own for `save()`, `remove()` or query builders. Defaults to 5.
 
 - `logNotifications` - A boolean to determine whether postgres server [notice messages](https://www.postgresql.org/docs/current/plpgsql-errors-and-messages.html) and [notification events](https://www.postgresql.org/docs/current/sql-notify.html) should be included in client's logs with `info` level (default: `false`).
 
