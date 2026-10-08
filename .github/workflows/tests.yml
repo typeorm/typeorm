@@ -15,6 +15,11 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       changes: ${{ steps.detect-changes.outputs.changes }}
+      # SONAR_TOKEN is empty for forks and for Dependabot: a pull_request run
+      # from a fork gets none of this repository's secrets, and a Dependabot run
+      # reads the Dependabot secret store, where SONAR_TOKEN is not set. Running
+      # the scan without it fails with "Not authorized".
+      sonar: ${{ github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -154,12 +159,7 @@ jobs:
       - run: pnpm exec c8 pnpm test
         working-directory: packages/codemod
       - uses: SonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4 # v8.2.2
-        # Neither a fork nor Dependabot can read SONAR_TOKEN: forks have no
-        # access to secrets, and Dependabot runs read from a separate store.
-        if: >-
-          github.event_name != 'pull_request' ||
-          (github.event.pull_request.head.repo.full_name == github.repository &&
-          github.actor != 'dependabot[bot]')
+        if: needs.detect-changes.outputs.sonar == 'true'
         with:
           projectBaseDir: packages/codemod
         env:
@@ -180,12 +180,7 @@ jobs:
       - run: pnpm exec c8 pnpm test
         working-directory: packages/legacy-naming-strategies
       - uses: SonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4 # v8.2.2
-        # Neither a fork nor Dependabot can read SONAR_TOKEN: forks have no
-        # access to secrets, and Dependabot runs read from a separate store.
-        if: >-
-          github.event_name != 'pull_request' ||
-          (github.event.pull_request.head.repo.full_name == github.repository &&
-          github.actor != 'dependabot[bot]')
+        if: needs.detect-changes.outputs.sonar == 'true'
         with:
           projectBaseDir: packages/legacy-naming-strategies
         env:
@@ -205,12 +200,7 @@ jobs:
           path: packages/typeorm/coverage/
 
       - uses: SonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4 # v8.2.2
-        # Neither a fork nor Dependabot can read SONAR_TOKEN: forks have no
-        # access to secrets, and Dependabot runs read from a separate store.
-        if: >-
-          github.event_name != 'pull_request' ||
-          (github.event.pull_request.head.repo.full_name == github.repository &&
-          github.actor != 'dependabot[bot]')
+        if: needs.detect-changes.outputs.sonar == 'true'
         with:
           projectBaseDir: packages/typeorm
         env:

@@ -177,31 +177,31 @@ jobs:
             (cd "$dir" && pnpm version "${BASE}-${STAMP}" --no-git-tag-version --allow-same-version)
           done
 
-      - run: pnpm run package
-        if: steps.publishable.outputs.should_publish == 'true'
-
-      - name: Publish typeorm
-        if: steps.publishable.outputs.should_publish == 'true'
-        run: pnpm publish --provenance --access public --no-git-checks --tag "${{ steps.publishable.outputs.tag }}"
-        working-directory: ${{ steps.publishable.outputs.pkg_dir }}/build/package
-
       # The codemod is versioned independently of typeorm and usually does not
       # change between releases, so a release that leaves its version alone has
-      # nothing to publish. Without this the whole release job fails after
-      # typeorm has already gone out.
+      # nothing to publish. This runs before anything is published, so a release
+      # decides everything it is going to do before it pushes the first package.
       - name: Check whether @typeorm/codemod needs publishing
         id: codemod
         if: steps.publishable.outputs.should_publish == 'true' && matrix.ref != 'v0'
         run: |
+          # The v0 line predates the packages layout and has no codemod.
+          if [ ! -f packages/codemod/package.json ]; then
+            echo "no codemod in this checkout"
+            echo "should_publish=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
           VERSION=$(node -p "require('./packages/codemod/package.json').version")
-          # Asking the registry directly, rather than through `pnpm view`, so the
-          # answer does not depend on package manager behaviour. Anything other
-          # than a clear yes or no is an error rather than a guess.
-          STATUS=$(curl -sS -o /dev/null -w "%{http_code}" \
+          # `pnpm view` exits non-zero both for a version that does not exist and
+          # for a registry it cannot reach, so a missing version cannot be told
+          # from a network failure. Read the status code instead.
+          STATUS=$(curl -sS --retry 3 --retry-all-errors --max-time 30 \
+            -o /dev/null -w "%{http_code}" \
             "https://registry.npmjs.org/@typeorm%2fcodemod/${VERSION}")
           case "$STATUS" in
             200)
-              echo "@typeorm/codemod@${VERSION} is already on the registry - nothing to publish"
+              echo "::warning::@typeorm/codemod@${VERSION} is already published - skipping. Bump the version if packages/codemod has changed."
               echo "should_publish=false" >> $GITHUB_OUTPUT
               ;;
             404)
@@ -213,6 +213,14 @@ jobs:
               exit 1
               ;;
           esac
+
+      - run: pnpm run package
+        if: steps.publishable.outputs.should_publish == 'true'
+
+      - name: Publish typeorm
+        if: steps.publishable.outputs.should_publish == 'true'
+        run: pnpm publish --provenance --access public --no-git-checks --tag "${{ steps.publishable.outputs.tag }}"
+        working-directory: ${{ steps.publishable.outputs.pkg_dir }}/build/package
 
       - name: Build @typeorm/codemod
         if: steps.codemod.outputs.should_publish == 'true'
