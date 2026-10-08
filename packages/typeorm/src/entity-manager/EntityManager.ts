@@ -26,6 +26,7 @@ import type { FindOptionsWhere } from "../find-options/FindOptionsWhere"
 import type { EntityMetadata } from "../metadata/EntityMetadata"
 import type { IsolationLevel } from "../driver/types/IsolationLevel"
 import { ObjectUtils } from "../util/ObjectUtils"
+import { isUint8Array } from "../util/Uint8ArrayUtils"
 import type { UpsertOptions } from "../repository/UpsertOptions"
 import type { UpdateOptions } from "../repository/UpdateOptions"
 import { InstanceChecker } from "../util/InstanceChecker"
@@ -1390,6 +1391,7 @@ export class EntityManager {
         if (
             !ObjectUtils.isObject(where) ||
             where instanceof Date ||
+            isUint8Array(where) ||
             InstanceChecker.isFindOperator(where)
         )
             return where
