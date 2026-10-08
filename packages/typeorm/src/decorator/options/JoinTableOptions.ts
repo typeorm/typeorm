@@ -1,4 +1,4 @@
-import type { JoinColumnOptions } from "./JoinColumnOptions"
+import type { JoinTableColumnOptions } from "./JoinTableColumnOptions"
 
 /**
  * Describes join table options.
@@ -13,12 +13,12 @@ export interface JoinTableOptions {
     /**
      * First column of the join table.
      */
-    joinColumn?: JoinColumnOptions
+    joinColumn?: JoinTableColumnOptions
 
     /**
      * Second (inverse) column of the join table.
      */
-    inverseJoinColumn?: JoinColumnOptions
+    inverseJoinColumn?: JoinTableColumnOptions
 
     /**
      * Database where join table will be created.
