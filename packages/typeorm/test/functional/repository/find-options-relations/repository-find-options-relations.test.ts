@@ -14,6 +14,7 @@ import { Counters } from "./entity/Counters"
 import { EntityPropertyNotFoundError } from "../../../../src/error/EntityPropertyNotFoundError"
 import type { QueryRunner } from "../../../../src/query-runner/QueryRunner"
 import { In } from "../../../../src/find-options/operator/In"
+import type { FindManyOptions } from "../../../../src/find-options/FindManyOptions"
 import { Post as CompositeKeyPost } from "../../query-builder/relation-id/one-to-many/multiple-pk/entity/Post"
 import { Category as CompositeKeyCategory } from "../../query-builder/relation-id/one-to-many/multiple-pk/entity/Category"
 import { PostCategory } from "../../view-entity/general/entity/PostCategory"
@@ -649,6 +650,33 @@ describe("repository > find options > relations", () => {
                         expect(post!.id).to.equal(1)
                         expect(post!.photos).to.have.lengthOf(3)
                     }
+                }),
+            ))
+
+        it("should keep the paginated queries when skip is set and the where fixes the primary key", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const options: FindManyOptions<Post> = {
+                        where: { id: 1 },
+                        relations: { photos: true },
+                        skip: 1,
+                    }
+                    const { result: post, queries } = await spyQueries(
+                        dataSource,
+                        (queryRunner) =>
+                            queryRunner.manager.findOne(Post, options),
+                    )
+                    const { queries: paginatedQueries } = await spyQueries(
+                        dataSource,
+                        (queryRunner) =>
+                            queryRunner.manager
+                                .createQueryBuilder(Post, "Post")
+                                .setFindOptions({ ...options, take: 1 })
+                                .getOne(),
+                    )
+
+                    expect(post).to.equal(null)
+                    expect(queries).to.eql(paginatedQueries)
                 }),
             ))
     })

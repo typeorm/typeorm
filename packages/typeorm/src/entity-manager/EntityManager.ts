@@ -1321,13 +1321,17 @@ export class EntityManager {
             )
         }
 
+        const { skip } = options as FindManyOptions<Entity>
+
         // create query builder and apply find options
         return this.createQueryBuilder<Entity>(entityClass, metadata.name)
             .setFindOptions({
                 ...options,
-                take: this.wherePinsEveryPrimaryColumn(metadata, options.where)
-                    ? undefined
-                    : 1,
+                take:
+                    !skip &&
+                    this.wherePinsEveryPrimaryColumn(metadata, options.where)
+                        ? undefined
+                        : 1,
             })
             .getOne()
     }
