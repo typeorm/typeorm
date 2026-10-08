@@ -679,6 +679,31 @@ describe("repository > find options > relations", () => {
                     expect(queries).to.eql(paginatedQueries)
                 }),
             ))
+
+        it("should keep limiting the query to one row when the primary key is not enumerable", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const where = Object.defineProperty({}, "id", {
+                        value: 1,
+                        enumerable: false,
+                    })
+                    const { queries } = await spyQueries(
+                        dataSource,
+                        (queryRunner) =>
+                            queryRunner.manager.findOneBy(Post, where),
+                    )
+                    const { queries: limitedQueries } = await spyQueries(
+                        dataSource,
+                        (queryRunner) =>
+                            queryRunner.manager
+                                .createQueryBuilder(Post, "Post")
+                                .setFindOptions({ where, take: 1 })
+                                .getOne(),
+                    )
+
+                    expect(queries).to.eql(limitedQueries)
+                }),
+            ))
     })
 })
 

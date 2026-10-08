@@ -1367,8 +1367,9 @@ export class EntityManager {
         if (Array.isArray(where) || metadata.primaryColumns.length === 0)
             return false
 
+        const queriedWhere = this.queriedWhere(where) as ObjectLiteral
         return metadata.primaryColumns.every((column) => {
-            const value: unknown = column.getEntityValue(where)
+            const value: unknown = column.getEntityValue(queriedWhere)
             return (
                 typeof value === "string" ||
                 typeof value === "number" ||
@@ -1377,6 +1378,26 @@ export class EntityManager {
                 value instanceof Date
             )
         })
+    }
+
+    /**
+     * Copies only what the find options builder reads from a where: its
+     * enumerable keys, at every level.
+     *
+     * @param where
+     */
+    private queriedWhere(where: unknown): unknown {
+        if (
+            !ObjectUtils.isObject(where) ||
+            where instanceof Date ||
+            InstanceChecker.isFindOperator(where)
+        )
+            return where
+
+        const copy: ObjectLiteral = {}
+        for (const key in where)
+            copy[key] = this.queriedWhere((where as ObjectLiteral)[key])
+        return copy
     }
 
     /**
