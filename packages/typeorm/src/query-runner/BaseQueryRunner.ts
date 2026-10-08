@@ -638,7 +638,10 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
         checkComment?: boolean,
         checkEnum = true,
     ): boolean {
+        const isVector = oldColumn.type === "vector" || oldColumn.type === "halfvec" || newColumn.type === "vector" || newColumn.type === "halfvec";
         return (
+            oldColumn.type !== newColumn.type ||
+            (!isVector && oldColumn.length !== newColumn.length) ||
             oldColumn.charset !== newColumn.charset ||
             oldColumn.collation !== newColumn.collation ||
             oldColumn.precision !== newColumn.precision ||
