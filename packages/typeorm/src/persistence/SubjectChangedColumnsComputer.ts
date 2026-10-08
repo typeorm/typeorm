@@ -114,6 +114,7 @@ export class SubjectChangedColumnsComputer {
                                   )
                                 : DateUtils.mixedDateToDateString(
                                       normalizedValue,
+                                      { utc: column.utc },
                                   )
                             databaseValue = column.isArray
                                 ? databaseValue.map((date: Date) =>
