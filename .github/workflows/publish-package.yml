@@ -185,12 +185,41 @@ jobs:
         run: pnpm publish --provenance --access public --no-git-checks --tag "${{ steps.publishable.outputs.tag }}"
         working-directory: ${{ steps.publishable.outputs.pkg_dir }}/build/package
 
-      - name: Build @typeorm/codemod
+      # The codemod is versioned independently of typeorm and usually does not
+      # change between releases, so a release that leaves its version alone has
+      # nothing to publish. Without this the whole release job fails after
+      # typeorm has already gone out.
+      - name: Check whether @typeorm/codemod needs publishing
+        id: codemod
         if: steps.publishable.outputs.should_publish == 'true' && matrix.ref != 'v0'
+        run: |
+          VERSION=$(node -p "require('./packages/codemod/package.json').version")
+          # Asking the registry directly, rather than through `pnpm view`, so the
+          # answer does not depend on package manager behaviour. Anything other
+          # than a clear yes or no is an error rather than a guess.
+          STATUS=$(curl -sS -o /dev/null -w "%{http_code}" \
+            "https://registry.npmjs.org/@typeorm%2fcodemod/${VERSION}")
+          case "$STATUS" in
+            200)
+              echo "@typeorm/codemod@${VERSION} is already on the registry - nothing to publish"
+              echo "should_publish=false" >> $GITHUB_OUTPUT
+              ;;
+            404)
+              echo "@typeorm/codemod@${VERSION} is not published yet"
+              echo "should_publish=true" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "Unexpected response $STATUS from the registry for @typeorm/codemod@${VERSION}"
+              exit 1
+              ;;
+          esac
+
+      - name: Build @typeorm/codemod
+        if: steps.codemod.outputs.should_publish == 'true'
         run: pnpm run build
         working-directory: packages/codemod
 
       - name: Publish @typeorm/codemod
-        if: steps.publishable.outputs.should_publish == 'true' && matrix.ref != 'v0'
+        if: steps.codemod.outputs.should_publish == 'true'
         run: pnpm publish --provenance --access public --no-git-checks --tag "${{ steps.publishable.outputs.tag }}"
         working-directory: packages/codemod
