@@ -154,7 +154,12 @@ jobs:
       - run: pnpm exec c8 pnpm test
         working-directory: packages/codemod
       - uses: SonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4 # v8.2.2
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        # Neither a fork nor Dependabot can read SONAR_TOKEN: forks have no
+        # access to secrets, and Dependabot runs read from a separate store.
+        if: >-
+          github.event_name != 'pull_request' ||
+          (github.event.pull_request.head.repo.full_name == github.repository &&
+          github.actor != 'dependabot[bot]')
         with:
           projectBaseDir: packages/codemod
         env:
@@ -175,7 +180,12 @@ jobs:
       - run: pnpm exec c8 pnpm test
         working-directory: packages/legacy-naming-strategies
       - uses: SonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4 # v8.2.2
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        # Neither a fork nor Dependabot can read SONAR_TOKEN: forks have no
+        # access to secrets, and Dependabot runs read from a separate store.
+        if: >-
+          github.event_name != 'pull_request' ||
+          (github.event.pull_request.head.repo.full_name == github.repository &&
+          github.actor != 'dependabot[bot]')
         with:
           projectBaseDir: packages/legacy-naming-strategies
         env:
@@ -195,7 +205,12 @@ jobs:
           path: packages/typeorm/coverage/
 
       - uses: SonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4 # v8.2.2
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        # Neither a fork nor Dependabot can read SONAR_TOKEN: forks have no
+        # access to secrets, and Dependabot runs read from a separate store.
+        if: >-
+          github.event_name != 'pull_request' ||
+          (github.event.pull_request.head.repo.full_name == github.repository &&
+          github.actor != 'dependabot[bot]')
         with:
           projectBaseDir: packages/typeorm
         env:
