@@ -1,4 +1,90 @@
 /**
+ * SQL Server parameter type names supported by MssqlParameter.
+ */
+export type MssqlParameterType =
+    | "bit"
+    | "bigint"
+    | "decimal"
+    | "float"
+    | "int"
+    | "money"
+    | "numeric"
+    | "smallint"
+    | "smallmoney"
+    | "real"
+    | "tinyint"
+    | "char"
+    | "nchar"
+    | "text"
+    | "ntext"
+    | "varchar"
+    | "nvarchar"
+    | "xml"
+    | "time"
+    | "date"
+    | "datetime"
+    | "datetime2"
+    | "datetimeoffset"
+    | "smalldatetime"
+    | "uniqueidentifier"
+    | "variant"
+    | "binary"
+    | "varbinary"
+    | "image"
+    | "udt"
+    | "geography"
+    | "geometry"
+    | "rowversion"
+    | "vector"
+
+const MSSQL_PARAMETER_TYPES: ReadonlySet<string> = new Set<MssqlParameterType>([
+    "bit",
+    "bigint",
+    "decimal",
+    "float",
+    "int",
+    "money",
+    "numeric",
+    "smallint",
+    "smallmoney",
+    "real",
+    "tinyint",
+    "char",
+    "nchar",
+    "text",
+    "ntext",
+    "varchar",
+    "nvarchar",
+    "xml",
+    "time",
+    "date",
+    "datetime",
+    "datetime2",
+    "datetimeoffset",
+    "smalldatetime",
+    "uniqueidentifier",
+    "variant",
+    "binary",
+    "varbinary",
+    "image",
+    "udt",
+    "geography",
+    "geometry",
+    "rowversion",
+    "vector",
+])
+
+/**
+ * Narrows a type name resolved at runtime (e.g. from `Driver.normalizeType()`)
+ * to a supported SQL Server parameter type.
+ *
+ * @param type type name to check
+ */
+export function isMssqlParameterType(type: string): type is MssqlParameterType {
+    return MSSQL_PARAMETER_TYPES.has(type)
+}
+
+/**
  * Sql server driver requires parameter types to be specified fo input parameters used in the query.
  *
  * @see https://github.com/patriksimek/node-mssql#data-types
@@ -50,6 +136,11 @@ export class MssqlParameter {
     constructor(value: any, type: "geometry")
     constructor(value: any, type: "rowversion")
     constructor(value: any, type: "vector", length: number)
+    /**
+     * For type names resolved at runtime and narrowed with
+     * `isMssqlParameterType()`; only supported SQL Server type names compile.
+     */
+    constructor(value: any, type: MssqlParameterType, ...params: number[])
     constructor(
         public value: any,
         public type: string,
