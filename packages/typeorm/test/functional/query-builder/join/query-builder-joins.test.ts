@@ -2054,6 +2054,30 @@ describe("query builder > joins", () => {
                 }),
             ))
 
+        it("should not order by a selection aliased as the primary key when paginating many-to-one joins", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await savePostsWithTags(dataSource)
+
+                    const { queries } = await spyQueries(
+                        dataSource,
+                        (queryRunner) =>
+                            dataSource.manager
+                                .createQueryBuilder(Post, "post")
+                                .innerJoinAndSelect("post.tag", "tag")
+                                .addSelect("post.title", "post.id")
+                                .take(2)
+                                .setQueryRunner(queryRunner)
+                                .getMany(),
+                    )
+
+                    expect(queries).to.have.lengthOf(1)
+                    expect(queries[0].split(/ORDER BY/i)[1] ?? "").to.not.match(
+                        /post\.id/,
+                    )
+                }),
+            ))
+
         it("should order by the primary key after the user order when paginating many-to-one joins", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {

@@ -1949,6 +1949,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             const byPropertyPath = `${mainAlias.name}.${primaryColumn.propertyPath}`
             const byDatabaseName = `${mainAlias.name}.${primaryColumn.databaseName}`
             if (orderBys[byPropertyPath] || orderBys[byDatabaseName]) return
+            if (
+                this.expressionMap.selects.some(
+                    (select) => select.aliasName === byPropertyPath,
+                )
+            )
+                return
             orderBysWithTieBreak[byPropertyPath] = "ASC"
         })
         return orderBysWithTieBreak
