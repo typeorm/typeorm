@@ -144,6 +144,10 @@ export class Post {
     @Column("bool")
     bool: boolean
 
+    // Resolves #12941
+    @Column()
+    inferredBoolean: boolean
+
     // -------------------------------------------------------------------------
     // Network Address Type
     // -------------------------------------------------------------------------

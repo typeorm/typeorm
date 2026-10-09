@@ -130,6 +130,10 @@ export class Post {
     @Column("bool")
     bool: boolean
 
+    // Resolves #12941
+    @Column()
+    inferredBoolean: boolean
+
     // -------------------------------------------------------------------------
     // Enumerated Type
     // -------------------------------------------------------------------------

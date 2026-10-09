@@ -74,6 +74,7 @@ describe("database schema > column types > postgres", () => {
                 post.timestamptz.setMilliseconds(0)
                 post.boolean = true
                 post.bool = false
+                post.inferredBoolean = true
                 post.enum = "A"
                 post.point = "(10,20)"
                 post.line = "{1,2,3}"
@@ -169,6 +170,7 @@ describe("database schema > column types > postgres", () => {
                     .should.be.equal(post.timestamptz.valueOf())
                 loadedPost.boolean.should.be.equal(post.boolean)
                 loadedPost.bool.should.be.equal(post.bool)
+                loadedPost.inferredBoolean.should.be.equal(post.inferredBoolean)
                 loadedPost.enum.should.be.equal(post.enum)
                 loadedPost.point.should.be.eql({ x: 10, y: 20 })
                 loadedPost.line.should.be.equal(post.line)
@@ -295,6 +297,9 @@ describe("database schema > column types > postgres", () => {
                     .findColumnByName("boolean")!
                     .type.should.be.equal("boolean")
                 table!.findColumnByName("bool")!.type.should.be.equal("boolean")
+                table!
+                    .findColumnByName("inferredBoolean")!
+                    .type.should.be.equal("boolean")
                 table!.findColumnByName("enum")!.type.should.be.equal("enum")
                 table!.findColumnByName("point")!.type.should.be.equal("point")
                 table!.findColumnByName("line")!.type.should.be.equal("line")

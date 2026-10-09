@@ -3,6 +3,7 @@ import { PostgresDriver } from "../../../src/driver/postgres/PostgresDriver"
 import { CockroachDriver } from "../../../src/driver/cockroachdb/CockroachDriver"
 import type { ColumnMetadata } from "../../../src/metadata/ColumnMetadata"
 
+// Resolves #12941: preserve boolean values in preparePersistentValue
 describe("driver > preparePersistentValue", () => {
     const drivers: [
         string,
