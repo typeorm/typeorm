@@ -83,6 +83,11 @@ export class TableColumn {
     collation?: string
 
     /**
+     * Schema of an existing PostgreSQL column's collation, populated on inspection.
+     */
+    collationSchema?: string
+
+    /**
      * The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
      * number of digits that are stored for the values.
      */
@@ -150,6 +155,7 @@ export class TableColumn {
             this.length = options.length ?? ""
             this.charset = options.charset
             this.collation = options.collation
+            this.collationSchema = options.collationSchema
             this.precision = options.precision
             this.scale = options.scale
             this.unsigned = options.unsigned ?? false
@@ -187,6 +193,7 @@ export class TableColumn {
             length: this.length,
             charset: this.charset,
             collation: this.collation,
+            collationSchema: this.collationSchema,
             precision: this.precision,
             scale: this.scale,
             unsigned: this.unsigned,
