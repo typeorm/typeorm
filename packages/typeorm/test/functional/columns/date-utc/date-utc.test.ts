@@ -74,4 +74,27 @@ describe("columns > date utc flag", () => {
                 expect(result.localDate).to.equal("2025-05-30")
             }),
         ))
+
+    // https://github.com/typeorm/typeorm/issues/12945
+    it("should not update an unchanged utc date read through a transformer", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const repository = dataSource.getRepository(Event)
+                const event = new Event()
+                event.localDate = new Date(2025, 5, 1)
+                event.utcDate = new Date(Date.UTC(2025, 5, 1))
+                event.utcTransformedDate = new Date(Date.UTC(2025, 5, 1))
+                await repository.save(event)
+
+                const loaded = await repository.findOneByOrFail({
+                    id: event.id,
+                })
+                await repository.save(loaded)
+
+                const result = await repository.findOneByOrFail({
+                    id: event.id,
+                })
+                expect(result.version).to.equal(1)
+            }),
+        ))
 })
