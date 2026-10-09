@@ -1994,6 +1994,25 @@ describe("query builder > joins", () => {
                 }),
             ))
 
+        it("should apply skip and take to raw results with many-to-one joins", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    await savePostsWithTags(dataSource)
+
+                    const rawPosts = await dataSource.manager
+                        .createQueryBuilder(Post, "post")
+                        .innerJoin("post.tag", "tag")
+                        .select(["post.id", "post.title", "tag.name"])
+                        .skip(1)
+                        .take(2)
+                        .getRawMany()
+
+                    expect(
+                        rawPosts.map((rawPost) => rawPost.post_title),
+                    ).to.eql(["post #2", "post #3"])
+                }),
+            ))
+
         it("should keep the two-query pagination when limit and take are both set", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
