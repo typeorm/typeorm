@@ -907,9 +907,10 @@ const users = await dataSource
 
 This will skip the first 5 users and take 10 users after them.
 
-`take` and `skip` may look like we are using `limit` and `offset`, but they aren't.
-`limit` and `offset` may not work as you expect once you have more complicated queries with joins or subqueries.
-Using `take` and `skip` will prevent those issues.
+`take` and `skip` may look like we are using `limit` and `offset`, but they aren't always.
+`limit` and `offset` count rows, so once a join can repeat the main entity (one-to-many or many-to-many) they count joined rows instead of entities.
+In that case `getMany` first loads the ids of the requested page in a separate query, so the page holds the right number of entities.
+When every join is many-to-one or one-to-one, `take` and `skip` become `LIMIT` and `OFFSET` on the query itself, `getRawMany` included.
 
 ## Set locking
 
