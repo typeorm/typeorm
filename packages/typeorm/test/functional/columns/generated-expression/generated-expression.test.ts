@@ -3,14 +3,16 @@ import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
+} from "../../../utils/test-utils"
 import { expect } from "chai"
-import type { DataSource } from "../../../src"
+import type { DataSource } from "../../../../src/data-source/DataSource"
+import { TypeORMError } from "../../../../src/error/TypeORMError"
 import { AllGeneratedEntity } from "./entity/AllGeneratedEntity"
 import { StoredGeneratedEntity } from "./entity/StoredGeneratedEntity"
 import { VirtualGeneratedEntity } from "./entity/VirtualGeneratedEntity"
 
-describe("github issues > #11509 generated expression columns should be non-writable by default", () => {
+// https://github.com/typeorm/typeorm/issues/11509
+describe("columns > generated-expression", () => {
     describe("stored generated columns", () => {
         let dataSources: DataSource[]
 
@@ -19,9 +21,6 @@ describe("github issues > #11509 generated expression columns should be non-writ
                 entities: [StoredGeneratedEntity],
                 schemaCreate: true,
                 dropSchema: true,
-                // The entity uses a numeric transformer to normalize
-                // cockroachdb's `int8`-as-string return into JS numbers so
-                // the same equality assertions hold across all drivers.
                 enabledDrivers: [
                     "postgres",
                     "mysql",
@@ -89,10 +88,7 @@ describe("github issues > #11509 generated expression columns should be non-writ
                 entities: [VirtualGeneratedEntity],
                 schemaCreate: true,
                 dropSchema: true,
-                // postgres and spanner only support STORED generated columns,
-                // so they are omitted here. cockroachdb is included; the
-                // entity uses a numeric transformer to normalize its
-                // `int8`-as-string return.
+                // postgres and spanner support only STORED
                 enabledDrivers: [
                     "mysql",
                     "mariadb",
@@ -151,13 +147,6 @@ describe("github issues > #11509 generated expression columns should be non-writ
             ))
     })
 
-    // Regression for the follow-up issue: when every column on an entity is
-    // filtered out of `getInsertedColumns()` (e.g. an auto-increment primary
-    // key on Postgres plus a `STORED` generated expression column), the
-    // InsertQueryBuilder used to fall back to `Object.keys(valueSet)` and
-    // emit non-insertable columns in the SQL. The fix must produce a
-    // `DEFAULT VALUES` INSERT instead, and still let the DB compute the
-    // generated value.
     describe("query builder with only non-insertable columns", () => {
         let dataSources: DataSource[]
 
@@ -207,6 +196,39 @@ describe("github issues > #11509 generated expression columns should be non-writ
                     )
 
                     expect(reloaded.generated).to.equal(2)
+                }),
+            ))
+
+        it("should reject multi-row insert with only default values", () => {
+            dataSources.forEach((connection) => {
+                const qb = connection
+                    .createQueryBuilder()
+                    .insert()
+                    .into(AllGeneratedEntity)
+                    .values([{ generated: 1 }, { generated: 2 }])
+
+                expect(() => qb.getQueryAndParameters()).to.throw(
+                    TypeORMError,
+                    "no insertable columns",
+                )
+            })
+        })
+
+        it("should save multiple entities with only non-insertable values", () =>
+            Promise.all(
+                dataSources.map(async (connection) => {
+                    const entities = [1, 2].map((generated) =>
+                        connection.manager.create(AllGeneratedEntity, {
+                            generated,
+                        }),
+                    )
+
+                    await connection.manager.save(entities)
+
+                    expect(
+                        await connection.manager.count(AllGeneratedEntity),
+                    ).to.equal(2)
+                    expect(entities[0].id).to.not.equal(entities[1].id)
                 }),
             ))
     })

@@ -1,8 +1,6 @@
-import { Entity } from "../../../../src/decorator/entity/Entity"
-import { PrimaryColumn } from "../../../../src/decorator/columns/PrimaryColumn"
-import { Column } from "../../../../src/decorator/columns/Column"
+import { Column, Entity, PrimaryColumn } from "../../../../../src"
 
-// See StoredGeneratedEntity for why a numeric transformer is needed.
+// cockroachdb returns int8 as string
 const numericTransformer = {
     to: (value: number | undefined | null) => value,
     from: (value: number | string | null | undefined) =>

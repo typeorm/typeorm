@@ -1,11 +1,6 @@
-import { Entity } from "../../../../src/decorator/entity/Entity"
-import { PrimaryColumn } from "../../../../src/decorator/columns/PrimaryColumn"
-import { Column } from "../../../../src/decorator/columns/Column"
+import { Column, Entity, PrimaryColumn } from "../../../../../src"
 
-// CockroachDB maps `int` to `int8` and the pg wire format returns `int8`
-// values as JS strings. Other drivers in the matrix already return JS numbers.
-// Coerce reads to number so cross-driver assertions like
-// `expect(reloaded.generated).to.equal(202)` hold uniformly.
+// cockroachdb returns int8 as string
 const numericTransformer = {
     to: (value: number | undefined | null) => value,
     from: (value: number | string | null | undefined) =>

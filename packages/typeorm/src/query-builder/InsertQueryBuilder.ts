@@ -923,14 +923,15 @@ export class InsertQueryBuilder<
 
             return expression
         } else {
-            // If the main alias actually has metadata but no columns passed the
-            // insertable filter (e.g. every column is marked `isInsert: false`,
-            // which is now the default for generated expression columns), we
-            // must not fall back to `Object.keys(valueSet)`: doing so would
-            // smuggle non-insertable columns into the generated SQL. Returning
-            // an empty values expression lets `createInsertExpression` render
-            // the correct driver-specific `DEFAULT VALUES` / `VALUES ()` form.
-            if (this.expressionMap.mainAlias!.hasMetadata) {
+            // entity has no insertable columns, so only defaults can be inserted
+            if (
+                this.expressionMap.mainAlias!.hasMetadata &&
+                !this.expressionMap.insertColumns.length
+            ) {
+                if (valueSets.length > 1)
+                    throw new TypeORMError(
+                        `Cannot insert multiple rows into "${this.getMainTableName()}" because it has no insertable columns.`,
+                    )
                 return ""
             }
 

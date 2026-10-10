@@ -376,7 +376,7 @@ export class OrderLine {
 
 > Note: PostgreSQL only supports `STORED`. Oracle only supports `VIRTUAL`.
 
-**Generated columns are read-only.** TypeORM automatically ignores any value you manually assign to a generated column — the database always computes the value from the expression. This applies to both inserts and updates:
+**Generated columns are read-only by default.** TypeORM ignores any value you manually assign to a generated column on insert and update, and the database computes it from the expression instead. You can opt back in with `insert: true` / `update: true`, but most databases reject writes to generated columns:
 
 ```typescript
 const line = new OrderLine()
@@ -391,7 +391,7 @@ const saved = await dataSource.manager.findOneByOrFail(OrderLine, { id: 1 })
 console.log(saved.totalPrice) // 120
 ```
 
-When every column on an entity is non-insertable (for example a `@PrimaryGeneratedColumn` combined with a `STORED` generated column), TypeORM will emit a `DEFAULT VALUES` insert so the database can compute all values without any explicit column list in the SQL.
+When every column on an entity is non-insertable (for example a `@PrimaryGeneratedColumn` combined with a `STORED` generated column), TypeORM inserts only defaults (`DEFAULT VALUES`, or `() VALUES ()` on MySQL/MariaDB), one row per statement.
 
 ### Vector columns
 
