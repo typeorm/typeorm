@@ -246,6 +246,28 @@ describe("query builder > locking", () => {
         }
     })
 
+    // https://github.com/typeorm/typeorm/issues/12764
+    it("should attach dirty read lock statement to every table of a nested join", () => {
+        for (const dataSource of dataSources) {
+            if (!(dataSource.driver.options.type === "mssql")) {
+                continue
+            }
+
+            const sql = dataSource
+                .createQueryBuilder(Post, "post")
+                .leftJoinAndSelect("post.categories", "categories")
+                .innerJoinAndSelect("categories.images", "images")
+                .setLock("dirty_read")
+                .getSql()
+
+            expect(sql).to.contain(
+                'LEFT JOIN ("category" "categories" WITH (NOLOCK)',
+            )
+            expect(sql).to.contain('INNER JOIN "image" "images" WITH (NOLOCK)')
+            expect(sql).not.to.contain(") WITH (NOLOCK)")
+        }
+    })
+
     it("should not attach pessimistic write lock statement on query if locking is not used", () => {
         for (const dataSource of dataSources) {
             if (
