@@ -160,15 +160,16 @@ export const mongodbTypes = (file: FileInfo, api: API) => {
             const existingPath = existingMongoExport.at(0).get() as ASTPath<
                 typeof exportPath.node
             >
-            const existingNames = new Set(
-                existingPath.node.specifiers
-                    ?.filter(
-                        (s) =>
-                            s.type === "ExportSpecifier" &&
-                            s.local?.type === "Identifier",
-                    )
-                    .map((s) => s.local?.name ?? "") ?? [],
-            )
+            const existingNames = new Set()
+            for (const spec of existingPath.node.specifiers ?? []) {
+                if (
+                    spec.type === "ExportSpecifier" &&
+                    spec.local?.type === "Identifier"
+                ) {
+                    existingNames.add(spec.local.name)
+                }
+            }
+
             for (const spec of moved) {
                 if (
                     spec.type === "ExportSpecifier" &&

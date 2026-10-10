@@ -196,9 +196,7 @@ export class DocumentChunk {
 SQL Server provides the `VECTOR_DISTANCE` function for calculating distances between vectors:
 
 ```typescript
-const queryEmbedding = [
-    /* your query vector */
-]
+const queryEmbedding = [/* your query vector */]
 
 const results = await dataSource.query(
     `

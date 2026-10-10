@@ -1,3 +1,61 @@
+## [1.1.2](https://github.com/typeorm/typeorm/compare/1.1.1...1.1.2) (2026-10-07)
+
+### Bug Fixes
+
+- **cockroachdb:** release all query runners before closing pool ([#12891](https://github.com/typeorm/typeorm/issues/12891)) ([3dddc4b](https://github.com/typeorm/typeorm/commit/3dddc4b8361d24e8bff5ef761167dfecf8ecaad7))
+- **data-source:** prevent connection leaks in `DataSource.initialize()` ([#12704](https://github.com/typeorm/typeorm/issues/12704)) ([67991e8](https://github.com/typeorm/typeorm/commit/67991e8d82997e18536f94b6009033be54164fe6))
+- handle schema and table name correctly in generated columns in metadata table ([#12423](https://github.com/typeorm/typeorm/issues/12423)) ([4a6a44b](https://github.com/typeorm/typeorm/commit/4a6a44b507f73a5e00b25323f2752e0abcf26d7a))
+- **metadata-builder:** keep the STI discriminator index on entities with embeddeds ([#12841](https://github.com/typeorm/typeorm/issues/12841)) ([7a9009d](https://github.com/typeorm/typeorm/commit/7a9009d299c178b37adeb5369e5d6de6efd6d93d))
+- **postgres,cockroachdb:** compare spatial columns against their default feature type and SRID ([#12812](https://github.com/typeorm/typeorm/issues/12812)) ([a5bd2e5](https://github.com/typeorm/typeorm/commit/a5bd2e5dc01ffa63ef8957ad47a5f7f68ebbeffb))
+- prevent composite primary key collisions during hydration ([#12905](https://github.com/typeorm/typeorm/issues/12905)) ([c64a1f0](https://github.com/typeorm/typeorm/commit/c64a1f052fc39f6688b6b73b83d065d7147ba8bb))
+- read closure-table primary values through column metadata ([#12907](https://github.com/typeorm/typeorm/issues/12907)) ([876eb04](https://github.com/typeorm/typeorm/commit/876eb0486aeed73ff0908ebb8b5896b63f1d4a19))
+
+## [1.1.1](https://github.com/typeorm/typeorm/compare/1.1.0...1.1.1) (2026-09-01)
+
+### Bug Fixes
+
+- **better-sqlite3:** await query event subscribers and report failed queries ([#12752](https://github.com/typeorm/typeorm/issues/12752)) ([8cf2258](https://github.com/typeorm/typeorm/commit/8cf22582d32f9b33ff2f2f5ab5c5f98832ab0d84))
+- **cache:** release query runners created by clear and getFromCache ([#12797](https://github.com/typeorm/typeorm/issues/12797)) ([3883d76](https://github.com/typeorm/typeorm/commit/3883d764aa597985b0d93c9db0af502090fbdaea))
+- evaluate function defaults before enum/string normalization ([#12508](https://github.com/typeorm/typeorm/issues/12508)) ([c95b3bd](https://github.com/typeorm/typeorm/commit/c95b3bd8504c68c80122e1e9362f3fe569bf0143))
+- export `DateUtils` from the package entry point ([#12566](https://github.com/typeorm/typeorm/issues/12566)) ([9fed5b4](https://github.com/typeorm/typeorm/commit/9fed5b41502d05e0affd8ebd8c5da8a5b7728da7))
+- export `RelationMetadata` ([#12789](https://github.com/typeorm/typeorm/issues/12789)) ([9694a4a](https://github.com/typeorm/typeorm/commit/9694a4ad4796be29fdb30e189e6757b5ed3ed614))
+- guard metadata access in InsertQueryBuilder for raw-table upsert ([#12702](https://github.com/typeorm/typeorm/issues/12702)) ([281bfba](https://github.com/typeorm/typeorm/commit/281bfba42a5813b106bcf5ba79bc7f7251bd1e73))
+- **persistence:** keep many-to-many junction rows when the relation is not loaded ([#12711](https://github.com/typeorm/typeorm/issues/12711)) ([04ff4da](https://github.com/typeorm/typeorm/commit/04ff4daedcf60fa4ffd0d5d33bbafaac1a9bbc96))
+- **postgres:** read `coord_dimension` when loading spatial columns ([#12749](https://github.com/typeorm/typeorm/issues/12749)) ([1b2df90](https://github.com/typeorm/typeorm/commit/1b2df90bead65a3437f6ecf2c7a21c160b319872))
+- **query-builder:** nest child joins only when outer join semantics require it ([#12793](https://github.com/typeorm/typeorm/issues/12793)) ([953b76f](https://github.com/typeorm/typeorm/commit/953b76f478a50cbcc99d46381f399f362830218e))
+- resolve relation values for join columns inside embedded entities ([#12726](https://github.com/typeorm/typeorm/issues/12726)) ([008f5c6](https://github.com/typeorm/typeorm/commit/008f5c6f66b1e1394a3ca13a25a42905b62a173a))
+- return undefined from deepValue when path is missing ([#12776](https://github.com/typeorm/typeorm/issues/12776)) ([5105371](https://github.com/typeorm/typeorm/commit/5105371dce16f1aa4e67f95a9696801149e35d28))
+- **schema:** default many-to-many inverse foreign key to CASCADE ([#12663](https://github.com/typeorm/typeorm/issues/12663)) ([a68612e](https://github.com/typeorm/typeorm/commit/a68612e218c33b3e4f82040262e3c8c15f19017a))
+- **sqljs:** measure query execution time after the statement runs ([#12759](https://github.com/typeorm/typeorm/issues/12759)) ([bb1ddea](https://github.com/typeorm/typeorm/commit/bb1ddea3c08f3f92df2d16589040a675905da124))
+- **version-utils:** compare versions of unequal length correctly ([#12668](https://github.com/typeorm/typeorm/issues/12668)) ([5543c7c](https://github.com/typeorm/typeorm/commit/5543c7c462a85b79746ae61205ddd43c1d8de157))
+
+### Performance Improvements
+
+- avoid quadratic grouping of raw results selected without primary keys ([#12802](https://github.com/typeorm/typeorm/issues/12802)) ([b495ed4](https://github.com/typeorm/typeorm/commit/b495ed449c9b606aab3fbed0debac07e8f385f2d))
+
+# [1.1.0](https://github.com/typeorm/typeorm/compare/1.0.0...1.1.0) (2026-07-13)
+
+### Bug Fixes
+
+- **cache:** release query runner on error in storeInCache ([#12545](https://github.com/typeorm/typeorm/issues/12545)) ([a84b9b3](https://github.com/typeorm/typeorm/commit/a84b9b3d39c44cc0e5809b4680a5f046bda602cd))
+- correct grammar in AlreadyHasActiveConnectionError message ([#12554](https://github.com/typeorm/typeorm/issues/12554)) ([304d129](https://github.com/typeorm/typeorm/commit/304d1290a4b6bd47d7d38269bae6a8514f378c9c))
+- **entity-manager:** default invalidWhereValuesBehavior to throw on the write path ([#12690](https://github.com/typeorm/typeorm/issues/12690)) ([44d8052](https://github.com/typeorm/typeorm/commit/44d8052ba4d226364c26e722826340d4ceb1419b))
+- **entity-manager:** validate where criteria in increment/decrement ([#12692](https://github.com/typeorm/typeorm/issues/12692)) ([8a51b75](https://github.com/typeorm/typeorm/commit/8a51b756bf31c885da1e1d92cb17d94819c7040a))
+- **mongodb:** use cursor.transform for doc to entity transformation and skip load broadcast in next if toArray ([#11926](https://github.com/typeorm/typeorm/issues/11926)) ([0bbefc9](https://github.com/typeorm/typeorm/commit/0bbefc914ef69b3826a4a2075b0b008c9a02e807))
+- move hashing function to PlatformTools ([#12648](https://github.com/typeorm/typeorm/issues/12648)) ([c456cbd](https://github.com/typeorm/typeorm/commit/c456cbd5d40aa2e797314bd202956449f64efbac))
+- multiple recursive cte problems ([#12490](https://github.com/typeorm/typeorm/issues/12490)) ([7c26654](https://github.com/typeorm/typeorm/commit/7c26654f430a7190c331242d68e75111fb334ea3))
+- normalization of FindOptionsWhere for arrays and Buffers ([#12577](https://github.com/typeorm/typeorm/issues/12577)) ([a8173fc](https://github.com/typeorm/typeorm/commit/a8173fcdf325c44bf3eb2101c6318b45c573102b))
+- **persistence:** preserve select false columns on the in-memory entity after save() ([#12501](https://github.com/typeorm/typeorm/issues/12501)) ([324c46c](https://github.com/typeorm/typeorm/commit/324c46cd8669270dd5f22173cd78a7cab591349c))
+- **postgres:** improve normalizeDatetimeFunction for tstzrange data type ([#12182](https://github.com/typeorm/typeorm/issues/12182)) ([bf47c9f](https://github.com/typeorm/typeorm/commit/bf47c9f1171b15523292e8914cfbdcfee542ef07))
+- **query-builder:** reject empty where criteria on update and delete operations ([#12629](https://github.com/typeorm/typeorm/issues/12629)) ([81b9466](https://github.com/typeorm/typeorm/commit/81b946625d84bcf3ce720fea7d406003270169ee))
+- **query-builder:** wrap inner joins under left joins correctly ([#11137](https://github.com/typeorm/typeorm/issues/11137)) ([d5f4b9d](https://github.com/typeorm/typeorm/commit/d5f4b9d7e0f0aca63a9dd66e7ae26a15f7e8eee0))
+- remove `require()` calls that break bundlers ([#12647](https://github.com/typeorm/typeorm/issues/12647)) ([30f9fc7](https://github.com/typeorm/typeorm/commit/30f9fc717bcfaa472d56680437105a6b9581014d))
+- **tree-entity:** tree entity schema propagation in internal TreeRepository methods ([#12590](https://github.com/typeorm/typeorm/issues/12590)) ([7fb7c2c](https://github.com/typeorm/typeorm/commit/7fb7c2c7c30d57489921eed458dfb97a5d08d4b8))
+
+### Features
+
+- support distinct count ([#11965](https://github.com/typeorm/typeorm/issues/11965)) ([cca26a9](https://github.com/typeorm/typeorm/commit/cca26a919f3ee5afda5af0f835e10629bcc378d1))
+
 # [1.0.0](https://github.com/typeorm/typeorm/compare/0.3.30...1.0.0) (2026-05-19)
 
 > **👉 For a structured walk-through of the changes in v1.0 — breaking changes, new features, security fixes, and the upgrade path from 0.3.x — see the [v1.0 Release Notes](https://typeorm.io/docs/releases/1.0/release-notes).**
@@ -1109,12 +1167,8 @@ Due to this change you might need to refactor the way you load entities using Mo
 
 ```ts
 const users = await userRepository.find({
-    where: {
-        /* conditions */
-    },
-    relations: {
-        /* relations */
-    },
+    where: {/* conditions */},
+    relations: {/* relations */},
 })
 ```
 
@@ -1326,18 +1380,14 @@ This change is due to type-safety improvement new `relations` signature brings.
   simply do:
 
 ```ts
-const myDataSource = new DataSource({
-    /*...*/
-})
+const myDataSource = new DataSource({/*...*/})
 await myDataSource.connect()
 ```
 
 - `getConnection()` is deprecated. To have a globally accessible connection, simply export your data source and use it in places you need it:
 
 ```ts
-export const myDataSource = new DataSource({
-    /*...*/
-})
+export const myDataSource = new DataSource({/*...*/})
 // now you can use myDataSource anywhere in your application
 ```
 
@@ -1345,9 +1395,7 @@ export const myDataSource = new DataSource({
   are all deprecated now. Use globally accessible data source instead:
 
 ```ts
-export const myDataSource = new DataSource({
-    /*...*/
-})
+export const myDataSource = new DataSource({/*...*/})
 export const Manager = myDataSource.manager
 export const UserRepository = myDataSource.getRepository(UserEntity)
 export const PhotoRepository = myDataSource.getRepository(PhotoEntity)
@@ -1359,15 +1407,9 @@ export const PhotoRepository = myDataSource.getRepository(PhotoEntity)
   of data sources, just define them in a variable, simply as:
 
 ```ts
-const dataSource1 = new DataSource({
-    /*...*/
-})
-const dataSource2 = new DataSource({
-    /*...*/
-})
-const dataSource3 = new DataSource({
-    /*...*/
-})
+const dataSource1 = new DataSource({/*...*/})
+const dataSource2 = new DataSource({/*...*/})
+const dataSource3 = new DataSource({/*...*/})
 
 export const MyDataSources = {
     dataSource1,
