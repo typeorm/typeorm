@@ -7,6 +7,7 @@ const __dirname = import.meta.dirname
 
 export default defineConfig([
     globalIgnores([
+        "coverage/**",
         "dist/**",
         "examples/**",
         "node_modules/**",

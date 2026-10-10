@@ -216,8 +216,9 @@ export class ClosureSubjectExecutor {
 
         const parameters: ObjectLiteral = {}
         for (const column of subject.metadata.primaryColumns) {
-            parameters[`value_${column.databaseName}`] =
-                entity![column.databaseName]
+            parameters[`value_${column.databaseName}`] = column.getEntityValue(
+                entity!,
+            )
         }
 
         await this.queryRunner.manager
@@ -309,7 +310,7 @@ export class ClosureSubjectExecutor {
                     ...descendantColumnNames,
                 ].join(", ")}) ` +
                     `SELECT ${select.join(", ")} ` +
-                    `FROM ${tableName} AS ${superAlias}, ${tableName} AS ${subAlias} ` +
+                    `FROM ${tableName} ${superAlias}, ${tableName} ${subAlias} ` +
                     `WHERE ${[
                         ...entityWhereCondition,
                         ...parentWhereCondition,

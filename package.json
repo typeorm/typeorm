@@ -1,6 +1,6 @@
 {
   "name": "typeorm-monorepo",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "private": true,
   "description": "Workspace root for the TypeORM repository",
   "repository": {
@@ -10,6 +10,7 @@
   "license": "MIT",
   "scripts": {
     "changelog": "standard-changelog",
+    "check:manifests": "node scripts/check-publishable-manifests.mjs",
     "compile": "pnpm --filter typeorm run compile",
     "docs:dev": "cd docs && pnpm run start",
     "format": "prettier --cache --write .",

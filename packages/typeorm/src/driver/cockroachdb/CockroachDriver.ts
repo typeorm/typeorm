@@ -1064,9 +1064,14 @@ export class CockroachDriver implements Driver {
                 tableColumn.generatedType !== columnMetadata.generatedType ||
                 (tableColumn.asExpression ?? "").trim() !==
                     (columnMetadata.asExpression ?? "").trim() ||
-                (tableColumn.spatialFeatureType ?? "").toLowerCase() !==
-                    (columnMetadata.spatialFeatureType ?? "").toLowerCase() ||
-                tableColumn.srid !== columnMetadata.srid
+                // Spatial columns declared without a feature type or SRID are
+                // created as plain geometry, which is reported back as
+                // "Geometry" with SRID 0, so compare against those defaults.
+                (tableColumn.spatialFeatureType ?? "geometry").toLowerCase() !==
+                    (
+                        columnMetadata.spatialFeatureType ?? "geometry"
+                    ).toLowerCase() ||
+                (tableColumn.srid ?? 0) !== (columnMetadata.srid ?? 0)
             )
         })
     }
@@ -1218,11 +1223,10 @@ export class CockroachDriver implements Driver {
      * @param pool
      */
     protected async closePool(pool: any): Promise<void> {
-        await Promise.all(
-            this.connectedQueryRunners.map((queryRunner) =>
-                queryRunner.release(),
-            ),
-        )
+        while (this.connectedQueryRunners.length) {
+            await this.connectedQueryRunners[0].release()
+        }
+
         return new Promise<void>((ok, fail) => {
             pool.end((err: any) => (err ? fail(err) : ok()))
         })
