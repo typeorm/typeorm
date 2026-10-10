@@ -84,13 +84,13 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             !(this.dataSource.driver.options.type === "spanner") &&
             this.dataSource.options.migrationsTransactionMode !== "none"
 
-        await this.queryRunner.beforeMigration()
-
-        if (isUsingTransactions) {
-            await this.queryRunner.startTransaction()
-        }
-
         try {
+            await this.queryRunner.beforeMigration()
+
+            if (isUsingTransactions) {
+                await this.queryRunner.startTransaction()
+            }
+
             await this.createMetadataTableIfNecessary(this.queryRunner)
             // Flush the queryRunner table & view cache
             const tablePaths = this.entityToSyncMetadatas.map((metadata) =>
