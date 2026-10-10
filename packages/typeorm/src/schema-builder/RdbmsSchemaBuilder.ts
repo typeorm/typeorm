@@ -829,6 +829,28 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             if (newTableColumns.length === 0) continue
 
+            // addColumn() names a single-column unique constraint with
+            // uniqueConstraintName(), but the metadata may carry another name
+            // (e.g. relationConstraintName() for an owning @OneToOne). Create
+            // those constraints separately so the name matches CREATE TABLE.
+            const namedUniques = metadata.uniques.filter(
+                (uniqueMetadata) =>
+                    uniqueMetadata.columns.length === 1 &&
+                    newColumnMetadatas.includes(uniqueMetadata.columns[0]) &&
+                    uniqueMetadata.name !==
+                        this.dataSource.namingStrategy.uniqueConstraintName(
+                            table,
+                            [uniqueMetadata.columns[0].databaseName],
+                        ),
+            )
+            for (const uniqueMetadata of namedUniques) {
+                const tableColumn = newTableColumns.find(
+                    (column) =>
+                        column.name === uniqueMetadata.columns[0].databaseName,
+                )
+                if (tableColumn) tableColumn.isUnique = false
+            }
+
             this.dataSource.logger.logSchemaBuild(
                 `new columns added: ` +
                     newColumnMetadatas
@@ -836,6 +858,15 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                         .join(", "),
             )
             await this.queryRunner.addColumns(table, newTableColumns)
+
+            if (namedUniques.length > 0) {
+                await this.queryRunner.createUniqueConstraints(
+                    table,
+                    namedUniques.map((uniqueMetadata) =>
+                        TableUnique.create(uniqueMetadata),
+                    ),
+                )
+            }
         }
     }
 
