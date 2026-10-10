@@ -60,6 +60,7 @@ jobs:
               - packages/typeorm/test/**/*
               - packages/typeorm/.c8rc.json
               - packages/typeorm/.mocharc.json
+              - packages/typeorm/vitest.config.mjs
               - packages/typeorm/ormconfig.sample.json
 
             lint:
