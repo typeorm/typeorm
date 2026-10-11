@@ -876,7 +876,12 @@ describe("repository > basic methods", () => {
         it("github issues > #12957: should not change the generated primary key when upserting a loaded entity", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
-                    if (!dataSource.driver.supportedUpsertTypes.length) return
+                    if (
+                        !dataSource.driver.supportedUpsertTypes.includes(
+                            "on-conflict-do-update",
+                        )
+                    )
+                        return
 
                     const postRepository = dataSource.getRepository(Post)
                     const externalId = "external-generated-id-test"
