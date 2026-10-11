@@ -284,8 +284,8 @@ importers:
         specifier: ~3.22.6
         version: 3.22.6(@types/node@20.19.43)
       oracledb:
-        specifier: ^7.0.1
-        version: 7.0.1
+        specifier: ^26.0.0
+        version: 26.0.0
       pg:
         specifier: ^8.23.0
         version: 8.23.0(pg-native@3.9.0)
@@ -3180,8 +3180,8 @@ packages:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
     engines: {node: '>= 0.8.0'}
 
-  oracledb@7.0.1:
-    resolution: {integrity: sha512-xlM0Ceh6A5stQLAdEfKf3pgCSkbOjQLo2ZPEi3+kXklz+KbZD3fLi/nsTSbQeZZNFBSFDNxdn1Ek3+bxG40M8w==}
+  oracledb@26.0.0:
+    resolution: {integrity: sha512-ywUqFidj/mPjRjfpOQdzcXT98lhiJzavPCbyPF9JYivcgrpHx7ENj4ZGQDclrpGXeozUBLc5BNXV7yj5qTMxDw==}
     engines: {node: '>=14.17'}
 
   p-event@6.0.1:
@@ -7462,7 +7462,7 @@ snapshots:
       type-check: 0.4.0
       word-wrap: 1.2.5
 
-  oracledb@7.0.1: {}
+  oracledb@26.0.0: {}
 
   p-event@6.0.1:
     dependencies:
