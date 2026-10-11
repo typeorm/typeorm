@@ -774,8 +774,7 @@ export class InsertQueryBuilder<
      * Such columns hold a newly generated value in the conflicting row
      * (e.g. the next sequence value for an increment primary key), not the existing one.
      *
-     * @param overwrite - Column names to overwrite on conflict.
-     * @returns The column names to overwrite.
+     * @param overwrite
      */
     protected getOverwriteColumns(
         overwrite: string[] | undefined,
