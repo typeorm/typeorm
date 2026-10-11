@@ -5,6 +5,8 @@ import { expect } from "chai"
 import { DataSource } from "../../../../src"
 import { EntitySchema } from "../../../../src/entity-schema/EntitySchema"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
+import { MysqlDriver } from "../../../../src/driver/mysql/MysqlDriver"
+import { VersionUtils } from "../../../../src/util/VersionUtils"
 import type { DataSourceOptions } from "../../../../src/data-source/DataSourceOptions"
 import type { ColumnCommonOptions } from "../../../../src/decorator/options/ColumnCommonOptions"
 import {
@@ -86,7 +88,28 @@ describe("columns > dialect types", () => {
                         break
                     case "mysql":
                     case "mariadb":
-                        expect(payload.type).to.equal("json")
+                        // MariaDB exposes JSON as LONGTEXT during introspection.
+                        expect(payload.type).to.equal(
+                            dataSource.options.type === "mariadb"
+                                ? "longtext"
+                                : "json",
+                        )
+                        if (
+                            dataSource.options.type === "mariadb" &&
+                            dataSource.driver instanceof MysqlDriver &&
+                            VersionUtils.isGreaterOrEqual(
+                                dataSource.driver.version,
+                                "10.4.3",
+                            )
+                        ) {
+                            const [definition] = await dataSource.query(
+                                "SHOW CREATE TABLE `post`",
+                            )
+                            // Check JSON semantics, not just its storage alias.
+                            expect(definition["Create Table"]).to.match(
+                                /CHECK \(json_valid\(`payload`\)\)/i,
+                            )
+                        }
                         expect(level.type).to.equal("tinyint")
                         expect(aliasLevel.type).to.equal("tinyint")
                         expect(shortText.length).to.equal("40")
