@@ -119,6 +119,7 @@ export class JunctionEntityMetadataBuilder {
                         unsigned: referencedColumn.unsigned,
                         enum: referencedColumn.enum,
                         enumName: referencedColumn.enumName,
+                        dialectTypes: referencedColumn.dialectTypes,
                         foreignKeyConstraintName:
                             joinColumn?.foreignKeyConstraintName,
                         nullable: false,
@@ -181,6 +182,7 @@ export class JunctionEntityMetadataBuilder {
                             unsigned: inverseReferencedColumn.unsigned,
                             enum: inverseReferencedColumn.enum,
                             enumName: inverseReferencedColumn.enumName,
+                            dialectTypes: inverseReferencedColumn.dialectTypes,
                             foreignKeyConstraintName:
                                 joinColumn?.foreignKeyConstraintName,
                             name: columnName,
