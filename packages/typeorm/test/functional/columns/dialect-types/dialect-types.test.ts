@@ -255,6 +255,67 @@ describe("columns > dialect types", () => {
         )
     })
 
+    it("should discard PostgreSQL collation only for non-collatable overrides", async () => {
+        await Promise.all(
+            dataSources
+                .filter((source) => source.options.type === "postgres")
+                .map(async (source) => {
+                    const entity = new EntitySchema({
+                        name: "DialectPostgresCollationOverride",
+                        columns: {
+                            id: { type: Number, primary: true },
+                            numericValue: {
+                                type: "varchar",
+                                collation: "C",
+                                dialectTypes: { postgres: "integer" },
+                            },
+                            textValue: {
+                                type: "varchar",
+                                collation: "C",
+                                dialectTypes: { postgres: "text" },
+                            },
+                        },
+                    })
+                    const dataSource = new DataSource({
+                        ...source.options,
+                        entities: [entity],
+                        synchronize: true,
+                        dropSchema: false,
+                    } as DataSourceOptions)
+                    await dataSource.initialize()
+                    const runner = dataSource.createQueryRunner()
+                    try {
+                        const metadata = dataSource.getMetadata(entity)
+                        const table = await runner.getTable(metadata.tableName)
+                        expect(
+                            table!.findColumnByName("numericValue")!.type,
+                        ).to.equal("integer")
+                        expect(
+                            table!.findColumnByName("numericValue")!.collation,
+                        ).to.be.undefined
+                        expect(
+                            table!.findColumnByName("textValue")!.collation,
+                        ).to.equal("C")
+                        expect(
+                            metadata.findColumnWithPropertyName("numericValue")!
+                                .collation,
+                        ).to.equal("C")
+                        const queries = await dataSource.driver
+                            .createSchemaBuilder()
+                            .log()
+                        expect(queries.upQueries).to.be.empty
+                        expect(queries.downQueries).to.be.empty
+                    } finally {
+                        await runner.dropTable(
+                            dataSource.getMetadata(entity).tableName,
+                        )
+                        await runner.release()
+                        await dataSource.destroy()
+                    }
+                }),
+        )
+    })
+
     it("should discard MySQL modifiers unsupported by a physical override", async () => {
         await Promise.all(
             dataSources
@@ -278,6 +339,20 @@ describe("columns > dialect types", () => {
                                 charset: "latin1",
                                 collation: "latin1_swedish_ci",
                                 dialectTypes: { [driverType]: "int" },
+                            },
+                            temporalAsText: {
+                                type: "datetime",
+                                precision: 3,
+                                onUpdate: "CURRENT_TIMESTAMP(3)",
+                                dialectTypes: { [driverType]: "varchar(40)" },
+                            },
+                            explicitDefaultPrecision: {
+                                type: "decimal",
+                                dialectTypes: { [driverType]: "decimal(10,0)" },
+                            },
+                            explicitDefaultLength: {
+                                type: "text",
+                                dialectTypes: { [driverType]: "varchar(255)" },
                             },
                             retainedUnsigned: {
                                 type: "int",
@@ -352,6 +427,21 @@ describe("columns > dialect types", () => {
                         expect(
                             table!.findColumnByName("numericText")!.type,
                         ).to.equal("int")
+                        expect(
+                            table!.findColumnByName("temporalAsText")!.onUpdate,
+                        ).to.be.undefined
+                        expect(
+                            table!.findColumnByName("explicitDefaultPrecision")!
+                                .precision,
+                        ).to.equal(10)
+                        expect(
+                            table!.findColumnByName("explicitDefaultPrecision")!
+                                .scale,
+                        ).to.equal(0)
+                        expect(
+                            table!.findColumnByName("explicitDefaultLength")!
+                                .length,
+                        ).to.equal("255")
                         const queries = await dataSource.driver
                             .createSchemaBuilder()
                             .log()

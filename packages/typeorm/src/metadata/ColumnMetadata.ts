@@ -38,6 +38,14 @@ const mysqlCharacterTypes = new Set<ColumnType>([
     "set",
 ])
 
+// Collatable types accepted by PostgresDriver after alias normalization.
+const postgresCollatableTypes = new Set<ColumnType>([
+    "character",
+    "character varying",
+    "text",
+    "citext",
+])
+
 /**
  * This metadata contains all information about entity's column.
  */
@@ -162,6 +170,11 @@ export class ColumnMetadata {
                 driver.options.type === "mariadb" ||
                 driver.options.type === "aurora-mysql"
             ) {
+                if (
+                    normalizedType !== "timestamp" &&
+                    normalizedType !== "datetime"
+                )
+                    physical.onUpdate = undefined
                 if (!mysqlUnsignedTypes.has(normalizedType))
                     physical.unsigned = false
                 if (!mysqlCharacterTypes.has(normalizedType)) {
@@ -169,6 +182,12 @@ export class ColumnMetadata {
                     physical.collation = undefined
                 }
             }
+            if (
+                (driver.options.type === "postgres" ||
+                    driver.options.type === "aurora-postgres") &&
+                !postgresCollatableTypes.has(normalizedType)
+            )
+                physical.collation = undefined
         }
 
         const parameterized =

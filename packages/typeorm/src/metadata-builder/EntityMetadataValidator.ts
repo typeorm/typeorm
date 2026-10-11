@@ -9,6 +9,7 @@ import { NoConnectionOptionError } from "../error/NoConnectionOptionError"
 import { InitializedRelationError } from "../error/InitializedRelationError"
 import { TypeORMError } from "../error"
 import { DriverUtils } from "../driver/DriverUtils"
+import { mysqlTimestampPrecision } from "../util/MysqlTimestampPrecision"
 
 /// todo: add check if there are multiple tables with the same name
 /// todo: add checks when generated column / table names are too long for the specific driver
@@ -147,6 +148,41 @@ export class EntityMetadataValidator {
                     )
                         throw new TypeORMError(
                             `Column "${column.propertyName}" of Entity "${entityMetadata.name}" is defined as enum, but missing "enum" or "enumName" properties.`,
+                        )
+                    if (
+                        (driver.options.type === "mysql" ||
+                            driver.options.type === "aurora-mysql") &&
+                        physicalColumn !== column &&
+                        (normalizedColumn === "datetime" ||
+                            normalizedColumn === "timestamp")
+                    ) {
+                        const updatePrecision = mysqlTimestampPrecision(
+                            physicalColumn.onUpdate,
+                        )
+                        const precision = physicalColumn.precision ?? 0
+                        if (
+                            updatePrecision !== undefined &&
+                            updatePrecision !== precision
+                        )
+                            throw new TypeORMError(
+                                `Column "${column.propertyName}" has an incompatible dialectTypes override for "${driver.options.type}": ON UPDATE CURRENT_TIMESTAMP precision must match the physical column precision (${precision}).`,
+                            )
+                    }
+                    if (
+                        (driver.options.type === "postgres" ||
+                            driver.options.type === "aurora-postgres") &&
+                        physicalColumn !== column &&
+                        physicalColumn.isGenerated &&
+                        ["increment", "identity"].includes(
+                            physicalColumn.generationStrategy ?? "",
+                        ) &&
+                        (physicalColumn.isArray ||
+                            (normalizedColumn !== "smallint" &&
+                                normalizedColumn !== "integer" &&
+                                normalizedColumn !== "bigint"))
+                    )
+                        throw new TypeORMError(
+                            `Column "${column.propertyName}" has an incompatible dialectTypes override for "${driver.options.type}": ${physicalColumn.generationStrategy} generation requires a non-array integer type.`,
                         )
                     if (
                         driver.options.type === "mssql" &&
