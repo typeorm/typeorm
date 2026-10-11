@@ -1346,20 +1346,20 @@ export class PostgresQueryRunner
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
 
-        if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
+        const oldBaseType = this.driver.normalizeType(oldColumn as any)
+        const newBaseType = this.driver.normalizeType(newColumn as any)
+        const typeChangeRequiresRecreation =
+            oldBaseType !== newBaseType ||
             newColumn.isArray !== oldColumn.isArray ||
             (!oldColumn.generatedType &&
                 newColumn.generatedType === "STORED") ||
             (oldColumn.asExpression !== newColumn.asExpression &&
                 newColumn.generatedType === "STORED")
-        ) {
-            // To avoid data conversion, we just recreate column
+
+        if (typeChangeRequiresRecreation) {
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
-            // update cloned table
             clonedTable = table.clone()
         } else {
             if (oldColumn.name !== newColumn.name) {
