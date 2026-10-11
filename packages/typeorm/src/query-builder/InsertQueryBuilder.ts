@@ -671,6 +671,7 @@ export class InsertQueryBuilder<
                     }
                     if (
                         DriverUtils.isPostgresFamily(this.dataSource.driver) &&
+                        updatePart.length > 0 &&
                         this.expressionMap.onUpdate.overwriteCondition &&
                         this.expressionMap.onUpdate.overwriteCondition.length >
                             0
