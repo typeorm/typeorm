@@ -42,11 +42,7 @@ class InspectPostgresQueryRunner extends PostgresQueryRunner {
 
 async function fixture(
     engine:
-        | "mysql"
-        | "mariadb"
-        | "aurora-mysql"
-        | "aurora-postgres"
-        | "postgres",
+        "mysql" | "mariadb" | "aurora-mysql" | "aurora-postgres" | "postgres",
     options: EntitySchemaColumnOptions,
 ) {
     const entity = new EntitySchema({
