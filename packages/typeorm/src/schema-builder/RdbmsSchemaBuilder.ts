@@ -19,6 +19,7 @@ import { DriverUtils } from "../driver/DriverUtils"
 import type { PostgresQueryRunner } from "../driver/postgres/PostgresQueryRunner"
 import { TypeORMError } from "../error"
 import type { IndexMetadata } from "../metadata/IndexMetadata"
+import type { UniqueMetadata } from "../metadata/UniqueMetadata"
 
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
@@ -829,6 +830,37 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             if (newTableColumns.length === 0) continue
 
+            // addColumn() names a single-column unique constraint with
+            // uniqueConstraintName(), but the metadata may carry another name
+            // (e.g. relationConstraintName() for an owning @OneToOne). Create
+            // that constraint separately so the name matches CREATE TABLE.
+            // Postgres and SQLite keep only the first of several identical
+            // single-column uniques in CREATE TABLE, so use the first one.
+            const namedUniques = newColumnMetadatas
+                .map((column) =>
+                    metadata.uniques.find(
+                        (uniqueMetadata) =>
+                            uniqueMetadata.columns.length === 1 &&
+                            uniqueMetadata.columns[0] === column,
+                    ),
+                )
+                .filter(
+                    (uniqueMetadata): uniqueMetadata is UniqueMetadata =>
+                        !!uniqueMetadata &&
+                        uniqueMetadata.name !==
+                            this.dataSource.namingStrategy.uniqueConstraintName(
+                                table,
+                                [uniqueMetadata.columns[0].databaseName],
+                            ),
+                )
+            for (const uniqueMetadata of namedUniques) {
+                const tableColumn = newTableColumns.find(
+                    (column) =>
+                        column.name === uniqueMetadata.columns[0].databaseName,
+                )
+                if (tableColumn) tableColumn.isUnique = false
+            }
+
             this.dataSource.logger.logSchemaBuild(
                 `new columns added: ` +
                     newColumnMetadatas
@@ -836,6 +868,15 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                         .join(", "),
             )
             await this.queryRunner.addColumns(table, newTableColumns)
+
+            if (namedUniques.length > 0) {
+                await this.queryRunner.createUniqueConstraints(
+                    table,
+                    namedUniques.map((uniqueMetadata) =>
+                        TableUnique.create(uniqueMetadata),
+                    ),
+                )
+            }
         }
     }
 
