@@ -6,7 +6,7 @@ import ts from "typescript-eslint"
 const __dirname = import.meta.dirname
 
 export default defineConfig([
-    globalIgnores(["dist/**", "node_modules/**"]),
+    globalIgnores(["coverage/**", "dist/**", "node_modules/**"]),
 
     {
         files: ["**/*.ts"],
