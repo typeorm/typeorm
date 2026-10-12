@@ -18,6 +18,10 @@ describe("schema builder > constraint > unique > one-to-one join column", () => 
      * Creates the schema from the initial entities, then reconnects with the
      * final entities (which have the one-to-one relation) without touching
      * the schema, so that `synchronize()` has to alter the existing table.
+     *
+     * Spanner is left out: its one-to-one unique index is NULL_FILTERED, which
+     * the unique column shortcut of `addColumn()` cannot create, so the schema
+     * builder still adds that index in a separate step there.
      */
     async function connectWithExistingSchema(
         initialEntities: TestingOptions["entities"],
@@ -26,6 +30,7 @@ describe("schema builder > constraint > unique > one-to-one join column", () => 
             entities: initialEntities,
             schemaCreate: true,
             dropSchema: true,
+            disabledDrivers: ["spanner"],
         })
         await closeTestingConnections(initialDataSources)
 
@@ -33,6 +38,7 @@ describe("schema builder > constraint > unique > one-to-one join column", () => 
             entities: [Profile, Customer],
             schemaCreate: false,
             dropSchema: false,
+            disabledDrivers: ["spanner"],
         })
     }
 
