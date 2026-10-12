@@ -10,6 +10,7 @@ import { TypeORMError } from "../error"
 import { InsertValuesMissingError } from "../error/InsertValuesMissingError"
 import { ReturningStatementNotSupportedError } from "../error/ReturningStatementNotSupportedError"
 import type { ColumnMetadata } from "../metadata/ColumnMetadata"
+import type { QueryResult } from "../query-runner/QueryResult"
 import { BroadcasterResult } from "../subscriber/BroadcasterResult"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectUtils } from "../util/ObjectUtils"
@@ -64,12 +65,14 @@ export class InsertQueryBuilder<
         // console.time(".database stuff");
         const queryRunner = this.obtainQueryRunner()
         let transactionStartedByUs: boolean = false
+        const mixedIdentityUpsertValues = this.getMixedIdentityUpsertValueSets()
 
         try {
             // start transaction if it was enabled
             if (
-                this.expressionMap.useTransaction === true &&
-                queryRunner.isTransactionActive === false
+                queryRunner.isTransactionActive === false &&
+                (this.expressionMap.useTransaction === true ||
+                    mixedIdentityUpsertValues !== undefined)
             ) {
                 await queryRunner.startTransaction()
                 transactionStartedByUs = true
@@ -156,14 +159,54 @@ export class InsertQueryBuilder<
 
             // execute query
             // console.time(".getting query and parameters");
-            const [insertSql, parameters] = this.getQueryAndParameters()
-            // console.timeEnd(".getting query and parameters");
+            let queryResult: QueryResult
+            if (mixedIdentityUpsertValues) {
+                const originalValuesSet = this.expressionMap.valuesSet
+                try {
+                    const queryResults: QueryResult[] = []
+                    for (const valueSet of mixedIdentityUpsertValues) {
+                        this.expressionMap.valuesSet = valueSet
+                        const [insertSql, parameters] =
+                            this.getQueryAndParameters()
+                        const statements = [
+                            declareSql,
+                            insertSql,
+                            selectOutputSql,
+                        ]
+                        const sql = statements
+                            .filter((s) => s != null)
+                            .join(";\n\n")
+                        queryResults.push(
+                            await queryRunner.query(sql, parameters, true),
+                        )
+                    }
+                    queryResult = queryResults[0]
+                    if (queryResults.length > 1) {
+                        queryResult.raw = queryResults.flatMap(
+                            (result) => result.raw ?? [],
+                        )
+                        queryResult.records = queryResults.flatMap(
+                            (result) => result.records ?? [],
+                        )
+                        queryResult.affected = queryResults.reduce(
+                            (affected, result) =>
+                                affected + (result.affected ?? 0),
+                            0,
+                        )
+                    }
+                } finally {
+                    this.expressionMap.valuesSet = originalValuesSet
+                }
+            } else {
+                const [insertSql, parameters] = this.getQueryAndParameters()
+                // console.timeEnd(".getting query and parameters");
 
-            // console.time(".query execution by database");
-            const statements = [declareSql, insertSql, selectOutputSql]
-            const sql = statements.filter((s) => s != null).join(";\n\n")
+                // console.time(".query execution by database");
+                const statements = [declareSql, insertSql, selectOutputSql]
+                const sql = statements.filter((s) => s != null).join(";\n\n")
 
-            const queryResult = await queryRunner.query(sql, parameters, true)
+                queryResult = await queryRunner.query(sql, parameters, true)
+            }
 
             const insertResult = InsertResult.from(queryResult)
 
@@ -211,6 +254,16 @@ export class InsertQueryBuilder<
 
             return insertResult
         } catch (error) {
+            if (this.hasExplicitIdentityValue()) {
+                try {
+                    const tableName = this.getTableName(this.getMainTableName())
+                    await queryRunner.query(
+                        `SET IDENTITY_INSERT ${tableName} OFF`,
+                    )
+                } catch {
+                    // Preserve the original query error.
+                }
+            }
             // rollback transaction if we started it
             if (transactionStartedByUs) {
                 try {
@@ -1018,6 +1071,60 @@ export class InsertQueryBuilder<
     }
 
     /**
+     * Returns separate value sets when a SQL Server upsert mixes explicit and
+     * generated identity values. SQL Server cannot use IDENTITY_INSERT for
+     * only some rows in a single MERGE statement.
+     */
+    protected getMixedIdentityUpsertValueSets(): ObjectLiteral[][] | undefined {
+        if (
+            this.dataSource.driver.options.type !== "mssql" ||
+            !this.expressionMap.onUpdate ||
+            !Array.isArray(this.expressionMap.valuesSet)
+        ) {
+            return undefined
+        }
+
+        const identityColumn = this.getInsertedColumns().find(
+            (column) =>
+                column.isPrimary &&
+                column.isGenerated &&
+                column.generationStrategy === "increment",
+        )
+        if (!identityColumn) return undefined
+
+        const valueSets = this.getValueSets()
+        const valueGroups: ObjectLiteral[][] = []
+        let previousValueHasIdentity: boolean | undefined
+        let hasExplicitValue = false
+        let hasGeneratedValue = false
+
+        for (const valueSet of valueSets) {
+            const value = identityColumn.getEntityValue(valueSet)
+            const hasIdentity = value !== undefined && value !== null
+            hasExplicitValue ||= hasIdentity
+            hasGeneratedValue ||= !hasIdentity
+
+            if (hasIdentity !== previousValueHasIdentity) {
+                valueGroups.push([])
+                previousValueHasIdentity = hasIdentity
+            }
+            valueGroups[valueGroups.length - 1].push(valueSet)
+        }
+
+        return hasExplicitValue && hasGeneratedValue ? valueGroups : undefined
+    }
+
+    protected hasExplicitIdentityValue(): boolean {
+        return (
+            this.dataSource.driver.options.type === "mssql" &&
+            this.expressionMap.mainAlias?.hasMetadata === true &&
+            this.expressionMap.mainAlias.metadata.columns.some((column) =>
+                this.isOverridingAutoIncrementBehavior(column),
+            )
+        )
+    }
+
+    /**
      * Creates MERGE express used to perform insert query.
      */
     protected createMergeExpression() {
@@ -1033,6 +1140,31 @@ export class InsertQueryBuilder<
             throw new TypeORMError(
                 `Upsert type "${this.expressionMap.onUpdate.upsertType}" is not supported by current database driver`,
             )
+        }
+
+        const mixedIdentityUpsertValues = this.getMixedIdentityUpsertValueSets()
+        if (mixedIdentityUpsertValues) {
+            const originalValuesSet = this.expressionMap.valuesSet
+            const originalOverwriteCondition =
+                this.expressionMap.onUpdate?.overwriteCondition
+            const queries: string[] = []
+            try {
+                for (const valueSet of mixedIdentityUpsertValues) {
+                    this.expressionMap.valuesSet = valueSet
+                    if (this.expressionMap.onUpdate) {
+                        this.expressionMap.onUpdate.overwriteCondition =
+                            originalOverwriteCondition
+                    }
+                    queries.push(this.createMergeExpression())
+                }
+            } finally {
+                this.expressionMap.valuesSet = originalValuesSet
+                if (this.expressionMap.onUpdate) {
+                    this.expressionMap.onUpdate.overwriteCondition =
+                        originalOverwriteCondition
+                }
+            }
+            return queries.join("\n")
         }
         // const mainAlias = this.expressionMap.mainAlias!
         const tableName = this.getTableName(this.getMainTableName())

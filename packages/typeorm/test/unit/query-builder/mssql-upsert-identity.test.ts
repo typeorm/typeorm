@@ -86,6 +86,26 @@ describe("SQL Server identity columns in MERGE", () => {
         )
     })
 
+    it("generates separate MERGE statements for mixed identity values", () => {
+        const sql = dataSource
+            .createQueryBuilder()
+            .insert()
+            .into("Sample")
+            .values([
+                { id: 1, code: "explicit", value: 2 },
+                { code: "generated", value: 3 },
+            ])
+            .orUpdate(["sample_id", "value"], ["code"])
+            .disableEscaping()
+            .getSql()
+
+        expect(sql.match(/MERGE INTO sample/g)).to.have.length(2)
+        expect(sql).to.contain("SET IDENTITY_INSERT sample ON;")
+        expect(sql).to.contain(
+            "INSERT(code, value) VALUES (mergeIntoSource.code, mergeIntoSource.value)",
+        )
+    })
+
     it("still updates primary columns that are not identities", () => {
         const sql = dataSource
             .createQueryBuilder()
