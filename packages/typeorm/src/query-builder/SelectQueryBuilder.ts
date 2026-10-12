@@ -1913,6 +1913,53 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         }
     }
 
+    private hasMultiplyingJoins(): boolean {
+        return this.expressionMap.joinAttributes.some(
+            (join) =>
+                !join.relation ||
+                join.relation.isOneToMany ||
+                join.relation.isManyToMany ||
+                join.isMappingMany === true,
+        )
+    }
+
+    private orderBysWithPrimaryKeyTieBreak(): OrderByCondition {
+        const orderBys = this.expressionMap.allOrderBys
+        const mainAlias = this.expressionMap.mainAlias
+        if (
+            !(this.expressionMap.skip || this.expressionMap.take) ||
+            this.expressionMap.offset !== undefined ||
+            this.expressionMap.limit !== undefined ||
+            this.expressionMap.groupBys.length > 0 ||
+            this.expressionMap.selectDistinct ||
+            this.expressionMap.selectDistinctOn.length > 0 ||
+            this.expressionMap.joinAttributes.length === 0 ||
+            this.hasMultiplyingJoins() ||
+            !mainAlias?.hasMetadata ||
+            !this.expressionMap.selects.some(
+                (select) =>
+                    select.selection === mainAlias.name ||
+                    select.selection.startsWith(`${mainAlias.name}.`),
+            )
+        )
+            return orderBys
+
+        const orderBysWithTieBreak = { ...orderBys }
+        mainAlias.metadata.primaryColumns.forEach((primaryColumn) => {
+            const byPropertyPath = `${mainAlias.name}.${primaryColumn.propertyPath}`
+            const byDatabaseName = `${mainAlias.name}.${primaryColumn.databaseName}`
+            if (orderBys[byPropertyPath] || orderBys[byDatabaseName]) return
+            if (
+                this.expressionMap.selects.some(
+                    (select) => select.aliasName === byPropertyPath,
+                )
+            )
+                return
+            orderBysWithTieBreak[byPropertyPath] = "ASC"
+        })
+        return orderBysWithTieBreak
+    }
+
     private lazyCount(entitiesAndRaw: {
         entities: Entity[]
         raw: any[]
@@ -2613,7 +2660,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
      * Creates "ORDER BY" part of SQL query.
      */
     protected createOrderByExpression() {
-        const orderBys = this.expressionMap.allOrderBys
+        const orderBys = this.orderBysWithPrimaryKeyTieBreak()
         if (Object.keys(orderBys).length === 0) return ""
 
         return (
@@ -2688,7 +2735,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         if (
             offset === undefined &&
             limit === undefined &&
-            this.expressionMap.joinAttributes.length === 0
+            !this.hasMultiplyingJoins()
         ) {
             offset = this.expressionMap.skip
             limit = this.expressionMap.take
@@ -2707,7 +2754,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             let prefix = ""
             if (
                 (hasLimit || hasOffset) &&
-                Object.keys(this.expressionMap.allOrderBys).length <= 0
+                Object.keys(this.orderBysWithPrimaryKeyTieBreak()).length <= 0
             ) {
                 prefix = " ORDER BY (SELECT NULL)"
             }
@@ -3502,13 +3549,16 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         let rawResults: any[],
             entities: any[] = []
 
-        // for pagination enabled (e.g. skip and take) its much more complicated - its a special process
-        // where we make two queries to find the data we need
+        // for pagination enabled (e.g. skip and take) its much more complicated when a join can repeat the root row
+        // or when limit or offset is set - its a special process where we make two queries to find the data we need
         // first query find ids in skip and take range
         // and second query loads the actual data in given ids range
         if (
             (this.expressionMap.skip || this.expressionMap.take) &&
-            this.expressionMap.joinAttributes.length > 0
+            this.expressionMap.joinAttributes.length > 0 &&
+            (this.expressionMap.offset !== undefined ||
+                this.expressionMap.limit !== undefined ||
+                this.hasMultiplyingJoins())
         ) {
             // we are skipping order by here because its not working in subqueries anyway
             // to make order by working we need to apply it on a distinct query
