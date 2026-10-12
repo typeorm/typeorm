@@ -129,4 +129,47 @@ describe("column kinds > version column", () => {
                 expect(loadedPost.version).to.be.eql(6)
             }),
         ))
+    it("version column should be updated automatically on upsert", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                const humanRepo = connection.getRepository("Human")
+
+                // save a new human
+                const human = humanRepo.create({
+                    name: "John Doe",
+                    email: "john@email.com",
+                })
+                await humanRepo.save(human)
+
+                // update human once again
+                human.name = "Updated Name"
+                await humanRepo.upsert(human, ["email"])
+
+                // check if version was updated
+                const loadedHuman = await humanRepo.findOneByOrFail({
+                    id: human.id,
+                })
+                expect(loadedHuman.name).to.be.eql("Updated Name")
+                expect(loadedHuman.email).to.be.eql("john@email.com")
+                expect(loadedHuman.version).to.be.eql(2)
+
+                // update human once again using query builder
+                await humanRepo
+                    .createQueryBuilder("my_human")
+                    .insert()
+                    .values({
+                        name: "Jane Doe",
+                        email: "john@email.com",
+                    })
+                    .orUpdate(["name"], ["email"])
+                    .execute()
+
+                const loadedHuman2 = await humanRepo.findOneByOrFail({
+                    id: human.id,
+                })
+                expect(loadedHuman2.name).to.be.eql("Jane Doe")
+                expect(loadedHuman2.email).to.be.eql("john@email.com")
+                expect(loadedHuman2.version).to.be.eql(3)
+            }),
+        ))
 })
