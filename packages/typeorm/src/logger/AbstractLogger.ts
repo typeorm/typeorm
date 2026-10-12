@@ -10,6 +10,13 @@ import type { LoggerOptions } from "./LoggerOptions"
 import { PlatformTools } from "../platform/PlatformTools"
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 
+/**
+ * Byte length beyond which a binary parameter is logged as a summary rather
+ * than serialised. Anything under this is small enough that the serialised
+ * form is still readable in a log line.
+ */
+const MAX_LOGGED_PARAMETER_BYTES = 1024
+
 export abstract class AbstractLogger implements Logger {
     // -------------------------------------------------------------------------
     // Constructor
@@ -386,10 +393,39 @@ export abstract class AbstractLogger implements Logger {
      */
     protected stringifyParams(parameters: any[] | ObjectLiteral) {
         try {
-            return JSON.stringify(parameters)
+            if (!Array.isArray(parameters)) return JSON.stringify(parameters)
+
+            // substituting before serialising keeps the array a single
+            // JSON.stringify call, so everything that is not binary is rendered
+            // exactly as it was: holes still become null, an element's index
+            // still reaches its toJSON, and the separators are unchanged
+            return JSON.stringify(
+                Array.from(parameters, (value) => this.summariseParam(value)),
+            )
         } catch (error) {
             // most probably circular objects in parameters
             return parameters
         }
+    }
+
+    /**
+     * Replaces a query parameter that is too large to log with a summary.
+     *
+     * A binary parameter is summarised rather than serialised: a buffer of any
+     * size becomes an array of that many numbers under `JSON.stringify`, so a
+     * large one produces a log line several times the size of the data itself,
+     * which is enough to exhaust memory before anything is written.
+     *
+     * @param value one query parameter
+     * @returns the parameter, or a short stand-in when it is large and binary
+     */
+    protected summariseParam(value: unknown): unknown {
+        if (
+            ArrayBuffer.isView(value) &&
+            value.byteLength > MAX_LOGGED_PARAMETER_BYTES
+        )
+            return `<${value.constructor.name}(${value.byteLength} bytes)>`
+
+        return value
     }
 }
