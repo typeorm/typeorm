@@ -1043,6 +1043,30 @@ const users = await dataSource
     .getMany()
 ```
 
+## Adding a query comment
+
+You can prepend a comment to the generated SQL, for example to find a query in the database server's logs
+or to tag it for an APM product:
+
+```typescript
+const users = await dataSource
+    .getRepository(User)
+    .createQueryBuilder("user")
+    .comment("GET /users/:id")
+    .where("user.id = :id", { id: 1 })
+    .getMany()
+```
+
+Which becomes:
+
+```sql
+/* GET /users/:id */ SELECT ... FROM "users" "user" WHERE "user"."id" = $1
+```
+
+The comment is emitted verbatim (only the `*/` closing sequence is stripped from it). Parameter-like tokens
+such as `:id` or `:...ids` inside the comment are not treated as parameters, so they are neither bound nor
+expanded. This also applies to comments on query builders used as sub-queries or common table expressions.
+
 ## Partial selection
 
 If you want to select only some entity properties, you can use the following syntax:
