@@ -1155,11 +1155,24 @@ export class InsertQueryBuilder<
 
         if (this.expressionMap.onUpdate) {
             const {
-                overwrite,
+                overwrite: requestedOverwrite,
                 columns,
                 conflict,
                 skipUpdateIfNoValuesChanged,
             } = this.expressionMap.onUpdate
+            // SQL Server identity columns can be inserted explicitly, but never updated.
+            const overwrite =
+                this.dataSource.driver.options.type === "mssql"
+                    ? requestedOverwrite?.filter(
+                          (name) =>
+                              !this.expressionMap.mainAlias!.metadata.columns.some(
+                                  (column) =>
+                                      column.databaseName === name &&
+                                      column.isGenerated &&
+                                      column.generationStrategy === "increment",
+                              ),
+                      )
+                    : requestedOverwrite
             let updateExpression = ""
 
             if (Array.isArray(overwrite)) {
@@ -1237,6 +1250,13 @@ export class InsertQueryBuilder<
         }
         if (this.dataSource.driver.options.type === "mssql") {
             query += `;`
+            if (
+                columns.some((column) =>
+                    this.isOverridingAutoIncrementBehavior(column),
+                )
+            ) {
+                query = `SET IDENTITY_INSERT ${tableName} ON; ${query} SET IDENTITY_INSERT ${tableName} OFF;`
+            }
         }
         return query
     }
@@ -1429,7 +1449,12 @@ export class InsertQueryBuilder<
                     (column.isGenerated &&
                         column.generationStrategy === "uuid" &&
                         this.dataSource.driver.isUUIDGenerationSupported()) ||
-                    (column.isGenerated && column.generationStrategy !== "uuid")
+                    (column.isGenerated &&
+                        column.generationStrategy !== "uuid" &&
+                        !(
+                            this.dataSource.driver.options.type === "mssql" &&
+                            this.isOverridingAutoIncrementBehavior(column)
+                        ))
                 ) {
                     expression += `DEFAULT`
                 } else {
