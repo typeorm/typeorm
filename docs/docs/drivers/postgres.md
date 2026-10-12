@@ -56,6 +56,8 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 
 - `parseInt8` - A boolean to enable parsing 64-bit integers (int8) as JavaScript numbers. By default, `int8` (bigint) values are returned as strings to avoid overflows. JavaScript numbers are IEEE-754 and lose precision over the maximum safe integer (`Number.MAX_SAFE_INTEGER = +2^53`). If you require the full 64-bit range consider working with the returned strings or converting them to native `bigint` instead of using this option.
 
+- `dateAsString` - A boolean to return `date` and `date[]` values as `YYYY-MM-DD` strings instead of JavaScript `Date` objects (default: `false`). TypeORM always hydrates entity `date` columns as strings, but by default `pg` parses `date` values into `Date` objects at local midnight, so raw results (`query()`, `getRawMany()`, `stream()`) and `date` array columns receive `Date` objects instead. With this option, all of them receive strings. It applies on top of any `types` passed in `extra`.
+
 Additional options can be added to the `extra` object and will be passed directly to the client library. See more in `pg`'s documentation for [Pool](https://node-postgres.com/apis/pool#new-pool) and [Client](https://node-postgres.com/apis/client#new-client).
 
 ## Column Types
