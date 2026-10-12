@@ -505,6 +505,8 @@ Used for `many-to-many` relations and describes join columns of the "junction" t
 Junction table is a special, separate table created automatically by TypeORM with columns referenced to the related entities.
 You can change the name of the generated "junction" table, the column names inside the junction table, their referenced
 columns with the `joinColumn`- and `inverseJoinColumn` attributes, and the created foreign keys names.
+Both attributes also accept `onDelete`, `onUpdate` and `deferrable` for the junction table foreign key of that side.
+Options set on the relation (or on the inverse relation for `inverseJoinColumn`) take precedence over them.
 You can also set parameter `synchronize` to false to skip schema update(same way as in @Entity)
 
 Example:
@@ -524,6 +526,8 @@ export class Post {
             name: "category",
             referencedColumnName: "id",
             foreignKeyConstraintName: "fk_question_categories_categoryId",
+            onDelete: "NO ACTION",
+            onUpdate: "NO ACTION",
         },
         synchronize: false,
     })
