@@ -7,6 +7,7 @@ export class TableUtils {
         columnMetadata: ColumnMetadata,
         driver: Driver,
     ): TableColumnOptions {
+        const isUnique = driver.normalizeIsUnique(columnMetadata)
         return {
             name: columnMetadata.databaseName,
             length: driver.getColumnLength(columnMetadata),
@@ -26,7 +27,10 @@ export class TableUtils {
             isNullable: columnMetadata.isNullable,
             type: driver.normalizeType(columnMetadata),
             isPrimary: columnMetadata.isPrimary,
-            isUnique: driver.normalizeIsUnique(columnMetadata),
+            isUnique,
+            uniqueConstraintName: isUnique
+                ? TableUtils.findUniqueConstraintName(columnMetadata)
+                : undefined,
             isArray: columnMetadata.isArray || false,
             enum: columnMetadata.enum
                 ? columnMetadata.enum.map((val) => val + "")
@@ -36,5 +40,32 @@ export class TableUtils {
             spatialFeatureType: columnMetadata.spatialFeatureType,
             srid: columnMetadata.srid,
         }
+    }
+
+    /**
+     * Finds the name of the unique constraint, or of the unique index for
+     * drivers that implement unique constraints as unique indices, that
+     * covers only the given column.
+     *
+     * @param columnMetadata
+     */
+    protected static findUniqueConstraintName(
+        columnMetadata: ColumnMetadata,
+    ): string | undefined {
+        const { uniques, indices } = columnMetadata.entityMetadata
+        const unique = uniques.find(
+            (unique) =>
+                unique.columns.length === 1 &&
+                unique.columns[0] === columnMetadata,
+        )
+        if (unique) return unique.name
+
+        const uniqueIndex = indices.find(
+            (index) =>
+                index.isUnique &&
+                index.columns.length === 1 &&
+                index.columns[0] === columnMetadata,
+        )
+        return uniqueIndex?.name
     }
 }
