@@ -172,7 +172,9 @@ await repository.updateAll(
 )
 ```
 
-- `upsert` - Inserts a new entity or array of entities unless they already exist in which case they are updated instead. Supported by AuroraDataApi, Cockroach, Mysql, Postgres, and Sqlite database drivers.
+- `upsert` - Inserts a new entity or array of entities unless they already exist in which case they are updated instead. Supported by AuroraDataApi, Cockroach, Mysql, Mssql, Oracle, Postgres, SAP, and Sqlite database drivers.
+
+On SQL Server, an explicitly supplied value for a generated identity column is used when inserting a new row. If the upsert matches an existing row, its identity value is never changed. A batch that mixes supplied and generated identity values is executed as separate upserts in a transaction.
 
 When an upsert operation results in an update (due to a conflict), special columns like `@UpdateDateColumn` and `@VersionColumn` are automatically updated to their current values.
 
