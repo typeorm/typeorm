@@ -70,6 +70,45 @@ Additional options can be added to the `extra` object and will be passed directl
 
 Note: CockroachDB returns all numeric data types as `string`. However, if you omit the column type and define your property as `number` ORM will `parseInt` string into number.
 
+### Resizing PostgreSQL varchar columns
+
+For the `postgres` driver, changing a `varchar` / `character varying` column's
+length uses `ALTER COLUMN ... TYPE` instead of dropping and recreating the
+column. The two names are aliases, including in caller-created `TableColumn`
+objects. This also covers adding or removing a length limit and resizing varchar
+array elements without changing the array shape.
+
+Widening preserves existing values, including trailing spaces and nulls.
+Narrowing delegates validation to PostgreSQL: fitting values are retained, while
+ordinary overlength content rejects the ALTER statement rather than erasing the
+column. **PostgreSQL may trim excess trailing spaces without an error.** This is
+native assignment-conversion behavior, not a universally lossless operation.
+The generated `down` migration has the same rules: it may fail on longer values
+inserted after widening, and it cannot restore any characters already trimmed.
+No explicit `USING` cast is added to force truncation. See
+[PostgreSQL character types](https://www.postgresql.org/docs/current/datatype-character.html).
+
+The in-place path also supports collation changes, with or without a length
+change. It applies the target collation in the same `ALTER COLUMN ... TYPE`
+statement and restores the previous length and collation in the down migration.
+Removing an explicit collation selects the type's default. Schema-qualified
+collations retain their identity; an unqualified new collation is resolved using
+the current search path and retained in the query runner's column cache.
+Collation changes can affect comparison and ordering semantics and require
+PostgreSQL to rebuild affected indexes or validate constraints. An incompatible
+change may be rejected; no destructive fallback is attempted for these varchar
+operations. See [PostgreSQL ALTER TABLE](https://www.postgresql.org/docs/18/sql-altertable.html).
+
+The path requires unchanged array shape and excludes generated columns.
+Renaming, defaults, nullability and comments can still change in the same
+operation. Fixed-width `char` / `character`, conversions to other types and
+array-shape changes remain on their existing paths, which may still recreate
+columns. These other conversions are not covered by this varchar repair.
+
+Inspect both directions of generated migrations before executing them. Use a
+transaction for multi-statement changes when atomicity is required: rejection of
+one ALTER statement does not undo earlier statements run outside a transaction.
+
 ### Vector columns
 
 Vector columns can be used for similarity searches using PostgreSQL's vector operators:
