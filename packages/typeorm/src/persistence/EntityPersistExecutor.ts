@@ -146,9 +146,14 @@ export class EntityPersistExecutor {
             // console.time("building subject executors...");
             // Avoid concurrent queries on the same pg client; see #12238.
             // CockroachDB uses the pg package over a single connection too.
+            // MongoDB also forbids parallel operations on an active transaction session.
             const driverType = this.dataSource.options.type
             let executors: SubjectExecutor[]
-            if (driverType === "postgres" || driverType === "cockroachdb") {
+            if (
+                driverType === "postgres" ||
+                driverType === "cockroachdb" ||
+                (driverType === "mongodb" && queryRunner.isTransactionActive)
+            ) {
                 executors = []
                 for (const entities of entitiesInChunks) {
                     executors.push(await buildExecutor(entities))
@@ -176,6 +181,7 @@ export class EntityPersistExecutor {
                 if (!queryRunner.isTransactionActive) {
                     if (
                         this.dataSource.driver.transactionSupport !== "none" &&
+                        driverType !== "mongodb" &&
                         this.options?.transaction !== false
                     ) {
                         // start transaction until it was not explicitly disabled
