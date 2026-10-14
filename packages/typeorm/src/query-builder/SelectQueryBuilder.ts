@@ -3217,7 +3217,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
     ): Promise<number> {
         const countSql = this.computeCountExpression()
 
-        const results = await this.clone()
+        const countQuery = this.clone()
             .orderBy()
             .groupBy()
             .offset(undefined)
@@ -3226,7 +3226,17 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             .take(undefined)
             .select(countSql, "cnt")
             .setOption("disable-global-order")
-            .loadRawResults(queryRunner)
+
+        if (
+            this.takesNoRows() &&
+            this.hasCommonTableExpressions() &&
+            this.dataSource.driver.cteCapabilities.writable
+        ) {
+            // The count query must execute the CTE even on a cache hit.
+            countQuery.cache(false)
+        }
+
+        const results = await countQuery.loadRawResults(queryRunner)
 
         if (!results?.[0]?.["cnt"]) return 0
 
@@ -3532,6 +3542,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     entities: [],
                     raw: await this.clone()
                         .limit(0)
+                        .cache(false)
                         .loadRawResults(queryRunner),
                 }
             }

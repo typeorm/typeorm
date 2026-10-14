@@ -19,6 +19,7 @@ describe("github issues > #12666 take(0) combined with a join returns all rows i
             disabledDrivers: ["spanner"],
             schemaCreate: true,
             dropSchema: true,
+            cache: { duration: 60000 },
         })
     })
     beforeEach(async () => {
@@ -157,6 +158,97 @@ describe("github issues > #12666 take(0) combined with a join returns all rows i
                             .countBy({ name: "d" }),
                     ).to.equal(1)
                 }),
+        ))
+
+    for (const alwaysEnabled of [false, true]) {
+        for (const method of [
+            "getMany",
+            "getOne",
+            "getManyAndCount",
+        ] as const) {
+            it(`should execute a writable CTE on every ${method} with take(0) and ${alwaysEnabled ? "global" : "explicit"} caching`, () =>
+                Promise.all(
+                    dataSources
+                        .filter(
+                            (dataSource) =>
+                                dataSource.driver.cteCapabilities.writable,
+                        )
+                        .map(async (dataSource) => {
+                            const cacheOptions = dataSource.options.cache as {
+                                alwaysEnabled?: boolean
+                            }
+                            cacheOptions.alwaysEnabled = alwaysEnabled
+                            try {
+                                const insert = dataSource
+                                    .createQueryBuilder()
+                                    .insert()
+                                    .into(Category)
+                                    .values({ name: "cached-write" })
+                                const query = dataSource
+                                    .createQueryBuilder(Post, "post")
+                                    .addCommonTableExpression(
+                                        insert,
+                                        "inserted",
+                                    )
+                                    .leftJoinAndSelect(
+                                        "post.categories",
+                                        "category",
+                                    )
+                                    .take(0)
+                                if (!alwaysEnabled) query.cache(true)
+
+                                for (
+                                    let execution = 1;
+                                    execution <= 2;
+                                    execution++
+                                ) {
+                                    const result = await query[method]()
+                                    if (method === "getManyAndCount") {
+                                        expect(result).to.deep.equal([[], 3])
+                                    } else {
+                                        expect(result).to.deep.equal(
+                                            method === "getOne" ? null : [],
+                                        )
+                                    }
+                                    const writes = await dataSource
+                                        .createQueryBuilder(
+                                            Category,
+                                            "category",
+                                        )
+                                        .where("category.name = :name", {
+                                            name: "cached-write",
+                                        })
+                                        .cache(false)
+                                        .getCount()
+                                    expect(writes).to.equal(execution)
+                                    expect(query.expressionMap.cache).to.equal(
+                                        alwaysEnabled ? undefined : true,
+                                    )
+                                }
+                            } finally {
+                                cacheOptions.alwaysEnabled = false
+                            }
+                        }),
+                ))
+        }
+    }
+
+    it("should preserve count caching for take(0) without a CTE", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const query = dataSource
+                    .createQueryBuilder(Post, "post")
+                    .leftJoinAndSelect("post.categories", "category")
+                    .take(0)
+                    .cache(true)
+
+                expect(await query.getManyAndCount()).to.deep.equal([[], 3])
+                await dataSource.getRepository(Post).save({ title: "post #4" })
+                expect(await query.getManyAndCount()).to.deep.equal([[], 3])
+                expect(
+                    await query.cache(false).getManyAndCount(),
+                ).to.deep.equal([[], 4])
+            }),
         ))
 
     it("should still require a transaction for a pessimistic lock, even for take(0)", () =>
