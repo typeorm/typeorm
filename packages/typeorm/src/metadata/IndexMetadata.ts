@@ -191,8 +191,13 @@ export class IndexMetadata {
      * @param namingStrategy
      */
     build(namingStrategy: NamingStrategyInterface): this {
-        if (this.synchronize === false) {
-            this.name = this.givenName!
+        if (
+            this.synchronize === false &&
+            this.givenName &&
+            !this.givenColumnNames &&
+            this.columns.length === 0
+        ) {
+            this.name = this.givenName
             return this
         }
 
@@ -217,7 +222,7 @@ export class IndexMetadata {
                 columnPropertyPaths.forEach((propertyPath) => {
                     map[propertyPath] = 1
                 })
-            } else {
+            } else if (typeof this.givenColumnNames === "function") {
                 // todo: indices in embeds are not implemented in this syntax. deprecate this syntax?
                 // if columns is a function that returns array of field names then execute it and get columns names from it
                 const columnsFnResult = this.givenColumnNames(
@@ -238,6 +243,8 @@ export class IndexMetadata {
                         map[columnName] = columnsFnResult[columnName]
                     })
                 }
+            } else {
+                columnPropertyPaths = []
             }
 
             this.columns = columnPropertyPaths
@@ -257,6 +264,9 @@ export class IndexMetadata {
                     if (relationWithSameName) {
                         return relationWithSameName.joinColumns
                     }
+                    if (this.synchronize === false && this.givenName) {
+                        return []
+                    }
                     const indexName = this.givenName
                         ? '"' + this.givenName + '" '
                         : ""
@@ -266,7 +276,7 @@ export class IndexMetadata {
                             propertyPath,
                     )
                 })
-                .reduce((a, b) => a.concat(b))
+                .reduce((a, b) => a.concat(b), [] as ColumnMetadata[])
         }
 
         this.columnNamesWithOrderingMap = Object.keys(map).reduce(

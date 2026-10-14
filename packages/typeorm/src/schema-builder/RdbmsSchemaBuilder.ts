@@ -440,9 +440,37 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             const dropQueries = table.indices
                 .filter((tableIndex) => {
-                    const indexMetadata = metadata.indices.find(
-                        (index) => index.name === tableIndex.name,
-                    )
+                    const isSameIndexName = (
+                        a?: string,
+                        b?: string,
+                    ): boolean => {
+                        if (!a || !b) return false
+                        return a.toLowerCase() === b.toLowerCase()
+                    }
+
+                    const indexMetadata = metadata.indices.find((index) => {
+                        if (index.name === tableIndex.name) return true
+                        if (index.synchronize === false) {
+                            if (isSameIndexName(index.name, tableIndex.name)) {
+                                return true
+                            }
+                            if (
+                                index.columns.length > 0 &&
+                                index.columns.length ===
+                                    tableIndex.columnNames.length &&
+                                Boolean(index.isUnique) ===
+                                    Boolean(tableIndex.isUnique) &&
+                                index.columns.every(
+                                    (col, i) =>
+                                        col.databaseName ===
+                                        tableIndex.columnNames[i],
+                                )
+                            ) {
+                                return true
+                            }
+                        }
+                        return false
+                    })
                     return this.shouldDropIndices(indexMetadata, tableIndex)
                 })
                 .map(async (tableIndex) => {
@@ -465,13 +493,26 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 )
                 if (!view) continue
 
+                const isSameIndexName = (a?: string, b?: string): boolean => {
+                    if (!a || !b) return false
+                    return a.toLowerCase() === b.toLowerCase()
+                }
+
                 const dropQueries = view.indices
                     .filter((tableIndex) => {
-                        const indexMetadata = metadata.indices.find(
-                            (index) => index.name === tableIndex.name,
-                        )
+                        const indexMetadata = metadata.indices.find((index) => {
+                            if (index.name === tableIndex.name) return true
+                            if (
+                                index.synchronize === false &&
+                                isSameIndexName(index.name, tableIndex.name)
+                            ) {
+                                return true
+                            }
+                            return false
+                        })
                         return this.shouldDropIndices(indexMetadata, tableIndex)
                     })
+
                     .map(async (tableIndex) => {
                         this.dataSource.logger.logSchemaBuild(
                             `dropping an index: "${tableIndex.name}" from view ${view.name}`,

@@ -72,4 +72,9 @@ export interface IndexOptions {
      * This option is only applicable in PostgreSQL.
      */
     type?: TableIndexTypes
+
+    /**
+     * Indicates if this index must synchronize with database index.
+     */
+    synchronize?: boolean
 }
