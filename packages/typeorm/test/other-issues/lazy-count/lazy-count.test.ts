@@ -183,6 +183,35 @@ describe("other issues > lazy count", () => {
             }),
         ))
 
+    it("run count query when joining a relation with a take and ordering by a joined column", () =>
+        Promise.all(
+            dataSources.map(async function (connection) {
+                await savePostEntities(connection, 5)
+
+                const afterQuery = connection
+                    .subscribers[0] as AfterQuerySubscriber
+                afterQuery.clear()
+
+                // the paginated ids come back once per comment, so the page
+                // holds fewer posts than the take although more are left
+                const [, count] = await connection.manager
+                    .createQueryBuilder(Post, "post")
+                    .innerJoinAndSelect("post.comments", "comments")
+                    .take(3)
+                    .orderBy("post.id")
+                    .addOrderBy("comments.title")
+                    .getManyAndCount()
+
+                expect(count).to.be.equal(5)
+
+                expect(
+                    afterQuery
+                        .getCalledQueries()
+                        .filter((query) => query.match(/(count|cnt)/i)),
+                ).not.to.be.empty
+            }),
+        ))
+
     it("run count query when joining a relation with a limit", () =>
         Promise.all(
             dataSources.map(async function (connection) {

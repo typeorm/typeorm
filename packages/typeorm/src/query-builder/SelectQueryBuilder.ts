@@ -1924,6 +1924,21 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             return undefined
         }
 
+        // with joins, skip and take paginate a distinct query over the primary
+        // columns and the order by columns: ordering by a column outside the main
+        // alias can return an entity once per joined row, so the page size no
+        // longer tells how many entities are left
+        const mainAliasName = this.expressionMap.mainAlias!.name
+        if (
+            this.expressionMap.joinAttributes.length > 0 &&
+            (this.expressionMap.skip || this.expressionMap.take) &&
+            Object.keys(this.expressionMap.allOrderBys).some(
+                (orderBy) => !orderBy.startsWith(`${mainAliasName}.`),
+            )
+        ) {
+            return undefined
+        }
+
         const hasTake =
             this.expressionMap.take !== undefined &&
             this.expressionMap.take !== null
