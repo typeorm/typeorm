@@ -1,7 +1,6 @@
 import { expect } from "chai"
 import fs from "node:fs/promises"
 import path from "node:path"
-import { glob } from "tinyglobby"
 
 import type { DataSource } from "../../../../src/data-source/DataSource"
 import { filepathToName } from "../../../../src/util/PathUtils"
@@ -88,8 +87,9 @@ describe("multi-database > basic-functionality", () => {
         beforeEach(() => reloadTestingDatabases(dataSources))
         after(async () => {
             await closeTestingConnections(dataSources)
-            const files = await glob(`${tempPath}/**/*.attach.db`)
-            await Promise.all(files.map((file) => fs.rm(file, { force: true })))
+            for await (const file of fs.glob(`${tempPath}/**/*.attach.db`)) {
+                await fs.rm(file, { force: true })
+            }
         })
 
         it("should correctly attach and create database files", () =>
