@@ -1,6 +1,7 @@
 import type { AuroraMysqlDataSourceOptions } from "../driver/aurora-mysql/AuroraMysqlDataSourceOptions"
 import type { AuroraPostgresDataSourceOptions } from "../driver/aurora-postgres/AuroraPostgresDataSourceOptions"
 import type { BetterSqlite3DataSourceOptions } from "../driver/better-sqlite3/BetterSqlite3DataSourceOptions"
+import type { BunSqliteDataSourceOptions } from "../driver/bun-sqlite/BunSqliteDataSourceOptions"
 import type { CapacitorDataSourceOptions } from "../driver/capacitor/CapacitorDataSourceOptions"
 import type { CockroachDataSourceOptions } from "../driver/cockroachdb/CockroachDataSourceOptions"
 import type { CordovaDataSourceOptions } from "../driver/cordova/CordovaDataSourceOptions"
@@ -23,6 +24,7 @@ export type DataSourceOptions =
     | AuroraMysqlDataSourceOptions
     | AuroraPostgresDataSourceOptions
     | BetterSqlite3DataSourceOptions
+    | BunSqliteDataSourceOptions
     | CapacitorDataSourceOptions
     | CockroachDataSourceOptions
     | CordovaDataSourceOptions
