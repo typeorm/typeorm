@@ -85,13 +85,7 @@ describe("postgis spatial types", () => {
                     .createSchemaBuilder()
                     .log()
 
-                // Scoped to the dimensional table: the shared Post entity
-                // reports pre-existing drift for spatial columns declared
-                // without explicit options, independently of this fix.
-                const dimensionalPostChanges = sqlInMemory.upQueries.filter(
-                    (query) => query.query.includes("dimensional_post"),
-                )
-                expect(dimensionalPostChanges).to.have.length(0)
+                expect(sqlInMemory.upQueries).to.eql([])
             }),
         ))
 

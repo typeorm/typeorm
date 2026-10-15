@@ -15,10 +15,15 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       changes: ${{ steps.detect-changes.outputs.changes }}
+      # SONAR_TOKEN is empty for forks and for Dependabot: a pull_request run
+      # from a fork gets none of this repository's secrets, and a Dependabot run
+      # reads the Dependabot secret store, where SONAR_TOKEN is not set. Running
+      # the scan without it fails with "Not authorized".
+      sonar: ${{ github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: detect-changes
         with:
           filters: |
@@ -59,8 +64,8 @@ jobs:
 
             lint:
               - *src-or-tests
-              - packages/**/eslint.config.mjs
-              - packages/codemod/**/*
+              # `pnpm run lint` fans out to every workspace package
+              - packages/**
 
             codemod:
               - pnpm-lock.yaml
@@ -80,13 +85,22 @@ jobs:
       - uses: ./.github/actions/build-docs
 
   build:
-    if: contains(needs.detect-changes.outputs.changes, 'src-or-tests')
+    # Also runs for `lint` and `legacy-naming-strategies`, which consume the
+    # build artifact rather than building the core package themselves.
+    if: |
+      contains(needs.detect-changes.outputs.changes, 'src-or-tests') ||
+      contains(needs.detect-changes.outputs.changes, 'lint') ||
+      contains(needs.detect-changes.outputs.changes, 'legacy-naming-strategies')
     needs: detect-changes
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-node
+      # `compile` produces build/compiled for the test suites and `package`
+      # produces build/package, which the workspace packages link against. Each
+      # cleans only its own output, so both end up in the one artifact.
       - run: pnpm run compile
+      - run: pnpm run package
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -103,15 +117,15 @@ jobs:
 
   lint:
     if: contains(needs.detect-changes.outputs.changes, 'lint')
-    needs: detect-changes
+    needs: [detect-changes, build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: ./.github/actions/setup-node
       # `@typeorm/legacy-naming-strategies` is type-checked against `typeorm`,
-      # which resolves to ./build/package via publishConfig.directory, so the
-      # core package has to exist before it can be linted.
-      - run: pnpm run package
+      # which resolves to ./build/package via publishConfig.directory.
+      - uses: ./.github/actions/setup-node
+        with:
+          download-build: true
       - run: pnpm run lint
       - run: pnpm run check:manifests
 
@@ -144,8 +158,8 @@ jobs:
       - uses: ./.github/actions/setup-node
       - run: pnpm exec c8 pnpm test
         working-directory: packages/codemod
-      - uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8.2.1
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+      - uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v8.3.0
+        if: needs.detect-changes.outputs.sonar == 'true'
         with:
           projectBaseDir: packages/codemod
         env:
@@ -153,20 +167,20 @@ jobs:
 
   tests-legacy-naming-strategies:
     if: contains(needs.detect-changes.outputs.changes, 'legacy-naming-strategies')
-    needs: detect-changes
+    needs: [detect-changes, build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # SonarQube needs full history for blame and PR diffing against master
+      # `typeorm` resolves to ./build/package via publishConfig.directory.
       - uses: ./.github/actions/setup-node
-      # `typeorm` resolves to ./build/package via publishConfig.directory,
-      # so the core package has to exist before these tests can run.
-      - run: pnpm run package
+        with:
+          download-build: true
       - run: pnpm exec c8 pnpm test
         working-directory: packages/legacy-naming-strategies
-      - uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8.2.1
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+      - uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v8.3.0
+        if: needs.detect-changes.outputs.sonar == 'true'
         with:
           projectBaseDir: packages/legacy-naming-strategies
         env:
@@ -185,8 +199,8 @@ jobs:
           pattern: coverage-*
           path: packages/typeorm/coverage/
 
-      - uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8.2.1
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+      - uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v8.3.0
+        if: needs.detect-changes.outputs.sonar == 'true'
         with:
           projectBaseDir: packages/typeorm
         env:
