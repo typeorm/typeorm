@@ -8,6 +8,12 @@
 npm install better-sqlite3
 ```
 
+:::warning
+`better-sqlite3` v13 requires Node-API 10. Among the Node.js versions TypeORM supports, that means Node.js 22.14.0 or a later 22.x release, or Node.js 24.11.0 or newer. On Node.js 20 and 22.13.x, use `better-sqlite3` v12 (`npm install better-sqlite3@12`), which TypeORM continues to support.
+
+The `engines` field of v13 (`"node": ">=22"`) doesn't reflect this requirement, so a package manager can still install v13 on an incompatible Node.js version. The process then crashes during `DataSource.initialize()`.
+:::
+
 - for **sql.js**:
 
 ```shell
