@@ -19,7 +19,12 @@ const getCurrentTransactionLevelAndAssert = async (
     entityManager: EntityManager,
     expectedIsolationLevel: string,
 ) => {
-    const query = `SELECT isolation_level FROM performance_schema.events_transactions_current WHERE state = 'ACTIVE'`
+    const query = `SELECT transaction_event.isolation_level
+        FROM performance_schema.events_transactions_current transaction_event
+        INNER JOIN performance_schema.threads thread
+            ON thread.THREAD_ID = transaction_event.THREAD_ID
+        WHERE transaction_event.state = 'ACTIVE'
+            AND thread.PROCESSLIST_ID = CONNECTION_ID()`
     const actualIsolationLevel = (await entityManager.query(query))[0]
         .isolation_level
     expect(actualIsolationLevel).to.equal(expectedIsolationLevel)
@@ -95,6 +100,43 @@ describe("transaction > isolation level > mysql", () => {
                 )
             }
         })
+
+        it("should inspect only the current connection when another transaction is active", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const readCommittedRunner = dataSource.createQueryRunner()
+                    const serializableRunner = dataSource.createQueryRunner()
+                    const runners = [readCommittedRunner, serializableRunner]
+                    try {
+                        await readCommittedRunner.startTransaction(
+                            "READ COMMITTED",
+                        )
+                        await serializableRunner.startTransaction(
+                            "SERIALIZABLE",
+                        )
+
+                        await getCurrentTransactionLevelAndAssert(
+                            readCommittedRunner.manager,
+                            "READ COMMITTED",
+                        )
+                        await getCurrentTransactionLevelAndAssert(
+                            serializableRunner.manager,
+                            "SERIALIZABLE",
+                        )
+                    } finally {
+                        await Promise.all(
+                            runners.map(async (runner) => {
+                                try {
+                                    if (runner.isTransactionActive)
+                                        await runner.rollbackTransaction()
+                                } finally {
+                                    await runner.release()
+                                }
+                            }),
+                        )
+                    }
+                }),
+            ))
 
         describe("unsupported", () => {
             for (const level of unsupportedLevels) {
