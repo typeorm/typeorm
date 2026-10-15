@@ -8,6 +8,10 @@ establishes the initial database connection or connection pool depending on the 
 
 To establish the initial connection/connection pool, you must call the `initialize` method of your `DataSource` instance.
 
+`initialize` must only be called once: calling it again while a previous call is still in progress, or after it has
+succeeded, rejects with a `CannotConnectAlreadyConnectedError`. If initialization fails, the partially established
+connection is cleaned up and `initialize` can safely be called again.
+
 Disconnection (closing all connections in the pool) occurs when the `destroy` method is called.
 
 Generally, you call the `initialize` method of the `DataSource` instance on the application bootstrap,
