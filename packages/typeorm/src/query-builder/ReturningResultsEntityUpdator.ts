@@ -25,17 +25,23 @@ export class ReturningResultsEntityUpdator {
 
     /**
      * Builds a key identifying the entity with the given id map.
-     * Values are stringified so that ids the driver hydrates with another type
-     * (e.g. a bigint returned as a string) still match the inserted ones.
+     * Values are converted to their persisted form and stringified so that ids the driver
+     * hydrates with another type (e.g. a date returned as a string or a bigint returned as a string)
+     * still match the inserted ones.
      *
      * @param entityId id map of the entity
      * @returns key identifying the entity
      */
     protected getEntityIdKey(entityId: ObjectLiteral): string {
+        const driver = this.queryRunner.dataSource.driver
+
         return JSON.stringify(
             this.expressionMap.mainAlias!.metadata.primaryColumns.map(
                 (column) => {
-                    const value = column.getEntityValue(entityId)
+                    const value = driver.preparePersistentValue(
+                        column.getEntityValue(entityId),
+                        column,
+                    )
                     return typeof value === "object" && value !== null
                         ? JSON.stringify(value)
                         : String(value)
