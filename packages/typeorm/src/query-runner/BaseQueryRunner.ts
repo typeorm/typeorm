@@ -9,6 +9,7 @@ import type { Table } from "../schema-builder/table/Table"
 import type { EntityManager } from "../entity-manager/EntityManager"
 import type { TableColumn } from "../schema-builder/table/TableColumn"
 import type { Broadcaster } from "../subscriber/Broadcaster"
+import type { BroadcasterResult } from "../subscriber/BroadcasterResult"
 import type { ReplicationMode } from "../driver/types/ReplicationMode"
 import { TypeORMError } from "../error/TypeORMError"
 import type { EntityMetadata } from "../metadata/EntityMetadata"
@@ -19,6 +20,8 @@ import { InstanceChecker } from "../util/InstanceChecker"
 import { buildSqlTag } from "../util/SqlTagUtils"
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { QueryDeepPartialEntity } from "../query-builder/QueryPartialEntity"
+
+const queryReachedDatabase = Symbol("queryReachedDatabase")
 
 export abstract class BaseQueryRunner implements AsyncDisposable {
     // -------------------------------------------------------------------------
@@ -136,6 +139,12 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
      * Error will be thrown if transaction was not started.
      */
     abstract commitTransaction(): Promise<void>
+
+    /**
+     * Rollbacks transaction.
+     * Error will be thrown if transaction was not started.
+     */
+    abstract rollbackTransaction(): Promise<void>
 
     /**
      * Executes a given SQL query.
@@ -306,6 +315,102 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Records that the statement ran and a later subscriber then failed. A failed
+     * savepoint or BEGIN is not proof the database created it; this mark is.
+     *
+     * @param error error thrown by the query
+     * @returns whether the database ran the statement before this error
+     */
+    protected didQueryReachDatabase(error: unknown): boolean {
+        return (
+            typeof error === "object" &&
+            error !== null &&
+            queryReachedDatabase in error
+        )
+    }
+
+    /**
+     * Waits for afterQuery subscribers. When the statement itself succeeded, a subscriber
+     * failure is marked so startTransaction can undo the statement it already ran.
+     *
+     * @param result subscriber promises for this query
+     * @param statementReachedDatabase whether the database ran the statement
+     * @returns promise resolved when subscribers have finished
+     */
+    protected async waitForQuerySubscribers(
+        result: BroadcasterResult,
+        statementReachedDatabase: boolean,
+    ): Promise<void> {
+        try {
+            await result.wait()
+        } catch (error) {
+            if (
+                statementReachedDatabase &&
+                typeof error === "object" &&
+                error !== null
+            )
+                Object.defineProperty(error, queryReachedDatabase, {
+                    value: true,
+                })
+            throw error
+        }
+    }
+
+    /**
+     * Puts the runner back to the state from before this startTransaction attempt.
+     * A level this attempt already opened is rolled back. A statement that reached the
+     * database before the attempt failed is undone, without rolling back a level the
+     * caller already owned. When the undo itself fails, the runner is left as it is.
+     *
+     * @param activeBefore isTransactionActive from before this attempt
+     * @param depthBefore transaction depth from before this attempt
+     * @param began whether a top-level transaction statement succeeded
+     * @param savepointEstablished whether the new savepoint statement succeeded
+     * @param error error thrown by the attempt
+     * @param undo driver statements that discard a statement this attempt ran
+     * @param undo.rollbackTopLevel rolls back a transaction this attempt began
+     * @param undo.rollbackToSavepoint rolls back a savepoint this attempt created
+     * @returns promise resolved when the runner has been restored, or left unchanged
+     */
+    protected async recoverFailedTransactionStart(
+        activeBefore: boolean,
+        depthBefore: number,
+        began: boolean,
+        savepointEstablished: boolean,
+        error: unknown,
+        undo: {
+            rollbackTopLevel: () => Promise<void>
+            rollbackToSavepoint: (savepoint: string) => Promise<void>
+        },
+    ): Promise<void> {
+        if (this.transactionDepth > depthBefore) {
+            try {
+                await this.rollbackTransaction()
+            } catch {
+                // the start error is the one reported
+            }
+            return
+        }
+
+        const statementLanded = this.didQueryReachDatabase(error)
+        const undoTopLevel = began || (depthBefore === 0 && statementLanded)
+        const undoSavepoint =
+            savepointEstablished || (depthBefore > 0 && statementLanded)
+        let restored = true
+        try {
+            if (undoTopLevel) await undo.rollbackTopLevel()
+            else if (undoSavepoint)
+                await undo.rollbackToSavepoint(`typeorm_${depthBefore}`)
+        } catch {
+            restored = false
+        }
+        if (!restored) return
+
+        this.transactionDepth = depthBefore
+        this.isTransactionActive = depthBefore === 0 ? false : activeBefore
+    }
 
     /**
      * Gets view from previously loaded views, otherwise loads it from database.

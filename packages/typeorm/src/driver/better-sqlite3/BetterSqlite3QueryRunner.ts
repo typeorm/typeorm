@@ -100,6 +100,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
         )
 
         const broadcasterResult = new BroadcasterResult()
+        let queryReachedDatabase = false
 
         this.driver.dataSource.logger.logQuery(
             query,
@@ -148,6 +149,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
                     this,
                 )
 
+            queryReachedDatabase = true
             this.broadcaster.broadcastAfterQueryEvent(
                 broadcasterResult,
                 query,
@@ -182,7 +184,10 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
 
             throw new QueryFailedError(query, normalizedParameters, err)
         } finally {
-            await broadcasterResult.wait()
+            await this.waitForQuerySubscribers(
+                broadcasterResult,
+                queryReachedDatabase,
+            )
         }
     }
 

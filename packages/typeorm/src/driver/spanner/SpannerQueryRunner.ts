@@ -109,11 +109,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             isolationLevel,
         )
 
+        const activeBefore = this.isTransactionActive
         this.isTransactionActive = true
         try {
             await this.broadcaster.broadcast("BeforeTransactionStart")
         } catch (err) {
-            this.isTransactionActive = false
+            this.isTransactionActive = activeBefore
             throw err
         }
 
@@ -133,7 +134,16 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
         this.dataSource.logger.logQuery("START TRANSACTION")
 
-        await this.broadcaster.broadcast("AfterTransactionStart")
+        try {
+            await this.broadcaster.broadcast("AfterTransactionStart")
+        } catch (err) {
+            try {
+                await this.rollbackTransaction()
+            } catch {
+                // the start error is the one reported
+            }
+            throw err
+        }
     }
 
     /**
