@@ -52,9 +52,11 @@ describe("transaction > nested transaction start failure", () => {
                 event.success
             ) {
                 failSavepointAfterQuery.delete(event.queryRunner)
-                return Promise.reject(
-                    new Error("afterQuery rejected the SAVEPOINT"),
-                )
+                return event.manager
+                    .save(Post, { title: "written-after-savepoint" })
+                    .then(() => {
+                        throw new Error("afterQuery rejected the SAVEPOINT")
+                    })
             }
         }
     }
