@@ -4,6 +4,7 @@ import path from "path"
 import process from "process"
 import type yargs from "yargs"
 import type { DataSource } from "../data-source"
+import { MigrationExecutor } from "../migration/MigrationExecutor"
 import { PlatformTools } from "../platform/PlatformTools"
 import { camelCase } from "../util/StringUtils"
 import { CommandUtils } from "./CommandUtils"
@@ -69,6 +70,12 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 default: false,
                 describe: "Custom timestamp for the migration name",
             })
+            .option("skipPendingCheck", {
+                type: "boolean",
+                default: false,
+                describe:
+                    "Skips warning when unapplied pending migrations exist before generating a new migration",
+            })
     }
 
     async handler(args: yargs.Arguments<any & { path: string }>) {
@@ -96,6 +103,28 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
                 downSqls: string[] = []
 
             try {
+                if (!args.skipPendingCheck) {
+                    try {
+                        const migrationExecutor = new MigrationExecutor(
+                            dataSource,
+                        )
+                        const pendingMigrations =
+                            await migrationExecutor.getPendingMigrations()
+                        if (pendingMigrations.length > 0) {
+                            const migrationNames = pendingMigrations
+                                .map((m) => m.name)
+                                .join(", ")
+                            console.log(
+                                ansi.yellow(
+                                    `Warning: There are ${pendingMigrations.length} pending migration(s) (${migrationNames}) that have not been executed. Generating a migration against the current database state may produce duplicate or conflicting schema statements. Consider running 'typeorm migration:run' first, or pass '--skipPendingCheck'.`,
+                                ),
+                            )
+                        }
+                    } catch {
+                        // ignore errors during pending migration check (e.g. if driver lacks migration table support)
+                    }
+                }
+
                 const sqlInMemory = await dataSource.driver
                     .createSchemaBuilder()
                     .log()
