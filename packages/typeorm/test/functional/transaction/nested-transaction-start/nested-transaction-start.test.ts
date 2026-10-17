@@ -72,7 +72,9 @@ describe("transaction > nested transaction start failure", () => {
                 "better-sqlite3",
                 "cockroachdb",
                 "mariadb",
+                "mssql",
                 "mysql",
+                "oracle",
                 "postgres",
                 "sqljs",
             ],
@@ -132,6 +134,14 @@ describe("transaction > nested transaction start failure", () => {
     it("should keep the caller's transaction when a nested start fails validation", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
+                // SQL Server can open SNAPSHOT, so the level is not a validation failure there.
+                if (
+                    dataSource.driver.supportedIsolationLevels.includes(
+                        "SNAPSHOT",
+                    )
+                )
+                    return
+
                 await dataSource.transaction(async (manager) => {
                     await manager.save(Post, { title: "outer" })
                     const error = await manager
