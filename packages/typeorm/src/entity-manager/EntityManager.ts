@@ -154,16 +154,20 @@ export class EntityManager {
         const queryRunner =
             this.queryRunner ?? this.dataSource.createQueryRunner()
 
+        let started = false
         try {
             await queryRunner.startTransaction(isolation)
+            started = true
             const result = await runInTransaction(queryRunner.manager)
             await queryRunner.commitTransaction()
             return result
         } catch (err) {
-            try {
-                // we throw original error even if rollback thrown an error
-                await queryRunner.rollbackTransaction()
-            } catch (rollbackError) {}
+            if (started) {
+                try {
+                    // we throw original error even if rollback thrown an error
+                    await queryRunner.rollbackTransaction()
+                } catch (rollbackError) {}
+            }
             throw err
         } finally {
             if (!this.queryRunner)

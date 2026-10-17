@@ -98,6 +98,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
         await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
         const broadcasterResult = new BroadcasterResult()
+        let queryReachedDatabase = false
         const queryStartTime = Date.now()
         let statement: any
 
@@ -134,6 +135,7 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
                     this,
                 )
 
+            queryReachedDatabase = true
             this.broadcaster.broadcastAfterQueryEvent(
                 broadcasterResult,
                 query,
@@ -184,7 +186,10 @@ export class SqljsQueryRunner extends AbstractSqliteQueryRunner {
 
             throw new QueryFailedError(query, parameters, err)
         } finally {
-            await broadcasterResult.wait()
+            await this.waitForQuerySubscribers(
+                broadcasterResult,
+                queryReachedDatabase,
+            )
         }
     }
 }

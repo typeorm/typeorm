@@ -104,41 +104,49 @@ export class AuroraPostgresQueryRunner
             isolationLevel,
         )
 
+        const activeBefore = this.isTransactionActive
+        const depthBefore = this.transactionDepth
         this.isTransactionActive = true
         try {
             await this.broadcaster.broadcast("BeforeTransactionStart")
         } catch (err) {
-            this.isTransactionActive = false
+            this.isTransactionActive = activeBefore
             throw err
         }
 
-        if (this.transactionDepth === 0) {
-            try {
+        let began = false
+        let savepointEstablished = false
+        try {
+            if (depthBefore === 0) {
                 await this.client.startTransaction()
-            } catch (err) {
-                this.isTransactionActive = false
-                throw err
-            }
-            if (isolationLevel) {
-                try {
+                began = true
+                if (isolationLevel) {
                     await this.query(
                         `SET TRANSACTION ISOLATION LEVEL ${isolationLevel}`,
                     )
-                } catch (err) {
-                    try {
-                        await this.client.rollbackTransaction()
-                    } finally {
-                        this.isTransactionActive = false
-                    }
-                    throw err
                 }
+            } else {
+                await this.query(`SAVEPOINT typeorm_${depthBefore}`)
+                savepointEstablished = true
             }
-        } else {
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
-        }
-        this.transactionDepth += 1
+            this.transactionDepth += 1
 
-        await this.broadcaster.broadcast("AfterTransactionStart")
+            await this.broadcaster.broadcast("AfterTransactionStart")
+        } catch (err) {
+            await this.recoverFailedTransactionStart(
+                activeBefore,
+                depthBefore,
+                began,
+                savepointEstablished,
+                err,
+                {
+                    rollbackTopLevel: () => this.client.rollbackTransaction(),
+                    rollbackToSavepoint: (savepoint) =>
+                        this.query(`ROLLBACK TO SAVEPOINT ${savepoint}`),
+                },
+            )
+            throw err
+        }
     }
 
     /**

@@ -125,24 +125,46 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         )
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
+        const activeBefore = this.isTransactionActive
+        const depthBefore = this.transactionDepth
         this.isTransactionActive = true
         try {
             await this.broadcaster.broadcast("BeforeTransactionStart")
         } catch (err) {
-            this.isTransactionActive = false
+            this.isTransactionActive = activeBefore
             throw err
         }
 
-        if (this.transactionDepth === 0) {
-            await this.query(
-                "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
-            )
-        } else {
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
-        }
-        this.transactionDepth += 1
+        let began = false
+        let savepointEstablished = false
+        try {
+            if (depthBefore === 0) {
+                await this.query(
+                    "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
+                )
+                began = true
+            } else {
+                await this.query(`SAVEPOINT typeorm_${depthBefore}`)
+                savepointEstablished = true
+            }
+            this.transactionDepth += 1
 
-        await this.broadcaster.broadcast("AfterTransactionStart")
+            await this.broadcaster.broadcast("AfterTransactionStart")
+        } catch (err) {
+            await this.recoverFailedTransactionStart(
+                activeBefore,
+                depthBefore,
+                began,
+                savepointEstablished,
+                err,
+                {
+                    rollbackTopLevel: () => this.query("ROLLBACK"),
+                    rollbackToSavepoint: (savepoint) =>
+                        this.query(`ROLLBACK TO SAVEPOINT ${savepoint}`),
+                },
+            )
+            throw err
+        }
     }
 
     /**
@@ -205,6 +227,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
         const broadcasterResult = new BroadcasterResult()
+        let queryReachedDatabase = false
         const queryStartTime = Date.now()
 
         try {
@@ -225,6 +248,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             const queryEndTime = Date.now()
             const queryExecutionTime = queryEndTime - queryStartTime
 
+            queryReachedDatabase = true
             this.broadcaster.broadcastAfterQueryEvent(
                 broadcasterResult,
                 query,
@@ -300,7 +324,10 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             throw new QueryFailedError(query, parameters, err)
         } finally {
-            await broadcasterResult.wait()
+            await this.waitForQuerySubscribers(
+                broadcasterResult,
+                queryReachedDatabase,
+            )
         }
     }
 

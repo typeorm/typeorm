@@ -121,27 +121,50 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             isolationLevel,
         )
 
+        const activeBefore = this.isTransactionActive
+        const depthBefore = this.transactionDepth
         this.isTransactionActive = true
 
         try {
             await this.broadcaster.broadcast("BeforeTransactionStart")
         } catch (err) {
-            this.isTransactionActive = false
+            this.isTransactionActive = activeBefore
             throw err
         }
-        if (this.transactionDepth === 0) {
-            if (isolationLevel) {
-                await this.query(
-                    "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
-                )
-            }
-            await this.query("START TRANSACTION")
-        } else {
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
-        }
-        this.transactionDepth += 1
 
-        await this.broadcaster.broadcast("AfterTransactionStart")
+        let began = false
+        let savepointEstablished = false
+        try {
+            if (depthBefore === 0) {
+                if (isolationLevel) {
+                    await this.query(
+                        "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
+                    )
+                }
+                await this.query("START TRANSACTION")
+                began = true
+            } else {
+                await this.query(`SAVEPOINT typeorm_${depthBefore}`)
+                savepointEstablished = true
+            }
+            this.transactionDepth += 1
+
+            await this.broadcaster.broadcast("AfterTransactionStart")
+        } catch (err) {
+            await this.recoverFailedTransactionStart(
+                activeBefore,
+                depthBefore,
+                began,
+                savepointEstablished,
+                err,
+                {
+                    rollbackTopLevel: () => this.query("ROLLBACK"),
+                    rollbackToSavepoint: (savepoint) =>
+                        this.query(`ROLLBACK TO SAVEPOINT ${savepoint}`),
+                },
+            )
+            throw err
+        }
     }
 
     /**
@@ -208,6 +231,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
         const broadcasterResult = new BroadcasterResult()
+        let queryReachedDatabase = false
         const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime
         const enableQueryTimeout = this.driver.options.enableQueryTimeout
         const queryPayload =
@@ -220,6 +244,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             const [raw] = await databaseConnection
                 .promise()
                 .query(queryPayload, parameters)
+            queryReachedDatabase = true
 
             const queryExecutionTime = Date.now() - queryStartTime
 
@@ -290,7 +315,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             )
             throw new QueryFailedError(query, parameters, err)
         } finally {
-            await broadcasterResult.wait()
+            await this.waitForQuerySubscribers(
+                broadcasterResult,
+                queryReachedDatabase,
+            )
         }
     }
 

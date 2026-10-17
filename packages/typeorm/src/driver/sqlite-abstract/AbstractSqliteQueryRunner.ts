@@ -93,29 +93,51 @@ export abstract class AbstractSqliteQueryRunner
         )
             throw new TransactionAlreadyStartedError()
 
+        const activeBefore = this.isTransactionActive
+        const depthBefore = this.transactionDepth
         this.isTransactionActive = true
         try {
             await this.broadcaster.broadcast("BeforeTransactionStart")
         } catch (err) {
-            this.isTransactionActive = false
+            this.isTransactionActive = activeBefore
             throw err
         }
 
-        if (this.transactionDepth === 0) {
-            if (isolationLevel) {
-                if (isolationLevel === "READ UNCOMMITTED") {
-                    await this.query("PRAGMA read_uncommitted = true")
-                } else {
-                    await this.query("PRAGMA read_uncommitted = false")
+        let began = false
+        let savepointEstablished = false
+        try {
+            if (depthBefore === 0) {
+                if (isolationLevel) {
+                    if (isolationLevel === "READ UNCOMMITTED") {
+                        await this.query("PRAGMA read_uncommitted = true")
+                    } else {
+                        await this.query("PRAGMA read_uncommitted = false")
+                    }
                 }
+                await this.query("BEGIN TRANSACTION")
+                began = true
+            } else {
+                await this.query(`SAVEPOINT typeorm_${depthBefore}`)
+                savepointEstablished = true
             }
-            await this.query("BEGIN TRANSACTION")
-        } else {
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
-        }
-        this.transactionDepth += 1
+            this.transactionDepth += 1
 
-        await this.broadcaster.broadcast("AfterTransactionStart")
+            await this.broadcaster.broadcast("AfterTransactionStart")
+        } catch (err) {
+            await this.recoverFailedTransactionStart(
+                activeBefore,
+                depthBefore,
+                began,
+                savepointEstablished,
+                err,
+                {
+                    rollbackTopLevel: () => this.query("ROLLBACK"),
+                    rollbackToSavepoint: (savepoint) =>
+                        this.query(`ROLLBACK TO SAVEPOINT ${savepoint}`),
+                },
+            )
+            throw err
+        }
     }
 
     /**

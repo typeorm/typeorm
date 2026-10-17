@@ -197,31 +197,53 @@ export class CockroachQueryRunner
             isolationLevel,
         )
 
+        const activeBefore = this.isTransactionActive
+        const depthBefore = this.transactionDepth
         this.isTransactionActive = true
         this.transactionRetries = 0
         try {
             await this.broadcaster.broadcast("BeforeTransactionStart")
         } catch (err) {
-            this.isTransactionActive = false
+            this.isTransactionActive = activeBefore
             throw err
         }
 
-        if (this.transactionDepth === 0) {
-            await this.query("START TRANSACTION")
-            await this.query("SAVEPOINT cockroach_restart")
-            if (isolationLevel) {
-                await this.query(
-                    "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
-                )
+        let began = false
+        let savepointEstablished = false
+        try {
+            if (depthBefore === 0) {
+                await this.query("START TRANSACTION")
+                began = true
+                await this.query("SAVEPOINT cockroach_restart")
+                if (isolationLevel) {
+                    await this.query(
+                        "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
+                    )
+                }
+            } else {
+                await this.query(`SAVEPOINT typeorm_${depthBefore}`)
+                savepointEstablished = true
             }
-        } else {
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
+
+            this.transactionDepth += 1
+            this.storeQueries = true
+
+            await this.broadcaster.broadcast("AfterTransactionStart")
+        } catch (err) {
+            await this.recoverFailedTransactionStart(
+                activeBefore,
+                depthBefore,
+                began,
+                savepointEstablished,
+                err,
+                {
+                    rollbackTopLevel: () => this.query("ROLLBACK"),
+                    rollbackToSavepoint: (savepoint) =>
+                        this.query(`ROLLBACK TO SAVEPOINT ${savepoint}`),
+                },
+            )
+            throw err
         }
-
-        this.transactionDepth += 1
-        this.storeQueries = true
-
-        await this.broadcaster.broadcast("AfterTransactionStart")
     }
 
     /**
@@ -298,6 +320,7 @@ export class CockroachQueryRunner
         await this.broadcaster.broadcast("BeforeQuery", query, parameters)
 
         const broadcasterResult = new BroadcasterResult()
+        let queryReachedDatabase = false
         const queryStartTime = Date.now()
 
         if (this.isTransactionActive && this.storeQueries) {
@@ -349,6 +372,7 @@ export class CockroachQueryRunner
                     result.raw = raw.rows
             }
 
+            queryReachedDatabase = true
             this.broadcaster.broadcastAfterQueryEvent(
                 broadcasterResult,
                 query,
@@ -417,7 +441,10 @@ export class CockroachQueryRunner
                 throw new QueryFailedError(query, parameters, err)
             }
         } finally {
-            await broadcasterResult.wait()
+            await this.waitForQuerySubscribers(
+                broadcasterResult,
+                queryReachedDatabase,
+            )
         }
     }
 

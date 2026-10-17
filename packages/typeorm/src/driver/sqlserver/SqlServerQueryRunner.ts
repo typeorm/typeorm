@@ -100,11 +100,12 @@ export class SqlServerQueryRunner
         )
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
+        const activeBefore = this.isTransactionActive
         this.isTransactionActive = true
         try {
             await this.broadcaster.broadcast("BeforeTransactionStart")
         } catch (err) {
-            this.isTransactionActive = false
+            this.isTransactionActive = activeBefore
             throw err
         }
         await new Promise<void>(async (ok, fail) => {
@@ -142,7 +143,16 @@ export class SqlServerQueryRunner
             this.transactionDepth += 1
         })
 
-        await this.broadcaster.broadcast("AfterTransactionStart")
+        try {
+            await this.broadcaster.broadcast("AfterTransactionStart")
+        } catch (err) {
+            try {
+                await this.rollbackTransaction()
+            } catch {
+                // the start error is the one reported
+            }
+            throw err
+        }
     }
 
     /**
