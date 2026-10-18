@@ -100,8 +100,12 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
                                 this,
                             )
 
-                        if (broadcasterResult.promises.length > 0)
-                            await Promise.all(broadcasterResult.promises)
+                        try {
+                            await broadcasterResult.wait()
+                        } catch (subscriberErr) {
+                            fail(subscriberErr)
+                            return
+                        }
 
                         const result = new QueryResult()
 
@@ -130,7 +134,7 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
                             ok(result.raw)
                         }
                     },
-                    (err: any) => {
+                    async (err: any) => {
                         this.driver.dataSource.logger.logQueryError(
                             err,
                             query,
@@ -146,14 +150,17 @@ export class ReactNativeQueryRunner extends AbstractSqliteQueryRunner {
                             undefined,
                             err,
                         )
+                        try {
+                            await broadcasterResult.wait()
+                        } catch {
+                            // a subscriber failing must not hide the original query error
+                        }
 
                         fail(new QueryFailedError(query, parameters, err))
                     },
                 )
             } catch (err) {
                 fail(err)
-            } finally {
-                await broadcasterResult.wait()
             }
         })
     }
