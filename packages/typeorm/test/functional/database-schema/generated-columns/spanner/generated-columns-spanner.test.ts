@@ -95,7 +95,6 @@ describe("database schema > generated columns > spanner", () => {
                 table = await queryRunner.getTable("post")
                 expect(table!.findColumnByName("storedColumn")).to.be.undefined
 
-                // check if generated column records removed from typeorm_metadata table
                 const metadataRecords = await queryRunner.query(
                     `SELECT * FROM \`typeorm_metadata\` WHERE \`table\` = 'post' AND \`name\` = 'storedColumn'`,
                 )
@@ -117,7 +116,6 @@ describe("database schema > generated columns > spanner", () => {
                 expect(table!.findColumnByName("storedFullName")).to.be
                     .undefined
 
-                // check if generated column records removed from typeorm_metadata table
                 const metadataRecords = await queryRunner.query(
                     `SELECT * FROM \`typeorm_metadata\` WHERE \`table\` = 'post' AND \`name\` = 'storedFullName'`,
                 )
@@ -176,7 +174,6 @@ describe("database schema > generated columns > spanner", () => {
                 expect(name!.generatedType).to.be.undefined
                 expect(name!.asExpression).to.be.undefined
 
-                // check if generated column records removed from typeorm_metadata table
                 const metadataRecords = await queryRunner.query(
                     `SELECT * FROM \`typeorm_metadata\` WHERE \`table\` = 'post' AND \`name\` = 'name'`,
                 )
@@ -211,7 +208,6 @@ describe("database schema > generated columns > spanner", () => {
 
                 await queryRunner.dropTable(table!)
 
-                // check if generated column records removed from typeorm_metadata table
                 let metadataRecords = await queryRunner.query(
                     `SELECT * FROM \`typeorm_metadata\` WHERE \`table\` = 'post'`,
                 )

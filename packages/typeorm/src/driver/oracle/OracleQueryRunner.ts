@@ -566,22 +566,26 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             (column) => column.generatedType && column.asExpression,
         )
 
-        for (const column of generatedColumns) {
-            const insertQuery = this.insertTypeormMetadataSql({
-                table: table.name,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression,
-            })
+        if (generatedColumns.length > 0) {
+            const { tableName } = this.driver.parseTableName(table)
 
-            const deleteQuery = this.deleteTypeormMetadataSql({
-                table: table.name,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-            })
+            for (const column of generatedColumns) {
+                const insertQuery = this.insertTypeormMetadataSql({
+                    table: tableName,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                    value: column.asExpression,
+                })
 
-            upQueries.push(insertQuery)
-            downQueries.push(deleteQuery)
+                const deleteQuery = this.deleteTypeormMetadataSql({
+                    table: tableName,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                })
+
+                upQueries.push(insertQuery)
+                downQueries.push(deleteQuery)
+            }
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -635,25 +639,30 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // if table had columns with generated type, we must remove the expression from the metadata table
         const generatedColumns = table.columns.filter(
-            (column) => column.generatedType && column.asExpression,
+            (column) => column.generatedType,
         )
 
-        for (const column of generatedColumns) {
-            const deleteQuery = this.deleteTypeormMetadataSql({
-                table: table.name,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-            })
+        if (generatedColumns.length > 0) {
+            const { tableName } = this.driver.parseTableName(table)
 
-            const insertQuery = this.insertTypeormMetadataSql({
-                table: table.name,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression,
-            })
+            for (const column of generatedColumns) {
+                const deleteQuery = this.deleteTypeormMetadataSql({
+                    table: tableName,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                })
+                upQueries.push(deleteQuery)
 
-            upQueries.push(deleteQuery)
-            downQueries.push(insertQuery)
+                if (column.asExpression) {
+                    const insertQuery = this.insertTypeormMetadataSql({
+                        table: tableName,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        name: column.name,
+                        value: column.asExpression,
+                    })
+                    downQueries.push(insertQuery)
+                }
+            }
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -738,6 +747,25 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 )} RENAME TO "${oldTableName}"`,
             ),
         )
+
+        const hasGeneratedColumns = oldTable.columns.some(
+            (col) => col.generatedType,
+        )
+        if (hasGeneratedColumns) {
+            const updateQuery = this.updateTypeormMetadataSql({
+                table: oldTableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                valueToSet: { table: newTableName },
+            })
+            const revertUpdateQuery = this.updateTypeormMetadataSql({
+                table: newTableName,
+                type: MetadataTableType.GENERATED_COLUMN,
+                valueToSet: { table: oldTableName },
+            })
+
+            upQueries.push(updateQuery)
+            downQueries.push(revertUpdateQuery)
+        }
 
         // rename primary key constraint
         if (
@@ -1037,15 +1065,16 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
 
         if (column.generatedType && column.asExpression) {
+            const { tableName } = this.driver.parseTableName(table)
             const insertQuery = this.insertTypeormMetadataSql({
-                table: table.name,
+                table: tableName,
                 type: MetadataTableType.GENERATED_COLUMN,
                 name: column.name,
                 value: column.asExpression,
             })
 
             const deleteQuery = this.deleteTypeormMetadataSql({
-                table: table.name,
+                table: tableName,
                 type: MetadataTableType.GENERATED_COLUMN,
                 name: column.name,
             })
@@ -1174,6 +1203,25 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                         }" TO "${oldColumn.name}"`,
                     ),
                 )
+
+                if (oldColumn.generatedType) {
+                    const { tableName } = this.driver.parseTableName(table)
+                    const updateQuery = this.updateTypeormMetadataSql({
+                        table: tableName,
+                        name: oldColumn.name,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        valueToSet: { name: newColumn.name },
+                    })
+                    const revertUpdateQuery = this.updateTypeormMetadataSql({
+                        table: tableName,
+                        name: newColumn.name,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        valueToSet: { name: oldColumn.name },
+                    })
+
+                    upQueries.push(updateQuery)
+                    downQueries.push(revertUpdateQuery)
+                }
 
                 // rename column primary key constraint
                 if (
@@ -1773,21 +1821,24 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
             ),
         )
 
-        if (column.generatedType && column.asExpression) {
+        if (column.generatedType) {
+            const { tableName } = this.driver.parseTableName(table)
             const deleteQuery = this.deleteTypeormMetadataSql({
-                table: table.name,
+                table: tableName,
                 type: MetadataTableType.GENERATED_COLUMN,
                 name: column.name,
             })
-            const insertQuery = this.insertTypeormMetadataSql({
-                table: table.name,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression,
-            })
-
             upQueries.push(deleteQuery)
-            downQueries.push(insertQuery)
+
+            if (column.asExpression) {
+                const insertQuery = this.insertTypeormMetadataSql({
+                    table: tableName,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                    value: column.asExpression,
+                })
+                downQueries.push(insertQuery)
+            }
         }
 
         await this.executeQueries(upQueries, downQueries)
