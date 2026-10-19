@@ -409,7 +409,7 @@ export abstract class AbstractSqliteQueryRunner
 
         // if table had columns with generated type, we must remove the expression from the metadata table
         const generatedColumns = table.columns.filter(
-            (column) => column.generatedType && column.asExpression,
+            (column) => column.generatedType,
         )
 
         for (const column of generatedColumns) {
@@ -418,16 +418,17 @@ export abstract class AbstractSqliteQueryRunner
                 type: MetadataTableType.GENERATED_COLUMN,
                 name: column.name,
             })
-
-            const insertQuery = this.insertTypeormMetadataSql({
-                table: table.name,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression,
-            })
-
             upQueries.push(deleteQuery)
-            downQueries.push(insertQuery)
+
+            if (column.asExpression) {
+                const insertQuery = this.insertTypeormMetadataSql({
+                    table: table.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                    value: column.asExpression,
+                })
+                downQueries.push(insertQuery)
+            }
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -557,6 +558,24 @@ export abstract class AbstractSqliteQueryRunner
                 index.where,
             )
         })
+
+        const hasGeneratedColumns = oldTable.columns.some(
+            (col) => col.generatedType,
+        )
+        if (hasGeneratedColumns) {
+            const updateQuery = this.updateTypeormMetadataSql({
+                table: oldTable.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                valueToSet: { table: newTable.name },
+            })
+            const revertUpdateQuery = this.updateTypeormMetadataSql({
+                table: newTable.name,
+                type: MetadataTableType.GENERATED_COLUMN,
+                valueToSet: { table: oldTable.name },
+            })
+
+            await this.executeQueries(updateQuery, revertUpdateQuery)
+        }
 
         // rename old table;
         oldTable.name = newTable.name
@@ -2327,7 +2346,6 @@ export abstract class AbstractSqliteQueryRunner
                 // or it was changed to non-generated
                 return (
                     column.generatedType &&
-                    column.asExpression &&
                     (!newTableColumn ||
                         (!newTableColumn.generatedType &&
                             !newTableColumn.asExpression))
@@ -2339,16 +2357,17 @@ export abstract class AbstractSqliteQueryRunner
                     type: MetadataTableType.GENERATED_COLUMN,
                     name: column.name,
                 })
-
-                const insertQuery = this.insertTypeormMetadataSql({
-                    table: oldTable.name,
-                    type: MetadataTableType.GENERATED_COLUMN,
-                    name: column.name,
-                    value: column.asExpression,
-                })
-
                 upQueries.push(deleteQuery)
-                downQueries.push(insertQuery)
+
+                if (column.asExpression) {
+                    const insertQuery = this.insertTypeormMetadataSql({
+                        table: oldTable.name,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        name: column.name,
+                        value: column.asExpression,
+                    })
+                    downQueries.push(insertQuery)
+                }
             })
 
         // Step 2: add data for new generated columns
@@ -2379,7 +2398,7 @@ export abstract class AbstractSqliteQueryRunner
 
         // Step 3: update changed expressions
         newTable.columns
-            .filter((column) => column.generatedType && column.asExpression)
+            .filter((column) => column.generatedType)
             .forEach((column) => {
                 const oldColumn = oldTable.columns.find(
                     (c) =>
@@ -2397,32 +2416,34 @@ export abstract class AbstractSqliteQueryRunner
                     type: MetadataTableType.GENERATED_COLUMN,
                     name: oldColumn.name,
                 })
-
-                const insertQuery = this.insertTypeormMetadataSql({
-                    table: newTable.name,
-                    type: MetadataTableType.GENERATED_COLUMN,
-                    name: column.name,
-                    value: column.asExpression,
-                })
-
                 upQueries.push(deleteQuery)
-                upQueries.push(insertQuery)
+
+                if (column.asExpression) {
+                    const insertQuery = this.insertTypeormMetadataSql({
+                        table: newTable.name,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        name: column.name,
+                        value: column.asExpression,
+                    })
+                    upQueries.push(insertQuery)
+                }
 
                 // revert update
-                const revertInsertQuery = this.insertTypeormMetadataSql({
-                    table: newTable.name,
-                    type: MetadataTableType.GENERATED_COLUMN,
-                    name: oldColumn.name,
-                    value: oldColumn.asExpression,
-                })
+                if (oldColumn.asExpression) {
+                    const revertInsertQuery = this.insertTypeormMetadataSql({
+                        table: newTable.name,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        name: oldColumn.name,
+                        value: oldColumn.asExpression,
+                    })
+                    downQueries.push(revertInsertQuery)
+                }
 
                 const revertDeleteQuery = this.deleteTypeormMetadataSql({
                     table: oldTable.name,
                     type: MetadataTableType.GENERATED_COLUMN,
                     name: column.name,
                 })
-
-                downQueries.push(revertInsertQuery)
                 downQueries.push(revertDeleteQuery)
             })
 
