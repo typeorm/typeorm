@@ -1129,7 +1129,10 @@ export class CockroachDriver implements Driver {
      */
     loadStreamDependency() {
         try {
-            return PlatformTools.load("pg-query-stream")
+            return (
+                this.options.queryStream ??
+                PlatformTools.load("pg-query-stream")
+            )
         } catch {
             // todo: better error for browser env
             throw new TypeORMError(
