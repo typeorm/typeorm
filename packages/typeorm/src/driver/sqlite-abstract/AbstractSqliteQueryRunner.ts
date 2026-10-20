@@ -1738,8 +1738,8 @@ export abstract class AbstractSqliteQueryRunner
                     (dbForeignKey) => dbForeignKey["id"],
                 )
 
-                table.foreignKeys = tableForeignKeyConstraints.map(
-                    (foreignKey) => {
+                table.foreignKeys = await Promise.all(
+                    tableForeignKeyConstraints.map(async (foreignKey) => {
                         const ownForeignKeys = dbForeignKeys.filter(
                             (dbForeignKey) =>
                                 dbForeignKey["id"] === foreignKey["id"] &&
@@ -1748,9 +1748,32 @@ export abstract class AbstractSqliteQueryRunner
                         const columnNames = ownForeignKeys.map(
                             (dbForeignKey) => dbForeignKey["from"],
                         )
-                        const referencedColumnNames = ownForeignKeys.map(
-                            (dbForeignKey) => dbForeignKey["to"],
+                        const referencedColumnNames = ownForeignKeys.every(
+                            (dbForeignKey) => dbForeignKey["to"] === null,
                         )
+                            ? (
+                                  await this.loadPragmaRecords(
+                                      foreignKey["table"],
+                                      `table_info`,
+                                  )
+                              )
+                                  .filter(
+                                      (dbColumn: ObjectLiteral) =>
+                                          dbColumn["pk"] > 0,
+                                  )
+                                  .sort(
+                                      (
+                                          left: ObjectLiteral,
+                                          right: ObjectLiteral,
+                                      ) => left["pk"] - right["pk"],
+                                  )
+                                  .map(
+                                      (dbColumn: ObjectLiteral) =>
+                                          dbColumn["name"],
+                                  )
+                            : ownForeignKeys.map(
+                                  (dbForeignKey) => dbForeignKey["to"],
+                              )
 
                         // find related foreign key mapping
                         const fkMapping = fkMappings.find(
@@ -1771,7 +1794,7 @@ export abstract class AbstractSqliteQueryRunner
                             onDelete: foreignKey["on_delete"],
                             onUpdate: foreignKey["on_update"],
                         })
-                    },
+                    }),
                 )
 
                 // find unique constraints from CREATE TABLE sql
@@ -1820,8 +1843,13 @@ export abstract class AbstractSqliteQueryRunner
 
                         // find existent mapping by a column names
                         const foundMapping = uniqueMappings.find((mapping) => {
-                            return mapping!.columns.every(
-                                (column) => indexColumns.indexOf(column) !== -1,
+                            return (
+                                mapping!.columns.length ===
+                                    indexColumns.length &&
+                                mapping!.columns.every(
+                                    (column) =>
+                                        indexColumns.indexOf(column) !== -1,
+                                )
                             )
                         })
 

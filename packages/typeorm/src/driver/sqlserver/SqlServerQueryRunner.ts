@@ -3695,8 +3695,13 @@ export class SqlServerQueryRunner
                 table.uniques = tableUniqueConstraints.map((constraint) => {
                     const uniques = dbConstraints.filter(
                         (dbC) =>
+                            dbC["TABLE_NAME"] === constraint["TABLE_NAME"] &&
+                            dbC["TABLE_SCHEMA"] ===
+                                constraint["TABLE_SCHEMA"] &&
+                            dbC["TABLE_CATALOG"] ===
+                                constraint["TABLE_CATALOG"] &&
                             dbC["CONSTRAINT_NAME"] ===
-                            constraint["CONSTRAINT_NAME"],
+                                constraint["CONSTRAINT_NAME"],
                     )
                     return new TableUnique({
                         name: constraint["CONSTRAINT_NAME"],
@@ -3729,8 +3734,14 @@ export class SqlServerQueryRunner
                     .map((constraint) => {
                         const checks = dbConstraints.filter(
                             (dbC) =>
+                                dbC["TABLE_NAME"] ===
+                                    constraint["TABLE_NAME"] &&
+                                dbC["TABLE_SCHEMA"] ===
+                                    constraint["TABLE_SCHEMA"] &&
+                                dbC["TABLE_CATALOG"] ===
+                                    constraint["TABLE_CATALOG"] &&
                                 dbC["CONSTRAINT_NAME"] ===
-                                constraint["CONSTRAINT_NAME"],
+                                    constraint["CONSTRAINT_NAME"],
                         )
                         return new TableCheck({
                             name: constraint["CONSTRAINT_NAME"],
@@ -3757,6 +3768,12 @@ export class SqlServerQueryRunner
                     (dbForeignKey) => {
                         const foreignKeys = dbForeignKeys.filter(
                             (dbFk) =>
+                                dbFk["TABLE_NAME"] ===
+                                    dbForeignKey["TABLE_NAME"] &&
+                                dbFk["TABLE_SCHEMA"] ===
+                                    dbForeignKey["TABLE_SCHEMA"] &&
+                                dbFk["TABLE_CATALOG"] ===
+                                    dbForeignKey["TABLE_CATALOG"] &&
                                 dbFk["FK_NAME"] === dbForeignKey["FK_NAME"],
                         )
 
