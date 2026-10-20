@@ -127,19 +127,28 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         this.isTransactionActive = true
 
-        /**
-         * Disable AUTOCOMMIT while running transaction.
-         *  Otherwise, COMMIT/ROLLBACK doesn't work in autocommit mode.
-         */
-        await this.setAutoCommit({ status: "off" })
+        try {
+            /**
+             * Disable AUTOCOMMIT while running transaction.
+             *  Otherwise, COMMIT/ROLLBACK doesn't work in autocommit mode.
+             */
+            await this.setAutoCommit({ status: "off" })
 
-        if (isolationLevel) {
-            await this.query(
-                `SET TRANSACTION ISOLATION LEVEL ${isolationLevel || ""}`,
-            )
+            if (isolationLevel) {
+                await this.query(
+                    `SET TRANSACTION ISOLATION LEVEL ${isolationLevel || ""}`,
+                )
+            }
+
+            await this.broadcaster.broadcast("AfterTransactionStart")
+        } catch (err) {
+            try {
+                await this.rollbackTransaction()
+            } catch {
+                // the start error is the one reported
+            }
+            throw err
         }
-
-        await this.broadcaster.broadcast("AfterTransactionStart")
     }
 
     /**
