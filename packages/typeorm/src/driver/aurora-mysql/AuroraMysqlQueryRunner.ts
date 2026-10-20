@@ -101,27 +101,37 @@ export class AuroraMysqlQueryRunner
             isolationLevel,
         )
 
+        const initialTransactionDepth = this.transactionDepth
+        const isInitialTransaction = this.transactionDepth === 0
         this.isTransactionActive = true
         try {
             await this.broadcaster.broadcast("BeforeTransactionStart")
+
+            if (this.transactionDepth === 0) {
+                await this.client.startTransaction()
+            } else {
+                await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
+            }
+            this.transactionDepth += 1
+
+            await this.broadcaster.broadcast("AfterTransactionStart")
         } catch (err) {
-            this.isTransactionActive = false
+            if (this.transactionDepth > initialTransactionDepth) {
+                try {
+                    await this.rollbackTransaction()
+                } catch (rollbackErr) {
+                    this.dataSource.logger.log(
+                        "warn",
+                        `Failed to rollback transaction after failed start: ${rollbackErr}`,
+                        this,
+                    )
+                }
+            }
+            if (isInitialTransaction && this.transactionDepth === 0) {
+                this.isTransactionActive = false
+            }
             throw err
         }
-
-        if (this.transactionDepth === 0) {
-            try {
-                await this.client.startTransaction()
-            } catch (err) {
-                this.isTransactionActive = false
-                throw err
-            }
-        } else {
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
-        }
-        this.transactionDepth += 1
-
-        await this.broadcaster.broadcast("AfterTransactionStart")
     }
 
     /**
