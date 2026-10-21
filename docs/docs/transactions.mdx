@@ -248,6 +248,30 @@ const dataSource = new DataSource({
 
 When set, all transactions started without an explicit isolation level will use this default. An explicit isolation level passed to `transaction()` or `startTransaction()` will override the default.
 
+## Nested transactions and error handling
+
+TypeORM supports nested transactions through savepoints for relational database drivers. When nesting `transaction()` calls:
+
+```typescript
+await dataSource.manager.transaction(async (manager) => {
+    await manager.save(Post, { title: "Outer Post" })
+
+    try {
+        await manager.transaction(async (nestedManager) => {
+            await nestedManager.save(Post, { title: "Nested Post" })
+            throw new Error("Nested operation failed")
+        })
+    } catch (err) {
+        // Nested transaction is rolled back to savepoint.
+        // The outer transaction remains active and can continue or commit.
+    }
+
+    await manager.save(Post, { title: "Another Outer Post" })
+})
+```
+
+If a nested transaction fails during its initialization (for example, if a `beforeTransactionStart` subscriber throws, an unsupported isolation level is supplied, or the database rejects the savepoint), TypeORM preserves the enclosing transaction rather than rolling it back. The enclosing transaction retains its active state and can proceed normally or be rolled back by its own transaction boundary.
+
 ## Using `QueryRunner` to create and control state of single database connection
 
 `QueryRunner` provides a single database connection.
