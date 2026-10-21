@@ -3,6 +3,7 @@ import { TypeORMError } from "../../error"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
+import { DateUtils } from "../../util/DateUtils"
 import type { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryResult } from "../../query-runner/QueryResult"
@@ -214,14 +215,15 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             enableQueryTimeout && maxQueryExecutionTime
                 ? { sql: query, timeout: maxQueryExecutionTime }
                 : query
-        const queryStartTime = Date.now()
+        const queryStartTime = DateUtils.performanceNow()
 
         try {
             const [raw] = await databaseConnection
                 .promise()
                 .query(queryPayload, parameters)
 
-            const queryExecutionTime = Date.now() - queryStartTime
+            const queryExecutionTime =
+                DateUtils.performanceNow() - queryStartTime
 
             if (
                 maxQueryExecutionTime &&
@@ -260,7 +262,8 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             return useStructuredResult ? result : result.raw
         } catch (err) {
-            const queryExecutionTime = Date.now() - queryStartTime
+            const queryExecutionTime =
+                DateUtils.performanceNow() - queryStartTime
 
             if (
                 maxQueryExecutionTime &&
