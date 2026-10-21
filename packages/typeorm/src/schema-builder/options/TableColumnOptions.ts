@@ -110,6 +110,13 @@ export interface TableColumnOptions {
     primaryKeyConstraintName?: string
 
     /**
+     * If this column is unique then this specifies the name of its unique
+     * constraint (or of its unique index, for drivers that implement unique
+     * constraints as unique indices).
+     */
+    uniqueConstraintName?: string
+
+    /**
      * If this column is foreign key then this specifies the name for it.
      */
     foreignKeyConstraintName?: string
