@@ -354,4 +354,17 @@ describe("query builder > order-by", () => {
                 expect(result.length).to.be.equal(5)
             }),
         ))
+
+    it("should not produce 'undefined' in SQL when orderBy object shorthand omits nulls", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const query = dataSource.manager
+                    .createQueryBuilder(Post, "post")
+                    .orderBy({ "post.myOrder": { order: "ASC" } })
+
+                const sql = query.getSql()
+                expect(sql).to.not.include("undefined")
+                expect(sql).to.include("ORDER BY")
+            }),
+        ))
 })
