@@ -1062,9 +1062,7 @@ If you use a DI framework, register the `DataSource` (or its repositories) as pr
 import { DataSource } from "typeorm"
 import { Container } from "typedi"
 
-const dataSource = new DataSource({
-    /* ... */
-})
+const dataSource = new DataSource({/* ... */})
 await dataSource.initialize()
 Container.set(DataSource, dataSource)
 Container.set("UserRepository", dataSource.getRepository(User))

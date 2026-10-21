@@ -8,8 +8,8 @@ pr_compliances:
     - title: "Prefer functional tests over per-issue tests"
       compliance_label: true
       objective: "Issue fixes stay in the functional test suite."
-      success_criteria: "Issue fixes add or update tests in test/functional, with an issue reference in the test comment when applicable."
-      failure_criteria: "Issue fixes only add tests under test/github-issues without a clear reason."
+      success_criteria: "Issue fixes add or update tests in packages/typeorm/test/functional, with an issue reference in the test comment when applicable."
+      failure_criteria: "Issue fixes only add tests under packages/typeorm/test/github-issues without a clear reason."
 
     - title: "Consistent Naming Conventions"
       compliance_label: true

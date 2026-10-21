@@ -1,0 +1,4 @@
+# `docs` is not part of the repository's pnpm workspace (see the root
+# `pnpm-workspace.yaml`). This file makes it a workspace root of its own, so
+# pnpm commands run from this directory install from `docs/pnpm-lock.yaml`
+# rather than walking up and installing the repository root workspace.
