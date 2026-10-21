@@ -33,6 +33,14 @@ export interface BaseDataSourceOptions {
     readonly subscribers?: MixedList<Function | string>
 
     /**
+     * Loads files discovered by entity, migration, and subscriber glob patterns.
+     * Receives an absolute filesystem path and returns the module's exports.
+     * Use this to load files through a runtime's transformer, such as Vitest.
+     * When omitted, TypeORM uses its native import/require loader.
+     */
+    readonly fileLoader?: (filePath: string) => Promise<unknown>
+
+    /**
      * Default isolation level for transactions. When set, all transactions started
      * without an explicit level will use this value. An explicit isolation level
      * passed to `transaction()` or `startTransaction()` overrides this default.

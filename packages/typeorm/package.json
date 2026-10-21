@@ -82,6 +82,7 @@
     "test": "pnpm run compile && pnpm run test:fast --",
     "test:ci": "mocha --bail",
     "test:fast": "mocha",
+    "test:vitest": "vitest run",
     "typecheck": "tsc --noEmit",
     "watch": "tsc --watch"
   },
@@ -103,6 +104,7 @@
     "@sap/hana-client": "^2.29.27",
     "@stryker-mutator/core": "^9.6.1",
     "@stryker-mutator/mocha-runner": "^9.6.1",
+    "@swc/core": "1.12.14",
     "@tsconfig/node20": "^20.1.10",
     "@types/chai": "^5.2.3",
     "@types/chai-as-promised": "^8.0.2",
@@ -141,7 +143,9 @@
     "testcontainers": "^11.14.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.69.0"
+    "typescript-eslint": "^8.69.0",
+    "unplugin-swc": "1.5.5",
+    "vitest": "3.2.4"
   },
   "peerDependencies": {
     "@google-cloud/spanner": "^8.0.0",
