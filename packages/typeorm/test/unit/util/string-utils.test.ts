@@ -112,6 +112,24 @@ describe("StringUtils", () => {
             expect(camelCase(expected2, true)).to.be.equal(expected2, expected2)
         })
 
+        it("should not capitalize the first character when the input starts with a separator", () => {
+            expect(camelCase("_id")).to.be.equal("id")
+            expect(camelCase("_owner_id")).to.be.equal("ownerId")
+            expect(camelCase("-dash-case")).to.be.equal("dashCase")
+            expect(camelCase(" leading space")).to.be.equal("leadingSpace")
+        })
+
+        it("should still capitalize a separator-prefixed input when firstCapital is set", () => {
+            expect(camelCase("_id", true)).to.be.equal("Id")
+            expect(camelCase("_owner_id", true)).to.be.equal("OwnerId")
+        })
+
+        it("should be idempotent for separator-prefixed input", () => {
+            const once = camelCase("__leading")
+            expect(once).to.be.equal("leading")
+            expect(camelCase(once)).to.be.equal(once)
+        })
+
         it("should correctly convert strings with numbers", () => {
             const input = "device1_status"
             const expected = "device1Status"
