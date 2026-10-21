@@ -6,6 +6,7 @@ import {
 } from "../../../utils/test-utils"
 import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
+import { IdentityPost } from "./entity/IdentityPost"
 import { expect } from "chai"
 import { MoreThan } from "../../../../src"
 
@@ -133,77 +134,126 @@ describe("query builder > insert > merge into", () => {
             }),
         ))
 
-    it("should perform insertion using overwrite condition and skipping update on no change", () =>
+    it("should omit identity column from merge insert projection", () =>
         Promise.all(
-            dataSources.map(async (dataSource) => {
-                const post1 = new Post()
-                post1.id = "post#1"
-                post1.title = "About post"
-                post1.published = false
-                post1.date = new Date("06 Aug 2020 00:12:00 GMT")
+            dataSources
+                .filter((dataSource) => dataSource.options.type === "mssql")
+                .map(async (dataSource) => {
+                    const repository = dataSource.getRepository(IdentityPost)
+                    const post = await repository.save(
+                        repository.create({
+                            title: "About post",
+                            email: "post@example.com",
+                        }),
+                    )
 
-                const sql = dataSource.manager
-                    .createQueryBuilder()
-                    .insert()
-                    .into(Post)
-                    .values(post1)
-                    .orUpdate(["title"], ["date"], {
-                        skipUpdateIfNoValuesChanged: true,
-                        overwriteCondition: {
-                            where: { date: MoreThan("2020-01-01") },
-                        },
+                    post.title = "Updated post"
+                    await repository.upsert(post, ["email"])
+
+                    const loadedPost = await repository.findOneByOrFail({
+                        id: post.id,
                     })
-                    .setParameter("title", post1.title)
-                    .disableEscaping()
-                    .getSql()
-                if (dataSource.options.type === "mssql") {
-                    expect(sql).to.equal(
-                        `MERGE INTO post post USING (VALUES (@0, @1, @2, @3)) mergeIntoSource (id, title, published, date) ON (post.date = mergeIntoSource.date) ` +
-                            `WHEN MATCHED AND post.date > @4 AND post.title != mergeIntoSource.title THEN UPDATE SET post.title = mergeIntoSource.title ` +
-                            `WHEN NOT MATCHED THEN INSERT(id, title, published, date) VALUES (mergeIntoSource.id, mergeIntoSource.title, mergeIntoSource.published, mergeIntoSource.date);`,
+                    expect(loadedPost.title).to.equal("Updated post")
+                }),
+        ))
+
+    it("should perform insertion using overwrite condition and skipping update on no change", () =>
+        dataSources.map((dataSource) => {
+            const post1 = new Post()
+            post1.id = "post#1"
+            post1.title = "About post"
+            post1.published = false
+            post1.date = new Date("06 Aug 2020 00:12:00 GMT")
+
+            const sql = dataSource.manager
+                .createQueryBuilder()
+                .insert()
+                .into(Post)
+                .values(post1)
+                .orUpdate(["title"], ["date"], {
+                    skipUpdateIfNoValuesChanged: true,
+                    overwriteCondition: {
+                        where: { date: MoreThan("2020-01-01") },
+                    },
+                })
+                .setParameter("title", post1.title)
+                .disableEscaping()
+                .getSql()
+            if (dataSource.options.type === "mssql") {
+                expect(sql).to.equal(
+                    `MERGE INTO post post USING (VALUES (@0, @1, @2, @3)) mergeIntoSource (id, title, published, date) ON (post.date = mergeIntoSource.date) ` +
+                        `WHEN MATCHED AND post.date > @4 AND post.title != mergeIntoSource.title THEN UPDATE SET post.title = mergeIntoSource.title ` +
+                        `WHEN NOT MATCHED THEN INSERT(id, title, published, date) VALUES (mergeIntoSource.id, mergeIntoSource.title, mergeIntoSource.published, mergeIntoSource.date);`,
+                )
+            } else if (dataSource.options.type === "sap") {
+                expect(sql).to.equal(
+                    `MERGE INTO post post USING (SELECT ? AS id, ? AS title, ? AS published, ? AS date FROM SYS.DUMMY) mergeIntoSource ON (post.date = mergeIntoSource.date) ` +
+                        `WHEN MATCHED AND post.date > ? AND post.title != mergeIntoSource.title THEN UPDATE SET post.title = mergeIntoSource.title ` +
+                        `WHEN NOT MATCHED THEN INSERT(id, title, published, date) VALUES (mergeIntoSource.id, mergeIntoSource.title, mergeIntoSource.published, mergeIntoSource.date)`,
+                )
+            } else if (dataSource.options.type === "oracle") {
+                expect(sql).to.equal(
+                    `MERGE INTO post post USING (SELECT :1 AS id, :2 AS title, :3 AS published, :4 AS date FROM DUAL) mergeIntoSource ON (post.date = mergeIntoSource.date) ` +
+                        `WHEN MATCHED THEN UPDATE SET post.title = mergeIntoSource.title WHERE post.date > :5 AND post.title != mergeIntoSource.title ` +
+                        `WHEN NOT MATCHED THEN INSERT(id, title, published, date) VALUES (mergeIntoSource.id, mergeIntoSource.title, mergeIntoSource.published, mergeIntoSource.date)`,
+                )
+            }
+        }))
+
+    it("should generate valid SQL for MERGE upsert when only the identity column is explicitly selected", () =>
+        Promise.all(
+            dataSources
+                .filter((dataSource) => dataSource.options.type === "mssql")
+                .map(async (dataSource) => {
+                    const repo = dataSource.getRepository(IdentityPost)
+                    const existing = await repo.save(
+                        repo.create({
+                            title: "existing",
+                            email: "identity-only@example.com",
+                        }),
                     )
-                } else if (dataSource.options.type === "sap") {
-                    expect(sql).to.equal(
-                        `MERGE INTO post post USING (SELECT ? AS id, ? AS title, ? AS published, ? AS date FROM SYS.DUMMY) mergeIntoSource ON (post.date = mergeIntoSource.date) ` +
-                            `WHEN MATCHED AND post.date > ? AND post.title != mergeIntoSource.title THEN UPDATE SET post.title = mergeIntoSource.title ` +
-                            `WHEN NOT MATCHED THEN INSERT(id, title, published, date) VALUES (mergeIntoSource.id, mergeIntoSource.title, mergeIntoSource.published, mergeIntoSource.date)`,
+
+                    const qb = dataSource.manager
+                        .createQueryBuilder()
+                        .insert()
+                        .into(IdentityPost, ["id"])
+                        .values({ id: existing.id })
+                        .orIgnore("id")
+
+                    const sql = qb.disableEscaping().getSql()
+                    expect(sql).to.include(
+                        "WHEN NOT MATCHED THEN INSERT DEFAULT VALUES",
                     )
-                } else if (dataSource.options.type === "oracle") {
-                    expect(sql).to.equal(
-                        `MERGE INTO post post USING (SELECT :1 AS id, :2 AS title, :3 AS published, :4 AS date FROM DUAL) mergeIntoSource ON (post.date = mergeIntoSource.date) ` +
-                            `WHEN MATCHED THEN UPDATE SET post.title = mergeIntoSource.title WHERE post.date > :5 AND post.title != mergeIntoSource.title ` +
-                            `WHEN NOT MATCHED THEN INSERT(id, title, published, date) VALUES (mergeIntoSource.id, mergeIntoSource.title, mergeIntoSource.published, mergeIntoSource.date)`,
-                    )
-                }
-            }),
+                    expect(sql).not.to.match(/WHEN NOT MATCHED THEN INSERT\s*;/)
+
+                    await expect(qb.execute()).to.eventually.be.fulfilled
+                }),
         ))
 
     it("should throw error if using indexPredicate and an unsupported driver", () =>
-        Promise.all(
-            dataSources.map(async (dataSource) => {
-                if (
-                    !dataSource.driver.supportedUpsertTypes.includes(
-                        "on-duplicate-key-update",
-                    )
+        dataSources.map((dataSource) => {
+            if (
+                !dataSource.driver.supportedUpsertTypes.includes(
+                    "on-duplicate-key-update",
                 )
-                    return
-                const post1 = new Post()
-                post1.id = "post#1"
-                post1.title = "About post"
-                post1.date = new Date("06 Aug 2020 00:12:00 GMT")
+            )
+                return
+            const post1 = new Post()
+            post1.id = "post#1"
+            post1.title = "About post"
+            post1.date = new Date("06 Aug 2020 00:12:00 GMT")
 
-                const builder = dataSource.manager
-                    .createQueryBuilder()
-                    .insert()
-                    .into(Post)
-                    .values(post1)
-                    .orUpdate(["title"], ["date"], {
-                        indexPredicate: "date > 2020-01-01",
-                    })
-                    .setParameter("title", post1.title)
-                    .disableEscaping()
+            const builder = dataSource.manager
+                .createQueryBuilder()
+                .insert()
+                .into(Post)
+                .values(post1)
+                .orUpdate(["title"], ["date"], {
+                    indexPredicate: "date > 2020-01-01",
+                })
+                .setParameter("title", post1.title)
+                .disableEscaping()
 
-                expect(builder.getSql).to.throw(Error)
-            }),
-        ))
+            expect(() => builder.getSql()).to.throw(Error)
+        }))
 })
