@@ -4,6 +4,7 @@ import { NamedPlaceholdersNotSupportedError } from "../../error/NamedPlaceholder
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
+import { DateUtils } from "../../util/DateUtils"
 import type { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryLock } from "../../query-runner/QueryLock"
@@ -225,8 +226,13 @@ export class SqlServerQueryRunner
 
         const release = await this.lock.acquire()
 
-        this.driver.dataSource.logger.logQuery(query, parameters, this)
-        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
+        try {
+            this.driver.dataSource.logger.logQuery(query, parameters, this)
+            await this.broadcaster.broadcast("BeforeQuery", query, parameters)
+        } catch (error) {
+            release()
+            throw error
+        }
 
         const broadcasterResult = new BroadcasterResult()
         const maxQueryExecutionTime = this.driver.options.maxQueryExecutionTime
@@ -259,14 +265,15 @@ export class SqlServerQueryRunner
                     }
                 })
             }
-            queryStartTime = Date.now()
+            queryStartTime = DateUtils.performanceNow()
 
             const raw = await request.query(query).catch((err: Error) => {
                 throw new QueryFailedError(query, parameters, err)
             })
 
             // log slow queries if maxQueryExecution time is set
-            const queryExecutionTime = Date.now() - queryStartTime
+            const queryExecutionTime =
+                DateUtils.performanceNow() - queryStartTime
 
             this.broadcaster.broadcastAfterQueryEvent(
                 broadcasterResult,
@@ -312,9 +319,10 @@ export class SqlServerQueryRunner
 
             return useStructuredResult ? result : result.raw
         } catch (err) {
-            const queryExecutionTime = queryStartTime
-                ? Date.now() - queryStartTime
-                : undefined
+            const queryExecutionTime =
+                queryStartTime !== undefined
+                    ? DateUtils.performanceNow() - queryStartTime
+                    : undefined
 
             if (
                 maxQueryExecutionTime &&
@@ -347,9 +355,11 @@ export class SqlServerQueryRunner
 
             throw err
         } finally {
-            await broadcasterResult.wait()
-
-            release()
+            try {
+                await broadcasterResult.wait()
+            } finally {
+                release()
+            }
         }
     }
 

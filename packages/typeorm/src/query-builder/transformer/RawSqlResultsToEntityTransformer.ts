@@ -133,21 +133,34 @@ export class RawSqlResultsToEntityTransformer {
 
             if (primaryKeysSelected) {
                 // Use primary key based grouping when available
-                id = keys
-                    .map((key) => {
-                        const keyValue = rawResult[key]
+                const keyValues = keys.map((key) => {
+                    const keyValue = rawResult[key]
 
-                        if (isUint8Array(keyValue)) {
-                            return uint8ArrayToHex(keyValue)
-                        }
+                    if (isUint8Array(keyValue)) {
+                        return uint8ArrayToHex(keyValue)
+                    }
 
-                        if (ObjectUtils.isObject(keyValue)) {
-                            return JSON.stringify(keyValue)
-                        }
+                    if (ObjectUtils.isObject(keyValue)) {
+                        return JSON.stringify(keyValue)
+                    }
 
-                        return keyValue
-                    })
-                    .join("_")
+                    if (
+                        typeof keyValue === "number" &&
+                        !Number.isFinite(keyValue)
+                    ) {
+                        // JSON turns non-finite numbers into null; a nested tuple
+                        // also keeps them distinct from literal string values.
+                        return [keyValue.toString()]
+                    }
+
+                    return typeof keyValue === "bigint"
+                        ? keyValue.toString()
+                        : keyValue
+                })
+                id =
+                    keys.length === 1
+                        ? keyValues.join("_")
+                        : JSON.stringify(keyValues)
             } else {
                 // Fallback: use row index when primary keys are not available
                 // This ensures each row gets its own group for proper entity mapping
