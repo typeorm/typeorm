@@ -7,6 +7,12 @@ on:
         required: true
         type: number
 
+# Every `run` step below operates on the core package. Steps that need the
+# repository root (docker compose) override this individually.
+defaults:
+  run:
+    working-directory: packages/typeorm
+
 jobs:
   better-sqlite3:
     runs-on: windows-latest

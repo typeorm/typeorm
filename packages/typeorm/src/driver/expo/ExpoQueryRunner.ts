@@ -1,0 +1,111 @@
+import { DateUtils } from "../../util/DateUtils"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import { NamedPlaceholdersNotSupportedError } from "../../error"
+import { QueryFailedError } from "../../error/QueryFailedError"
+import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
+import { QueryResult } from "../../query-runner/QueryResult"
+import { Broadcaster } from "../../subscriber/Broadcaster"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
+import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
+import type { ExpoDriver } from "./ExpoDriver"
+
+export class ExpoQueryRunner extends AbstractSqliteQueryRunner {
+    driver: ExpoDriver
+
+    constructor(driver: ExpoDriver) {
+        super()
+        this.driver = driver
+        this.dataSource = driver.dataSource
+        this.broadcaster = new Broadcaster(this)
+    }
+
+    async beforeMigration(): Promise<void> {
+        await this.query("PRAGMA foreign_keys = OFF")
+    }
+
+    async afterMigration(): Promise<void> {
+        await this.query("PRAGMA foreign_keys = ON")
+    }
+
+    async query(
+        query: string,
+        parameters?: any[] | ObjectLiteral,
+        useStructuredResult = false,
+    ): Promise<any> {
+        if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
+        if (parameters && !Array.isArray(parameters))
+            throw new NamedPlaceholdersNotSupportedError()
+
+        const databaseConnection = await this.connect()
+        const broadcasterResult = new BroadcasterResult()
+
+        this.driver.dataSource.logger.logQuery(query, parameters, this)
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
+
+        const queryStartTime = DateUtils.performanceNow()
+
+        const statement = await databaseConnection.prepareAsync(query)
+        try {
+            const rawResult = await statement.executeAsync(parameters)
+
+            const maxQueryExecutionTime =
+                this.driver.options.maxQueryExecutionTime
+            const queryEndTime = DateUtils.performanceNow()
+            const queryExecutionTime = queryEndTime - queryStartTime
+
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                true,
+                queryExecutionTime,
+                rawResult,
+                undefined,
+            )
+            await broadcasterResult.wait()
+
+            if (
+                maxQueryExecutionTime &&
+                queryExecutionTime > maxQueryExecutionTime
+            ) {
+                this.driver.dataSource.logger.logQuerySlow(
+                    queryExecutionTime,
+                    query,
+                    parameters,
+                    this,
+                )
+            }
+
+            const result = new QueryResult()
+            result.affected = rawResult.changes
+            result.records = await rawResult.getAllAsync()
+            result.raw = query.startsWith("INSERT INTO")
+                ? rawResult.lastInsertRowId
+                : result.records
+
+            return useStructuredResult ? result : result.raw
+        } catch (err) {
+            this.driver.dataSource.logger.logQueryError(
+                err,
+                query,
+                parameters,
+                this,
+            )
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                false,
+                0,
+                undefined,
+                err,
+            )
+            await broadcasterResult.wait()
+
+            throw new QueryFailedError(query, parameters, err)
+        } finally {
+            await broadcasterResult.wait()
+            await statement.finalizeAsync()
+        }
+    }
+}

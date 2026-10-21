@@ -44,6 +44,24 @@ cd typeorm
 git remote add upstream https://github.com/typeorm/typeorm.git
 ```
 
+## Repository layout
+
+Every published package lives under `packages/`, including `typeorm` itself:
+
+| Path                                | Package                             |
+| ----------------------------------- | ----------------------------------- |
+| `packages/typeorm`                  | `typeorm`                           |
+| `packages/codemod`                  | `@typeorm/codemod`                  |
+| `packages/legacy-naming-strategies` | `@typeorm/legacy-naming-strategies` |
+
+The repository root holds the workspace configuration, the shared tooling
+(prettier, husky, lint-staged) and the documentation site. Scripts such as
+`pnpm run package` and `pnpm run test` run from the root and delegate to
+`packages/typeorm`.
+
+If you have a pull request open that predates this layout, see
+[moving a pull request onto the packages/ layout](scripts/migrate-pr-to-packages-layout.md).
+
 ## Installing package dependencies
 
 Install all TypeORM dependencies by running this command:
@@ -52,12 +70,22 @@ Install all TypeORM dependencies by running this command:
 pnpm install
 ```
 
+This installs every project in the workspace: the packages under `packages/`
+(including `typeorm` itself, in `packages/typeorm`) and the `playground` example.
+The repository root is the workspace root and is not a published package.
+
+`packages/legacy-naming-strategies` and `playground` depend on `typeorm`. Its manifest sets
+`publishConfig.directory` to `build/package`, so pnpm links them to the build
+output rather than to the source tree. Until you have run `pnpm run package`
+(see [Building](#building)), that link points at a directory that does not
+exist yet, and those packages fail with `Cannot find module 'typeorm'`.
+
 ## ORM config
 
 To create an initial `ormconfig.json` file, run the following command:
 
 ```shell
-cp ormconfig.sample.json ormconfig.json
+cd packages/typeorm && cp ormconfig.sample.json ormconfig.json
 ```
 
 ## Building
@@ -68,24 +96,24 @@ To build a distribution package of TypeORM run:
 pnpm run package
 ```
 
-This command will generate a distribution package in the `build/package` directory.
+This command will generate a distribution package in the `packages/typeorm/build/package` directory.
 You can link (or simply copy/paste) this directory into your project and test TypeORM there
 (but make sure to keep all node_modules required by TypeORM).
 
 To build the distribution package of TypeORM packed into a `.tgz`, run:
 
 ```shell
-cd build/package && pnpm pack
+cd packages/typeorm/build/package && pnpm pack
 ```
 
-This command will generate a distribution package tar in the `build` directory (`build/typeorm-x.x.x.tgz`).
+This command will generate a distribution package tar in that same directory (`packages/typeorm/build/package/typeorm-x.x.x.tgz`).
 You can copy this tar into your project and run `npm install ./typeorm-x.x.x.tgz` to bundle your build of TypeORM in your project.
 
 ## Running Tests Locally
 
 It is greatly appreciated if PRs that change code come with appropriate tests.
 
-To create a new test, check the [relevant functional tests](https://github.com/typeorm/typeorm/tree/master/test/functional). Depending on the test, you may need to create a new `.test.ts` file or modify an existing one.
+To create a new test, check the [relevant functional tests](https://github.com/typeorm/typeorm/tree/master/packages/typeorm/test/functional). Depending on the test, you may need to create a new `.test.ts` file or modify an existing one.
 
 If the test is for a specific regression or issue opened on GitHub, add a comment to the tests mentioning the issue number.
 
@@ -130,7 +158,7 @@ describe("description of the functionality you're testing", () => {
 If you place entities in `./entity/<entity-name>.ts` relative to your test file,
 they will automatically be loaded.
 
-To run the tests, setup your environment configuration by copying `ormconfig.sample.json` into `ormconfig.json` and replacing parameters with your own. The tests will be run for each database that is defined in that file. If you're working on something that's not database specific and you want to speed things up, you can pick which objects in the file make sense for you to keep.
+To run the tests, setup your environment configuration by copying `packages/typeorm/ormconfig.sample.json` into `packages/typeorm/ormconfig.json` and replacing parameters with your own. The tests will be run for each database that is defined in that file. If you're working on something that's not database specific and you want to speed things up, you can pick which objects in the file make sense for you to keep.
 
 Run the tests as follows:
 

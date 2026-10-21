@@ -5,6 +5,10 @@ on:
   schedule:
     - cron: "0 0 1 * *"
 
+defaults:
+  run:
+    working-directory: packages/typeorm
+
 jobs:
   mutation-testing:
     runs-on: ubuntu-latest
@@ -64,4 +68,4 @@ jobs:
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: mutation-testing
-          path: ./reports/mutation/mutation.html
+          path: ./packages/typeorm/reports/mutation/mutation.html
