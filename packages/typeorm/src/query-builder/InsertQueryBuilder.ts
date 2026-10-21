@@ -1280,25 +1280,33 @@ export class InsertQueryBuilder<
             }
         }
 
-        const valuesExpression = this.createMergeIntoInsertValuesExpression(
-            mergeSourceAlias,
-            insertColumns,
-        )
         const returningExpression =
             this.dataSource.driver.options.type === "mssql"
                 ? this.createReturningExpression("insert")
                 : null
 
-        query += " WHEN NOT MATCHED THEN INSERT"
+        if (
+            this.dataSource.driver.options.type === "mssql" &&
+            insertColumns.length === 0
+        ) {
+            query += " WHEN NOT MATCHED THEN INSERT DEFAULT VALUES"
+        } else {
+            const valuesExpression = this.createMergeIntoInsertValuesExpression(
+                mergeSourceAlias,
+                insertColumns,
+            )
 
-        // add columns expression
-        if (columnsExpression) {
-            query += `(${columnsExpression})`
-        }
+            query += " WHEN NOT MATCHED THEN INSERT"
 
-        // add VALUES expression
-        if (valuesExpression) {
-            query += ` VALUES ${valuesExpression}`
+            // add columns expression
+            if (columnsExpression) {
+                query += `(${columnsExpression})`
+            }
+
+            // add VALUES expression
+            if (valuesExpression) {
+                query += ` VALUES ${valuesExpression}`
+            }
         }
 
         // add OUTPUT expression
