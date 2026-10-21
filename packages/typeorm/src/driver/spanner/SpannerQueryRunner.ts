@@ -1925,7 +1925,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             `AND \`TC\`.\`TABLE_NAME\` IN (${loadedTableNames})`
 
         const indicesSql =
-            `SELECT \`I\`.\`TABLE_NAME\`, \`I\`.\`INDEX_NAME\`, \`I\`.\`IS_UNIQUE\`, \`I\`.\`IS_NULL_FILTERED\`, \`IC\`.\`COLUMN_NAME\` ` +
+            `SELECT \`I\`.\`TABLE_NAME\`, \`I\`.\`INDEX_NAME\`, \`I\`.\`IS_UNIQUE\`, \`I\`.\`IS_NULL_FILTERED\`, \`IC\`.\`COLUMN_NAME\`, \`IC\`.\`ORDINAL_POSITION\` ` +
             `FROM \`INFORMATION_SCHEMA\`.\`INDEXES\` \`I\` ` +
             `INNER JOIN \`INFORMATION_SCHEMA\`.\`INDEX_COLUMNS\` \`IC\` ON \`IC\`.\`INDEX_NAME\` = \`I\`.\`INDEX_NAME\` ` +
             `AND \`IC\`.\`TABLE_NAME\` = \`I\`.\`TABLE_NAME\` ` +
@@ -2153,10 +2153,17 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                         return index["INDEX_NAME"] === constraint["INDEX_NAME"]
                     })
 
+                    const ordinal = (index: ObjectLiteral): number =>
+                        Number(index["ORDINAL_POSITION"]) ||
+                        Number.MAX_SAFE_INTEGER
                     return new TableIndex(<TableIndexOptions>{
                         table: table,
                         name: constraint["INDEX_NAME"],
-                        columnNames: indices.map((i) => i["COLUMN_NAME"]),
+                        columnNames: [...indices]
+                            .sort(
+                                (left, right) => ordinal(left) - ordinal(right),
+                            )
+                            .map((i) => i["COLUMN_NAME"]),
                         isUnique: constraint["IS_UNIQUE"],
                         isNullFiltered: constraint["IS_NULL_FILTERED"],
                     })

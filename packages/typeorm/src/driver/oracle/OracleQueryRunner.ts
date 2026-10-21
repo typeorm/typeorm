@@ -2600,7 +2600,7 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         const indicesSql =
             `SELECT "C"."INDEX_NAME", "C"."OWNER", "C"."TABLE_NAME", "C"."UNIQUENESS", ` +
-            `LISTAGG ("COL"."COLUMN_NAME", ',') WITHIN GROUP (ORDER BY "COL"."COLUMN_NAME") AS "COLUMN_NAMES" ` +
+            `LISTAGG ("COL"."COLUMN_NAME", ',') WITHIN GROUP (ORDER BY "COL"."COLUMN_POSITION") AS "COLUMN_NAMES" ` +
             `FROM "ALL_INDEXES" "C" ` +
             `INNER JOIN "ALL_IND_COLUMNS" "COL" ON "COL"."INDEX_OWNER" = "C"."OWNER" AND "COL"."INDEX_NAME" = "C"."INDEX_NAME" ` +
             `LEFT JOIN "ALL_CONSTRAINTS" "CON" ON "CON"."OWNER" = "C"."OWNER" AND "CON"."CONSTRAINT_NAME" = "C"."INDEX_NAME" ` +
