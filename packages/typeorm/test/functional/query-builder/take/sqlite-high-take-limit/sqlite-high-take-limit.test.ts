@@ -12,7 +12,7 @@ describe("query-builder > take > sqlite high take limit", () => {
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["better-sqlite3"], // this issue only related to sqlite
+            enabledDrivers: ["better-sqlite3", "bun-sqlite"], // this issue only related to sqlite
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
