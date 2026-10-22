@@ -747,59 +747,33 @@ export class MigrationExecutor {
 
         const values: ObjectLiteral = {}
         if (this.dataSource.driver.options.type === "mssql") {
-            const timestampType = this.dataSource.driver.normalizeType({
-                type: this.dataSource.driver.mappedDataTypes.migrationTimestamp,
-            })
-            const nameType = this.dataSource.driver.normalizeType({
-                type: this.dataSource.driver.mappedDataTypes.migrationName,
-            })
             values["timestamp"] = new MssqlParameter(
                 migration.timestamp,
-                timestampType as any,
+                this.dataSource.driver.normalizeType({
+                    type: this.dataSource.driver.mappedDataTypes
+                        .migrationTimestamp,
+                }) as any,
             )
-            values["name"] = new MssqlParameter(migration.name, nameType as any)
-            values["executedAt"] = new MssqlParameter(
-                Date.now(),
-                timestampType as any,
+            values["name"] = new MssqlParameter(
+                migration.name,
+                this.dataSource.driver.normalizeType({
+                    type: this.dataSource.driver.mappedDataTypes.migrationName,
+                }) as any,
             )
-            const checksum = await this.resolveMigrationChecksum(
-                queryRunner,
-                migration,
-                options,
-            )
-            values["checksum"] = new MssqlParameter(checksum, nameType as any)
         } else {
             values["timestamp"] = migration.timestamp
             values["name"] = migration.name
-            values["executedAt"] = Date.now()
-            values["checksum"] = await this.resolveMigrationChecksum(
-                queryRunner,
-                migration,
-                options,
-            )
         }
+        values["executedAt"] = Date.now()
+        values["checksum"] = await this.resolveMigrationChecksum(
+            queryRunner,
+            migration,
+            options,
+        )
 
         for (const column of this.getMigrationsExtraColumns()) {
-            const value =
+            values[column.name] =
                 migration.instance?.migrationMetadata?.[column.name] ?? null
-            if (this.dataSource.driver.options.type === "mssql") {
-                // types without a dedicated mssql parameter type (e.g. sql_variant)
-                // fall back to driver inference in SqlServerQueryRunner
-                const length =
-                    column.length != null && column.length !== ""
-                        ? parseInt(column.length, 10)
-                        : undefined
-                values[column.name] =
-                    length != null && !Number.isNaN(length)
-                        ? new MssqlParameter(
-                              value,
-                              column.type as any,
-                              length as any,
-                          )
-                        : new MssqlParameter(value, column.type as any)
-            } else {
-                values[column.name] = value
-            }
         }
 
         if (this.dataSource.driver.options.type === "mongodb") {
