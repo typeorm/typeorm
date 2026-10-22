@@ -4,10 +4,7 @@ import type { DataSource } from "../data-source/DataSource"
 import { Migration } from "./Migration"
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { QueryRunner } from "../query-runner/QueryRunner"
-import {
-    isMssqlParameterType,
-    MssqlParameter,
-} from "../driver/sqlserver/MssqlParameter"
+import { MssqlParameter } from "../driver/sqlserver/MssqlParameter"
 import type { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner"
 import {
     ForbiddenTransactionModeOverrideError,
@@ -756,21 +753,21 @@ export class MigrationExecutor {
             const nameType = this.dataSource.driver.normalizeType({
                 type: this.dataSource.driver.mappedDataTypes.migrationName,
             })
-            values["timestamp"] = this.createMssqlParameter(
+            values["timestamp"] = new MssqlParameter(
                 migration.timestamp,
-                timestampType,
+                timestampType as any,
             )
-            values["name"] = this.createMssqlParameter(migration.name, nameType)
-            values["executedAt"] = this.createMssqlParameter(
+            values["name"] = new MssqlParameter(migration.name, nameType as any)
+            values["executedAt"] = new MssqlParameter(
                 Date.now(),
-                timestampType,
+                timestampType as any,
             )
             const checksum = await this.resolveMigrationChecksum(
                 queryRunner,
                 migration,
                 options,
             )
-            values["checksum"] = this.createMssqlParameter(checksum, nameType)
+            values["checksum"] = new MssqlParameter(checksum, nameType as any)
         } else {
             values["timestamp"] = migration.timestamp
             values["name"] = migration.name
@@ -785,21 +782,22 @@ export class MigrationExecutor {
         for (const column of this.getMigrationsExtraColumns()) {
             const value =
                 migration.instance?.migrationMetadata?.[column.name] ?? null
-            if (
-                this.dataSource.driver.options.type === "mssql" &&
-                isMssqlParameterType(column.type)
-            ) {
+            if (this.dataSource.driver.options.type === "mssql") {
+                // types without a dedicated mssql parameter type (e.g. sql_variant)
+                // fall back to driver inference in SqlServerQueryRunner
                 const length =
                     column.length != null && column.length !== ""
                         ? parseInt(column.length, 10)
                         : undefined
                 values[column.name] =
                     length != null && !Number.isNaN(length)
-                        ? new MssqlParameter(value, column.type, length)
-                        : new MssqlParameter(value, column.type)
+                        ? new MssqlParameter(
+                              value,
+                              column.type as any,
+                              length as any,
+                          )
+                        : new MssqlParameter(value, column.type as any)
             } else {
-                // Other drivers, or SQL Server column types without a dedicated
-                // parameter type (e.g. sql_variant): let the driver infer.
                 values[column.name] = value
             }
         }
@@ -832,18 +830,18 @@ export class MigrationExecutor {
     ): Promise<void> {
         const conditions: ObjectLiteral = {}
         if (this.dataSource.driver.options.type === "mssql") {
-            conditions["timestamp"] = this.createMssqlParameter(
+            conditions["timestamp"] = new MssqlParameter(
                 migration.timestamp,
                 this.dataSource.driver.normalizeType({
                     type: this.dataSource.driver.mappedDataTypes
                         .migrationTimestamp,
-                }),
+                }) as any,
             )
-            conditions["name"] = this.createMssqlParameter(
+            conditions["name"] = new MssqlParameter(
                 migration.name,
                 this.dataSource.driver.normalizeType({
                     type: this.dataSource.driver.mappedDataTypes.migrationName,
-                }),
+                }) as any,
             )
         } else {
             conditions["timestamp"] = migration.timestamp
@@ -1020,27 +1018,6 @@ export class MigrationExecutor {
                 )
             }
         }
-    }
-
-    /**
-     * Wraps a value for SQL Server using a type name resolved at runtime
-     * (driver-normalized or user-configured), rejecting unsupported names.
-     *
-     * @param value
-     * @param type
-     * @param params optional length / precision / scale
-     */
-    protected createMssqlParameter(
-        value: unknown,
-        type: string,
-        ...params: number[]
-    ): MssqlParameter {
-        if (!isMssqlParameterType(type)) {
-            throw new TypeORMError(
-                `Unsupported SQL Server parameter type "${type}" for the migrations table.`,
-            )
-        }
-        return new MssqlParameter(value, type, ...params)
     }
 
     protected buildExecutedAtColumn(): TableColumn {
