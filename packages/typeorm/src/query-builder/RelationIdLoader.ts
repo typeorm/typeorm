@@ -1,5 +1,6 @@
 import type { RelationMetadata } from "../metadata/RelationMetadata"
 import type { ColumnMetadata } from "../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
 import type { DataSource } from "../data-source/DataSource"
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { SelectQueryBuilder } from "./SelectQueryBuilder"
@@ -142,11 +143,27 @@ export class RelationIdLoader {
             )
             inverseColumns = relation.entityMetadata.primaryColumns
         } else if (relation.isOneToMany || relation.isOneToOneNotOwner) {
-            columns = relation.inverseRelation!.entityMetadata.primaryColumns
+            columns = this.getInverseEntityColumnsForQueryStrategyRelationIds(
+                relation.inverseRelation!.entityMetadata,
+            )
             inverseColumns = relation.inverseRelation!.joinColumns.map(
                 (column) => column.referencedColumn!,
             )
-        } else {
+        }
+
+        if (inverseColumns.length === 0) {
+            throw new TypeORMError(
+                `Cannot determine inverse correlation columns for relation "${relation.propertyPath}" ` +
+                    `when grouping query-strategy relation results. ` +
+                    `The owning side has no primary columns to match relation identifiers against; ` +
+                    `add @PrimaryColumn, map @ViewColumn to physical columns, or use a relation with explicit join columns.`,
+            )
+        }
+        if (columns.length === 0) {
+            throw new TypeORMError(
+                `Cannot determine relation correlation columns for relation "${relation.propertyPath}" ` +
+                    `when grouping query-strategy relation results.`,
+            )
         }
 
         return entities.map((entity) => {
@@ -156,44 +173,52 @@ export class RelationIdLoader {
             }
 
             const entityRelationIds = relationIds.filter((relationId) => {
-                return inverseColumns.every((column) => {
-                    return column.compareEntityValue(
-                        entity,
-                        relationId[
-                            DriverUtils.buildAlias(
-                                this.dataSource.driver,
-                                undefined,
-                                column.entityMetadata.name +
-                                    "_" +
-                                    column.propertyAliasName,
-                            )
-                        ],
-                    )
-                })
-            })
-            if (!entityRelationIds.length) return group
-
-            relatedEntities.forEach((relatedEntity) => {
-                entityRelationIds.forEach((relationId) => {
-                    const relatedEntityMatched = columns.every((column) => {
+                return (
+                    inverseColumns.length > 0 &&
+                    inverseColumns.every((column) => {
                         return column.compareEntityValue(
-                            relatedEntity,
+                            entity,
                             relationId[
                                 DriverUtils.buildAlias(
                                     this.dataSource.driver,
                                     undefined,
                                     column.entityMetadata.name +
                                         "_" +
-                                        relation.propertyPath.replace(
-                                            ".",
-                                            "_",
-                                        ) +
-                                        "_" +
-                                        column.propertyPath.replace(".", "_"),
+                                        column.propertyAliasName,
                                 )
                             ],
                         )
                     })
+                )
+            })
+            if (!entityRelationIds.length) return group
+
+            relatedEntities.forEach((relatedEntity) => {
+                entityRelationIds.forEach((relationId) => {
+                    const relatedEntityMatched =
+                        columns.length > 0 &&
+                        columns.every((column) => {
+                            return column.compareEntityValue(
+                                relatedEntity,
+                                relationId[
+                                    DriverUtils.buildAlias(
+                                        this.dataSource.driver,
+                                        undefined,
+                                        column.entityMetadata.name +
+                                            "_" +
+                                            relation.propertyPath.replace(
+                                                ".",
+                                                "_",
+                                            ) +
+                                            "_" +
+                                            column.propertyPath.replace(
+                                                ".",
+                                                "_",
+                                            ),
+                                    )
+                                ],
+                            )
+                        })
                     if (relatedEntityMatched) {
                         if (isMany) {
                             ;(group.related as E2[]).push(relatedEntity)
@@ -650,7 +675,11 @@ export class RelationIdLoader {
 
         // select all columns we need
         const qb = this.dataSource.createQueryBuilder(this.queryRunner)
-        relation.entityMetadata.primaryColumns.forEach((primaryColumn) => {
+        const inverseRelationIdColumns =
+            this.getInverseEntityColumnsForQueryStrategyRelationIds(
+                relation.entityMetadata,
+            )
+        inverseRelationIdColumns.forEach((primaryColumn) => {
             const columnName = DriverUtils.buildAlias(
                 this.dataSource.driver,
                 undefined,
@@ -744,6 +773,35 @@ export class RelationIdLoader {
             condition,
             fieldsToMetadata,
         )
+    }
+
+    /**
+     * Columns used to correlate inverse-side rows when grouping query-strategy
+     * relation loads. View entities (and similar) often have no primary columns
+     * in metadata; without non-empty columns here, `Array.prototype.every`
+     * matches all related entities against every relation-id row.
+     *
+     * @param inverseEntityMetadata
+     */
+    private getInverseEntityColumnsForQueryStrategyRelationIds(
+        inverseEntityMetadata: EntityMetadata,
+    ): ColumnMetadata[] {
+        const columns =
+            inverseEntityMetadata.primaryColumns.length > 0
+                ? inverseEntityMetadata.primaryColumns
+                : inverseEntityMetadata.columns.filter(
+                      (column) =>
+                          !column.isVirtual && !column.isVirtualProperty,
+                  )
+        if (columns.length === 0) {
+            throw new TypeORMError(
+                `Cannot determine correlation columns for entity "${inverseEntityMetadata.name}" ` +
+                    `when loading relations with strategy "query". ` +
+                    `The entity has no primary columns and no non-virtual columns, ` +
+                    `so relation rows cannot be correlated with parent entities.`,
+            )
+        }
+        return columns
     }
 
     /**
