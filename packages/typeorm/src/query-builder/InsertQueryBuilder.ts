@@ -531,12 +531,14 @@ export class InsertQueryBuilder<
                     query += " ON CONFLICT DO NOTHING "
                 } else if (this.expressionMap.onUpdate) {
                     const {
-                        overwrite,
                         columns,
                         conflict,
                         skipUpdateIfNoValuesChanged,
                         indexPredicate,
                     } = this.expressionMap.onUpdate
+                    const overwrite = this.getOverwriteColumns(
+                        this.expressionMap.onUpdate.overwrite,
+                    )
 
                     let conflictTarget = "ON CONFLICT"
 
@@ -669,6 +671,7 @@ export class InsertQueryBuilder<
                     }
                     if (
                         DriverUtils.isPostgresFamily(this.dataSource.driver) &&
+                        updatePart.length > 0 &&
                         this.expressionMap.onUpdate.overwriteCondition &&
                         this.expressionMap.onUpdate.overwriteCondition.length >
                             0
@@ -765,6 +768,32 @@ export class InsertQueryBuilder<
         }
 
         return query
+    }
+
+    /**
+     * Gets the columns to overwrite on conflict, without generated columns left out of the INSERT.
+     * Such columns hold a newly generated value in the conflicting row
+     * (e.g. the next sequence value for an increment primary key), not the existing one.
+     *
+     * @param overwrite
+     */
+    protected getOverwriteColumns(
+        overwrite: string[] | undefined,
+    ): string[] | undefined {
+        if (!overwrite || !this.expressionMap.mainAlias!.hasMetadata)
+            return overwrite
+
+        const metadata = this.expressionMap.mainAlias!.metadata
+        const insertedColumns = this.getInsertedColumns()
+
+        return overwrite.filter((columnName) => {
+            const column = metadata.findColumnWithDatabaseName(columnName)
+            return (
+                !column ||
+                !column.isGenerated ||
+                insertedColumns.includes(column)
+            )
+        })
     }
 
     /**
@@ -1154,12 +1183,11 @@ export class InsertQueryBuilder<
         }
 
         if (this.expressionMap.onUpdate) {
-            const {
-                overwrite,
-                columns,
-                conflict,
-                skipUpdateIfNoValuesChanged,
-            } = this.expressionMap.onUpdate
+            const { columns, conflict, skipUpdateIfNoValuesChanged } =
+                this.expressionMap.onUpdate
+            const overwrite = this.getOverwriteColumns(
+                this.expressionMap.onUpdate.overwrite,
+            )
             let updateExpression = ""
 
             if (Array.isArray(overwrite)) {
