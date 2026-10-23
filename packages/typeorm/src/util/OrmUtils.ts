@@ -590,7 +590,8 @@ export class OrmUtils {
         rightChain.push(y)
 
         for (const key of keys) {
-            if (!Object.prototype.hasOwnProperty.call(y, key)) return false
+            if (!Object.prototype.propertyIsEnumerable.call(y, key))
+                return false
 
             const valueX = x[key]
             const valueY = y[key]

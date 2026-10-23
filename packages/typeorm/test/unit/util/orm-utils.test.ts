@@ -303,6 +303,13 @@ describe(`OrmUtils`, () => {
             ).to.equal(true)
         })
 
+        it("should not match an enumerable key with a non-enumerable one", () => {
+            const y: Record<string, number> = { b: 2 }
+            Object.defineProperty(y, "a", { value: 1, enumerable: false })
+
+            expect(OrmUtils.deepCompare({ a: 1 }, y)).to.equal(false)
+        })
+
         it("should not treat cyclic plain objects as equal", () => {
             const x: any = { a: 1 }
             x.self = x
