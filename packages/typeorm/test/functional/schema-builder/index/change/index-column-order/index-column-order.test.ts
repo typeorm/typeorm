@@ -126,3 +126,41 @@ describe("schema builder > index > change > index column order", () => {
             }),
         ))
 })
+
+describe("schema builder > index > change > index column order > covering index", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Reversed],
+            enabledDrivers: ["postgres"],
+            schemaCreate: false,
+            dropSchema: true,
+        })
+    })
+    after(() => closeTestingConnections(dataSources))
+
+    it("should read the key columns of a covering index first", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await createTableBefore(
+                    dataSource,
+                    Table.create(
+                        dataSource.getMetadata(Reversed),
+                        dataSource.driver,
+                    ),
+                )
+                await dataSource.query(
+                    `CREATE INDEX "reversed_covering" ON "reversed" ("zeta", "alpha") INCLUDE ("mid")`,
+                )
+
+                const table = await loadTable(dataSource, "reversed")
+                const covering = table.indices.find(
+                    (index) => index.name === "reversed_covering",
+                )
+                expect(covering!.columnNames.slice(0, 2)).to.eql([
+                    "zeta",
+                    "alpha",
+                ])
+            }),
+        ))
+})
