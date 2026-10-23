@@ -51,6 +51,12 @@ export class CockroachDriver implements Driver {
         "SERIALIZABLE",
     ]
 
+    /**
+     * Default number of transaction retries after a 40001 error, used when
+     * `maxTransactionRetries` is not set.
+     */
+    static readonly defaultMaxTransactionRetries = 5
+
     // -------------------------------------------------------------------------
     // Public Properties
     // -------------------------------------------------------------------------
@@ -1120,9 +1126,63 @@ export class CockroachDriver implements Driver {
         return this.parametersPrefix + (index + 1)
     }
 
+    /**
+     * Restarts a transaction that failed with a 40001 serialization error
+     * through the `cockroach_restart` savepoint, then waits with exponential
+     * backoff and jitter before it is retried.
+     *
+     * @param queryRunner
+     * @param error
+     * @param attempt
+     * @see https://www.cockroachlabs.com/docs/stable/transaction-retry-error-reference
+     */
+    async retryTransaction(
+        queryRunner: QueryRunner,
+        error: unknown,
+        attempt: number,
+    ): Promise<boolean> {
+        if (!this.isTransactionRetryError(error)) return false
+        if (
+            attempt >
+            (this.options.maxTransactionRetries ??
+                CockroachDriver.defaultMaxTransactionRetries)
+        )
+            return false
+
+        try {
+            await (queryRunner as CockroachQueryRunner).restartTransaction()
+        } catch (restartError) {
+            this.dataSource.logger.log(
+                "warn",
+                `Could not restart transaction for a retry: ${restartError.message}`,
+                queryRunner,
+            )
+            return false
+        }
+
+        const delay = 2 ** attempt * 0.1 * (Math.random() + 0.5) * 1000
+        this.dataSource.logger.log(
+            "warn",
+            `Retrying transaction (retry ${attempt}) in ${Math.round(delay)}ms after error: ${(error as Error).message}`,
+            queryRunner,
+        )
+        await new Promise((resolve) => setTimeout(resolve, delay))
+        return true
+    }
+
     // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Returns true if the given error is a 40001 transaction retry error.
+     *
+     * @param error
+     */
+    isTransactionRetryError(error: unknown): boolean {
+        const err = error as { code?: string; driverError?: { code?: string } }
+        return (err?.driverError?.code ?? err?.code) === "40001"
+    }
 
     /**
      * Loads postgres query stream package.
