@@ -148,6 +148,7 @@ export abstract class AbstractSqliteQueryRunner
         if (!this.isTransactionActive) throw new TransactionNotStartedError()
 
         const initialDepth = this.transactionDepth
+        let executedDepth = initialDepth
 
         try {
             await this.broadcaster.broadcast("BeforeTransactionRollback")
@@ -158,22 +159,22 @@ export abstract class AbstractSqliteQueryRunner
             )
                 return
 
-            const currentDepth = this.transactionDepth
+            executedDepth = this.transactionDepth
 
-            if (currentDepth > 1) {
+            if (executedDepth > 1) {
                 await this.query(
-                    `ROLLBACK TO SAVEPOINT typeorm_${currentDepth - 1}`,
+                    `ROLLBACK TO SAVEPOINT typeorm_${executedDepth - 1}`,
                 )
             } else {
                 await this.query("ROLLBACK")
                 this.isTransactionActive = false
             }
         } catch (err) {
-            this.handleFailedRollback(this.transactionDepth)
+            this.handleFailedRollback(executedDepth)
             throw err
         }
 
-        this.handleSuccessfulRollback(initialDepth)
+        this.handleSuccessfulRollback(executedDepth)
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
