@@ -129,6 +129,13 @@ export class SubjectExecutor {
 
         // console.timeEnd("prepare");
 
+        // delete orphaned one-to-many rows first, so rows replaced in the same save
+        // don't violate unique constraints
+        const orphanedRemoveSubjects = this.removeSubjects.filter(
+            (subject) => subject.mustBeRemovedBeforeInsert,
+        )
+        await this.executeRemoveOperations(orphanedRemoveSubjects)
+
         // execute all insert operations
         // console.time(".insertion");
         this.insertSubjects = new SubjectTopologicalSorter(
@@ -153,7 +160,11 @@ export class SubjectExecutor {
         this.removeSubjects = new SubjectTopologicalSorter(
             this.removeSubjects,
         ).sort("delete")
-        await this.executeRemoveOperations()
+        await this.executeRemoveOperations(
+            this.removeSubjects.filter(
+                (subject) => !subject.mustBeRemovedBeforeInsert,
+            ),
+        )
         // console.timeEnd(".removal");
 
         // recompute soft-remove operations
@@ -657,11 +668,14 @@ export class SubjectExecutor {
      * Removes all given subjects from the database.
      *
      * todo: we need to apply topological sort here as well
+     * @param removeSubjects subjects to remove
      */
-    protected async executeRemoveOperations(): Promise<void> {
+    protected async executeRemoveOperations(
+        removeSubjects: Subject[],
+    ): Promise<void> {
         // group insertion subjects to make bulk insertions
         const [groupedRemoveSubjects, groupedRemoveSubjectKeys] =
-            this.groupBulkSubjects(this.removeSubjects, "delete")
+            this.groupBulkSubjects(removeSubjects, "delete")
 
         for (const groupName of groupedRemoveSubjectKeys) {
             const subjects = groupedRemoveSubjects[groupName]

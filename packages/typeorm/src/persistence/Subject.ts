@@ -105,6 +105,12 @@ export class Subject {
     mustBeRemoved: boolean = false
 
     /**
+     * Indicates if this subject is a one-to-many orphan that must be deleted
+     * before any insert runs, so rows replaced in the same save don't violate unique constraints.
+     */
+    mustBeRemovedBeforeInsert: boolean = false
+
+    /**
      * Indicates if this subject can be soft-removed from the database.
      * This means that this subject either was soft-removed, either was soft-removed by cascades.
      */
