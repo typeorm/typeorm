@@ -11,6 +11,7 @@ import type { TableColumn } from "../schema-builder/table/TableColumn"
 import type { Broadcaster } from "../subscriber/Broadcaster"
 import type { ReplicationMode } from "../driver/types/ReplicationMode"
 import { TypeORMError } from "../error/TypeORMError"
+import { TransactionNotStartedError } from "../error/TransactionNotStartedError"
 import type { EntityMetadata } from "../metadata/EntityMetadata"
 import type { TableForeignKey } from "../schema-builder/table/TableForeignKey"
 import { OrmUtils } from "../util/OrmUtils"
@@ -107,6 +108,67 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
      * for transactionDepth > 0 will use SAVEPOINT to start and commit/rollback transaction blocks
      */
     protected transactionDepth = 0
+
+    /**
+     * Minimum transaction depth at which a rollback to savepoint failed.
+     * Any transaction scope at or below this depth cannot commit,
+     * because it may still contain modifications that should have been rolled back.
+     */
+    protected failedRollbackDepth?: number
+
+    /**
+     * Asserts that the transaction is active and can be committed.
+     * Throws an error if a nested rollback failed within or above this transaction's scope.
+     */
+    protected checkTransactionCommit(): void {
+        if (!this.isTransactionActive) throw new TransactionNotStartedError()
+
+        if (
+            this.failedRollbackDepth !== undefined &&
+            this.transactionDepth <= this.failedRollbackDepth
+        ) {
+            throw new TypeORMError(
+                `Cannot commit transaction because a nested rollback failed at depth ${
+                    this.failedRollbackDepth + 1
+                }.`,
+            )
+        }
+    }
+
+    /**
+     * Updates transactionDepth and failedRollbackDepth after a failed rollback.
+     *
+     * @param currentDepth
+     */
+    protected handleFailedRollback(currentDepth: number): void {
+        if (currentDepth > 1) {
+            this.transactionDepth = currentDepth - 1
+            this.failedRollbackDepth =
+                this.failedRollbackDepth === undefined
+                    ? currentDepth - 1
+                    : Math.min(this.failedRollbackDepth, currentDepth - 1)
+        }
+    }
+
+    /**
+     * Updates transactionDepth and failedRollbackDepth after a successful rollback.
+     *
+     * @param currentDepth
+     */
+    protected handleSuccessfulRollback(currentDepth: number): void {
+        if (currentDepth > 1) {
+            this.transactionDepth = currentDepth - 1
+            if (
+                this.failedRollbackDepth !== undefined &&
+                this.transactionDepth < this.failedRollbackDepth
+            ) {
+                this.failedRollbackDepth = undefined
+            }
+        } else {
+            this.transactionDepth = 0
+            this.failedRollbackDepth = undefined
+        }
+    }
 
     private cachedTablePaths: Record<string, string> = {}
 

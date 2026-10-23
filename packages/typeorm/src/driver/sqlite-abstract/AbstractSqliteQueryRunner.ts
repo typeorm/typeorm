@@ -123,7 +123,7 @@ export abstract class AbstractSqliteQueryRunner
      * Error will be thrown if transaction was not started.
      */
     async commitTransaction(): Promise<void> {
-        if (!this.isTransactionActive) throw new TransactionNotStartedError()
+        this.checkTransactionCommit()
 
         await this.broadcaster.broadcast("BeforeTransactionCommit")
 
@@ -147,17 +147,25 @@ export abstract class AbstractSqliteQueryRunner
     async rollbackTransaction(): Promise<void> {
         if (!this.isTransactionActive) throw new TransactionNotStartedError()
 
-        await this.broadcaster.broadcast("BeforeTransactionRollback")
+        const currentDepth = this.transactionDepth
 
-        if (this.transactionDepth > 1) {
-            await this.query(
-                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
-            )
-        } else {
-            await this.query("ROLLBACK")
-            this.isTransactionActive = false
+        try {
+            await this.broadcaster.broadcast("BeforeTransactionRollback")
+
+            if (currentDepth > 1) {
+                await this.query(
+                    `ROLLBACK TO SAVEPOINT typeorm_${currentDepth - 1}`,
+                )
+            } else {
+                await this.query("ROLLBACK")
+                this.isTransactionActive = false
+            }
+        } catch (err) {
+            this.handleFailedRollback(currentDepth)
+            throw err
         }
-        this.transactionDepth -= 1
+
+        this.handleSuccessfulRollback(currentDepth)
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
