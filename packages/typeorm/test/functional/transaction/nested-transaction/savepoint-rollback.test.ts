@@ -17,6 +17,7 @@ describe("transaction > nested-transaction > savepoint rollback (#12977)", () =>
     let dataSources: DataSource[]
     let shouldThrowOnRollback = false
     let shouldCommitInSubscriber = false
+    let shouldStartInSubscriber = false
 
     const getDepth = (runner: QueryRunner): number =>
         (runner as unknown as { transactionDepth: number }).transactionDepth
@@ -27,6 +28,12 @@ describe("transaction > nested-transaction > savepoint rollback (#12977)", () =>
             if (shouldCommitInSubscriber && event.queryRunner) {
                 // Nested subscriber commits before the savepoint rollback statement
                 await event.queryRunner.commitTransaction()
+                return
+            }
+
+            if (shouldStartInSubscriber && event.queryRunner) {
+                shouldStartInSubscriber = false
+                await event.queryRunner.startTransaction()
                 return
             }
 
@@ -51,6 +58,7 @@ describe("transaction > nested-transaction > savepoint rollback (#12977)", () =>
     beforeEach(() => {
         shouldThrowOnRollback = false
         shouldCommitInSubscriber = false
+        shouldStartInSubscriber = false
         return reloadTestingDatabases(dataSources)
     })
     after(() => closeTestingConnections(dataSources))
@@ -249,7 +257,7 @@ describe("transaction > nested-transaction > savepoint rollback (#12977)", () =>
             }),
         ))
 
-    it("async disposal rolls back contaminated transaction before release", () =>
+    it("async disposal rolls back contaminated transaction before release and rejects", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const queryRunner = dataSource.createQueryRunner()
@@ -272,9 +280,18 @@ describe("transaction > nested-transaction > savepoint rollback (#12977)", () =>
                     shouldThrowOnRollback = false
                 }
 
-                // Invoking async disposal on contaminated runner performs root rollback
-                await queryRunner[Symbol.asyncDispose]()
+                // Invoking async disposal on contaminated runner performs root rollback and rejects with TypeORMError
+                let disposalError: Error | undefined
+                try {
+                    await queryRunner[Symbol.asyncDispose]()
+                } catch (err) {
+                    disposalError = err as Error
+                }
 
+                expect(disposalError).to.be.instanceOf(TypeORMError)
+                expect(disposalError?.message).to.include(
+                    "Cannot commit transaction because a nested rollback failed",
+                )
                 expect(queryRunner.isTransactionActive).to.be.false
 
                 // Verify nothing was committed
@@ -303,6 +320,52 @@ describe("transaction > nested-transaction > savepoint rollback (#12977)", () =>
                     expect(queryRunner.isTransactionActive).to.be.false
                 } finally {
                     shouldCommitInSubscriber = false
+                    await queryRunner.release()
+                }
+            }),
+        ))
+
+    it("handles subscriber starting a nested transaction during root rollback followed by another transaction", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                try {
+                    await queryRunner.startTransaction()
+                    expect(getDepth(queryRunner)).to.equal(1)
+                    await queryRunner.manager.save(Post, {
+                        title: "root-post",
+                    })
+
+                    shouldStartInSubscriber = true
+                    // Rollback at depth 1 triggers hook which starts nested transaction (depth -> 2)
+                    // The rollback then targets savepoint 1 and updates bookkeeping to depth 1
+                    await queryRunner.rollbackTransaction()
+
+                    expect(queryRunner.isTransactionActive).to.be.true
+                    expect(getDepth(queryRunner)).to.equal(1)
+
+                    // Start another nested transaction
+                    await queryRunner.startTransaction()
+                    expect(getDepth(queryRunner)).to.equal(2)
+                    await queryRunner.manager.save(Post, {
+                        title: "nested-post",
+                    })
+
+                    // Nested commit releases savepoint without committing root
+                    await queryRunner.commitTransaction()
+                    expect(queryRunner.isTransactionActive).to.be.true
+                    expect(getDepth(queryRunner)).to.equal(1)
+
+                    // Finally rollback root transaction
+                    await queryRunner.rollbackTransaction()
+                    expect(queryRunner.isTransactionActive).to.be.false
+                    expect(getDepth(queryRunner)).to.equal(0)
+
+                    // Verify nothing was committed
+                    const posts = await dataSource.manager.find(Post)
+                    expect(posts).to.have.length(0)
+                } finally {
+                    shouldStartInSubscriber = false
                     await queryRunner.release()
                 }
             }),

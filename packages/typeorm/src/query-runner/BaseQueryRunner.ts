@@ -185,16 +185,18 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
     async [Symbol.asyncDispose](): Promise<void> {
         try {
             if (this.isTransactionActive) {
-                if (
-                    this.failedRollbackDepth !== undefined &&
-                    this.transactionDepth <= this.failedRollbackDepth
-                ) {
+                if (this.failedRollbackDepth !== undefined) {
+                    const error = new TypeORMError(
+                        `Cannot commit transaction because a nested rollback failed at depth ${
+                            this.failedRollbackDepth + 1
+                        }.`,
+                    )
                     this.transactionDepth = 1
                     await this.rollbackTransaction()
-                } else {
-                    this.transactionDepth = 1 // ignore all savepoints and commit directly
-                    await this.commitTransaction()
+                    throw error
                 }
+                this.transactionDepth = 1 // ignore all savepoints and commit directly
+                await this.commitTransaction()
             }
         } catch (err) {
             try {
