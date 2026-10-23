@@ -449,6 +449,15 @@ export class ColumnMetadata {
         if (options.args.options.asExpression) {
             this.asExpression = options.args.options.asExpression
             this.generatedType = options.args.options.generatedType ?? "VIRTUAL"
+
+            // Generated expression columns should be read-only by default.
+            // Respect explicit user-provided insert/update flags if present.
+            if (options.args.options.insert === undefined) {
+                this.isInsert = false
+            }
+            if (options.args.options.update === undefined) {
+                this.isUpdate = false
+            }
         }
         if (options.args.options.hstoreType)
             this.hstoreType = options.args.options.hstoreType
