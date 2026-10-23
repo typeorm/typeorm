@@ -185,9 +185,27 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
     async [Symbol.asyncDispose](): Promise<void> {
         try {
             if (this.isTransactionActive) {
-                this.transactionDepth = 1 // ignore all savepoints and commit directly
-                await this.commitTransaction()
+                if (
+                    this.failedRollbackDepth !== undefined &&
+                    this.transactionDepth <= this.failedRollbackDepth
+                ) {
+                    this.transactionDepth = 1
+                    await this.rollbackTransaction()
+                } else {
+                    this.transactionDepth = 1 // ignore all savepoints and commit directly
+                    await this.commitTransaction()
+                }
             }
+        } catch (err) {
+            try {
+                if (this.isTransactionActive) {
+                    this.transactionDepth = 1
+                    await this.rollbackTransaction()
+                }
+            } catch {
+                // ignore secondary cleanup error
+            }
+            throw err
         } finally {
             await this.release()
         }
@@ -198,6 +216,12 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
      * Error will be thrown if transaction was not started.
      */
     abstract commitTransaction(): Promise<void>
+
+    /**
+     * Rollbacks transaction.
+     * Error will be thrown if transaction was not started.
+     */
+    abstract rollbackTransaction(): Promise<void>
 
     /**
      * Executes a given SQL query.

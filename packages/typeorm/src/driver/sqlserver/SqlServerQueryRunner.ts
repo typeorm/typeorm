@@ -184,38 +184,40 @@ export class SqlServerQueryRunner
 
         if (!this.isTransactionActive) throw new TransactionNotStartedError()
 
-        const currentDepth = this.transactionDepth
+        const initialDepth = this.transactionDepth
 
         try {
             await this.broadcaster.broadcast("BeforeTransactionRollback")
+
+            if (
+                !this.isTransactionActive ||
+                this.transactionDepth < initialDepth
+            )
+                return
+
+            const currentDepth = this.transactionDepth
 
             if (currentDepth > 1) {
                 await this.query(
                     `ROLLBACK TRANSACTION typeorm_${currentDepth - 1}`,
                 )
             } else {
-                return await new Promise<void>((ok, fail) => {
-                    this.databaseConnection.rollback(async (err: any) => {
+                await new Promise<void>((ok, fail) => {
+                    this.databaseConnection.rollback((err: any) => {
                         if (err) return fail(err)
-                        this.isTransactionActive = false
-                        this.databaseConnection = null
-
-                        await this.broadcaster.broadcast(
-                            "AfterTransactionRollback",
-                        )
-
-                        ok()
                         this.dataSource.logger.logQuery("ROLLBACK")
-                        this.handleSuccessfulRollback(1)
+                        ok()
                     })
                 })
+                this.isTransactionActive = false
+                this.databaseConnection = null
             }
         } catch (err) {
-            this.handleFailedRollback(currentDepth)
+            this.handleFailedRollback(this.transactionDepth)
             throw err
         }
 
-        this.handleSuccessfulRollback(currentDepth)
+        this.handleSuccessfulRollback(initialDepth)
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }

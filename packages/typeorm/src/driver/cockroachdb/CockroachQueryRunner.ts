@@ -259,10 +259,18 @@ export class CockroachQueryRunner
     async rollbackTransaction(): Promise<void> {
         if (!this.isTransactionActive) throw new TransactionNotStartedError()
 
-        const currentDepth = this.transactionDepth
+        const initialDepth = this.transactionDepth
 
         try {
             await this.broadcaster.broadcast("BeforeTransactionRollback")
+
+            if (
+                !this.isTransactionActive ||
+                this.transactionDepth < initialDepth
+            )
+                return
+
+            const currentDepth = this.transactionDepth
 
             if (currentDepth > 1) {
                 await this.query(
@@ -276,11 +284,11 @@ export class CockroachQueryRunner
                 this.transactionRetries = 0
             }
         } catch (err) {
-            this.handleFailedRollback(currentDepth)
+            this.handleFailedRollback(this.transactionDepth)
             throw err
         }
 
-        this.handleSuccessfulRollback(currentDepth)
+        this.handleSuccessfulRollback(initialDepth)
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
