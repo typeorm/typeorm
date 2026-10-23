@@ -1,28 +1,35 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import type { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
-import { EventSubscriber } from "../../../src/decorator/listeners/EventSubscriber"
-import type { EntitySubscriberInterface } from "../../../src/subscriber/EntitySubscriberInterface"
-import type { TransactionRollbackEvent } from "../../../src/subscriber/event/TransactionRollbackEvent"
-import { TypeORMError } from "../../../src/error/TypeORMError"
-import type { QueryRunner } from "../../../src/query-runner/QueryRunner"
+} from "../../../utils/test-utils"
+import { EventSubscriber } from "../../../../src/decorator/listeners/EventSubscriber"
+import type { EntitySubscriberInterface } from "../../../../src/subscriber/EntitySubscriberInterface"
+import type { TransactionRollbackEvent } from "../../../../src/subscriber/event/TransactionRollbackEvent"
+import { TypeORMError } from "../../../../src/error/TypeORMError"
+import type { QueryRunner } from "../../../../src/query-runner/QueryRunner"
 import { Post } from "./entity/Post"
 
-describe("github issues > #12977 A failed ROLLBACK TO SAVEPOINT leaves the connection in a transaction", () => {
+describe("transaction > nested-transaction > savepoint rollback (#12977)", () => {
     let dataSources: DataSource[]
     let shouldThrowOnRollback = false
+    let shouldCommitInSubscriber = false
 
     const getDepth = (runner: QueryRunner): number =>
         (runner as unknown as { transactionDepth: number }).transactionDepth
 
     @EventSubscriber()
     class TestSubscriber implements EntitySubscriberInterface {
-        beforeTransactionRollback(event: TransactionRollbackEvent) {
+        async beforeTransactionRollback(event: TransactionRollbackEvent) {
+            if (shouldCommitInSubscriber && event.queryRunner) {
+                // Nested subscriber commits before the savepoint rollback statement
+                await event.queryRunner.commitTransaction()
+                return
+            }
+
             const depth = event.queryRunner
                 ? getDepth(event.queryRunner)
                 : undefined
@@ -43,6 +50,7 @@ describe("github issues > #12977 A failed ROLLBACK TO SAVEPOINT leaves the conne
     })
     beforeEach(() => {
         shouldThrowOnRollback = false
+        shouldCommitInSubscriber = false
         return reloadTestingDatabases(dataSources)
     })
     after(() => closeTestingConnections(dataSources))
@@ -236,6 +244,65 @@ describe("github issues > #12977 A failed ROLLBACK TO SAVEPOINT leaves the conne
                     expect(getDepth(queryRunner)).to.equal(0)
                     expect(queryRunner.isTransactionActive).to.be.false
                 } finally {
+                    await queryRunner.release()
+                }
+            }),
+        ))
+
+    it("async disposal rolls back contaminated transaction before release", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                await queryRunner.startTransaction()
+                await queryRunner.manager.save(Post, {
+                    title: "disposal-outer",
+                })
+
+                await queryRunner.startTransaction()
+                await queryRunner.manager.save(Post, {
+                    title: "disposal-inner",
+                })
+
+                shouldThrowOnRollback = true
+                try {
+                    await queryRunner.rollbackTransaction()
+                } catch {
+                    // expected failure
+                } finally {
+                    shouldThrowOnRollback = false
+                }
+
+                // Invoking async disposal on contaminated runner performs root rollback
+                await queryRunner[Symbol.asyncDispose]()
+
+                expect(queryRunner.isTransactionActive).to.be.false
+
+                // Verify nothing was committed
+                const posts = await dataSource.manager.find(Post)
+                expect(posts).to.have.length(0)
+            }),
+        ))
+
+    it("handles transaction-depth changes made during BeforeTransactionRollback hook", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                try {
+                    await queryRunner.startTransaction()
+                    await queryRunner.startTransaction()
+                    expect(getDepth(queryRunner)).to.equal(2)
+
+                    shouldCommitInSubscriber = true
+                    // Rollback at depth 2 triggers hook which commits nested savepoint
+                    await queryRunner.rollbackTransaction()
+
+                    // Outer transaction is not marked contaminated because no rollback failed
+                    expect(getDepth(queryRunner)).to.equal(1)
+                    await queryRunner.commitTransaction()
+                    expect(getDepth(queryRunner)).to.equal(0)
+                    expect(queryRunner.isTransactionActive).to.be.false
+                } finally {
+                    shouldCommitInSubscriber = false
                     await queryRunner.release()
                 }
             }),
