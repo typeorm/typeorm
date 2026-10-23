@@ -153,7 +153,7 @@ export class SqlServerQueryRunner
     async commitTransaction(): Promise<void> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
-        if (!this.isTransactionActive) throw new TransactionNotStartedError()
+        this.checkTransactionCommit()
 
         await this.broadcaster.broadcast("BeforeTransactionCommit")
 
@@ -184,28 +184,40 @@ export class SqlServerQueryRunner
 
         if (!this.isTransactionActive) throw new TransactionNotStartedError()
 
-        await this.broadcaster.broadcast("BeforeTransactionRollback")
+        const currentDepth = this.transactionDepth
 
-        if (this.transactionDepth > 1) {
-            await this.query(
-                `ROLLBACK TRANSACTION typeorm_${this.transactionDepth - 1}`,
-            )
-            this.transactionDepth -= 1
-        } else {
-            return new Promise<void>((ok, fail) => {
-                this.databaseConnection.rollback(async (err: any) => {
-                    if (err) return fail(err)
-                    this.isTransactionActive = false
-                    this.databaseConnection = null
+        try {
+            await this.broadcaster.broadcast("BeforeTransactionRollback")
 
-                    await this.broadcaster.broadcast("AfterTransactionRollback")
+            if (currentDepth > 1) {
+                await this.query(
+                    `ROLLBACK TRANSACTION typeorm_${currentDepth - 1}`,
+                )
+            } else {
+                return await new Promise<void>((ok, fail) => {
+                    this.databaseConnection.rollback(async (err: any) => {
+                        if (err) return fail(err)
+                        this.isTransactionActive = false
+                        this.databaseConnection = null
 
-                    ok()
-                    this.dataSource.logger.logQuery("ROLLBACK")
-                    this.transactionDepth -= 1
+                        await this.broadcaster.broadcast(
+                            "AfterTransactionRollback",
+                        )
+
+                        ok()
+                        this.dataSource.logger.logQuery("ROLLBACK")
+                        this.handleSuccessfulRollback(1)
+                    })
                 })
-            })
+            }
+        } catch (err) {
+            this.handleFailedRollback(currentDepth)
+            throw err
         }
+
+        this.handleSuccessfulRollback(currentDepth)
+
+        await this.broadcaster.broadcast("AfterTransactionRollback")
     }
 
     /**
