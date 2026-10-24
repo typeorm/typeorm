@@ -1,12 +1,12 @@
-import { Column, Entity, ManyToOne, PrimaryColumn } from "../../../../src"
-import { Example } from "./example"
+import { Column, Entity, ManyToOne, PrimaryColumn } from "../../../../../src"
+import { Example } from "./Example"
 
 @Entity()
 export class Dependency {
     @PrimaryColumn()
     fromId: number
 
-    @ManyToOne(() => Example, (example: Example) => example.dependencies, {
+    @ManyToOne(() => Example, (example) => example.dependencies, {
         orphanedRowAction: "delete",
     })
     from: Example

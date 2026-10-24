@@ -1,5 +1,5 @@
-import { Column, Entity, OneToMany, PrimaryColumn } from "../../../../src"
-import { Dependency } from "./dependency"
+import { Column, Entity, OneToMany, PrimaryColumn } from "../../../../../src"
+import { Dependency } from "./Dependency"
 
 @Entity()
 export class Example {
