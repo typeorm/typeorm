@@ -20,6 +20,8 @@ import type { PostgresQueryRunner } from "../driver/postgres/PostgresQueryRunner
 import { TypeORMError } from "../error"
 import type { IndexMetadata } from "../metadata/IndexMetadata"
 
+type RenamedColumn = { tableColumn: TableColumn; databaseName: string }
+
 /**
  * Creates complete tables schemas in the database based on the entity metadatas.
  *
@@ -270,6 +272,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             )
             if (!table) continue
 
+            const renamed = this.findRenamedColumn(metadata, table)
             // find foreign keys that exist in the schemas but does not exist in the entity metadata
             const tableForeignKeysToDrop = table.foreignKeys.filter(
                 (tableForeignKey) => {
@@ -279,7 +282,23 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                             this.getTablePath(tableForeignKey) ===
                                 this.getTablePath(
                                     metadataForeignKey.referencedEntityMetadata,
+                                ) &&
+                            this.sameColumnSet(
+                                metadataForeignKey.columnNames,
+                                this.renamedColumnNames(
+                                    tableForeignKey.columnNames,
+                                    renamed,
                                 ),
+                            ) &&
+                            this.sameColumnSet(
+                                metadataForeignKey.referencedColumnNames,
+                                this.renamedColumnNames(
+                                    tableForeignKey.referencedColumnNames,
+                                    this.findRenamedColumnOf(
+                                        metadataForeignKey.referencedEntityMetadata,
+                                    ),
+                                ),
+                            ),
                     )
                     return (
                         !metadataFK ||
@@ -325,59 +344,156 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             )
             if (!table) continue
 
-            if (metadata.columns.length !== table.columns.length) continue
+            const renamed = this.findRenamedColumn(metadata, table)
+            if (!renamed) continue
 
-            const renamedMetadataColumns = metadata.columns
-                .filter((c) => !c.isVirtualProperty)
-                .filter((column) => {
-                    return !table.columns.find((tableColumn) => {
-                        return (
-                            tableColumn.name === column.databaseName &&
-                            tableColumn.type ===
-                                this.dataSource.driver.normalizeType(column) &&
-                            tableColumn.isNullable === column.isNullable &&
-                            tableColumn.isUnique ===
-                                this.dataSource.driver.normalizeIsUnique(column)
-                        )
-                    })
-                })
+            const renamedColumn = renamed.tableColumn.clone()
+            renamedColumn.name = renamed.databaseName
 
-            if (
-                renamedMetadataColumns.length === 0 ||
-                renamedMetadataColumns.length > 1
+            this.dataSource.logger.logSchemaBuild(
+                `renaming column "${renamed.tableColumn.name}" in "${table.name}" to "${renamedColumn.name}"`,
             )
-                continue
+            await this.queryRunner.renameColumn(
+                table,
+                renamed.tableColumn,
+                renamedColumn,
+            )
+        }
+    }
 
-            const renamedTableColumns = table.columns.filter((tableColumn) => {
-                return !metadata.columns.find((column) => {
+    /**
+     * Finds the table column that the metadata renames.
+     * Works if only one column per table was changed.
+     *
+     * @param metadata Entity metadata of the table.
+     * @param table Table loaded from the database.
+     * @returns The renamed table column and its new name, or undefined when no single column is renamed.
+     */
+    protected findRenamedColumn(
+        metadata: EntityMetadata,
+        table: Table,
+    ): RenamedColumn | undefined {
+        if (metadata.columns.length !== table.columns.length) return undefined
+
+        const renamedMetadataColumns = metadata.columns
+            .filter((c) => !c.isVirtualProperty)
+            .filter((column) => {
+                return !table.columns.find((tableColumn) => {
                     return (
-                        !column.isVirtualProperty &&
-                        column.databaseName === tableColumn.name &&
-                        this.dataSource.driver.normalizeType(column) ===
-                            tableColumn.type &&
-                        column.isNullable === tableColumn.isNullable &&
-                        this.dataSource.driver.normalizeIsUnique(column) ===
-                            tableColumn.isUnique
+                        tableColumn.name === column.databaseName &&
+                        tableColumn.type ===
+                            this.dataSource.driver.normalizeType(column) &&
+                        tableColumn.isNullable === column.isNullable &&
+                        tableColumn.isUnique ===
+                            this.dataSource.driver.normalizeIsUnique(column)
                     )
                 })
             })
 
-            if (
-                renamedTableColumns.length === 0 ||
-                renamedTableColumns.length > 1
-            )
-                continue
+        if (renamedMetadataColumns.length !== 1) return undefined
 
-            const renamedColumn = renamedTableColumns[0].clone()
-            renamedColumn.name = renamedMetadataColumns[0].databaseName
+        const renamedTableColumns = table.columns.filter((tableColumn) => {
+            return !metadata.columns.find((column) => {
+                return (
+                    !column.isVirtualProperty &&
+                    column.databaseName === tableColumn.name &&
+                    this.dataSource.driver.normalizeType(column) ===
+                        tableColumn.type &&
+                    column.isNullable === tableColumn.isNullable &&
+                    this.dataSource.driver.normalizeIsUnique(column) ===
+                        tableColumn.isUnique
+                )
+            })
+        })
+
+        if (renamedTableColumns.length !== 1) return undefined
+
+        return {
+            tableColumn: renamedTableColumns[0],
+            databaseName: renamedMetadataColumns[0].databaseName,
+        }
+    }
+
+    /**
+     * Finds the column that the metadata of another table renames, when that table is loaded.
+     *
+     * @param entityMetadata Entity metadata of the other table.
+     * @returns The renamed table column and its new name, or undefined.
+     */
+    protected findRenamedColumnOf(
+        entityMetadata: EntityMetadata,
+    ): RenamedColumn | undefined {
+        const table = this.tables.find(
+            (table) =>
+                this.getTablePath(table) === this.getTablePath(entityMetadata),
+        )
+        return table ? this.findRenamedColumn(entityMetadata, table) : undefined
+    }
+
+    /**
+     * Applies a pending column rename to column names read from the database.
+     *
+     * @param columnNames Column names as the database has them.
+     * @param renamed The rename this run will perform, if any.
+     * @returns The column names as the metadata will have them.
+     */
+    protected renamedColumnNames(
+        columnNames: string[],
+        renamed: RenamedColumn | undefined,
+    ): string[] {
+        return columnNames.map((columnName) =>
+            columnName === renamed?.tableColumn.name
+                ? renamed.databaseName
+                : columnName,
+        )
+    }
+
+    /**
+     * Compares two column lists regardless of their order.
+     *
+     * @param expected Column names from the metadata.
+     * @param actual Column names from the database.
+     * @returns True when both lists hold the same columns.
+     */
+    protected sameColumnSet(expected: string[], actual: string[]): boolean {
+        return (
+            expected.length === actual.length &&
+            expected.every((columnName) => actual.includes(columnName))
+        )
+    }
+
+    /**
+     * Drops the foreign keys of the loaded tables that reference the given columns, so that the
+     * unique constraint behind them can be replaced. createForeignKeys creates them again.
+     *
+     * @param tablePath Referenced table.
+     * @param columnNames Referenced columns.
+     */
+    protected async dropForeignKeysReferencing(
+        tablePath: string,
+        columnNames: string[],
+    ): Promise<void> {
+        for (const loadedTable of this.tables) {
+            const dependForeignKeys = loadedTable.foreignKeys.filter(
+                (foreignKey) =>
+                    this.getTablePath(foreignKey) === tablePath &&
+                    this.sameColumnSet(
+                        columnNames,
+                        foreignKey.referencedColumnNames,
+                    ),
+            )
+            if (dependForeignKeys.length === 0) continue
 
             this.dataSource.logger.logSchemaBuild(
-                `renaming column "${renamedTableColumns[0].name}" in "${table.name}" to "${renamedColumn.name}"`,
+                `dropping related foreign keys of ${
+                    loadedTable.name
+                }: ${dependForeignKeys
+                    .map((foreignKey) => foreignKey.name)
+                    .join(", ")}`,
             )
-            await this.queryRunner.renameColumn(
-                table,
-                renamedTableColumns[0],
-                renamedColumn,
+            await this.queryRunner.dropForeignKeys(
+                loadedTable,
+                dependForeignKeys,
             )
         }
     }
@@ -527,12 +643,22 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             )
             if (!table) continue
 
+            const renamed = this.findRenamedColumn(metadata, table)
             const compositeUniques = table.uniques.filter((tableUnique) => {
                 return (
                     tableUnique.columnNames.length > 1 &&
                     !metadata.uniques.find(
                         (uniqueMetadata) =>
-                            uniqueMetadata.name === tableUnique.name,
+                            uniqueMetadata.name === tableUnique.name &&
+                            this.sameColumnSet(
+                                uniqueMetadata.columns.map(
+                                    (column) => column.databaseName,
+                                ),
+                                this.renamedColumnNames(
+                                    tableUnique.columnNames,
+                                    renamed,
+                                ),
+                            ),
                     )
                 )
             })
@@ -544,6 +670,12 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                     .map((unique) => `"${unique.name}"`)
                     .join(", ")} from table "${table.name}"`,
             )
+            for (const unique of compositeUniques) {
+                await this.dropForeignKeysReferencing(
+                    this.getTablePath(metadata),
+                    unique.columnNames,
+                )
+            }
             await this.queryRunner.dropUniqueConstraints(
                 table,
                 compositeUniques,

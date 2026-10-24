@@ -115,3 +115,5 @@ export class PostRefactoringTIMESTAMP {
 See, you don't need to write the queries on your own.
 
 The rule of thumb for generating migrations is that you generate them after **each** change you made to your models. To apply multi-line formatting to your generated migration queries, use the `p` (alias for `--pretty`) flag.
+
+A unique constraint or foreign key with an explicit name is matched with the database by its name and its columns. When its columns change in the entity, the generated migration drops the constraint and creates it again under the same name, together with any foreign key that depends on it. A database whose named constraints already differ from the entities gets that migration on the next generation.

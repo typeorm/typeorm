@@ -3758,8 +3758,11 @@ export class CockroachQueryRunner
                 table.uniques = tableUniqueConstraints.map((constraint) => {
                     const uniques = dbConstraints.filter(
                         (dbC) =>
+                            dbC["table_name"] === constraint["table_name"] &&
+                            dbC["table_schema"] ===
+                                constraint["table_schema"] &&
                             dbC["constraint_name"] ===
-                            constraint["constraint_name"],
+                                constraint["constraint_name"],
                     )
                     return new TableUnique({
                         name: constraint["constraint_name"],
@@ -3784,8 +3787,11 @@ export class CockroachQueryRunner
                 table.checks = tableCheckConstraints.map((constraint) => {
                     const checks = dbConstraints.filter(
                         (dbC) =>
+                            dbC["table_name"] === constraint["table_name"] &&
+                            dbC["table_schema"] ===
+                                constraint["table_schema"] &&
                             dbC["constraint_name"] ===
-                            constraint["constraint_name"],
+                                constraint["constraint_name"],
                     )
                     return new TableCheck({
                         name: constraint["constraint_name"],
@@ -3837,8 +3843,12 @@ export class CockroachQueryRunner
                     (dbForeignKey) => {
                         const foreignKeys = dbForeignKeys.filter(
                             (dbFk) =>
+                                dbFk["table_name"] ===
+                                    dbForeignKey["table_name"] &&
+                                dbFk["table_schema"] ===
+                                    dbForeignKey["table_schema"] &&
                                 dbFk["constraint_name"] ===
-                                dbForeignKey["constraint_name"],
+                                    dbForeignKey["constraint_name"],
                         )
 
                         // if referenced table located in currently used schema, we don't need to concat schema name to table name.
@@ -3882,8 +3892,11 @@ export class CockroachQueryRunner
                 table.indices = tableIndexConstraints.map((constraint) => {
                     const indices = dbIndices.filter(
                         (index) =>
+                            index["table_schema"] ===
+                                constraint["table_schema"] &&
+                            index["table_name"] === constraint["table_name"] &&
                             index["constraint_name"] ===
-                            constraint["constraint_name"],
+                                constraint["constraint_name"],
                     )
                     return new TableIndex(<TableIndexOptions>{
                         table: table,
