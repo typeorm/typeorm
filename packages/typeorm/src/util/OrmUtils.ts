@@ -446,19 +446,15 @@ export class OrmUtils {
         x: any,
         y: any,
     ) {
-        let p
+        // Identical references and equal primitives are the common, cheap path.
+        if (x === y) return true
 
         // remember that NaN === NaN returns false
         // and isNaN(undefined) returns true
         if (Number.isNaN(x) && Number.isNaN(y)) return true
 
-        // Compare primitives and functions.
-        // Check if both arguments link to the same object.
-        // Especially useful on the step where we compare prototypes
-        if (x === y) return true
-
         // Unequal, but either is null or undefined (use case: jsonb comparison)
-        // PR #3776, todo: add tests
+        // PR #3776
         if (x === null || y === null || x === undefined || y === undefined)
             return false
 
@@ -501,6 +497,51 @@ export class OrmUtils {
         if (leftChain.indexOf(x) > -1 || rightChain.indexOf(y) > -1)
             return false
 
+        // Fast path for arrays (the common shape inside json columns): compare
+        // length and each element positionally, applying the same per-element
+        // rules as the generic object walk below (recurse into objects, strict
+        // compare primitives) without the per-index hasOwnProperty bookkeeping.
+        // x and y share a constructor here, so y is an array too.
+        if (Array.isArray(x)) {
+            if (x.length !== y.length) return false
+
+            leftChain.push(x)
+            rightChain.push(y)
+            for (let i = 0; i < x.length; i++) {
+                const valueX = x[i]
+                const valueY = y[i]
+                const typeX = typeof valueX
+
+                if (typeX !== typeof valueY) {
+                    leftChain.pop()
+                    rightChain.pop()
+                    return false
+                }
+
+                if (typeX === "object" || typeX === "function") {
+                    if (
+                        !OrmUtils.compare2Objects(
+                            leftChain,
+                            rightChain,
+                            valueX,
+                            valueY,
+                        )
+                    ) {
+                        leftChain.pop()
+                        rightChain.pop()
+                        return false
+                    }
+                } else if (valueX !== valueY) {
+                    leftChain.pop()
+                    rightChain.pop()
+                    return false
+                }
+            }
+            leftChain.pop()
+            rightChain.pop()
+            return true
+        }
+
         let iterableX = x
         let iterableY = y
 
@@ -512,50 +553,57 @@ export class OrmUtils {
             iterableY = Array.from(y)
         }
 
-        // Quick checking of one object being a subset of another.
-        // todo: cache the structure of arguments[0] for performance
-        for (p in iterableY) {
-            if (iterableY.hasOwnProperty(p) !== iterableX.hasOwnProperty(p)) {
+        // Single pass over x's keys: check key-presence parity and value type,
+        // recursing into nested objects/functions. This does the heavy per-key
+        // work (type dispatch, recursion) only once instead of in the former
+        // two full passes.
+        leftChain.push(x)
+        rightChain.push(y)
+        for (const p in iterableX) {
+            if (iterableX.hasOwnProperty(p) !== iterableY.hasOwnProperty(p)) {
+                leftChain.pop()
+                rightChain.pop()
                 return false
-            } else if (typeof iterableY[p] !== typeof iterableX[p]) {
+            }
+
+            const valueX = iterableX[p]
+            const valueY = iterableY[p]
+            const typeX = typeof valueX
+
+            if (typeX !== typeof valueY) {
+                leftChain.pop()
+                rightChain.pop()
+                return false
+            }
+
+            if (typeX === "object" || typeX === "function") {
+                if (
+                    !OrmUtils.compare2Objects(
+                        leftChain,
+                        rightChain,
+                        valueX,
+                        valueY,
+                    )
+                ) {
+                    leftChain.pop()
+                    rightChain.pop()
+                    return false
+                }
+            } else if (valueX !== valueY) {
+                leftChain.pop()
+                rightChain.pop()
                 return false
             }
         }
+        leftChain.pop()
+        rightChain.pop()
 
-        for (p in iterableX) {
-            if (iterableY.hasOwnProperty(p) !== iterableX.hasOwnProperty(p)) {
+        // The pass above verified every key of x against y; this lighter pass
+        // only rejects keys that exist on y but not on x (no type or value
+        // checks needed, those keys cannot have matched above).
+        for (const p in iterableY) {
+            if (iterableX.hasOwnProperty(p) !== iterableY.hasOwnProperty(p))
                 return false
-            } else if (typeof iterableY[p] !== typeof iterableX[p]) {
-                return false
-            }
-
-            switch (typeof iterableX[p]) {
-                case "object":
-                case "function":
-                    leftChain.push(x)
-                    rightChain.push(y)
-
-                    if (
-                        !OrmUtils.compare2Objects(
-                            leftChain,
-                            rightChain,
-                            iterableX[p],
-                            iterableY[p],
-                        )
-                    ) {
-                        return false
-                    }
-
-                    leftChain.pop()
-                    rightChain.pop()
-                    break
-
-                default:
-                    if (iterableX[p] !== iterableY[p]) {
-                        return false
-                    }
-                    break
-            }
         }
 
         return true
