@@ -2580,16 +2580,22 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         childJoins = "",
         nestChildJoins = false,
     ): string {
+        const lockExpression = this.createTableLockExpression()
         const joinedTable = nestChildJoins
-            ? "(" + tableName + " " + this.escape(alias) + childJoins + ")"
-            : tableName + " " + this.escape(alias)
+            ? "(" +
+              tableName +
+              " " +
+              this.escape(alias) +
+              lockExpression +
+              childJoins +
+              ")"
+            : tableName + " " + this.escape(alias) + lockExpression
 
         return (
             " " +
             direction +
             " JOIN " +
             joinedTable +
-            this.createTableLockExpression() +
             (condition ? " ON " + condition : "") +
             (nestChildJoins ? "" : childJoins)
         )
@@ -2618,8 +2624,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                         typeof orderBys[columnName] === "string"
                             ? orderBys[columnName]
                             : orderBys[columnName].order +
-                              " " +
-                              orderBys[columnName].nulls
+                              (orderBys[columnName].nulls
+                                  ? " " + orderBys[columnName].nulls
+                                  : "")
 
                     if (/[;'"\\]/.test(orderValue))
                         throw new TypeORMError(

@@ -4,6 +4,7 @@ import { QueryFailedError, TypeORMError } from "../../error"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionAlreadyStartedError } from "../../error/TransactionAlreadyStartedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
+import { DateUtils } from "../../util/DateUtils"
 import type { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryLock } from "../../query-runner/QueryLock"
@@ -227,7 +228,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const broadcasterResult = new BroadcasterResult()
 
         try {
-            const queryStartTime = Date.now()
+            const queryStartTime = DateUtils.performanceNow()
             const isInsertQuery = query.startsWith("INSERT INTO")
 
             if (parameters?.some(Array.isArray)) {
@@ -257,7 +258,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.dataSource.options.maxQueryExecutionTime
-            const queryEndTime = Date.now()
+            const queryEndTime = DateUtils.performanceNow()
             const queryExecutionTime = queryEndTime - queryStartTime
 
             this.broadcaster.broadcastAfterQueryEvent(
@@ -754,7 +755,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // if table has column with generated type, we must add the expression to the metadata table
         const generatedColumns = table.columns.filter(
-            (column) => column.asExpression,
+            (column) => column.asExpression != null,
         )
 
         if (generatedColumns.length > 0) {
@@ -768,17 +769,18 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     type: MetadataTableType.GENERATED_COLUMN,
                     name: column.name,
                 })
-
-                const insertQuery = this.insertTypeormMetadataSql({
-                    schema: parsedTableName.schema,
-                    table: parsedTableName.tableName,
-                    type: MetadataTableType.GENERATED_COLUMN,
-                    name: column.name,
-                    value: column.asExpression,
-                })
-
                 upQueries.push(deleteQuery)
-                downQueries.push(insertQuery)
+
+                if (column.asExpression) {
+                    const insertQuery = this.insertTypeormMetadataSql({
+                        schema: parsedTableName.schema,
+                        table: parsedTableName.tableName,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        name: column.name,
+                        value: column.asExpression,
+                    })
+                    downQueries.push(insertQuery)
+                }
             }
         }
 
@@ -875,7 +877,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         )
 
         const hasGeneratedColumns = oldTable.columns.some(
-            (col) => col.asExpression,
+            (col) => col.asExpression != null,
         )
 
         if (hasGeneratedColumns) {
@@ -1455,7 +1457,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     )
                 }
 
-                if (oldColumn.asExpression) {
+                if (oldColumn.asExpression != null) {
                     const parsedTableName = this.driver.parseTableName(table)
                     parsedTableName.schema ??= await this.getCurrentSchema()
 
@@ -2038,23 +2040,25 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             downQueries.push(this.createCheckConstraintSql(table, columnCheck))
         }
 
-        if (column.asExpression) {
+        if (column.asExpression != null) {
             const deleteQuery = this.deleteTypeormMetadataSql({
                 schema: parsedTableName.schema,
                 table: parsedTableName.tableName,
                 type: MetadataTableType.GENERATED_COLUMN,
                 name: column.name,
             })
-            const insertQuery = this.insertTypeormMetadataSql({
-                schema: parsedTableName.schema,
-                table: parsedTableName.tableName,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression,
-            })
-
             upQueries.push(deleteQuery)
-            downQueries.push(insertQuery)
+
+            if (column.asExpression) {
+                const insertQuery = this.insertTypeormMetadataSql({
+                    schema: parsedTableName.schema,
+                    table: parsedTableName.tableName,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                    value: column.asExpression,
+                })
+                downQueries.push(insertQuery)
+            }
         }
 
         upQueries.push(new Query(this.dropColumnSql(table, column)))
