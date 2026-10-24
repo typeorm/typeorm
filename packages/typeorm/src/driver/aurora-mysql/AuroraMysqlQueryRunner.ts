@@ -2588,7 +2588,13 @@ export class AuroraMysqlQueryRunner
                 return new TableIndex({
                     table: table,
                     name: constraint["INDEX_NAME"],
-                    columnNames: indices.map((i) => i["COLUMN_NAME"]),
+                    columnNames: [...indices]
+                        .sort(
+                            (left, right) =>
+                                Number(left["SEQ_IN_INDEX"]) -
+                                Number(right["SEQ_IN_INDEX"]),
+                        )
+                        .map((i) => i["COLUMN_NAME"]),
                     isUnique: nonUnique === 0,
                     isSpatial: constraint["INDEX_TYPE"] === "SPATIAL",
                     isFulltext: constraint["INDEX_TYPE"] === "FULLTEXT",

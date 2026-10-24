@@ -106,10 +106,9 @@ describe("database schema > indices > reading index from entity and updating dat
                 expect(table!.indices.length).to.be.equal(1)
                 expect(table!.indices[0].name).to.be.equal("IDX_TEST")
                 expect(table!.indices[0].isUnique).to.be.false
-                expect(table!.indices[0].columnNames.length).to.be.equal(2)
-                expect(table!.indices[0].columnNames).to.deep.include.members([
-                    "firstname",
+                expect(table!.indices[0].columnNames).to.eql([
                     "lastname",
+                    "firstname",
                 ])
             }),
         ))

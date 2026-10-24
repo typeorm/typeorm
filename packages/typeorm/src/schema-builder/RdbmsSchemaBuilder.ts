@@ -422,8 +422,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 return true
 
             return !indexMetadata.columns.every(
-                (column) =>
-                    tableIndex.columnNames.indexOf(column.databaseName) !== -1,
+                (column, position) =>
+                    tableIndex.columnNames[position] === column.databaseName,
             )
         }
 
