@@ -418,6 +418,12 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             )
                 return true
 
+            if (
+                this.isIndexConditionLoaded() &&
+                !!indexMetadata.where !== !!tableIndex.where
+            )
+                return true
+
             if (indexMetadata.columns.length !== tableIndex.columnNames.length)
                 return true
 
@@ -428,6 +434,21 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         }
 
         return true
+    }
+
+    /**
+     * Tells whether the driver creates partial indices and reads their condition back,
+     * so that a condition that appears or disappears can be compared.
+     *
+     * @returns True for the drivers whose loaders fill TableIndex.where.
+     */
+    private isIndexConditionLoaded(): boolean {
+        const driver = this.dataSource.driver
+        return (
+            DriverUtils.isPostgresFamily(driver) ||
+            DriverUtils.isSQLiteFamily(driver) ||
+            driver.options.type === "mssql"
+        )
     }
 
     protected async dropOldIndices(): Promise<void> {
