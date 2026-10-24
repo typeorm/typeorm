@@ -208,7 +208,7 @@ export class PostgresQueryRunner
      * Error will be thrown if transaction was not started.
      */
     async commitTransaction(): Promise<void> {
-        if (!this.isTransactionActive) throw new TransactionNotStartedError()
+        this.checkTransactionCommit()
 
         await this.broadcaster.broadcast("BeforeTransactionCommit")
 
@@ -232,17 +232,34 @@ export class PostgresQueryRunner
     async rollbackTransaction(): Promise<void> {
         if (!this.isTransactionActive) throw new TransactionNotStartedError()
 
-        await this.broadcaster.broadcast("BeforeTransactionRollback")
+        const initialDepth = this.transactionDepth
+        let executedDepth = initialDepth
 
-        if (this.transactionDepth > 1) {
-            await this.query(
-                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
+        try {
+            await this.broadcaster.broadcast("BeforeTransactionRollback")
+
+            if (
+                !this.isTransactionActive ||
+                this.transactionDepth < initialDepth
             )
-        } else {
-            await this.query("ROLLBACK")
-            this.isTransactionActive = false
+                return
+
+            executedDepth = this.transactionDepth
+
+            if (executedDepth > 1) {
+                await this.query(
+                    `ROLLBACK TO SAVEPOINT typeorm_${executedDepth - 1}`,
+                )
+            } else {
+                await this.query("ROLLBACK")
+                this.isTransactionActive = false
+            }
+        } catch (err) {
+            this.handleFailedRollback(executedDepth)
+            throw err
         }
-        this.transactionDepth -= 1
+
+        this.handleSuccessfulRollback(executedDepth)
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
