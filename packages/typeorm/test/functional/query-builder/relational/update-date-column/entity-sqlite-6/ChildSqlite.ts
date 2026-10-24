@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne } from "../../../../src"
+import { Column, Entity, ManyToOne } from "../../../../../../src"
 import { BaseSqliteEntity } from "./BaseSqlite"
 import { ParentSqlite } from "./ParentSqlite"
 

@@ -1,4 +1,4 @@
-import { Column, Entity, OneToMany } from "../../../../src"
+import { Column, Entity, OneToMany } from "../../../../../../src"
 import { BaseSqliteEntity } from "./BaseSqlite"
 import { ChildSqlite } from "./ChildSqlite"
 

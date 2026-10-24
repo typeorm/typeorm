@@ -1,18 +1,19 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
+} from "../../../../utils/test-utils"
 import { ParentSqlite as ParentSqlite0 } from "./entity-sqlite-0/ParentSqlite"
 import { ChildSqlite as ChildSqlite0 } from "./entity-sqlite-0/ChildSqlite"
 import { ParentSqlite as ParentSqlite6 } from "./entity-sqlite-6/ParentSqlite"
 import { ChildSqlite as ChildSqlite6 } from "./entity-sqlite-6/ChildSqlite"
 import { scheduler } from "node:timers/promises"
 
-describe("github issues > #11258 SQLite - datetime precision handling", () => {
+// #11258
+describe("query builder > relational query builder > update date column precision > sqlite", () => {
     let connections: DataSource[]
 
     /**
@@ -50,7 +51,7 @@ describe("github issues > #11258 SQLite - datetime precision handling", () => {
                     ParentSqlite6,
                     ChildSqlite6,
                 ],
-                enabledDrivers: ["better-sqlite3", "sqlite"],
+                enabledDrivers: ["better-sqlite3", "sqljs"],
                 schemaCreate: true,
                 dropSchema: true,
             })
@@ -95,8 +96,8 @@ describe("github issues > #11258 SQLite - datetime precision handling", () => {
             : { Parent: ParentSqlite6, Child: ChildSqlite6 }
     }
 
-    describe("SQLite Table creation verification", () => {
-        it("should create tables with correct datetime precision", async () => {
+    describe("schema synchronization", () => {
+        it("creates datetime columns with the configured precision", async () => {
             for (const connection of connections) {
                 const queryRunner = connection.createQueryRunner()
                 try {
@@ -140,8 +141,8 @@ describe("github issues > #11258 SQLite - datetime precision handling", () => {
         })
     })
 
-    describe("SQLite Basic functionality tests", () => {
-        it("should handle datetime precision 0 updates correctly", async () => {
+    describe("when updating an entity", () => {
+        it("preserves second precision for precision 0", async () => {
             for (const connection of connections) {
                 const { Parent, Child } = getSqliteEntityClasses(0)
                 const { child } = await createSqliteEntities(
@@ -182,7 +183,7 @@ describe("github issues > #11258 SQLite - datetime precision handling", () => {
             }
         })
 
-        it("should handle datetime precision 6 updates correctly", async () => {
+        it("preserves fractional seconds for precision 6", async () => {
             for (const connection of connections) {
                 const { Parent, Child } = getSqliteEntityClasses(6)
                 const { child } = await createSqliteEntities(
@@ -227,7 +228,7 @@ describe("github issues > #11258 SQLite - datetime precision handling", () => {
             }
         })
 
-        it("should verify SQL generation uses STRFTIME for precision 6 updates", async () => {
+        it("uses STRFTIME for precision 6", async () => {
             for (const connection of connections) {
                 const { Child } = getSqliteEntityClasses(6) // Use precision 6 entity
                 const { child } = await createSqliteEntities(
@@ -269,7 +270,7 @@ describe("github issues > #11258 SQLite - datetime precision handling", () => {
             }
         })
 
-        it("should verify SQL generation uses datetime('now') for precision 0 updates", async () => {
+        it("uses datetime('now') for precision 0", async () => {
             for (const connection of connections) {
                 const { Child } = getSqliteEntityClasses(0) // Use precision 0 entity
                 const { child } = await createSqliteEntities(
@@ -314,8 +315,8 @@ describe("github issues > #11258 SQLite - datetime precision handling", () => {
         })
     })
 
-    describe("SQLite Schema tests", () => {
-        it("should demonstrate the precision difference in schema (even though SQLite handles datetime differently)", async () => {
+    describe("timestamp precision", () => {
+        it("preserves the configured precision in the schema", async () => {
             for (const connection of connections) {
                 // Verify that different precision settings create different column types
                 const queryRunner0 = connection.createQueryRunner()

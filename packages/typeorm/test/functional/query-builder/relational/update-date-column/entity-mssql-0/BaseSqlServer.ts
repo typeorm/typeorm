@@ -1,4 +1,4 @@
-import { PrimaryColumn, UpdateDateColumn } from "../../../../src"
+import { PrimaryColumn, UpdateDateColumn } from "../../../../../../src"
 
 export abstract class BaseEntitySqlServer {
     @PrimaryColumn()

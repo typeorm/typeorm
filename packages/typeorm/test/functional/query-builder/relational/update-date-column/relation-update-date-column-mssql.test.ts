@@ -1,18 +1,19 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
+} from "../../../../utils/test-utils"
 import { ParentSqlServer as ParentSqlServer0 } from "./entity-mssql-0/ParentSqlServer"
 import { ChildSqlServer as ChildSqlServer0 } from "./entity-mssql-0/ChildSqlServer"
 import { ParentSqlServer as ParentSqlServer6 } from "./entity-mssql-6/ParentSqlServer"
 import { ChildSqlServer as ChildSqlServer6 } from "./entity-mssql-6/ChildSqlServer"
 import { scheduler } from "node:timers/promises"
 
-describe("github issues > #11258 SQL Server - datetime2 precision handling with GETDATE() and SYSDATETIME()", () => {
+// #11258
+describe("query builder > relational query builder > update date column precision > mssql", () => {
     let connections: DataSource[]
 
     /**
@@ -104,8 +105,8 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
             : { Parent: ParentSqlServer6, Child: ChildSqlServer6 }
     }
 
-    describe("SQL Server Table creation verification", () => {
-        it("should create tables with correct datetime2 precision", async () => {
+    describe("schema synchronization", () => {
+        it("creates datetime2 columns with the configured precision", async () => {
             for (const connection of connections) {
                 const queryRunner = connection.createQueryRunner()
                 try {
@@ -113,9 +114,9 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
                     const child0TableName =
                         connection.getMetadata(ChildSqlServer0).tableName
                     const columnInfo0 = await queryRunner.query(`
-                        SELECT COLUMN_NAME, DATA_TYPE, DATETIME_PRECISION 
-                        FROM INFORMATION_SCHEMA.COLUMNS 
-                        WHERE TABLE_NAME = '${child0TableName}' 
+                        SELECT COLUMN_NAME, DATA_TYPE, DATETIME_PRECISION
+                        FROM INFORMATION_SCHEMA.COLUMNS
+                        WHERE TABLE_NAME = '${child0TableName}'
                         AND COLUMN_NAME = 'updated_date'
                     `)
 
@@ -127,9 +128,9 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
                     const child6TableName =
                         connection.getMetadata(ChildSqlServer6).tableName
                     const columnInfo6 = await queryRunner.query(`
-                        SELECT COLUMN_NAME, DATA_TYPE, DATETIME_PRECISION 
-                        FROM INFORMATION_SCHEMA.COLUMNS 
-                        WHERE TABLE_NAME = '${child6TableName}' 
+                        SELECT COLUMN_NAME, DATA_TYPE, DATETIME_PRECISION
+                        FROM INFORMATION_SCHEMA.COLUMNS
+                        WHERE TABLE_NAME = '${child6TableName}'
                         AND COLUMN_NAME = 'updated_date'
                     `)
 
@@ -143,8 +144,8 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
         })
     })
 
-    describe("SQL Server Precision 0 (GETDATE) tests", () => {
-        it("should use GETDATE (precision 0) when updating relations", async () => {
+    describe("with timestamp precision 0", () => {
+        it("updates the relation with GETDATE", async () => {
             for (const connection of connections) {
                 const { Parent, Child } = getSqlServerEntityClasses(0)
                 const { parent, child } = await createSqlServerEntities(
@@ -156,7 +157,9 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
                 )
                 const childBefore = await connection.manager.findOne(Child, {
                     where: { id: 1 },
-                    relations: ["parent"],
+                    relations: {
+                        parent: true,
+                    },
                 })
                 expect(childBefore).to.not.equal(null)
                 expect(childBefore!.updated_date).to.not.be.undefined
@@ -174,7 +177,9 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
 
                 const childAfter = await connection.manager.findOne(Child, {
                     where: { id: 1 },
-                    relations: ["parent"],
+                    relations: {
+                        parent: true,
+                    },
                 })
                 expect(childAfter).to.not.equal(null)
                 expect(childAfter!.parent?.id).to.equal(1)
@@ -188,7 +193,7 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
             }
         })
 
-        it("should use GETDATE in SQL for relation updates (precision 0)", async () => {
+        it("uses GETDATE in the relation update query", async () => {
             for (const connection of connections) {
                 const { Parent, Child } = getSqlServerEntityClasses(0)
                 const { parent, child } = await createSqlServerEntities(
@@ -231,8 +236,8 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
         })
     })
 
-    describe("SQL Server Precision 6 (SYSDATETIME) tests", () => {
-        it("should use SYSDATETIME (precision 6) when updating relations", async () => {
+    describe("with timestamp precision 6", () => {
+        it("updates the relation with SYSDATETIME", async () => {
             for (const connection of connections) {
                 const { Parent, Child } = getSqlServerEntityClasses(6)
                 const { parent, child } = await createSqlServerEntities(
@@ -261,7 +266,9 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
 
                 const childAfter = await connection.manager.findOne(Child, {
                     where: { id: 10 },
-                    relations: ["parent"],
+                    relations: {
+                        parent: true,
+                    },
                 })
                 expect(childAfter).to.not.equal(null)
                 expect(childAfter!.parent?.id).to.equal(10)
@@ -279,7 +286,7 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
             }
         })
 
-        it("should use SYSDATETIME in SQL for relation updates (precision 6)", async () => {
+        it("uses SYSDATETIME in the relation update query", async () => {
             for (const connection of connections) {
                 const { Parent, Child } = getSqlServerEntityClasses(6)
                 const { parent, child } = await createSqlServerEntities(
@@ -325,8 +332,8 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
         })
     })
 
-    describe("SQL Server Schema and Precision Tests", () => {
-        it("should demonstrate the precision difference in schema and SQL (even though JS Date is limited)", async () => {
+    describe("timestamp precision", () => {
+        it("persists the configured precision in the schema and query", async () => {
             for (const connection of connections) {
                 // Test precision 0 schema
                 getSqlServerEntityClasses(0) // Ensure entities are registered
@@ -363,8 +370,8 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
         })
     })
 
-    describe("SQL Server Entity update tests", () => {
-        it("should use GETDATE (precision 0) when updating parent entities directly", async () => {
+    describe("when updating an entity", () => {
+        it("uses GETDATE for precision 0 parent updates", async () => {
             for (const connection of connections) {
                 const { parent } = await createSqlServerEntities(
                     connection,
@@ -407,7 +414,7 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
             }
         })
 
-        it("should use GETDATE in SQL for parent entity updates (precision 0)", async () => {
+        it("uses GETDATE in the precision 0 parent update query", async () => {
             for (const connection of connections) {
                 const { parent } = await createSqlServerEntities(
                     connection,
@@ -451,7 +458,7 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
             }
         })
 
-        it("should use SYSDATETIME (precision 6) when updating parent entities directly", async () => {
+        it("uses SYSDATETIME for precision 6 parent updates", async () => {
             for (const connection of connections) {
                 const { parent } = await createSqlServerEntities(
                     connection,
@@ -491,8 +498,8 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
         })
     })
 
-    describe("SQL Server Relation removal tests", () => {
-        it("should handle removal of relations with proper timestamp updates (precision 0)", async () => {
+    describe("when removing a relation", () => {
+        it("updates the timestamp with precision 0", async () => {
             for (const connection of connections) {
                 const { parent, child } = await createSqlServerEntities(
                     connection,
@@ -523,7 +530,9 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
                     ChildSqlServer0,
                     {
                         where: { id: 20 },
-                        relations: ["parent"],
+                        relations: {
+                            parent: true,
+                        },
                     },
                 )
                 expect(childAfter).to.not.equal(null)
@@ -534,7 +543,7 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
             }
         })
 
-        it("should handle removal of relations with proper timestamp updates (precision 6)", async () => {
+        it("updates the timestamp with precision 6", async () => {
             for (const connection of connections) {
                 const { parent, child } = await createSqlServerEntities(
                     connection,
@@ -565,7 +574,9 @@ describe("github issues > #11258 SQL Server - datetime2 precision handling with 
                     ChildSqlServer6,
                     {
                         where: { id: 21 },
-                        relations: ["parent"],
+                        relations: {
+                            parent: true,
+                        },
                     },
                 )
                 expect(childAfter).to.not.equal(null)

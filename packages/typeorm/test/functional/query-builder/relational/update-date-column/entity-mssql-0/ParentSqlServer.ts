@@ -1,8 +1,8 @@
-import { Entity, Column, OneToMany } from "../../../../src"
+import { Entity, Column, OneToMany } from "../../../../../../src"
 import { BaseEntitySqlServer } from "./BaseSqlServer"
 import { ChildSqlServer } from "./ChildSqlServer"
 
-@Entity("test_parent_sqlserver_6")
+@Entity("test_parent_sqlserver_3")
 export class ParentSqlServer extends BaseEntitySqlServer {
     @Column()
     name?: string

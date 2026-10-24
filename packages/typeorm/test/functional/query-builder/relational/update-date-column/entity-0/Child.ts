@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne } from "../../../../src"
+import { Column, Entity, ManyToOne } from "../../../../../../src"
 import { BaseEntity } from "./Base"
 import { Parent } from "./Parent"
 

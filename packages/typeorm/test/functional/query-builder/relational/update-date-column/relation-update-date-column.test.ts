@@ -1,18 +1,19 @@
 import "reflect-metadata"
 import { expect } from "chai"
-import { DataSource } from "../../../src/data-source/DataSource"
+import type { DataSource } from "../../../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
+} from "../../../../utils/test-utils"
 import { Parent as Parent0 } from "./entity-0/Parent"
 import { Child as Child0 } from "./entity-0/Child"
 import { Parent as Parent6 } from "./entity-6/Parent"
 import { Child as Child6 } from "./entity-6/Child"
 import { scheduler } from "node:timers/promises"
 
-describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used in relation updates", () => {
+// #11258
+describe("query builder > relational query builder > update date column precision", () => {
     let connections: DataSource[]
 
     /**
@@ -73,8 +74,8 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
             : { Parent: Parent6, Child: Child6 }
     }
 
-    describe("Precision 0 (CURRENT_TIMESTAMP) tests", () => {
-        it("should use CURRENT_TIMESTAMP (precision 0) when updating relations", async () => {
+    describe("with timestamp precision 0", () => {
+        it("updates the relation with CURRENT_TIMESTAMP", async () => {
             for (const connection of connections) {
                 const { Parent, Child } = getEntityClasses(connection, 0)
                 const { parent, child } = await createEntities(
@@ -86,7 +87,9 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                 )
                 const childBefore = await connection.manager.findOne(Child, {
                     where: { id: 1 },
-                    relations: ["parent"],
+                    relations: {
+                        parent: true,
+                    },
                 })
                 expect(childBefore).to.not.equal(null)
                 expect(childBefore!.updated_date!.getMilliseconds()).to.equal(0)
@@ -98,7 +101,9 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                     .add(child)
                 const childAfter = await connection.manager.findOne(Child, {
                     where: { id: 1 },
-                    relations: ["parent"],
+                    relations: {
+                        parent: true,
+                    },
                 })
                 expect(childAfter).to.not.equal(null)
                 expect(childAfter!.parent?.id).to.equal(1)
@@ -106,7 +111,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
             }
         })
 
-        it("should use CURRENT_TIMESTAMP (precision 0) in SQL for relation updates", async () => {
+        it("uses CURRENT_TIMESTAMP in the relation update query", async () => {
             for (const connection of connections) {
                 const { Parent, Child } = getEntityClasses(connection, 0)
                 const { parent, child } = await createEntities(
@@ -147,8 +152,8 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
         })
     })
 
-    describe("Precision 6 (CURRENT_TIMESTAMP(6)) tests", () => {
-        it("should use CURRENT_TIMESTAMP(6) (precision 6) when updating relations", async () => {
+    describe("with timestamp precision 6", () => {
+        it("updates the relation with CURRENT_TIMESTAMP(6)", async () => {
             for (const connection of connections) {
                 const { Parent, Child } = getEntityClasses(connection, 6)
                 const { parent, child } = await createEntities(
@@ -169,7 +174,9 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                     .add(child)
                 const childAfter = await connection.manager.findOne(Child, {
                     where: { id: 10 },
-                    relations: ["parent"],
+                    relations: {
+                        parent: true,
+                    },
                 })
                 expect(childAfter).to.not.equal(null)
                 expect(childAfter!.parent?.id).to.equal(10)
@@ -179,7 +186,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
             }
         })
 
-        it("should use CURRENT_TIMESTAMP(6) in SQL for relation updates", async () => {
+        it("uses CURRENT_TIMESTAMP(6) in the relation update query", async () => {
             for (const connection of connections) {
                 const { parent, child } = await createEntities(
                     connection,
@@ -212,7 +219,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
             }
         })
 
-        it("should preserve microsecond precision when using CURRENT_TIMESTAMP(6) with relation updates", async () => {
+        it("preserves fractional seconds when updating the relation", async () => {
             for (const connection of connections) {
                 const { parent, child } = await createEntities(
                     connection,
@@ -247,8 +254,8 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
         })
     })
 
-    describe("Relation removal tests", () => {
-        it("should handle removal of relations with proper timestamp updates (precision 0)", async () => {
+    describe("when removing a relation", () => {
+        it("updates the timestamp with precision 0", async () => {
             for (const connection of connections) {
                 // Skip SQL Server as it doesn't support timestamp precision 0 in the same way
                 if (connection.options.type === "mssql") {
@@ -274,7 +281,9 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                     .remove(child)
                 const childAfter = await connection.manager.findOne(Child0, {
                     where: { id: 20 },
-                    relations: ["parent"],
+                    relations: {
+                        parent: true,
+                    },
                 })
                 expect(childAfter).to.not.equal(null)
                 expect(childAfter!.parent).to.equal(null)
@@ -285,7 +294,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
             }
         })
 
-        it("should handle removal of relations with proper timestamp updates (precision 6)", async () => {
+        it("updates the timestamp with precision 6", async () => {
             for (const connection of connections) {
                 const { parent, child } = await createEntities(
                     connection,
@@ -307,7 +316,9 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
                     .remove(child)
                 const childAfter = await connection.manager.findOne(Child6, {
                     where: { id: 21 },
-                    relations: ["parent"],
+                    relations: {
+                        parent: true,
+                    },
                 })
                 expect(childAfter).to.not.equal(null)
                 expect(childAfter!.parent).to.equal(null)
@@ -318,8 +329,8 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
         })
     })
 
-    describe("Backward compatibility and configuration tests", () => {
-        it("should respect the default value configuration from UpdateDateColumn decorator (precision 0)", async () => {
+    describe("with custom update date defaults", () => {
+        it("uses the configured precision 0 default", async () => {
             for (const connection of connections) {
                 // Skip SQL Server as it doesn't support timestamp precision 0 in the same way
                 if (connection.options.type === "mssql") {
@@ -366,7 +377,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
             }
         })
 
-        it("should respect the default value configuration from UpdateDateColumn decorator (precision 6)", async () => {
+        it("uses the configured precision 6 default", async () => {
             for (const connection of connections) {
                 const { parent, child } = await createEntities(
                     connection,
@@ -406,8 +417,8 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
         })
     })
 
-    describe("Table creation verification (MySQL/MariaDB only)", () => {
-        it("should create tables with correct timestamp precision", async () => {
+    describe("schema synchronization", () => {
+        it("creates timestamp columns with the configured precision", async () => {
             for (const connection of connections) {
                 // Only test on MySQL/MariaDB since issue #11258 was specific to these databases
                 if (!["mysql", "mariadb"].includes(connection.options.type)) {
@@ -463,8 +474,8 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
         })
     })
 
-    describe("Parent entity update tests", () => {
-        it("should use CURRENT_TIMESTAMP (precision 0) when updating parent entities directly", async () => {
+    describe("when updating a parent entity", () => {
+        it("uses CURRENT_TIMESTAMP with precision 0", async () => {
             for (const connection of connections) {
                 // Skip SQL Server as it doesn't support timestamp precision 0 in the same way
                 if (connection.options.type === "mssql") {
@@ -503,7 +514,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
             }
         })
 
-        it("should use CURRENT_TIMESTAMP(6) (precision 6) when updating parent entities directly", async () => {
+        it("uses CURRENT_TIMESTAMP with precision 6", async () => {
             for (const connection of connections) {
                 const { parent } = await createEntities(
                     connection,
@@ -534,7 +545,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
             }
         })
 
-        it("should use CURRENT_TIMESTAMP in SQL for parent entity updates (precision 0)", async () => {
+        it("uses CURRENT_TIMESTAMP in the precision 0 update query", async () => {
             for (const connection of connections) {
                 // Skip SQL Server as it doesn't support timestamp precision 0 in the same way
                 if (connection.options.type === "mssql") {
@@ -581,7 +592,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
             }
         })
 
-        it("should use CURRENT_TIMESTAMP(6) in SQL for parent entity updates (precision 6)", async () => {
+        it("uses CURRENT_TIMESTAMP(6) in the precision 6 update query", async () => {
             for (const connection of connections) {
                 const { parent } = await createEntities(
                     connection,
@@ -620,7 +631,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
             }
         })
 
-        it("should handle bulk updates with correct timestamp precision (precision 0)", async () => {
+        it("uses precision 0 for bulk updates", async () => {
             for (const connection of connections) {
                 // Skip SQL Server as it doesn't support timestamp precision 0 in the same way
                 if (connection.options.type === "mssql") {
@@ -661,7 +672,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
             }
         })
 
-        it("should handle bulk updates with correct timestamp precision (precision 6)", async () => {
+        it("uses precision 6 for bulk updates", async () => {
             for (const connection of connections) {
                 await createEntities(connection, Parent6, Child6, 46, "Bulk 6")
                 await createEntities(connection, Parent6, Child6, 47, "Bulk 6")
@@ -695,8 +706,8 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
         })
     })
 
-    describe("Child entity update tests", () => {
-        it("should use CURRENT_TIMESTAMP (precision 0) when updating child entities directly", async () => {
+    describe("when updating a child entity", () => {
+        it("uses CURRENT_TIMESTAMP with precision 0", async () => {
             for (const connection of connections) {
                 // Skip SQL Server as it doesn't support timestamp precision 0 in the same way
                 if (connection.options.type === "mssql") {
@@ -733,7 +744,7 @@ describe("github issues > #11258 Fix issue with CURRENT_TIMESTAMP(6) being used 
             }
         })
 
-        it("should use CURRENT_TIMESTAMP(6) (precision 6) when updating child entities directly", async () => {
+        it("uses CURRENT_TIMESTAMP with precision 6", async () => {
             for (const connection of connections) {
                 const { child } = await createEntities(
                     connection,
