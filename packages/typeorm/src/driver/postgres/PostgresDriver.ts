@@ -639,56 +639,29 @@ export class PostgresDriver implements Driver {
                 )
             },
         )
-        const hasCitextColumns = this.dataSource.entityMetadatas.some(
-            (metadata) => {
-                return (
-                    metadata.columns.filter(
-                        (column) => column.type === "citext",
-                    ).length > 0
-                )
-            },
+        const physicalColumns = this.dataSource.entityMetadatas.flatMap(
+            (metadata) =>
+                metadata.columns.map((column) =>
+                    column.resolveDriverColumn(this),
+                ),
         )
-        const hasHstoreColumns = this.dataSource.entityMetadatas.some(
-            (metadata) => {
-                return (
-                    metadata.columns.filter(
-                        (column) => column.type === "hstore",
-                    ).length > 0
-                )
-            },
+        const hasCitextColumns = physicalColumns.some(
+            (column) => column.type === "citext",
         )
-        const hasCubeColumns = this.dataSource.entityMetadatas.some(
-            (metadata) => {
-                return (
-                    metadata.columns.filter((column) => column.type === "cube")
-                        .length > 0
-                )
-            },
+        const hasHstoreColumns = physicalColumns.some(
+            (column) => column.type === "hstore",
         )
-        const hasGeometryColumns = this.dataSource.entityMetadatas.some(
-            (metadata) => {
-                return (
-                    metadata.columns.filter(
-                        (column) => this.spatialTypes.indexOf(column.type) >= 0,
-                    ).length > 0
-                )
-            },
+        const hasCubeColumns = physicalColumns.some(
+            (column) => column.type === "cube",
         )
-        const hasLtreeColumns = this.dataSource.entityMetadatas.some(
-            (metadata) => {
-                return (
-                    metadata.columns.filter((column) => column.type === "ltree")
-                        .length > 0
-                )
-            },
+        const hasGeometryColumns = physicalColumns.some(
+            (column) => this.spatialTypes.indexOf(column.type) >= 0,
         )
-        const hasVectorColumns = this.dataSource.entityMetadatas.some(
-            (metadata) => {
-                return metadata.columns.some(
-                    (column) =>
-                        column.type === "vector" || column.type === "halfvec",
-                )
-            },
+        const hasLtreeColumns = physicalColumns.some(
+            (column) => column.type === "ltree",
+        )
+        const hasVectorColumns = physicalColumns.some(
+            (column) => column.type === "vector" || column.type === "halfvec",
         )
         const hasExclusionConstraints = this.dataSource.entityMetadatas.some(
             (metadata) => {

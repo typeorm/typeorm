@@ -105,6 +105,11 @@ export interface Driver {
     withLengthColumnTypes: ColumnType[]
 
     /**
+     * Gets list of column data types that support MAX as their length.
+     */
+    withMaxLengthColumnTypes?: ColumnType[]
+
+    /**
      * Supported index types
      */
     supportedIndexTypes?: TableIndexTypes[]

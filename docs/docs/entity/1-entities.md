@@ -198,6 +198,34 @@ or
 @Column({ type: "int" })
 ```
 
+For a physical type that differs by database, set `dialectTypes` with the
+database driver name as the key. If the current driver has no override, the
+regular `type` is used. Overrides affect schema creation and comparison,
+spatial read/write expressions, PostgreSQL extension detection, SQL Server's typed parameters and
+`OUTPUT` table variables, and Oracle's `RETURNING` bindings. Entity value
+conversion and hydration still use the logical `type`. An omitted column
+default inlined by INSERT uses the physical type. Each override
+must be supported by its driver and compatible with the field's existing
+value conversion. Column type aliases are normalized
+for schema comparison. Empty or whitespace overrides are
+rejected during initialization, and TypeScript checks keys against supported
+driver names. Numeric parameters can be supplied for types that support
+`length` or `precision` and `scale`, such as `varchar(10)` or `decimal(10,2)`.
+The `max` length is also accepted for SQL Server's `varchar`, `nvarchar` and
+`varbinary`, and Spanner's `string` and `bytes`, for example `nvarchar(max)`.
+Override parameters take precedence over the corresponding column options.
+Without explicit parameters, compatible column options are retained; modifiers
+that the replacement type does not support are dropped. For example, overriding
+a `varchar` column with PostgreSQL `text` drops its length.
+On MySQL-family drivers, `unsigned` is retained only for numeric physical types,
+while `charset` and `collation` are retained only for character types.
+Spatial feature type and SRID are retained only for spatial physical types.
+
+```typescript
+@Column({ type: "json", dialectTypes: { postgres: "jsonb" } })
+payload: object
+```
+
 If you want to specify additional type parameters you can do it via column options.
 For example:
 
