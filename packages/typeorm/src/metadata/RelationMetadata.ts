@@ -448,38 +448,58 @@ export class RelationMetadata {
                 entity,
             )
 
-            if (this.isLazy) {
-                if (
-                    embeddedObject["__" + this.propertyName + "__"] !==
-                    undefined
+            if (!embeddedObject) return undefined
+
+            if (this.isLazy)
+                return this.getLazyEntityValue(
+                    embeddedObject,
+                    getLazyRelationsPromiseValue,
                 )
-                    return embeddedObject["__" + this.propertyName + "__"]
 
-                if (getLazyRelationsPromiseValue === true)
-                    return embeddedObject[this.propertyName]
-
-                return undefined
-            }
-            return embeddedObject
-                ? embeddedObject[
-                      this.isLazy
-                          ? "__" + this.propertyName + "__"
-                          : this.propertyName
-                  ]
-                : undefined
+            return embeddedObject[this.propertyName]
         } else {
             // no embeds - no problems. Simply return column name by property name of the entity
-            if (this.isLazy) {
-                if (entity["__" + this.propertyName + "__"] !== undefined)
-                    return entity["__" + this.propertyName + "__"]
+            if (this.isLazy)
+                return this.getLazyEntityValue(
+                    entity,
+                    getLazyRelationsPromiseValue,
+                )
 
-                if (getLazyRelationsPromiseValue === true)
-                    return entity[this.propertyName]
-
-                return undefined
-            }
             return entity[this.propertyName]
         }
+    }
+
+    /**
+     * Extracts the value of a lazy relation from the given object.
+     * Reads the loaded data of an entity, or the plain (non-promise) value of a plain object
+     * such as a value set created by createValueMap, without triggering the lazy load.
+     *
+     * @param object
+     * @param getLazyRelationsPromiseValue
+     */
+    protected getLazyEntityValue(
+        object: ObjectLiteral,
+        getLazyRelationsPromiseValue: boolean,
+    ): any | undefined {
+        const loadedValue = object["__" + this.propertyName + "__"]
+        if (loadedValue !== undefined) return loadedValue
+
+        if (getLazyRelationsPromiseValue === true)
+            return object[this.propertyName]
+
+        const descriptor = Object.getOwnPropertyDescriptor(
+            object,
+            this.propertyName,
+        )
+        if (
+            descriptor &&
+            "value" in descriptor &&
+            descriptor.value !== undefined &&
+            !(descriptor.value instanceof Promise)
+        )
+            return descriptor.value
+
+        return undefined
     }
 
     /**
