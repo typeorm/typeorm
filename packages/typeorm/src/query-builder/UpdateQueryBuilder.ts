@@ -686,17 +686,20 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                     updatedColumns.indexOf(metadata.updateDateColumn) === -1
                 ) {
                     const updateDateColumn = metadata.updateDateColumn
-                    let defaultUpdateDateValue = "CURRENT_TIMESTAMP"
-                    if (updateDateColumn.default) {
-                        defaultUpdateDateValue =
-                            typeof updateDateColumn.default === "function"
-                                ? updateDateColumn.default()
-                                : String(updateDateColumn.default)
-                    }
+                    const defaultUpdateDateValue =
+                        typeof updateDateColumn.default === "function"
+                            ? updateDateColumn.default()
+                            : updateDateColumn.default
+                    const updateDateValue =
+                        updateDateColumn.onUpdate ?? defaultUpdateDateValue
+                    const updateDateExpression =
+                        typeof updateDateValue === "string"
+                            ? updateDateValue.trim()
+                            : String(updateDateValue ?? "")
                     updateColumnAndValues.push(
                         this.escape(updateDateColumn.databaseName) +
                             " = " +
-                            defaultUpdateDateValue,
+                            (updateDateExpression ?? "CURRENT_TIMESTAMP"),
                     )
                 }
             }

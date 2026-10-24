@@ -415,6 +415,59 @@ describe("query builder > relational query builder > update date column precisio
                 }
             }
         })
+
+        it("prefers the configured update expression over the insert default", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const updateDateColumn =
+                        connection.getMetadata(Child0).updateDateColumn!
+                    const originalDefault = updateDateColumn.default
+                    const originalOnUpdate = updateDateColumn.onUpdate
+                    updateDateColumn.default = () => "'insert default'"
+                    updateDateColumn.onUpdate = "CURRENT_TIMESTAMP(3)"
+
+                    try {
+                        const query = connection
+                            .createQueryBuilder()
+                            .update(Child0)
+                            .set({ name: "updated" })
+                            .where("id = :id", { id: 1 })
+                            .getQuery()
+
+                        expect(query).to.include("CURRENT_TIMESTAMP(3)")
+                        expect(query).to.not.include("insert default")
+                    } finally {
+                        updateDateColumn.default = originalDefault
+                        updateDateColumn.onUpdate = originalOnUpdate
+                    }
+                }),
+            ))
+
+        it("falls back to CURRENT_TIMESTAMP when no update expression is configured", () =>
+            Promise.all(
+                connections.map(async (connection) => {
+                    const updateDateColumn =
+                        connection.getMetadata(Child0).updateDateColumn!
+                    const originalDefault = updateDateColumn.default
+                    const originalOnUpdate = updateDateColumn.onUpdate
+                    updateDateColumn.default = () => " "
+                    updateDateColumn.onUpdate = " "
+
+                    try {
+                        const query = connection
+                            .createQueryBuilder()
+                            .update(Child0)
+                            .set({ name: "updated" })
+                            .where("id = :id", { id: 1 })
+                            .getQuery()
+
+                        expect(query).to.include("CURRENT_TIMESTAMP")
+                    } finally {
+                        updateDateColumn.default = originalDefault
+                        updateDateColumn.onUpdate = originalOnUpdate
+                    }
+                }),
+            ))
     })
 
     describe("schema synchronization", () => {

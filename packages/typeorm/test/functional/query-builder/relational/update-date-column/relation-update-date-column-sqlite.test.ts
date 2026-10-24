@@ -12,6 +12,12 @@ import { ParentSqlite as ParentSqlite6 } from "./entity-sqlite-6/ParentSqlite"
 import { ChildSqlite as ChildSqlite6 } from "./entity-sqlite-6/ChildSqlite"
 import { scheduler } from "node:timers/promises"
 
+interface SqliteTableInfoRow {
+    name: string
+    type: string
+    dflt_value: string | null
+}
+
 // #11258
 describe("query builder > relational query builder > update date column precision > sqlite", () => {
     let connections: DataSource[]
@@ -104,36 +110,40 @@ describe("query builder > relational query builder > update date column precisio
                     // Test precision 0 table
                     const child0TableName =
                         connection.getMetadata(ChildSqlite0).tableName
-                    const columnInfo0 = await queryRunner.query(`
+                    const columnInfo0: SqliteTableInfoRow[] =
+                        await queryRunner.query(`
                         PRAGMA table_info(${child0TableName})
                     `)
                     const updatedDateColumn0 = columnInfo0.find(
-                        (col: any) => col.name === "updated_date",
+                        (column) => column.name === "updated_date",
                     )
 
                     expect(updatedDateColumn0).to.not.be.undefined
-                    expect(updatedDateColumn0.type.toLowerCase()).to.include(
+                    expect(updatedDateColumn0!.type.toLowerCase()).to.include(
                         "datetime",
                     )
-                    expect(updatedDateColumn0.dflt_value).to.equal(
+                    expect(updatedDateColumn0!.dflt_value).to.equal(
                         "datetime('now')",
                     )
 
                     // Test precision 6 table
                     const child6TableName =
                         connection.getMetadata(ChildSqlite6).tableName
-                    const columnInfo6 = await queryRunner.query(`
+                    const columnInfo6: SqliteTableInfoRow[] =
+                        await queryRunner.query(`
                         PRAGMA table_info(${child6TableName})
                     `)
                     const updatedDateColumn6 = columnInfo6.find(
-                        (col: any) => col.name === "updated_date",
+                        (column) => column.name === "updated_date",
                     )
 
                     expect(updatedDateColumn6).to.not.be.undefined
-                    expect(updatedDateColumn6.type.toLowerCase()).to.include(
+                    expect(updatedDateColumn6!.type.toLowerCase()).to.include(
                         "datetime",
                     )
-                    expect(updatedDateColumn6.dflt_value).to.include("STRFTIME")
+                    expect(updatedDateColumn6!.dflt_value).to.include(
+                        "STRFTIME",
+                    )
                 } finally {
                     await queryRunner.release()
                 }
@@ -255,15 +265,16 @@ describe("query builder > relational query builder > update date column precisio
                 const queryRunner = connection.createQueryRunner()
                 try {
                     const tableName = connection.getMetadata(Child).tableName
-                    const columnInfo = await queryRunner.query(`
+                    const columnInfo: SqliteTableInfoRow[] =
+                        await queryRunner.query(`
                         PRAGMA table_info(${tableName})
                     `)
                     const updatedDateColumn = columnInfo.find(
-                        (col: any) => col.name === "updated_date",
+                        (column) => column.name === "updated_date",
                     )
 
                     expect(updatedDateColumn).to.not.be.undefined
-                    expect(updatedDateColumn.dflt_value).to.include("STRFTIME")
+                    expect(updatedDateColumn!.dflt_value).to.include("STRFTIME")
                 } finally {
                     await queryRunner.release()
                 }
@@ -297,15 +308,16 @@ describe("query builder > relational query builder > update date column precisio
                 const queryRunner = connection.createQueryRunner()
                 try {
                     const tableName = connection.getMetadata(Child).tableName
-                    const columnInfo = await queryRunner.query(`
+                    const columnInfo: SqliteTableInfoRow[] =
+                        await queryRunner.query(`
                         PRAGMA table_info(${tableName})
                     `)
                     const updatedDateColumn = columnInfo.find(
-                        (col: any) => col.name === "updated_date",
+                        (column) => column.name === "updated_date",
                     )
 
                     expect(updatedDateColumn).to.not.be.undefined
-                    expect(updatedDateColumn.dflt_value).to.equal(
+                    expect(updatedDateColumn!.dflt_value).to.equal(
                         "datetime('now')",
                     )
                 } finally {
