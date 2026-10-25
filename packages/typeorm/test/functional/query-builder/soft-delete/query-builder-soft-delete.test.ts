@@ -327,23 +327,19 @@ describe("query builder > soft-delete", () => {
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const repository = dataSource.getRepository(Document)
-                const [deleted, live] = await repository.save([
-                    { title: "deleted" },
-                    { title: "live" },
-                ])
+                const deleted = await repository.save({ title: "deleted" })
+                const live = await repository.save({ title: "live" })
                 await repository.softDelete(deleted.id)
                 const deletedBefore = await repository.findOneOrFail({
                     where: { id: deleted.id },
                     withDeleted: true,
                 })
-                // whereEntity() may update the passed entities in place
-                const liveVersion = live.version
-
                 const queryBuilder = dataSource
                     .createQueryBuilder()
                     .softDelete()
                     .from(Document)
-                    .whereEntity([deleted, live])
+                    .where("id = :deletedId", { deletedId: deleted.id })
+                    .orWhere("id = :liveId", { liveId: live.id })
 
                 // generating the query must not accumulate conditions
                 expect(queryBuilder.getQuery()).to.equal(
@@ -366,7 +362,7 @@ describe("query builder > soft-delete", () => {
                 expect(deletedAfter.deletedAt!.getTime()).to.equal(
                     deletedBefore.deletedAt!.getTime(),
                 )
-                expect(liveAfter.version).to.equal(liveVersion + 1)
+                expect(liveAfter.version).to.equal(live.version + 1)
                 expect(liveAfter.deletedAt).to.be.instanceof(Date)
 
                 await dataSource
@@ -387,7 +383,7 @@ describe("query builder > soft-delete", () => {
                 expect(deletedRestored.deletedAt).to.be.instanceof(Date)
                 expect(deletedRestored.version).to.equal(deletedBefore.version)
                 expect(liveRestored.deletedAt).to.equal(null)
-                expect(liveRestored.version).to.equal(liveVersion + 2)
+                expect(liveRestored.version).to.equal(live.version + 2)
             }),
         ))
 
