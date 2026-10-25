@@ -134,44 +134,41 @@ describe("column kinds > version column", () => {
             dataSources
                 .filter((conn) => conn.driver.options.type !== "spanner")
                 .map(async (connection) => {
-                    const humanRepo = connection.getRepository("Human")
+                    for (const upsertType of connection.driver
+                        .supportedUpsertTypes) {
+                        const humanRepo = connection.getRepository("Human")
 
-                    // save a new human
-                    const human = humanRepo.create({
-                        name: "John Doe",
-                        email: "john@email.com",
-                    })
-                    await humanRepo.save(human)
-
-                    // update human once again
-                    human.name = "Updated Name"
-                    await humanRepo.upsert(human, ["email"])
-
-                    // check if version was updated
-                    const loadedHuman = await humanRepo.findOneByOrFail({
-                        id: human.id,
-                    })
-                    expect(loadedHuman.name).to.be.eql("Updated Name")
-                    expect(loadedHuman.email).to.be.eql("john@email.com")
-                    expect(loadedHuman.version).to.be.eql(2)
-
-                    // update human once again using query builder
-                    await humanRepo
-                        .createQueryBuilder("my_human")
-                        .insert()
-                        .values({
-                            name: "Jane Doe",
-                            email: "john@email.com",
+                        // save a new human
+                        const human = humanRepo.create({
+                            name: `John Doe - ${upsertType}`,
+                            email: `john-${upsertType}@email.com`,
                         })
-                        .orUpdate(["name"], ["email"])
-                        .execute()
+                        await humanRepo.save(human)
 
-                    const loadedHuman2 = await humanRepo.findOneByOrFail({
-                        id: human.id,
-                    })
-                    expect(loadedHuman2.name).to.be.eql("Jane Doe")
-                    expect(loadedHuman2.email).to.be.eql("john@email.com")
-                    expect(loadedHuman2.version).to.be.eql(3)
+                        // update human once again
+                        human.name = `John Doe - ${upsertType} - Updated Name`
+
+                        let conflictPaths: string[] = ["email"]
+
+                        // CockroachDB's UPSERT requires primary key as conflict path
+                        // and "email" should be unique
+                        if (upsertType === "primary-key") {
+                            conflictPaths = ["id"]
+                            human.email = `john-different@email.com`
+                        }
+                        await humanRepo.upsert(human, {
+                            upsertType: upsertType,
+                            conflictPaths: conflictPaths,
+                        })
+
+                        // check if version was updated
+                        const loadedHuman = await humanRepo.findOneByOrFail({
+                            id: human.id,
+                        })
+                        expect(loadedHuman.name).to.be.eql(human.name)
+                        expect(loadedHuman.email).to.be.eql(human.email)
+                        expect(loadedHuman.version).to.be.eql(2)
+                    }
                 }),
         ))
 })

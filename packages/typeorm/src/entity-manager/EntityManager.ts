@@ -786,8 +786,6 @@ export class EntityManager {
                 !conflictColumns.includes(col) &&
                 col.isUpdate !== false &&
                 !col.generatedType &&
-                !col.isGenerated &&
-                !col.isVersion &&
                 entities.some(
                     (entity) =>
                         typeof col.getEntityValue(entity) !== "undefined",
@@ -802,9 +800,7 @@ export class EntityManager {
             .into(target)
             .values(entities)
             .orUpdate(
-                [...conflictColumns, ...overwriteColumns].map(
-                    (col) => col.databaseName,
-                ),
+                overwriteColumns.map((col) => col.databaseName),
                 conflictColumns.map((col) => col.databaseName),
                 {
                     skipUpdateIfNoValuesChanged:
