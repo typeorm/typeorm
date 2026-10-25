@@ -14,6 +14,7 @@ import { UserWithoutDeleteDate } from "./entity/UserWithoutDeleteDate"
 import { Photo } from "./entity/Photo"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
 import { Document } from "./entity/Document"
+import { Invoice } from "./entity/Invoice"
 import { TypeORMError } from "../../../../src/error/TypeORMError"
 
 describe("query builder > soft-delete", () => {
@@ -447,6 +448,37 @@ describe("query builder > soft-delete", () => {
                     expect(document.version).to.equal(row.version)
                     expect(document.deletedAt).to.be.instanceof(Date)
                 }
+            }),
+        ))
+
+    // https://github.com/typeorm/typeorm/issues/13004
+    it("should merge returned values into an entity with a transformed primary key", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // Spanner rejects the RETURNING clause that whereEntity() adds
+                if (dataSource.driver.options.type === "spanner") return
+
+                const repository = dataSource.getRepository(Invoice)
+                const { id } = await repository.save({ total: 10 })
+                const invoice = await repository.findOneOrFail({
+                    where: { id },
+                })
+                expect(invoice.id).to.be.a("string")
+
+                await dataSource
+                    .createQueryBuilder()
+                    .softDelete()
+                    .from(Invoice)
+                    .whereEntity(invoice)
+                    .execute()
+
+                const row = await repository.findOneOrFail({
+                    where: { id },
+                    withDeleted: true,
+                })
+                expect(invoice.id).to.equal(row.id)
+                expect(invoice.version).to.equal(row.version)
+                expect(invoice.deletedAt).to.be.instanceof(Date)
             }),
         ))
 

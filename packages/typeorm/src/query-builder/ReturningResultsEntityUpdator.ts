@@ -5,6 +5,7 @@ import type { ColumnMetadata } from "../metadata/ColumnMetadata"
 import type { UpdateResult } from "./result/UpdateResult"
 import type { InsertResult } from "./result/InsertResult"
 import { TypeORMError } from "../error"
+import { OrmUtils } from "../util/OrmUtils"
 
 /**
  * Updates entity with returning results in the entity insert and update operations.
@@ -34,6 +35,7 @@ export class ReturningResultsEntityUpdator {
         entities: ObjectLiteral[],
     ): Promise<void> {
         const metadata = this.expressionMap.mainAlias!.metadata
+        let returnedRows: (ObjectLiteral | undefined)[] | undefined
 
         await Promise.all(
             entities.map(async (entity, entityIndex) => {
@@ -61,11 +63,11 @@ export class ReturningResultsEntityUpdator {
                             {} as ObjectLiteral,
                         )
                     }
-                    const result = this.getReturnedRow(
+                    returnedRows ??= this.getReturnedRows(
                         updateResult.raw,
                         entities,
-                        entityIndex,
                     )
+                    const result = returnedRows[entityIndex]
                     const returningColumns =
                         this.queryRunner.dataSource.driver.createGeneratedMap(
                             metadata,
@@ -322,48 +324,59 @@ export class ReturningResultsEntityUpdator {
     // -------------------------------------------------------------------------
 
     /**
-     * Returns the row that belongs to the given entity.
+     * Returns the row of each entity, in entity order.
      * Soft-delete and restore skip rows that are already in the target state, and the
-     * database returns rows in its own order, so their rows are matched by primary key.
-     * The primary columns are returned only for that, not to overwrite entity ids.
+     * database returns the updated rows in its own order, so their rows are matched to
+     * the entities by primary key. The primary columns are returned only for that and
+     * are left out of the rows, so they do not overwrite the entity ids.
      *
      * @param raw
      * @param entities
-     * @param entityIndex
      */
-    protected getReturnedRow(
+    protected getReturnedRows(
         raw: any,
         entities: ObjectLiteral[],
-        entityIndex: number,
-    ): ObjectLiteral | undefined {
+    ): (ObjectLiteral | undefined)[] {
         const { queryType, returning } = this.expressionMap
         if (
             (queryType !== "soft-delete" && queryType !== "restore") ||
             typeof returning === "string"
         )
-            return Array.isArray(raw) ? raw[entityIndex] : raw
+            return entities.map((_, entityIndex) =>
+                Array.isArray(raw) ? raw[entityIndex] : raw,
+            )
 
         const metadata = this.expressionMap.mainAlias!.metadata
-        const row: ObjectLiteral | undefined = Array.isArray(raw)
-            ? raw.find((returnedRow) =>
-                  metadata.compareEntities(
-                      entities[entityIndex],
-                      this.queryRunner.dataSource.driver.createGeneratedMap(
-                          metadata,
-                          returnedRow,
-                      )!,
-                  ),
-              )
-            : raw
-        if (!row) return undefined
-
-        return Object.fromEntries(
-            Object.entries(row).filter(
-                ([key]) =>
-                    !metadata.primaryColumns.some(
-                        (column) => column.databaseName === key,
+        const driver = this.queryRunner.dataSource.driver
+        const rows: ObjectLiteral[] = Array.isArray(raw) ? raw : [raw]
+        const returnedRows = rows.map((row) => ({
+            idMap: metadata.primaryColumns.reduce(
+                (idMap, column) =>
+                    OrmUtils.mergeDeep(
+                        idMap,
+                        column.createValueMap(
+                            driver.prepareHydratedValue(
+                                row[column.databaseName],
+                                column,
+                            ),
+                        ),
                     ),
+                {} as ObjectLiteral,
             ),
-        )
+            values: Object.fromEntries(
+                Object.entries(row).filter(
+                    ([key]) =>
+                        !metadata.primaryColumns.some(
+                            (column) => column.databaseName === key,
+                        ),
+                ),
+            ),
+        }))
+        return entities.map((entity) => {
+            const entityIdMap = metadata.getEntityIdMap(entity)
+            return returnedRows.find((returnedRow) =>
+                OrmUtils.compareIds(entityIdMap, returnedRow.idMap),
+            )?.values
+        })
     }
 }
