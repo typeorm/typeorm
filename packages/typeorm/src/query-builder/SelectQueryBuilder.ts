@@ -4205,19 +4205,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                                     relationMetadata: eagerRelation,
                                 })
                             }
-
-                            if (
-                                selection &&
-                                typeof selection[relationName] === "object"
-                            ) {
-                                this.buildSelect(
-                                    selection[
-                                        relationName
-                                    ] as FindOptionsSelect<any>,
-                                    relation.inverseEntityMetadata,
-                                    joinAlias,
-                                )
-                            }
                         },
                     )
                 }
