@@ -148,11 +148,15 @@ export class DateUtils {
      */
     static mixedTimeToDate(value: Date | any): string | any {
         if (typeof value === "string") {
-            const [hours, minutes, seconds] = value.split(":")
+            const [hours, minutes = "0", seconds = "0"] = value.split(":")
+            const secondsValue = parseFloat(seconds)
             const date = new Date()
-            if (hours) date.setHours(parseInt(hours))
-            if (minutes) date.setMinutes(parseInt(minutes))
-            if (seconds) date.setSeconds(parseInt(seconds))
+            date.setHours(
+                parseInt(hours),
+                parseInt(minutes),
+                Math.trunc(secondsValue),
+                Math.round((secondsValue % 1) * 1000),
+            )
             return date
         }
 

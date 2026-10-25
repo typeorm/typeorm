@@ -18,4 +18,24 @@ describe("DateUtils", () => {
             "2023-05-09",
         )
     })
+
+    // https://github.com/typeorm/typeorm/issues/10402
+    it("should convert a time string to a date with only the given time parts", () => {
+        const toTimeParts = (date: Date) => [
+            date.getHours(),
+            date.getMinutes(),
+            date.getSeconds(),
+            date.getMilliseconds(),
+        ]
+
+        expect(toTimeParts(DateUtils.mixedTimeToDate("08:30"))).to.deep.equal([
+            8, 30, 0, 0,
+        ])
+        expect(
+            toTimeParts(DateUtils.mixedTimeToDate("08:30:00")),
+        ).to.deep.equal([8, 30, 0, 0])
+        expect(
+            toTimeParts(DateUtils.mixedTimeToDate("08:30:15.250")),
+        ).to.deep.equal([8, 30, 15, 250])
+    })
 })
