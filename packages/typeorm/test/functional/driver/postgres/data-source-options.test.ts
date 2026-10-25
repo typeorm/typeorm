@@ -5,6 +5,7 @@ import {
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import type { DataSource } from "../../../../src/data-source/DataSource"
+import { PlatformTools } from "../../../../src/platform/PlatformTools"
 import { expect } from "chai"
 
 describe("driver > postgres > DataSource options", () => {
@@ -73,6 +74,45 @@ describe("driver > postgres > DataSource options > custom extension installation
                 const installedExtensions = result.map((r: any) => r.extname)
                 expect(installedExtensions).to.include("tablefunc")
                 expect(installedExtensions).to.include("xml2")
+            }),
+        ))
+})
+
+describe("driver > postgres > DataSource options > queryStream", () => {
+    const QueryStream = PlatformTools.load("pg-query-stream")
+    let constructed = 0
+    class CountingQueryStream extends QueryStream {
+        constructor(...args: any[]) {
+            super(...args)
+            constructed++
+        }
+    }
+
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            enabledDrivers: ["postgres"],
+            driverSpecific: {
+                queryStream: CountingQueryStream,
+            },
+        })
+    })
+    after(() => closeTestingConnections(dataSources))
+
+    it("should stream through the given pg-query-stream module", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const constructedBefore = constructed
+                const stream = await dataSource
+                    .createQueryBuilder()
+                    .select("db.datname", "name")
+                    .from("pg_database", "db")
+                    .where("db.datname = current_database()")
+                    .stream()
+                const rows: unknown[] = []
+                for await (const row of stream) rows.push(row)
+                expect(rows).to.have.length(1)
+                expect(constructed).equals(constructedBefore + 1)
             }),
         ))
 })

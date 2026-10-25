@@ -36,6 +36,12 @@ export interface CockroachDataSourceOptions
     readonly nativeDriver?: any
 
     /**
+     * The `pg-query-stream` module, used by `stream()`
+     * This defaults to `require("pg-query-stream")`.
+     */
+    readonly queryStream?: any
+
+    /**
      * Replication setup.
      */
     readonly replication?: {
