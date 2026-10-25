@@ -322,6 +322,7 @@ describe("query builder > soft-delete", () => {
                 expect(usersWithSoftDelete[1].picture.deletedAt).to.equal(null)
             }),
         ))
+    // https://github.com/typeorm/typeorm/issues/13004
     it("should not touch already soft-deleted rows when the WHERE is OR-chained", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
@@ -390,6 +391,7 @@ describe("query builder > soft-delete", () => {
             }),
         ))
 
+    // https://github.com/typeorm/typeorm/issues/13004
     it("should reject empty criteria for soft-delete and restore like other write operations", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
