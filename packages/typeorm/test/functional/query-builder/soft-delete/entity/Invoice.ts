@@ -10,7 +10,7 @@ import { Column } from "../../../../../src/decorator/columns/Column"
 export class Invoice {
     @Generated("increment")
     @PrimaryColumn({
-        type: "integer",
+        type: Number,
         transformer: {
             from: (databaseValue: number) => databaseValue?.toString(),
             to: (entityValue: string) =>

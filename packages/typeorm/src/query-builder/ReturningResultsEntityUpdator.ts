@@ -51,16 +51,18 @@ export class ReturningResultsEntityUpdator {
                         Array.isArray(updateResult.raw) &&
                         this.expressionMap.extraReturningColumns.length > 0
                     ) {
-                        updateResult.raw = updateResult.raw.reduce(
-                            (newRaw, rawItem, rawItemIndex) => {
-                                newRaw[
-                                    this.expressionMap.extraReturningColumns[
-                                        rawItemIndex
-                                    ].databaseName
-                                ] = rawItem[0]
-                                return newRaw
-                            },
-                            {} as ObjectLiteral,
+                        // each out bind holds one column's values, one per updated row
+                        const columnValues: any[][] = updateResult.raw
+                        updateResult.raw = (columnValues[0] ?? []).map(
+                            (_, rowIndex) =>
+                                this.expressionMap.extraReturningColumns.reduce(
+                                    (row, column, columnIndex) => {
+                                        row[column.databaseName] =
+                                            columnValues[columnIndex][rowIndex]
+                                        return row
+                                    },
+                                    {} as ObjectLiteral,
+                                ),
                         )
                     }
                     returnedRows ??= this.getReturnedRows(
