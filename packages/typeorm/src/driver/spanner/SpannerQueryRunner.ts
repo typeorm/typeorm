@@ -4,6 +4,7 @@ import { NamedPlaceholdersNotSupportedError } from "../../error/NamedPlaceholder
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionNotStartedError } from "../../error/TransactionNotStartedError"
+import { DateUtils } from "../../util/DateUtils"
 import type { ReadStream } from "../../platform/PlatformTools"
 import { BaseQueryRunner } from "../../query-runner/BaseQueryRunner"
 import { QueryResult } from "../../query-runner/QueryResult"
@@ -240,7 +241,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         const broadcasterResult = new BroadcasterResult()
 
         try {
-            const queryStartTime = Date.now()
+            const queryStartTime = DateUtils.performanceNow()
             let rawResult:
                 | [
                       any[],
@@ -306,7 +307,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = Date.now()
+            const queryEndTime = DateUtils.performanceNow()
             const queryExecutionTime = queryEndTime - queryStartTime
 
             this.broadcaster.broadcastAfterQueryEvent(
@@ -379,14 +380,14 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         this.driver.dataSource.logger.logQuery(query, parameters, this)
         try {
-            const queryStartTime = Date.now()
+            const queryStartTime = DateUtils.performanceNow()
             const [operation] =
                 await this.driver.instanceDatabase.updateSchema(query)
             await operation.promise()
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = Date.now()
+            const queryEndTime = DateUtils.performanceNow()
             const queryExecutionTime = queryEndTime - queryStartTime
             if (
                 maxQueryExecutionTime &&
@@ -739,7 +740,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         // if table had columns with generated type, we must remove the expression from the metadata table
         const generatedColumns = table.columns.filter(
-            (column) => column.generatedType && column.asExpression,
+            (column) => column.generatedType,
         )
 
         for (const column of generatedColumns) {
@@ -748,16 +749,17 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 type: MetadataTableType.GENERATED_COLUMN,
                 name: column.name,
             })
-
-            const insertQuery = this.insertTypeormMetadataSql({
-                table: table.name,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression,
-            })
-
             upQueries.push(deleteQuery)
-            downQueries.push(insertQuery)
+
+            if (column.asExpression) {
+                const insertQuery = this.insertTypeormMetadataSql({
+                    table: table.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                    value: column.asExpression,
+                })
+                downQueries.push(insertQuery)
+            }
         }
 
         await this.executeQueries(upQueries, downQueries)
@@ -1199,21 +1201,23 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
             ),
         )
 
-        if (column.generatedType && column.asExpression) {
+        if (column.generatedType) {
             const deleteQuery = this.deleteTypeormMetadataSql({
                 table: table.name,
                 type: MetadataTableType.GENERATED_COLUMN,
                 name: column.name,
             })
-            const insertQuery = this.insertTypeormMetadataSql({
-                table: table.name,
-                type: MetadataTableType.GENERATED_COLUMN,
-                name: column.name,
-                value: column.asExpression,
-            })
-
             upQueries.push(deleteQuery)
-            downQueries.push(insertQuery)
+
+            if (column.asExpression) {
+                const insertQuery = this.insertTypeormMetadataSql({
+                    table: table.name,
+                    type: MetadataTableType.GENERATED_COLUMN,
+                    name: column.name,
+                    value: column.asExpression,
+                })
+                downQueries.push(insertQuery)
+            }
         }
 
         await this.executeQueries(upQueries, downQueries)
