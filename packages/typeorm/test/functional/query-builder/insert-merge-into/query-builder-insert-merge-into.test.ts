@@ -8,6 +8,7 @@ import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
 import { expect } from "chai"
 import { MoreThan } from "../../../../src"
+import { Sample } from "./entity/IdentitySample"
 
 describe("query builder > insert > merge into", () => {
     let dataSources: DataSource[]
@@ -19,6 +20,170 @@ describe("query builder > insert > merge into", () => {
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
+
+    describe("SQL Server identity upsert (#12962)", () => {
+        let sqlServerDataSources: DataSource[]
+
+        before(() => {
+            sqlServerDataSources = dataSources.filter(
+                (dataSource) => dataSource.options.type === "mssql",
+            )
+        })
+
+        it("updates a loaded entity using a different conflict column", () =>
+            Promise.all(
+                sqlServerDataSources.map(async (dataSource) => {
+                    const repository = dataSource.getRepository(Sample)
+                    await repository.insert({ code: "k1", value: 1 })
+                    const sample = await repository.findOneByOrFail({
+                        code: "k1",
+                    })
+                    sample.value = 2
+                    await repository.upsert(sample, ["code"])
+                    expect(
+                        await repository.findOneByOrFail({ code: "k1" }),
+                    ).to.deep.equal(sample)
+                }),
+            ))
+
+        it("preserves the matched row identity when another id is supplied", () =>
+            Promise.all(
+                sqlServerDataSources.map(async (dataSource) => {
+                    const repository = dataSource.getRepository(Sample)
+                    const sample = await repository.save({
+                        code: "k1",
+                        value: 1,
+                    })
+                    await repository.upsert({ id: 100, code: "k1", value: 2 }, [
+                        "code",
+                    ])
+                    expect(
+                        await repository.findOneByOrFail({ code: "k1" }),
+                    ).to.deep.equal({ id: sample.id, code: "k1", value: 2 })
+                }),
+            ))
+
+        it("splits supplied and generated identities in a mixed batch", () =>
+            Promise.all(
+                sqlServerDataSources.map(async (dataSource) => {
+                    const repository = dataSource.getRepository(Sample)
+                    const existing = await repository.save({
+                        code: "k1",
+                        value: 1,
+                    })
+                    await repository.upsert(
+                        [
+                            { id: existing.id, code: "k1", value: 2 },
+                            { id: 100, code: "k2", value: 3 },
+                            { code: "k3", value: 3 },
+                            { id: 102, code: "k4", value: 4 },
+                        ],
+                        ["code"],
+                    )
+                    expect(
+                        await repository.find({ order: { code: "ASC" } }),
+                    ).to.deep.equal([
+                        { id: existing.id, code: "k1", value: 2 },
+                        { id: 100, code: "k2", value: 3 },
+                        { id: 101, code: "k3", value: 3 },
+                        { id: 102, code: "k4", value: 4 },
+                    ])
+                }),
+            ))
+
+        it("supports the identity as the conflict path", () =>
+            Promise.all(
+                sqlServerDataSources.map(async (dataSource) => {
+                    const repository = dataSource.getRepository(Sample)
+                    await repository.upsert({ id: 100, code: "k1", value: 1 }, [
+                        "id",
+                    ])
+                    await repository.upsert({ id: 100, code: "k1", value: 2 }, [
+                        "id",
+                    ])
+                    expect(
+                        await repository.findOneByOrFail({ id: 100 }),
+                    ).to.deep.equal({ id: 100, code: "k1", value: 2 })
+                }),
+            ))
+
+        it("does not update when only the supplied identity differs", () =>
+            Promise.all(
+                sqlServerDataSources.map(async (dataSource) => {
+                    const repository = dataSource.getRepository(Sample)
+                    const sample = await repository.save({
+                        code: "k1",
+                        value: 1,
+                    })
+                    const result = await repository.upsert(
+                        { id: 100, code: "k1", value: 1 },
+                        {
+                            conflictPaths: ["code"],
+                            skipUpdateIfNoValuesChanged: true,
+                        },
+                    )
+                    expect(result.raw).to.have.length(0)
+                    expect(
+                        await repository.findOneByOrFail({ code: "k1" }),
+                    ).to.deep.equal(sample)
+                }),
+            ))
+
+        it("omits identity-only updates", () =>
+            Promise.all(
+                sqlServerDataSources.map(async (dataSource) => {
+                    const repository = dataSource.getRepository(Sample)
+                    const sample = await repository.save({
+                        code: "k1",
+                        value: 1,
+                    })
+                    await repository.upsert({ id: 100, code: "k1" }, ["code"])
+                    expect(
+                        await repository.findOneByOrFail({ code: "k1" }),
+                    ).to.deep.equal(sample)
+                }),
+            ))
+
+        it("generates identities when IDs are omitted", () =>
+            Promise.all(
+                sqlServerDataSources.map(async (dataSource) => {
+                    const repository = dataSource.getRepository(Sample)
+                    await repository.upsert({ code: "k1", value: 1 }, ["code"])
+                    const sample = await repository.findOneByOrFail({
+                        code: "k1",
+                    })
+                    await repository.upsert({ code: "k1", value: 2 }, ["code"])
+                    expect(
+                        await repository.findOneByOrFail({ code: "k1" }),
+                    ).to.deep.equal({ id: sample.id, code: "k1", value: 2 })
+                }),
+            ))
+
+        it("clears IDENTITY_INSERT after a failed upsert", () =>
+            Promise.all(
+                sqlServerDataSources.map(async (dataSource) => {
+                    const repository = dataSource.getRepository(Sample)
+                    await repository.save({ code: "k1", value: 1 })
+                    await dataSource.query(
+                        `CREATE TRIGGER fail_identity_upsert ON sample AFTER INSERT AS BEGIN THROW 50001, 'forced identity upsert failure', 1; END`,
+                    )
+                    try {
+                        await repository.upsert(
+                            { id: 100, code: "k2", value: 2 },
+                            ["code"],
+                        ).should.be.rejected
+                    } finally {
+                        await dataSource.query(
+                            "DROP TRIGGER fail_identity_upsert",
+                        )
+                    }
+                    await repository.insert({ code: "k2", value: 3 })
+                    expect(
+                        (await repository.findOneByOrFail({ code: "k2" })).id,
+                    ).to.be.greaterThan(1)
+                }),
+            ))
+    })
 
     it("should perform insertion correctly using orIgnore", () =>
         Promise.all(
