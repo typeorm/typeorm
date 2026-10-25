@@ -13,6 +13,8 @@ import { MissingDeleteDateColumnError } from "../../../../src/error/MissingDelet
 import { UserWithoutDeleteDate } from "./entity/UserWithoutDeleteDate"
 import { Photo } from "./entity/Photo"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
+import { Document } from "./entity/Document"
+import { TypeORMError } from "../../../../src/error/TypeORMError"
 
 describe("query builder > soft-delete", () => {
     let dataSources: DataSource[]
@@ -318,6 +320,109 @@ describe("query builder > soft-delete", () => {
                     null,
                 )
                 expect(usersWithSoftDelete[1].picture.deletedAt).to.equal(null)
+            }),
+        ))
+    it("should not touch already soft-deleted rows when the WHERE is OR-chained", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const repository = dataSource.getRepository(Document)
+                const [deleted, live] = await repository.save([
+                    { title: "deleted" },
+                    { title: "live" },
+                ])
+                await repository.softDelete(deleted.id)
+                const deletedBefore = await repository.findOneOrFail({
+                    where: { id: deleted.id },
+                    withDeleted: true,
+                })
+                // whereEntity() may update the passed entities in place
+                const liveVersion = live.version
+
+                const queryBuilder = dataSource
+                    .createQueryBuilder()
+                    .softDelete()
+                    .from(Document)
+                    .whereEntity([deleted, live])
+
+                // generating the query must not accumulate conditions
+                expect(queryBuilder.getQuery()).to.equal(
+                    queryBuilder.getQuery(),
+                )
+
+                await queryBuilder.execute()
+
+                const [deletedAfter, liveAfter] = await Promise.all([
+                    repository.findOneOrFail({
+                        where: { id: deleted.id },
+                        withDeleted: true,
+                    }),
+                    repository.findOneOrFail({
+                        where: { id: live.id },
+                        withDeleted: true,
+                    }),
+                ])
+                expect(deletedAfter.version).to.equal(deletedBefore.version)
+                expect(deletedAfter.deletedAt!.getTime()).to.equal(
+                    deletedBefore.deletedAt!.getTime(),
+                )
+                expect(liveAfter.version).to.equal(liveVersion + 1)
+                expect(liveAfter.deletedAt).to.be.instanceof(Date)
+
+                await dataSource
+                    .createQueryBuilder()
+                    .restore()
+                    .from(Document)
+                    .where("title = :title", { title: "none" })
+                    .orWhere("title = :live", { live: "live" })
+                    .execute()
+
+                const [deletedRestored, liveRestored] = await Promise.all([
+                    repository.findOneOrFail({
+                        where: { id: deleted.id },
+                        withDeleted: true,
+                    }),
+                    repository.findOneOrFail({ where: { id: live.id } }),
+                ])
+                expect(deletedRestored.deletedAt).to.be.instanceof(Date)
+                expect(deletedRestored.version).to.equal(deletedBefore.version)
+                expect(liveRestored.deletedAt).to.equal(null)
+                expect(liveRestored.version).to.equal(liveVersion + 2)
+            }),
+        ))
+
+    it("should reject empty criteria for soft-delete and restore like other write operations", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const repository = dataSource.getRepository(Document)
+                const [deleted, live] = await repository.save([
+                    { title: "deleted" },
+                    { title: "live" },
+                ])
+                await repository.softDelete(deleted.id)
+
+                for (const build of [
+                    () => dataSource.createQueryBuilder().softDelete(),
+                    () => dataSource.createQueryBuilder().restore(),
+                ]) {
+                    await expect(
+                        build().from(Document).where({}).execute(),
+                    ).to.be.rejectedWith(TypeORMError, /Empty criteria/)
+                    await expect(
+                        build().from(Document).where([]).execute(),
+                    ).to.be.rejectedWith(TypeORMError, /Empty criteria/)
+                }
+
+                const rows = await repository.find({
+                    withDeleted: true,
+                    order: { id: "ASC" },
+                })
+                expect(rows.map((row) => row.deletedAt instanceof Date)).to.eql(
+                    [true, false],
+                )
+                expect(rows.map((row) => row.version)).to.eql([
+                    deleted.version + 1,
+                    live.version,
+                ])
             }),
         ))
 })
