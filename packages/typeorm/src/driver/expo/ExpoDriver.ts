@@ -28,6 +28,9 @@ export class ExpoDriver extends AbstractSqliteDriver {
     protected async createDatabaseConnection() {
         this.databaseConnection = await this.sqlite.openDatabaseAsync(
             this.options.database,
+            {
+                useNewConnection: this.options.useNewConnection,
+            },
         )
         await this.databaseConnection.runAsync("PRAGMA foreign_keys = ON")
         return this.databaseConnection

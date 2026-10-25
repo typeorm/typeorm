@@ -21,5 +21,14 @@ export interface ExpoDataSourceOptions extends BaseDataSourceOptions {
      */
     readonly driver?: any
 
+    /**
+     * If set to `true` it tells expo-sqlite to create a new connection even
+     * if an existing connection exists in cache
+     */
+    readonly useNewConnection?: boolean
+
+    /**
+     * @deprecated Not supported by expo-sqlite
+     */
     readonly poolSize?: never
 }
