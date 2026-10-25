@@ -388,7 +388,7 @@ describe("query builder > soft-delete", () => {
         ))
 
     // https://github.com/typeorm/typeorm/issues/13004
-    it("should merge returned values only into the entities that were soft-deleted", () =>
+    it("should merge each returned row into the entity it belongs to", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 // Spanner rejects the RETURNING clause that whereEntity() adds
@@ -396,39 +396,57 @@ describe("query builder > soft-delete", () => {
 
                 const repository = dataSource.getRepository(Document)
                 const deleted = await repository.save({ title: "deleted" })
-                const live = await repository.save({ title: "live" })
+                const first = await repository.save({ title: "first" })
+                const second = await repository.save({ title: "second" })
                 await repository.softDelete(deleted.id)
-                const [deletedDocument, liveDocument] = await Promise.all([
-                    repository.findOneOrFail({
-                        where: { id: deleted.id },
-                        withDeleted: true,
-                    }),
-                    repository.findOneOrFail({ where: { id: live.id } }),
-                ])
-                const deletedVersion = deletedDocument.version
+                // give the live rows different versions so a row merged into the wrong entity is visible
+                await repository.update(second.id, { title: "second-updated" })
+                const [deletedDocument, firstDocument, secondDocument] =
+                    await Promise.all(
+                        [deleted, first, second].map((document) =>
+                            repository.findOneOrFail({
+                                where: { id: document.id },
+                                withDeleted: true,
+                            }),
+                        ),
+                    )
+                const versionsBefore = [
+                    deletedDocument.version,
+                    firstDocument.version,
+                    secondDocument.version,
+                ]
 
+                // not in table order: databases return the updated rows in their own order
                 await dataSource
                     .createQueryBuilder()
                     .softDelete()
                     .from(Document)
-                    .whereEntity([deletedDocument, liveDocument])
+                    .whereEntity([
+                        secondDocument,
+                        deletedDocument,
+                        firstDocument,
+                    ])
                     .execute()
 
-                const [deletedRow, liveRow] = await Promise.all([
-                    repository.findOneOrFail({
-                        where: { id: deleted.id },
-                        withDeleted: true,
-                    }),
-                    repository.findOneOrFail({
-                        where: { id: live.id },
-                        withDeleted: true,
-                    }),
+                const rows = await repository.find({
+                    withDeleted: true,
+                    order: { id: "ASC" },
+                })
+                expect(rows.map((row) => row.version)).to.eql([
+                    versionsBefore[0],
+                    versionsBefore[1] + 1,
+                    versionsBefore[2] + 1,
                 ])
-                expect(deletedRow.version).to.equal(deletedVersion)
-                expect(deletedDocument.version).to.equal(deletedVersion)
-                expect(liveRow.version).to.equal(live.version + 1)
-                expect(liveDocument.version).to.equal(liveRow.version)
-                expect(liveDocument.deletedAt).to.be.instanceof(Date)
+                expect(deletedDocument.id).to.equal(deleted.id)
+                expect(deletedDocument.version).to.equal(versionsBefore[0])
+                for (const [document, row] of [
+                    [firstDocument, rows[1]],
+                    [secondDocument, rows[2]],
+                ]) {
+                    expect(document.id).to.equal(row.id)
+                    expect(document.version).to.equal(row.version)
+                    expect(document.deletedAt).to.be.instanceof(Date)
+                }
             }),
         ))
 

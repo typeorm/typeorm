@@ -61,13 +61,11 @@ export class ReturningResultsEntityUpdator {
                             {} as ObjectLiteral,
                         )
                     }
-                    const result = Array.isArray(updateResult.raw)
-                        ? this.findReturnedRow(
-                              updateResult.raw,
-                              entity,
-                              entityIndex,
-                          )
-                        : updateResult.raw
+                    const result = this.getReturnedRow(
+                        updateResult.raw,
+                        entities,
+                        entityIndex,
+                    )
                     const returningColumns =
                         this.queryRunner.dataSource.driver.createGeneratedMap(
                             metadata,
@@ -324,35 +322,47 @@ export class ReturningResultsEntityUpdator {
     // -------------------------------------------------------------------------
 
     /**
-     * Soft-delete and restore skip rows that are already in the target state,
-     * so their returned rows are matched to the entities by primary key.
+     * Returns the row that belongs to the given entity.
+     * Soft-delete and restore skip rows that are already in the target state, and the
+     * database returns rows in its own order, so their rows are matched by primary key.
+     * The primary columns are returned only for that, not to overwrite entity ids.
      *
-     * @param rows
-     * @param entity
+     * @param raw
+     * @param entities
      * @param entityIndex
      */
-    protected findReturnedRow(
-        rows: ObjectLiteral[],
-        entity: ObjectLiteral,
+    protected getReturnedRow(
+        raw: any,
+        entities: ObjectLiteral[],
         entityIndex: number,
     ): ObjectLiteral | undefined {
-        const metadata = this.expressionMap.mainAlias!.metadata
-        const { queryType } = this.expressionMap
+        const { queryType, returning } = this.expressionMap
         if (
             (queryType !== "soft-delete" && queryType !== "restore") ||
-            !metadata.primaryColumns.every(
-                (column) => column.databaseName in (rows[0] ?? {}),
-            )
+            typeof returning === "string"
         )
-            return rows[entityIndex]
+            return Array.isArray(raw) ? raw[entityIndex] : raw
 
-        return rows.find((row) =>
-            metadata.compareEntities(
-                entity,
-                this.queryRunner.dataSource.driver.createGeneratedMap(
-                    metadata,
-                    row,
-                )!,
+        const metadata = this.expressionMap.mainAlias!.metadata
+        const row: ObjectLiteral | undefined = Array.isArray(raw)
+            ? raw.find((returnedRow) =>
+                  metadata.compareEntities(
+                      entities[entityIndex],
+                      this.queryRunner.dataSource.driver.createGeneratedMap(
+                          metadata,
+                          returnedRow,
+                      )!,
+                  ),
+              )
+            : raw
+        if (!row) return undefined
+
+        return Object.fromEntries(
+            Object.entries(row).filter(
+                ([key]) =>
+                    !metadata.primaryColumns.some(
+                        (column) => column.databaseName === key,
+                    ),
             ),
         )
     }
