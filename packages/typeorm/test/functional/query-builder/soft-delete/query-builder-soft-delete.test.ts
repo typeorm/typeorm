@@ -388,6 +388,51 @@ describe("query builder > soft-delete", () => {
         ))
 
     // https://github.com/typeorm/typeorm/issues/13004
+    it("should merge returned values only into the entities that were soft-deleted", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // Spanner rejects the RETURNING clause that whereEntity() adds
+                if (dataSource.driver.options.type === "spanner") return
+
+                const repository = dataSource.getRepository(Document)
+                const deleted = await repository.save({ title: "deleted" })
+                const live = await repository.save({ title: "live" })
+                await repository.softDelete(deleted.id)
+                const [deletedDocument, liveDocument] = await Promise.all([
+                    repository.findOneOrFail({
+                        where: { id: deleted.id },
+                        withDeleted: true,
+                    }),
+                    repository.findOneOrFail({ where: { id: live.id } }),
+                ])
+                const deletedVersion = deletedDocument.version
+
+                await dataSource
+                    .createQueryBuilder()
+                    .softDelete()
+                    .from(Document)
+                    .whereEntity([deletedDocument, liveDocument])
+                    .execute()
+
+                const [deletedRow, liveRow] = await Promise.all([
+                    repository.findOneOrFail({
+                        where: { id: deleted.id },
+                        withDeleted: true,
+                    }),
+                    repository.findOneOrFail({
+                        where: { id: live.id },
+                        withDeleted: true,
+                    }),
+                ])
+                expect(deletedRow.version).to.equal(deletedVersion)
+                expect(deletedDocument.version).to.equal(deletedVersion)
+                expect(liveRow.version).to.equal(live.version + 1)
+                expect(liveDocument.version).to.equal(liveRow.version)
+                expect(liveDocument.deletedAt).to.be.instanceof(Date)
+            }),
+        ))
+
+    // https://github.com/typeorm/typeorm/issues/13004
     it("should reject empty criteria for soft-delete and restore like other write operations", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {

@@ -62,7 +62,11 @@ export class ReturningResultsEntityUpdator {
                         )
                     }
                     const result = Array.isArray(updateResult.raw)
-                        ? updateResult.raw[entityIndex]
+                        ? this.findReturnedRow(
+                              updateResult.raw,
+                              entity,
+                              entityIndex,
+                          )
                         : updateResult.raw
                     const returningColumns =
                         this.queryRunner.dataSource.driver.createGeneratedMap(
@@ -307,10 +311,49 @@ export class ReturningResultsEntityUpdator {
                 return (
                     column.asExpression !== undefined ||
                     column.isUpdateDate ||
+                    column.isPrimary ||
                     column.isVersion ||
                     column.isDeleteDate
                 )
             },
+        )
+    }
+
+    // -------------------------------------------------------------------------
+    // Protected Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Soft-delete and restore skip rows that are already in the target state,
+     * so their returned rows are matched to the entities by primary key.
+     *
+     * @param rows
+     * @param entity
+     * @param entityIndex
+     */
+    protected findReturnedRow(
+        rows: ObjectLiteral[],
+        entity: ObjectLiteral,
+        entityIndex: number,
+    ): ObjectLiteral | undefined {
+        const metadata = this.expressionMap.mainAlias!.metadata
+        const { queryType } = this.expressionMap
+        if (
+            (queryType !== "soft-delete" && queryType !== "restore") ||
+            !metadata.primaryColumns.every(
+                (column) => column.databaseName in (rows[0] ?? {}),
+            )
+        )
+            return rows[entityIndex]
+
+        return rows.find((row) =>
+            metadata.compareEntities(
+                entity,
+                this.queryRunner.dataSource.driver.createGeneratedMap(
+                    metadata,
+                    row,
+                )!,
+            ),
         )
     }
 }
