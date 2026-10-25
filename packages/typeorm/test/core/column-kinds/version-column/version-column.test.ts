@@ -129,4 +129,46 @@ describe("column kinds > version column", () => {
                 expect(loadedPost.version).to.be.eql(6)
             }),
         ))
+    it("version column should be updated automatically on upsert", () =>
+        Promise.all(
+            dataSources
+                .filter((conn) => conn.driver.options.type !== "spanner")
+                .map(async (connection) => {
+                    for (const upsertType of connection.driver
+                        .supportedUpsertTypes) {
+                        const humanRepo = connection.getRepository("Human")
+
+                        // save a new human
+                        const human = humanRepo.create({
+                            name: `John Doe - ${upsertType}`,
+                            email: `john-${upsertType}@email.com`,
+                        })
+                        await humanRepo.save(human)
+
+                        // update human once again
+                        human.name = `John Doe - ${upsertType} - Updated Name`
+
+                        let conflictPaths: string[] = ["email"]
+
+                        // CockroachDB's UPSERT requires primary key as conflict path
+                        // and "email" should be unique
+                        if (upsertType === "primary-key") {
+                            conflictPaths = ["id"]
+                            human.email = `john-different@email.com`
+                        }
+                        await humanRepo.upsert(human, {
+                            upsertType: upsertType,
+                            conflictPaths: conflictPaths,
+                        })
+
+                        // check if version was updated
+                        const loadedHuman = await humanRepo.findOneByOrFail({
+                            id: human.id,
+                        })
+                        expect(loadedHuman.name).to.be.eql(human.name)
+                        expect(loadedHuman.email).to.be.eql(human.email)
+                        expect(loadedHuman.version).to.be.eql(2)
+                    }
+                }),
+        ))
 })

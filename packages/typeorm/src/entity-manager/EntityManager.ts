@@ -800,9 +800,7 @@ export class EntityManager {
             .into(target)
             .values(entities)
             .orUpdate(
-                [...conflictColumns, ...overwriteColumns].map(
-                    (col) => col.databaseName,
-                ),
+                overwriteColumns.map((col) => col.databaseName),
                 conflictColumns.map((col) => col.databaseName),
                 {
                     skipUpdateIfNoValuesChanged:
