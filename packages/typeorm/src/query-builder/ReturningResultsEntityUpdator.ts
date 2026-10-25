@@ -35,7 +35,30 @@ export class ReturningResultsEntityUpdator {
         entities: ObjectLiteral[],
     ): Promise<void> {
         const metadata = this.expressionMap.mainAlias!.metadata
-        let returnedRows: (ObjectLiteral | undefined)[] | undefined
+        const driver = this.queryRunner.dataSource.driver
+        let returnedRows: (ObjectLiteral | undefined)[] = []
+
+        if (driver.isReturningSqlSupported("update")) {
+            if (
+                driver.options.type === "oracle" &&
+                Array.isArray(updateResult.raw) &&
+                this.expressionMap.extraReturningColumns.length > 0
+            ) {
+                // each out bind holds one column's values, one per updated row
+                const columnValues: any[][] = updateResult.raw
+                updateResult.raw = (columnValues[0] ?? []).map((_, rowIndex) =>
+                    this.expressionMap.extraReturningColumns.reduce(
+                        (row, column, columnIndex) => {
+                            row[column.databaseName] =
+                                columnValues[columnIndex][rowIndex]
+                            return row
+                        },
+                        {} as ObjectLiteral,
+                    ),
+                )
+            }
+            returnedRows = this.getReturnedRows(updateResult.raw, entities)
+        }
 
         await Promise.all(
             entities.map(async (entity, entityIndex) => {
@@ -45,30 +68,6 @@ export class ReturningResultsEntityUpdator {
                         "update",
                     )
                 ) {
-                    if (
-                        this.queryRunner.dataSource.driver.options.type ===
-                            "oracle" &&
-                        Array.isArray(updateResult.raw) &&
-                        this.expressionMap.extraReturningColumns.length > 0
-                    ) {
-                        // each out bind holds one column's values, one per updated row
-                        const columnValues: any[][] = updateResult.raw
-                        updateResult.raw = (columnValues[0] ?? []).map(
-                            (_, rowIndex) =>
-                                this.expressionMap.extraReturningColumns.reduce(
-                                    (row, column, columnIndex) => {
-                                        row[column.databaseName] =
-                                            columnValues[columnIndex][rowIndex]
-                                        return row
-                                    },
-                                    {} as ObjectLiteral,
-                                ),
-                        )
-                    }
-                    returnedRows ??= this.getReturnedRows(
-                        updateResult.raw,
-                        entities,
-                    )
                     const result = returnedRows[entityIndex]
                     const returningColumns =
                         this.queryRunner.dataSource.driver.createGeneratedMap(
