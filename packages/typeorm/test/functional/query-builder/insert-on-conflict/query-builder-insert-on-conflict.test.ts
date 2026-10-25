@@ -9,13 +9,14 @@ import {
 } from "../../../utils/test-utils"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
+import { Tag } from "./entity/Tag"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("query builder > insert > on conflict", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
-            entities: [Category, Post],
+            entities: [Category, Post, Tag],
             enabledDrivers: ["cockroachdb", "postgres", "better-sqlite3"], // since on conflict statement is only supported in postgres and sqlite >= 3.24.0
         })
     })
@@ -329,6 +330,112 @@ describe("query builder > insert > on conflict", () => {
                     .getSql()
 
                 expect(sql).to.throw(Error)
+            }),
+        ))
+
+    // https://github.com/typeorm/typeorm/issues/12994
+    // with ON CONFLICT DO NOTHING a skipped row returns no RETURNING row, so
+    // generated values must be matched back to entities by key, not by position
+    it("orIgnore gives each inserted entity its own row and leaves the skipped one alone", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const repository = dataSource.getRepository(Tag)
+
+                // "a" already exists, so it is skipped on the insert below
+                await repository.insert({ name: "a" })
+                const existingA = await repository.findOneByOrFail({
+                    name: "a",
+                })
+
+                const tags = [
+                    repository.create({ name: "a" }),
+                    repository.create({ name: "b" }),
+                ]
+                await repository
+                    .createQueryBuilder()
+                    .insert()
+                    .values(tags)
+                    .orIgnore()
+                    .execute()
+
+                const [tagA, tagB] = tags
+                const dbB = await repository.findOneByOrFail({ name: "b" })
+
+                // the inserted entity gets its own generated id
+                expect(tagB.id).to.be.a("string")
+                expect(tagB.id).to.equal(dbB.id)
+
+                // the skipped entity never receives the inserted row's id,
+                // nor is it silently turned into the pre-existing row
+                expect(tagA.id).to.not.equal(tagB.id)
+                expect(tagA.id).to.not.equal(existingA.id)
+
+                // the pre-existing row is untouched, nothing new created for "a"
+                expect(await repository.countBy({ name: "a" })).to.equal(1)
+                expect(
+                    (await repository.findOneByOrFail({ name: "a" })).id,
+                ).to.equal(existingA.id)
+            }),
+        ))
+
+    it("orIgnore maps rows correctly when the skipped entity is not the first one", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const repository = dataSource.getRepository(Tag)
+
+                await repository.insert({ name: "q" })
+
+                const tags = [
+                    repository.create({ name: "p" }),
+                    repository.create({ name: "q" }), // skipped (middle)
+                    repository.create({ name: "r" }),
+                ]
+                await repository
+                    .createQueryBuilder()
+                    .insert()
+                    .values(tags)
+                    .orIgnore()
+                    .execute()
+
+                const [tagP, tagQ, tagR] = tags
+                const dbP = await repository.findOneByOrFail({ name: "p" })
+                const dbR = await repository.findOneByOrFail({ name: "r" })
+
+                expect(tagP.id).to.equal(dbP.id)
+                expect(tagR.id).to.equal(dbR.id)
+
+                // the skipped middle entity did not steal an inserted row's id
+                expect(tagQ.id).to.not.equal(tagP.id)
+                expect(tagQ.id).to.not.equal(tagR.id)
+
+                // all three attempted entities stay distinct
+                expect(new Set([tagP.id, tagQ.id, tagR.id]).size).to.equal(3)
+            }),
+        ))
+
+    it("orIgnore keeps positional mapping when no row is skipped", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const repository = dataSource.getRepository(Tag)
+
+                const tags = [
+                    repository.create({ name: "x" }),
+                    repository.create({ name: "y" }),
+                ]
+                await repository
+                    .createQueryBuilder()
+                    .insert()
+                    .values(tags)
+                    .orIgnore()
+                    .execute()
+
+                const [tagX, tagY] = tags
+                const dbX = await repository.findOneByOrFail({ name: "x" })
+                const dbY = await repository.findOneByOrFail({ name: "y" })
+
+                expect(tagX.id).to.equal(dbX.id)
+                expect(tagY.id).to.equal(dbY.id)
+                expect(tagX.id).to.not.equal(tagY.id)
             }),
         ))
 })

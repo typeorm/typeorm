@@ -1160,4 +1160,24 @@ export class EntityMetadata {
             )
         })
     }
+
+    /**
+     * Columns that can identify a row that caused a conflict on an
+     * "INSERT ... ON CONFLICT"/"INSERT ... ON DUPLICATE" statement: the
+     * primary columns and every column participating in a unique index or
+     * unique constraint. These are used to map RETURNING rows back to the
+     * entities that produced them when some rows were skipped (e.g. orIgnore),
+     * since positional mapping breaks as soon as one row is missing.
+     */
+    getUpsertConflictIdentificationColumns(): ColumnMetadata[] {
+        const columns = new Set<ColumnMetadata>(this.primaryColumns)
+        for (const index of this.indices) {
+            if (index.isUnique)
+                for (const column of index.columns) columns.add(column)
+        }
+        for (const unique of this.uniques) {
+            for (const column of unique.columns) columns.add(column)
+        }
+        return [...columns]
+    }
 }
