@@ -342,9 +342,9 @@ describe("query builder > soft-delete", () => {
                     .orWhere("id = :liveId", { liveId: live.id })
 
                 // generating the query must not accumulate conditions
-                expect(queryBuilder.getQuery()).to.equal(
-                    queryBuilder.getQuery(),
-                )
+                const query = queryBuilder.getQuery()
+                expect(query.match(/IS NULL/g)).to.have.length(1)
+                expect(queryBuilder.getQuery()).to.equal(query)
 
                 await queryBuilder.execute()
 
