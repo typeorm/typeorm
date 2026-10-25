@@ -643,6 +643,23 @@ export class InsertQueryBuilder<
                                             )} = DEFAULT`,
                                     ),
                             )
+
+                            const versionColumn =
+                                this.expressionMap.mainAlias!.metadata
+                                    .versionColumn
+                            if (
+                                versionColumn &&
+                                !overwrite?.includes(
+                                    versionColumn.databaseName,
+                                )
+                            ) {
+                                const escaped = this.escape(
+                                    versionColumn.databaseName,
+                                )
+                                updatePart.push(
+                                    `${escaped} = ${tableOrAliasName}.${escaped} + 1`,
+                                )
+                            }
                         }
 
                         query += updatePart.join(", ")
@@ -694,14 +711,29 @@ export class InsertQueryBuilder<
                         )
                     } else if (Array.isArray(overwrite)) {
                         query += " ON DUPLICATE KEY UPDATE "
-                        query += overwrite
-                            .map(
-                                (column) =>
-                                    `${this.escape(
-                                        column,
-                                    )} = VALUES(${this.escape(column)})`,
-                            )
-                            .join(", ")
+                        const parts = overwrite.map(
+                            (column) =>
+                                `${this.escape(
+                                    column,
+                                )} = VALUES(${this.escape(column)})`,
+                        )
+                        if (this.expressionMap.mainAlias!.hasMetadata) {
+                            const versionColumn =
+                                this.expressionMap.mainAlias!.metadata
+                                    .versionColumn
+                            if (
+                                versionColumn &&
+                                !overwrite.includes(
+                                    versionColumn.databaseName,
+                                )
+                            ) {
+                                const escaped = this.escape(
+                                    versionColumn.databaseName,
+                                )
+                                parts.push(`${escaped} = ${escaped} + 1`)
+                            }
+                        }
+                        query += parts.join(", ")
                         query += " "
                     } else if (Array.isArray(columns)) {
                         query += " ON DUPLICATE KEY UPDATE "
