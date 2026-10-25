@@ -45,7 +45,7 @@ export class ReturningResultsEntityUpdator {
                 this.expressionMap.extraReturningColumns.length > 0
             ) {
                 // each out bind holds one column's values, one per updated row
-                const columnValues: any[][] = updateResult.raw
+                const columnValues: unknown[][] = updateResult.raw
                 updateResult.raw = (columnValues[0] ?? []).map((_, rowIndex) =>
                     this.expressionMap.extraReturningColumns.reduce(
                         (row, column, columnIndex) => {
@@ -335,7 +335,7 @@ export class ReturningResultsEntityUpdator {
      * @param entities
      */
     protected getReturnedRows(
-        raw: any,
+        raw: ObjectLiteral | ObjectLiteral[],
         entities: ObjectLiteral[],
     ): (ObjectLiteral | undefined)[] {
         const { queryType, returning } = this.expressionMap
