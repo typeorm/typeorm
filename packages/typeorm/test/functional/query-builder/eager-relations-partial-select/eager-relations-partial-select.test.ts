@@ -10,6 +10,7 @@ import { Author } from "./entity/Author"
 import { Post } from "./entity/Post"
 import { Profile } from "./entity/Profile"
 
+// https://github.com/typeorm/typeorm/issues/13006
 describe("query builder > eager relations with a partial relation select", () => {
     let dataSources: DataSource[]
     before(async () => {
