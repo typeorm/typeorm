@@ -5,7 +5,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../utils/test-utils"
-import { Annotation, Holder, Seen } from "./entity/Annotation"
+import { Annotation, Badge, Holder, Seen } from "./entity/Annotation"
 
 // https://github.com/typeorm/typeorm/issues/10465
 describe("persistence > orphanage > delete before insert", () => {
@@ -13,7 +13,7 @@ describe("persistence > orphanage > delete before insert", () => {
 
     before(async () => {
         dataSources = await createTestingConnections({
-            entities: [Annotation, Holder, Seen],
+            entities: [Annotation, Badge, Holder, Seen],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
@@ -78,6 +78,41 @@ describe("persistence > orphanage > delete before insert", () => {
                         relations: { seen: true },
                     })
                 expect(reloadedHolder.seen!.id).to.equal(kept.id)
+            }),
+        ))
+
+    it("should not run updates early when they reference a row pending insertion", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const repository = dataSource.getRepository(Annotation)
+
+                const annotation = new Annotation()
+                annotation.seen = [seen(1)]
+                await repository.save(annotation)
+
+                const holder = await dataSource
+                    .getRepository(Holder)
+                    .save(new Holder())
+
+                const loaded = await loadAnnotation(dataSource, annotation.id)
+                loaded.seen = [seen(1)]
+                // a different object that carries the id of the badge being inserted
+                holder.badge = Object.assign(new Badge(), { id: 5 })
+
+                await dataSource.manager.save([
+                    loaded,
+                    holder,
+                    Object.assign(new Badge(), { id: 5 }),
+                ])
+
+                const reloadedHolder = await dataSource
+                    .getRepository(Holder)
+                    .findOneOrFail({
+                        where: { id: holder.id },
+                        relations: { badge: true },
+                    })
+                expect(reloadedHolder.badge!.id).to.equal(5)
+                expect(await dataSource.getRepository(Seen).count()).to.equal(1)
             }),
         ))
 })

@@ -212,23 +212,50 @@ export class Subject {
     /**
      * Checks if the pending update of this subject can run before any insert,
      * i.e. none of its changes refer to an entity that is not yet inserted.
+     *
+     * @param insertSubjects subjects that are about to be inserted
+     * @returns true if the update doesn't depend on any pending insert
      */
-    get canBeUpdatedBeforeInsert() {
-        return (
-            !this.metadata.treeType &&
-            this.changeMaps.every((change) => {
-                const value = change.value
-                if (InstanceChecker.isSubject(value)) return false
-                if (
-                    change.relation &&
-                    ObjectUtils.isObject(value) &&
-                    !isUint8Array(value)
-                ) {
-                    return change.relation.getRelationIdMap(value) !== undefined
-                }
-                return true
-            })
-        )
+    canBeUpdatedBeforeInsert(insertSubjects: Subject[]): boolean {
+        if (this.metadata.treeType) return false
+
+        return this.changeMaps.every((change) => {
+            const value = change.value
+            if (InstanceChecker.isSubject(value)) return false
+
+            const relation = change.relation
+            if (!relation || value === null || value === undefined) return true
+
+            // a different object may carry the id of an entity that is pending insertion
+            const pendingEntities = insertSubjects
+                .filter(
+                    (subject) =>
+                        subject.entity &&
+                        subject.metadata === relation.inverseEntityMetadata,
+                )
+                .map((subject) => subject.entity!)
+
+            if (ObjectUtils.isObject(value) && !isUint8Array(value)) {
+                const relationId = relation.getRelationIdMap(value)
+                if (relationId === undefined) return false
+
+                return !pendingEntities.some((entity) =>
+                    OrmUtils.compareIds(
+                        relation.getRelationIdMap(entity),
+                        relationId,
+                    ),
+                )
+            }
+
+            // value is a direct relation id
+            const referencedColumn = relation.joinColumns[0]?.referencedColumn
+            return !pendingEntities.some(
+                (entity) =>
+                    referencedColumn !== undefined &&
+                    String(referencedColumn.getEntityValue(entity)) ===
+                        String(value),
+            )
+        })
     }
 
     /**

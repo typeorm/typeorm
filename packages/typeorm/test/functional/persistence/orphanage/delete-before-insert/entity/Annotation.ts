@@ -3,6 +3,7 @@ import {
     Entity,
     ManyToOne,
     OneToMany,
+    PrimaryColumn,
     PrimaryGeneratedColumn,
     Unique,
 } from "../../../../../../src"
@@ -33,6 +34,12 @@ export class Seen {
 }
 
 @Entity()
+export class Badge {
+    @PrimaryColumn()
+    id: number
+}
+
+@Entity()
 export class Holder {
     @PrimaryGeneratedColumn()
     id: number
@@ -40,4 +47,7 @@ export class Holder {
     // restrictive foreign key towards an entity that may be orphaned
     @ManyToOne(() => Seen, { nullable: true, onDelete: "RESTRICT" })
     seen: Seen | null
+
+    @ManyToOne(() => Badge, { nullable: true })
+    badge: Badge | null
 }

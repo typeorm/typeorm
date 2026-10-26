@@ -143,8 +143,8 @@ export class SubjectExecutor {
         )
         if (orphanedRemoveSubjects.length > 0) {
             earlyUpdatedSubjects.push(
-                ...this.updateSubjects.filter(
-                    (subject) => subject.canBeUpdatedBeforeInsert,
+                ...this.updateSubjects.filter((subject) =>
+                    subject.canBeUpdatedBeforeInsert(this.insertSubjects),
                 ),
             )
             await this.executeUpdateOperations(earlyUpdatedSubjects)
