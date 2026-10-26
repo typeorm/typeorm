@@ -129,12 +129,28 @@ export class SubjectExecutor {
 
         // console.timeEnd("prepare");
 
-        // delete orphaned one-to-many rows first, so rows replaced in the same save
-        // don't violate unique constraints
+        // delete orphaned one-to-many rows that are replaced by inserts first, so the
+        // replacements don't violate unique constraints. Updates that don't depend on
+        // the inserts run first, as they can move foreign keys away from the orphans.
+        const earlyUpdatedSubjects: Subject[] = []
         const orphanedRemoveSubjects = this.removeSubjects.filter(
-            (subject) => subject.mustBeRemovedBeforeInsert,
+            (subject) =>
+                subject.mustBeRemovedBeforeInsert &&
+                this.insertSubjects.some(
+                    (insertSubject) =>
+                        insertSubject.metadata === subject.metadata,
+                ),
         )
-        await this.executeRemoveOperations(orphanedRemoveSubjects)
+        if (orphanedRemoveSubjects.length > 0) {
+            earlyUpdatedSubjects.push(
+                ...this.updateSubjects.filter(
+                    (subject) => subject.canBeUpdatedBeforeInsert,
+                ),
+            )
+            await this.executeUpdateOperations(earlyUpdatedSubjects)
+
+            await this.executeRemoveOperations(orphanedRemoveSubjects)
+        }
 
         // execute all insert operations
         // console.time(".insertion");
@@ -152,7 +168,13 @@ export class SubjectExecutor {
 
         // execute update operations
         // console.time(".updation");
-        await this.executeUpdateOperations()
+        await this.executeUpdateOperations(this.updateSubjects)
+        // subjects updated before the inserts still need their "after" events
+        this.updateSubjects.push(
+            ...earlyUpdatedSubjects.filter(
+                (subject) => !this.updateSubjects.includes(subject),
+            ),
+        )
         // console.timeEnd(".updation");
 
         // make sure our remove subjects are sorted (using topological sorting) when multiple entities are passed for the removal
@@ -162,7 +184,7 @@ export class SubjectExecutor {
         ).sort("delete")
         await this.executeRemoveOperations(
             this.removeSubjects.filter(
-                (subject) => !subject.mustBeRemovedBeforeInsert,
+                (subject) => !orphanedRemoveSubjects.includes(subject),
             ),
         )
         // console.timeEnd(".removal");
@@ -526,8 +548,12 @@ export class SubjectExecutor {
 
     /**
      * Updates all given subjects in the database.
+     *
+     * @param updateSubjects subjects to update
      */
-    protected async executeUpdateOperations(): Promise<void> {
+    protected async executeUpdateOperations(
+        updateSubjects: Subject[],
+    ): Promise<void> {
         const updateSubject = async (subject: Subject) => {
             if (!subject.identifier)
                 throw new SubjectWithoutIdentifierError(subject)
@@ -633,7 +659,7 @@ export class SubjectExecutor {
         const nestedSetSubjects: Subject[] = []
         const remainingSubjects: Subject[] = []
 
-        for (const subject of this.updateSubjects) {
+        for (const subject of updateSubjects) {
             if (subject.metadata.treeType === "nested-set") {
                 nestedSetSubjects.push(subject)
             } else {
@@ -668,6 +694,7 @@ export class SubjectExecutor {
      * Removes all given subjects from the database.
      *
      * todo: we need to apply topological sort here as well
+     *
      * @param removeSubjects subjects to remove
      */
     protected async executeRemoveOperations(

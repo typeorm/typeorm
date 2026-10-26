@@ -5,7 +5,7 @@ import {
     OneToMany,
     PrimaryGeneratedColumn,
     Unique,
-} from "../../../../src"
+} from "../../../../../../src"
 
 @Entity()
 export class Annotation {
@@ -30,4 +30,14 @@ export class Seen {
         orphanedRowAction: "delete",
     })
     annotation: Annotation
+}
+
+@Entity()
+export class Holder {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    // restrictive foreign key towards an entity that may be orphaned
+    @ManyToOne(() => Seen, { nullable: true, onDelete: "RESTRICT" })
+    seen: Seen | null
 }

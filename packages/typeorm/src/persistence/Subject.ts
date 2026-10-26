@@ -210,6 +210,28 @@ export class Subject {
     }
 
     /**
+     * Checks if the pending update of this subject can run before any insert,
+     * i.e. none of its changes refer to an entity that is not yet inserted.
+     */
+    get canBeUpdatedBeforeInsert() {
+        return (
+            !this.metadata.treeType &&
+            this.changeMaps.every((change) => {
+                const value = change.value
+                if (InstanceChecker.isSubject(value)) return false
+                if (
+                    change.relation &&
+                    ObjectUtils.isObject(value) &&
+                    !isUint8Array(value)
+                ) {
+                    return change.relation.getRelationIdMap(value) !== undefined
+                }
+                return true
+            })
+        )
+    }
+
+    /**
      * Checks if this subject must be soft-removed into the database.
      * Subject can be updated in the database if it is allowed to be soft-removed (explicitly persisted or by cascades)
      * and if it does have differentiated columns or relations.
