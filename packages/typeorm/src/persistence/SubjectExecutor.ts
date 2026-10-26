@@ -107,8 +107,7 @@ export class SubjectExecutor {
         if (this.options?.listeners !== false) {
             // console.time(".broadcastBeforeEventsForAll");
             broadcasterResult = this.broadcastBeforeEventsForAll()
-            if (broadcasterResult.promises.length > 0)
-                await Promise.all(broadcasterResult.promises)
+            await broadcasterResult.wait()
             // console.timeEnd(".broadcastBeforeEventsForAll");
         }
 
@@ -181,8 +180,7 @@ export class SubjectExecutor {
         if (this.options?.listeners !== false) {
             // console.time(".broadcastAfterEventsForAll");
             broadcasterResult = this.broadcastAfterEventsForAll()
-            if (broadcasterResult.promises.length > 0)
-                await Promise.all(broadcasterResult.promises)
+            await broadcasterResult.wait()
             // console.timeEnd(".broadcastAfterEventsForAll");
         }
         // console.timeEnd("SubjectExecutor.execute");
@@ -234,7 +232,7 @@ export class SubjectExecutor {
      * Broadcasts "BEFORE_INSERT", "BEFORE_UPDATE", "BEFORE_REMOVE", "BEFORE_SOFT_REMOVE", "BEFORE_RECOVER" events for all given subjects.
      */
     protected broadcastBeforeEventsForAll(): BroadcasterResult {
-        const result = new BroadcasterResult()
+        const result = new BroadcasterResult(this.queryRunner)
         if (this.insertSubjects.length)
             this.insertSubjects.forEach((subject) =>
                 this.queryRunner.broadcaster.broadcastBeforeInsertEvent(
@@ -293,7 +291,7 @@ export class SubjectExecutor {
      * Note: this method has a performance-optimized code organization.
      */
     protected broadcastAfterEventsForAll(): BroadcasterResult {
-        const result = new BroadcasterResult()
+        const result = new BroadcasterResult(this.queryRunner)
         if (this.insertSubjects.length)
             this.insertSubjects.forEach((subject) =>
                 this.queryRunner.broadcaster.broadcastAfterInsertEvent(
@@ -637,10 +635,7 @@ export class SubjectExecutor {
             }
         }
 
-        // Avoid concurrent queries on the same pg client; see #12238.
-        // CockroachDB uses the pg package over a single connection too.
-        const driverType = this.queryRunner.dataSource.options.type
-        if (driverType === "postgres" || driverType === "cockroachdb") {
+        if (this.mustExecuteOperationsSequentially) {
             for (const subject of remainingSubjects) {
                 await updateSubject(subject)
             }
@@ -823,10 +818,7 @@ export class SubjectExecutor {
             // }
         }
 
-        // Avoid concurrent queries on the same pg client; see #12238.
-        // CockroachDB uses the pg package over a single connection too.
-        const driverType = this.queryRunner.dataSource.options.type
-        if (driverType === "postgres" || driverType === "cockroachdb") {
+        if (this.mustExecuteOperationsSequentially) {
             for (const subject of this.softRemoveSubjects) {
                 await softRemoveSubject(subject)
             }
@@ -934,16 +926,25 @@ export class SubjectExecutor {
             // }
         }
 
-        // Avoid concurrent queries on the same pg client; see #12238.
-        // CockroachDB uses the pg package over a single connection too.
-        const driverType = this.queryRunner.dataSource.options.type
-        if (driverType === "postgres" || driverType === "cockroachdb") {
+        if (this.mustExecuteOperationsSequentially) {
             for (const subject of this.recoverSubjects) {
                 await recoverSubject(subject)
             }
         } else {
             await Promise.all(this.recoverSubjects.map(recoverSubject))
         }
+    }
+
+    /**
+     * Whether database operations must run one at a time on this query runner.
+     */
+    protected get mustExecuteOperationsSequentially(): boolean {
+        const driverType = this.queryRunner.dataSource.options.type
+        return (
+            driverType === "postgres" ||
+            driverType === "cockroachdb" ||
+            (driverType === "mongodb" && this.queryRunner.isTransactionActive)
+        )
     }
 
     /**
