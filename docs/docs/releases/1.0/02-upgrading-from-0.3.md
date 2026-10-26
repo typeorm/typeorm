@@ -405,7 +405,7 @@ const qb = createQueryBuilder("user")
 
 // After
 const repo = dataSource.getRepository(User)
-const qb = dataSource.createQueryBuilder("user")
+const qb = dataSource.createQueryBuilder(User, "user")
 ```
 
 ### Configuration via environment variables removed
