@@ -1239,6 +1239,38 @@ const users = await dataSource
 
 You will get all the rows, including the ones which are deleted.
 
+### Per-join soft-delete control
+
+By default, `withDeleted()` disables the soft-delete filter globally — on the main entity **and** all joins. If you need to include soft-deleted rows only on a **specific join**, use `withDeletedJoin()`:
+
+```typescript
+const users = await dataSource
+    .createQueryBuilder(User, "user")
+    .leftJoinAndSelect("user.conversations", "conversation")
+    .withDeletedJoin() // only "conversation" includes soft-deleted rows
+    .leftJoinAndSelect("conversation.messages", "message")
+    .getMany()
+```
+
+`.withDeletedJoin()` applies to the **most recently added join**. You can chain it after any join method (`leftJoin`, `leftJoinAndSelect`, `innerJoin`, `innerJoinAndSelect`):
+
+```typescript
+// Both joins include soft-deleted rows
+const users = await dataSource
+    .createQueryBuilder(User, "user")
+    .leftJoinAndSelect("user.conversations", "conversation")
+    .withDeletedJoin()
+    .leftJoinAndSelect("conversation.messages", "message")
+    .withDeletedJoin()
+    .getMany()
+```
+
+| Method                 | Scope    | Effect                                                         |
+| ---------------------- | -------- | -------------------------------------------------------------- |
+| `.withDeleted()`       | Global   | Disables soft-delete filter on the main entity and all joins   |
+| `.withGlobalDeleted()` | Global   | Alias for `.withDeleted()` — clearer intent in complex queries |
+| `.withDeletedJoin()`   | Per-join | Disables soft-delete filter only on the preceding join         |
+
 ## Common table expressions
 
 `QueryBuilder` instances
