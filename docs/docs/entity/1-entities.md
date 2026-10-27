@@ -369,7 +369,7 @@ How the values are stored depends on the driver:
   React Native) and SQL Server store the values in a string column and add a `CHECK` constraint
 - SAP HANA stores the values in an `nvarchar` column without a `CHECK` constraint
 
-`simple-enum` is not supported by Oracle or Spanner.
+`simple-enum` is not supported by Oracle, Spanner or `spanner-postgres`.
 
 On PostgreSQL, CockroachDB and SQLite you can store an array of enum values with `array: true`:
 
@@ -524,8 +524,8 @@ List of available options in `ColumnOptions`:
 - `collation: string` - Defines a column collation.
 - `enum: string[]|AnyEnum` - Used in `enum` column type to specify list of allowed enum values. You can specify array of values or specify a enum class.
 - `enumName: string` - Defines the name for the used enum.
-- `asExpression: string` - Generated column expression. Supported by PostgreSQL/CockroachDB, MySQL/MariaDB, Oracle, SAP HANA, Spanner, SQLite, and SQL Server.
-- `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Supported by PostgreSQL (`STORED` only), CockroachDB, MySQL/MariaDB, Oracle (`VIRTUAL` only), Spanner (`STORED` only), SQLite, and SQL Server (`STORED` only, internally mapped to `PERSISTED`).
+- `asExpression: string` - Generated column expression. Supported by PostgreSQL/CockroachDB, MySQL/MariaDB, Oracle, SAP HANA, Spanner (`spanner` driver only), SQLite, and SQL Server.
+- `generatedType: "VIRTUAL"|"STORED"` - Generated column type. Supported by PostgreSQL (`STORED` only), CockroachDB, MySQL/MariaDB, Oracle (`VIRTUAL` only), Spanner (`STORED` only, `spanner` driver only), SQLite, and SQL Server (`STORED` only, internally mapped to `PERSISTED`).
 - `hstoreType: "object"|"string"` - Return type of `HSTORE` column. Returns value as string or as object. Used only in [Postgres](https://www.postgresql.org/docs/9.6/static/hstore.html).
 - `array: boolean` - Used for postgres and cockroachdb column types which can be array (for example int[])
 - `transformer: { from(value: DatabaseType): EntityType, to(value: EntityType): DatabaseType }` - Used to marshal properties of arbitrary type `EntityType` into a type `DatabaseType` supported by the database. Array of transformers are also supported and will be applied in natural order when writing, and in reverse order when reading. e.g. `[lowercase, encrypt]` will first lowercase the string then encrypt it when writing, and will decrypt then do nothing when reading.

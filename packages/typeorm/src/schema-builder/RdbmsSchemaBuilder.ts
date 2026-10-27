@@ -81,7 +81,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         // but not in a read-write transaction.
         const isUsingTransactions =
             !(this.dataSource.driver.options.type === "cockroachdb") &&
-            !(this.dataSource.driver.options.type === "spanner") &&
+            !DriverUtils.isSpannerFamily(this.dataSource.driver) &&
             this.dataSource.options.migrationsTransactionMode !== "none"
 
         await this.queryRunner.beforeMigration()
@@ -917,7 +917,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (!(
                 DriverUtils.isMySQLFamily(this.dataSource.driver) ||
                 this.dataSource.driver.options.type === "aurora-mysql" ||
-                this.dataSource.driver.options.type === "spanner"
+                DriverUtils.isSpannerFamily(this.dataSource.driver)
             )) {
                 for (const changedColumn of changedColumns) {
                     await this.dropColumnCompositeUniques(
@@ -1377,7 +1377,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         // Spanner requires at least one primary key in a table.
         // Since we don't have unique column in "typeorm_metadata" table
         // and we should avoid breaking changes, we mark all columns as primary for Spanner driver.
-        const isPrimary = this.dataSource.driver.options.type === "spanner"
+        const isPrimary = DriverUtils.isSpannerFamily(this.dataSource.driver)
         await queryRunner.createTable(
             new Table({
                 database: database,

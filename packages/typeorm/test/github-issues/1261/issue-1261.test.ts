@@ -10,6 +10,8 @@ describe("github issues > #1261 onDelete property on foreign key is not modified
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            // Spanner (PostgreSQL) only supports ON DELETE NO ACTION and CASCADE
+            disabledDrivers: ["spanner-postgres"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })

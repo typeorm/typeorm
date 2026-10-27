@@ -54,6 +54,16 @@ export interface TestingOptions {
     disabledDrivers?: DatabaseType[]
 
     /**
+     * Opts a test into the `spanner-postgres` driver. By default
+     * `disabledDrivers: ["spanner"]` also excludes `spanner-postgres`, and
+     * `enabledDrivers: ["spanner"]` does not include it: the PostgreSQL
+     * dialect of Spanner differs from GoogleSQL in many ways, so only the
+     * tests that are known to pass on it opt in. Has no effect on other
+     * drivers.
+     */
+    spannerPostgres?: boolean
+
+    /**
      * Entities needs to be included in the connection for the given test suite.
      */
     entities?: (string | Function | EntitySchema<any>)[]
@@ -234,6 +244,13 @@ export function setupTestingConnections(
             if (options?.disabledDrivers?.includes(connectionOptions.type!))
                 return false
 
+            if (
+                connectionOptions.type === "spanner-postgres" &&
+                options?.disabledDrivers?.includes("spanner") &&
+                !options.spannerPostgres
+            )
+                return false
+
             if (options?.enabledDrivers?.length)
                 return (
                     options.enabledDrivers.indexOf(connectionOptions.type!) !==
@@ -337,8 +354,45 @@ getMetadataArgsStorage().entitySubscribers.push({
     target: GeneratedColumnReplacerSubscriber,
 } as EntitySubscriberMetadataArgs)
 
+/**
+ * Creates, if missing, the PostgreSQL dialect databases of the `spanner-postgres`
+ * connections in ormconfig.json. The emulator only starts with a GoogleSQL
+ * database, and a database dialect can only be chosen when it is created.
+ */
+export async function ensureSpannerPostgresDatabases(): Promise<void> {
+    const configs = getTypeOrmConfig().filter(
+        (config) => config.type === "spanner-postgres" && config.skip !== true,
+    ) as (TestingConnectionOptions & {
+        host?: string
+        port?: number
+        projectId?: string
+        instanceId?: string
+        databaseId?: string
+    })[]
+
+    for (const config of configs) {
+        process.env.SPANNER_EMULATOR_HOST = `${config.host ?? "localhost"}:${config.port ?? 9010}`
+
+        const { Spanner } = await import("@google-cloud/spanner")
+        const spanner = new Spanner({ projectId: config.projectId })
+        const instance = spanner.instance(config.instanceId!)
+        const databaseId = config.databaseId!
+
+        const [exists] = await instance.database(databaseId).exists()
+        if (!exists) {
+            const [, operation] = await instance.createDatabase(databaseId, {
+                databaseDialect: "POSTGRESQL",
+                // the client would otherwise send GoogleSQL quoting
+                createStatement: `CREATE DATABASE "${databaseId}"`,
+            } as any)
+            await operation.promise()
+        }
+        await spanner.close()
+    }
+}
+
 export function createDataSource(options: DataSourceOptions): DataSource {
-    if (options.type === "spanner") {
+    if (options.type === "spanner" || options.type === "spanner-postgres") {
         const spannerOptions = options as DataSourceOptions & {
             host?: string
             port?: number

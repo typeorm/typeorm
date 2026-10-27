@@ -181,6 +181,14 @@ export class ReturningResultsEntityUpdator {
                     "spanner"
                 ) {
                     insertResult.raw = insertResult.raw[0]
+                } else if (
+                    this.queryRunner.dataSource.driver.options.type ===
+                        "spanner-postgres" &&
+                    Array.isArray(insertResult.raw[0])
+                ) {
+                    // unwrap the rows from the Spanner result tuple only once,
+                    // not for every entity
+                    insertResult.raw = insertResult.raw[0]
                 }
             }
 

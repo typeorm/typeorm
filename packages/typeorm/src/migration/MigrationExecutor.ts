@@ -565,10 +565,16 @@ export class MigrationExecutor {
                 .sort({ _id: -1 })
                 .toArray()
         } else {
+            // Spanner generates the id with a bit-reversed identity column: the ids
+            // do not grow with time, so the migrations are sorted by their timestamp
+            const sortColumn =
+                this.dataSource.driver.options.type === "spanner-postgres"
+                    ? "timestamp"
+                    : "id"
             const migrationsRaw: ObjectLiteral[] = await this.dataSource.manager
                 .createQueryBuilder(queryRunner)
                 .select()
-                .orderBy(this.dataSource.driver.escape("id"), "DESC")
+                .orderBy(this.dataSource.driver.escape(sortColumn), "DESC")
                 .from(this.migrationsTable, this.migrationsTableName)
                 .getRawMany()
             return migrationsRaw.map((migrationRaw) => {

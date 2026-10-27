@@ -5,6 +5,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
+import { DriverUtils } from "../../../../src/driver/DriverUtils"
 import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Question } from "./entity/Question"
 import { Answer } from "./entity/Answer"
@@ -25,7 +26,7 @@ describe("cascades > insert complex", () => {
         Promise.all(
             dataSources.map(async (dataSource) => {
                 // not supported in Spanner
-                if (dataSource.driver.options.type === "spanner") return
+                if (DriverUtils.isSpannerFamily(dataSource.driver)) return
 
                 const photo = new Photo()
                 const user = new User()

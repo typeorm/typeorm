@@ -201,8 +201,9 @@ export class EntityMetadataBuilder {
                                 this.dataSource.driver.options.type ===
                                     "mssql" ||
                                 this.dataSource.driver.options.type === "sap" ||
-                                this.dataSource.driver.options.type ===
-                                    "spanner"
+                                DriverUtils.isSpannerFamily(
+                                    this.dataSource.driver,
+                                )
                             ) {
                                 const index = new IndexMetadata({
                                     entityMetadata:
@@ -801,7 +802,7 @@ export class EntityMetadataBuilder {
             DriverUtils.isMySQLFamily(this.dataSource.driver) ||
             this.dataSource.driver.options.type === "aurora-mysql" ||
             this.dataSource.driver.options.type === "sap" ||
-            this.dataSource.driver.options.type === "spanner"
+            DriverUtils.isSpannerFamily(this.dataSource.driver)
         ) {
             const indices = this.metadataArgsStorage
                 .filterUniques(entityMetadata.inheritanceTree)
