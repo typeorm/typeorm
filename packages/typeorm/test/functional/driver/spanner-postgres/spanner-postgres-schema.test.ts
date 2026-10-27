@@ -571,6 +571,81 @@ describe("driver > spanner-postgres > schema", () => {
                 }
             }))
 
+        it("should send the DDL queued by another query runner before a statement", () =>
+            forEachDataSource(async (dataSource) => {
+                const queryRunner: any = dataSource.createQueryRunner()
+                try {
+                    await queryRunner.query(
+                        `CREATE TABLE "rw_shared" ("id" bigint NOT NULL, PRIMARY KEY ("id"))`,
+                    )
+
+                    await dataSource.query(
+                        `INSERT INTO "rw_shared" ("id") VALUES (1)`,
+                    )
+                    expect(queryRunner.pendingDdl).to.have.length(0)
+                } finally {
+                    await queryRunner.release()
+                }
+            }))
+
+        it("should keep the DDL another query runner queued in a transaction", () =>
+            forEachDataSource(async (dataSource) => {
+                const spy = spyOnSchemaUpdates(dataSource)
+                const queryRunner: any = dataSource.createQueryRunner()
+                try {
+                    await queryRunner.startTransaction()
+                    await queryRunner.query(
+                        `CREATE TABLE "rw_tx_only" ("id" bigint NOT NULL, PRIMARY KEY ("id"))`,
+                    )
+
+                    await dataSource.query(`SELECT 1`)
+                    expect(spy.calls).to.equal(0)
+
+                    await queryRunner.rollbackTransaction()
+                    expect(await queryRunner.hasTable("rw_tx_only")).to.be.false
+                } finally {
+                    spy.restore()
+                    await queryRunner.release()
+                }
+            }))
+
+        it("should forget the tables of a schema update that failed", () =>
+            forEachDataSource(async (dataSource) => {
+                const queryRunner: any = dataSource.createQueryRunner()
+                const updateSchema = sinon
+                    .stub(queryRunner, "updateSchema")
+                    .rejects(new Error("schema update failed"))
+                try {
+                    await queryRunner.createTable(
+                        new Table({
+                            name: "rw_stale",
+                            columns: [
+                                { name: "id", type: "bigint", isPrimary: true },
+                            ],
+                        }),
+                    )
+                    await expect(
+                        (queryRunner as SpannerPostgresQueryRunner).flushDdl(),
+                    ).to.be.rejectedWith("schema update failed")
+                    updateSchema.restore()
+
+                    // the table is read from Spanner, where it does not exist
+                    await expect(
+                        queryRunner.addColumn(
+                            "rw_stale",
+                            new TableColumn({
+                                name: "v",
+                                type: "bigint",
+                                isNullable: true,
+                            }),
+                        ),
+                    ).to.be.rejectedWith(TypeORMError, /does not exist/)
+                } finally {
+                    updateSchema.restore()
+                    await queryRunner.release()
+                }
+            }))
+
         it("should find tables and columns inside a transaction, after DML", () =>
             forEachDataSource(async (dataSource) => {
                 const queryRunner = dataSource.createQueryRunner()
@@ -801,6 +876,41 @@ describe("driver > spanner-postgres > schema", () => {
                         "pgs_account",
                         "IDX_pgs_account_not_null",
                     )
+
+                    // quoted column names with spaces and quotes
+                    const table = new Table({
+                        name: "rw_quoted",
+                        columns: [
+                            { name: "id", type: "bigint", isPrimary: true },
+                            {
+                                name: "customer name",
+                                type: "varchar",
+                                length: "20",
+                                isNullable: true,
+                            },
+                            {
+                                name: 'say "hi"',
+                                type: "varchar",
+                                length: "20",
+                                isNullable: true,
+                            },
+                        ],
+                    })
+                    await queryRunner.createTable(table)
+                    await queryRunner.createIndex(
+                        table,
+                        new TableIndex({
+                            name: "IDX_rw_quoted",
+                            columnNames: ["customer name", 'say "hi"'],
+                            where: `"customer name" IS NOT NULL AND ("say ""hi""" IS NOT NULL)`,
+                        }),
+                    )
+                    await (queryRunner as SpannerPostgresQueryRunner).flushDdl()
+                    expect(
+                        (await queryRunner.getTable("rw_quoted"))!.indices.map(
+                            (index) => index.name,
+                        ),
+                    ).to.deep.equal(["IDX_rw_quoted"])
                 } finally {
                     await queryRunner.release()
                 }

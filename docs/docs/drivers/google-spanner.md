@@ -124,12 +124,12 @@ A column declared as `int`, or the default `Number` type of `@PrimaryGeneratedCo
 
 The driver queues DDL statements and sends them to Spanner together, in one schema update. This is why `synchronize()` and migrations are much faster than with one request per statement. The queue is sent before:
 
-- a statement that is not DDL runs, or the schema is read;
+- a statement that is not DDL runs, or the schema is read, on the same query runner or on another one of the data source (`dataSource.query()`, a repository);
 - a transaction starts or commits;
 - a migration ends, or the query runner is released;
 - `queryRunner.flushDdl()` is called.
 
-A rollback discards the statements queued in the transaction. Spanner DDL is not transactional, so statements that were already sent are not undone. A DDL error is thrown by the call that sends the queue, which can be later than the call that queued the statement. Call `flushDdl()` to get the errors at a given point.
+A rollback discards the statements queued in the transaction. Spanner DDL is not transactional, so statements that were already sent are not undone. For the same reason, the statements a query runner queues in a transaction are only sent by that query runner: in a migration run in a transaction, call `queryRunner.flushDdl()` before using the schema changes through another query runner, such as a repository of the data source. A DDL error is thrown by the call that sends the queue, which can be later than the call that queued the statement, or a statement of another query runner. Call `flushDdl()` to get the errors at a given point.
 
 ### Schema Limits
 

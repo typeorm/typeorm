@@ -48,6 +48,12 @@ export class SpannerPostgresDriver extends SpannerDriver {
     readonly searchSchema: string = "public"
 
     /**
+     * Query runners with DDL queued and not sent yet. A statement of any query
+     * runner sends the DDL queued by the others first.
+     */
+    readonly queryRunnersWithDdl = new Set<SpannerPostgresQueryRunner>()
+
+    /**
      * Cloud Spanner client library, cached.
      */
     private library?: any

@@ -36,7 +36,8 @@ import type { SpannerPostgresDriver } from "./SpannerPostgresDriver"
  * afterwards, and every update has a high fixed cost. So the DDL statements are
  * not sent one by one: they are queued, and sent together, with one
  * `updateSchema` call, when something needs their effect:
- * - a statement that is not DDL, or any read of the schema, is about to run;
+ * - a statement that is not DDL, or any read of the schema, is about to run,
+ *   on this query runner or on another one of the same data source;
  * - a transaction starts or commits;
  * - a migration ends, or the query runner is released;
  * - {@link flushDdl} is called.
@@ -44,7 +45,8 @@ import type { SpannerPostgresDriver } from "./SpannerPostgresDriver"
  * This means a failed DDL statement is reported by the call that sends the
  * batch, not by the one that queued the statement. The statements queued in a
  * transaction that is rolled back are discarded; the ones already sent
- * cannot be undone, as Spanner DDL is not transactional.
+ * cannot be undone, as Spanner DDL is not transactional. So the statements
+ * queued in a transaction are only sent by this query runner.
  *
  * @see https://cloud.google.com/spanner/docs/schema-updates
  */
@@ -166,7 +168,7 @@ export class SpannerPostgresQueryRunner extends SpannerQueryRunner {
             return useStructuredResult ? new QueryResult() : []
         }
 
-        await this.flushDdl()
+        await this.flushAllDdl()
 
         return super.query(query, parameters, useStructuredResult)
     }
@@ -186,7 +188,7 @@ export class SpannerPostgresQueryRunner extends SpannerQueryRunner {
         onEnd?: Function,
         onError?: Function,
     ) {
-        await this.flushDdl()
+        await this.flushAllDdl()
 
         const source = await super.stream(query, parameters)
         const normalized = new Transform({
@@ -229,6 +231,7 @@ export class SpannerPostgresQueryRunner extends SpannerQueryRunner {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
         this.pendingDdl.push(query)
+        this.driver.queryRunnersWithDdl.add(this)
     }
 
     /**
@@ -247,10 +250,15 @@ export class SpannerPostgresQueryRunner extends SpannerQueryRunner {
 
         const statements = this.pendingDdl
         this.pendingDdl = []
+        this.driver.queryRunnersWithDdl.delete(this)
 
         this.ddlFlush = this.updateSchema(statements)
         try {
             await this.ddlFlush
+        } catch (error) {
+            // the tables remembered may have changes that were not applied
+            this.loadedTables = []
+            throw error
         } finally {
             this.ddlFlush = undefined
         }
@@ -262,6 +270,23 @@ export class SpannerPostgresQueryRunner extends SpannerQueryRunner {
      */
     discardDdl(): void {
         this.pendingDdl = []
+        this.driver.queryRunnersWithDdl.delete(this)
+        // the tables remembered may have the changes discarded
+        this.loadedTables = []
+    }
+
+    /**
+     * Sends the DDL queued by this query runner and by the other query runners
+     * of the data source, so a statement sees the schema changes queued
+     * before it. The DDL another query runner queued in a transaction stays
+     * queued, as a rollback of the transaction discards it.
+     */
+    protected async flushAllDdl(): Promise<void> {
+        for (const queryRunner of [...this.driver.queryRunnersWithDdl]) {
+            if (queryRunner !== this && !queryRunner.isTransactionActive)
+                await queryRunner.flushDdl()
+        }
+        await this.flushDdl()
     }
 
     /**
@@ -1201,7 +1226,7 @@ export class SpannerPostgresQueryRunner extends SpannerQueryRunner {
     ): Promise<ObjectLiteral[]> {
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
-        await this.flushDdl()
+        await this.flushAllDdl()
 
         this.driver.dataSource.logger.logQuery(query, parameters, this)
         try {
@@ -1727,12 +1752,15 @@ export class SpannerPostgresQueryRunner extends SpannerQueryRunner {
         const columns = index.columnNames
             .map((columnName) => this.driver.escape(columnName))
             .join(", ")
-        // Spanner only filters an index by columns that are not null
+        // Spanner only filters an index by columns that are not null; a quoted
+        // column name can have any character, with its quotes doubled
+        const condition = `\\(?\\s*(?:"(?:[^"]|"")+"|[^"\\s()]+)\\s+IS\\s+NOT\\s+NULL\\s*\\)?`
         if (
             index.where &&
-            !/^\s*\(?\s*"?[^"\s()]+"?\s+IS\s+NOT\s+NULL\s*\)?(\s+AND\s+\(?\s*"?[^"\s()]+"?\s+IS\s+NOT\s+NULL\s*\)?)*\s*$/i.test(
-                index.where,
-            )
+            !new RegExp(
+                `^\\s*${condition}(?:\\s+AND\\s+${condition})*\\s*$`,
+                "i",
+            ).test(index.where)
         )
             throw new TypeORMError(
                 `Spanner only supports "<column> IS NOT NULL" conditions, joined with AND, in the WHERE clause of an index: the index "${index.name}" of the table "${table.name}" has "${index.where}".`,
