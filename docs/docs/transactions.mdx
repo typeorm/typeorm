@@ -42,6 +42,23 @@ The most important restriction when working in a transaction is to **ALWAYS** us
 `transactionalEntityManager` in this example. DO NOT USE GLOBAL ENTITY MANAGER.
 All operations **MUST** be executed using the provided transactional entity manager.
 
+In PostgreSQL, a failed query aborts the whole transaction, even if you catch the error in the callback.
+The database then rolls the transaction back instead of committing it, and `transaction()` rejects with a `QueryFailedError`.
+To recover from an error and keep the rest of the transaction, run the query that may fail in a nested transaction, which uses a savepoint:
+
+```typescript
+await myDataSource.manager.transaction(async (transactionalEntityManager) => {
+    await transactionalEntityManager.save(users)
+    try {
+        await transactionalEntityManager.transaction(async (nestedManager) => {
+            await nestedManager.save(photos)
+        })
+    } catch (error) {
+        // photos were not saved, but users will still be committed
+    }
+})
+```
+
 ## Specifying isolation level
 
 Specifying the isolation level for the transaction can be done by supplying it as the first parameter:

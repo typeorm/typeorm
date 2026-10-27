@@ -273,6 +273,13 @@ export class PostgresQueryRunner
         try {
             const queryStartTime = DateUtils.performanceNow()
             const raw = await databaseConnection.query(query, parameters)
+            // postgres answers COMMIT with ROLLBACK when a query in the
+            // transaction failed, and none of its changes are saved
+            if (query === "COMMIT" && raw?.command === "ROLLBACK") {
+                throw new TypeORMError(
+                    "Transaction was rolled back instead of committed because a query in it failed.",
+                )
+            }
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
