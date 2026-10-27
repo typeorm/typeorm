@@ -174,7 +174,7 @@ There are several special column types with additional functionality available:
   each time you call `save` of entity manager or repository, or during `upsert` operations when an update occurs.
   You don't need to set this column - it will be automatically set.
 
-- `@DeleteDateColumn` is a special column that is automatically set to the entity's delete time each time you call soft-delete of entity manager or repository. You don't need to set this column - it will be automatically set. If the @DeleteDateColumn is set, the default scope will be "non-deleted".
+- `@DeleteDateColumn` is a special column that is automatically set to the entity's delete time each time you call soft-delete of entity manager or repository. You don't need to set this column - it will be automatically set. If the @DeleteDateColumn is set, the default scope will be "non-deleted". Use `withDeleted()` to include soft-deleted rows globally, or `withDeletedJoin()` in QueryBuilder to include them only on a specific join. See [Select QueryBuilder > Using Soft Deleting](../query-builder/1-select-query-builder.md#using-soft-deleting) for details.
 
 - `@VersionColumn` is a special column that is automatically set to the version of the entity (incremental number)
   each time you call `save` of entity manager or repository, or during `upsert` operations when an update occurs.

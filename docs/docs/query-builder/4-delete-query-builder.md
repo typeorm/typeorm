@@ -35,6 +35,34 @@ await myDataSource
     .execute()
 ```
 
+### Querying soft-deleted entities with relations
+
+When you use `@DeleteDateColumn`, TypeORM automatically adds a `deletedAt IS NULL` condition to all queries and joins. The `withDeleted()` method removes this filter **globally** — from the main entity and all joins:
+
+```typescript
+// All soft-deleted users, conversations, and messages are included
+const users = await dataSource
+    .createQueryBuilder(User, "user")
+    .leftJoinAndSelect("user.conversations", "conversation")
+    .leftJoinAndSelect("conversation.messages", "message")
+    .withDeleted()
+    .getMany()
+```
+
+If you need to include soft-deleted rows only on a **specific join** (e.g. show deleted conversations but hide deleted messages), use `withDeletedJoin()`:
+
+```typescript
+// Only soft-deleted conversations are included; messages still filtered
+const users = await dataSource
+    .createQueryBuilder(User, "user")
+    .leftJoinAndSelect("user.conversations", "conversation")
+    .withDeletedJoin()
+    .leftJoinAndSelect("conversation.messages", "message")
+    .getMany()
+```
+
+See the [Select QueryBuilder > Using Soft Deleting](./1-select-query-builder.md#using-soft-deleting) section for the full API reference.
+
 ## `Restore-Soft-Delete`
 
 Alternatively, You can recover the soft deleted rows by using the `restore()` method:
