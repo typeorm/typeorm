@@ -16,6 +16,7 @@ import { TableExclusion } from "./table/TableExclusion"
 import { View } from "./view/View"
 import { ViewUtils } from "./util/ViewUtils"
 import { DriverUtils } from "../driver/DriverUtils"
+import type { SpannerPostgresQueryRunner } from "../driver/spanner-postgres/SpannerPostgresQueryRunner"
 import type { PostgresQueryRunner } from "../driver/postgres/PostgresQueryRunner"
 import { TypeORMError } from "../error"
 import type { IndexMetadata } from "../metadata/IndexMetadata"
@@ -121,6 +122,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                     await this.queryRunner.rollbackTransaction()
                 }
             } catch (rollbackError) {}
+            // the DDL queued by the failed synchronization must not be sent
+            if (this.dataSource.driver.options.type === "spanner-postgres") {
+                ;(this.queryRunner as SpannerPostgresQueryRunner).discardDdl()
+            }
             throw error
         } finally {
             await this.queryRunner.afterMigration()

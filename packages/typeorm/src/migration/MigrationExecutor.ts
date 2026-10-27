@@ -5,6 +5,7 @@ import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { QueryRunner } from "../query-runner/QueryRunner"
 import { MssqlParameter } from "../driver/sqlserver/MssqlParameter"
 import type { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner"
+import type { SpannerPostgresQueryRunner } from "../driver/spanner-postgres/SpannerPostgresQueryRunner"
 import { ForbiddenTransactionModeOverrideError, TypeORMError } from "../error"
 import { InstanceChecker } from "../util/InstanceChecker"
 
@@ -383,6 +384,10 @@ export class MigrationExecutor {
                     await queryRunner.rollbackTransaction()
                 } catch (rollbackError) {}
             }
+            // the DDL queued by the failed migration must not be sent
+            if (this.dataSource.driver.options.type === "spanner-postgres") {
+                ;(queryRunner as SpannerPostgresQueryRunner).discardDdl()
+            }
 
             throw err
         } finally {
@@ -483,6 +488,10 @@ export class MigrationExecutor {
                     // we throw original error even if rollback thrown an error
                     await queryRunner.rollbackTransaction()
                 } catch (rollbackError) {}
+            }
+            // the DDL queued by the failed migration must not be sent
+            if (this.dataSource.driver.options.type === "spanner-postgres") {
+                ;(queryRunner as SpannerPostgresQueryRunner).discardDdl()
             }
 
             throw err

@@ -104,6 +104,30 @@ class AddColumnAndSeed1700000000002 implements MigrationInterface {
     }
 }
 
+/**
+ * Queues a table and fails before the DDL is sent.
+ */
+class FailAfterCreateTable1700000000003 implements MigrationInterface {
+    async up(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.createTable(
+            new Table({
+                name: "pgm_failed",
+                columns: [
+                    {
+                        name: "id",
+                        type: "varchar",
+                        length: "36",
+                        isPrimary: true,
+                    },
+                ],
+            }),
+        )
+        throw new Error("migration failed")
+    }
+
+    async down(): Promise<void> {}
+}
+
 describe("driver > spanner-postgres > migrations", () => {
     let dataSources: DataSource[]
     before(async () => {
@@ -219,4 +243,35 @@ describe("driver > spanner-postgres > migrations", () => {
                 ),
             ).to.deep.equal([{ n: 0 }])
         }))
+})
+
+describe("driver > spanner-postgres > failed migrations", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            enabledDrivers: ["spanner-postgres"],
+            migrations: [FailAfterCreateTable1700000000003],
+            dropSchema: true,
+            driverSpecific: { migrationsTransactionMode: "none" },
+        })
+    })
+    after(() => closeTestingConnections(dataSources))
+
+    it("should not send the DDL queued by a failed migration", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await expect(
+                    dataSource.runMigrations({ transaction: "none" }),
+                ).to.be.rejectedWith("migration failed")
+
+                const queryRunner = dataSource.createQueryRunner()
+                try {
+                    expect(await queryRunner.hasTable("pgm_failed")).to.equal(
+                        false,
+                    )
+                } finally {
+                    await queryRunner.release()
+                }
+            }),
+        ))
 })

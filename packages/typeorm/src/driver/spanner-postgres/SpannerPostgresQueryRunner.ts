@@ -112,7 +112,7 @@ export class SpannerPostgresQueryRunner extends SpannerQueryRunner {
      * Rollbacks transaction. The DDL queued in it is discarded.
      */
     async rollbackTransaction(): Promise<void> {
-        if (this.isTransactionActive) this.pendingDdl = []
+        if (this.isTransactionActive) this.discardDdl()
 
         return super.rollbackTransaction()
     }
@@ -208,6 +208,16 @@ export class SpannerPostgresQueryRunner extends SpannerQueryRunner {
     }
 
     /**
+     * Gets the Spanner object a stream runs its query on: the transaction of
+     * this query runner when there is one, so the stream sees its writes.
+     */
+    protected getStreamExecutor(): any {
+        return this.isTransactionActive && this.sessionTransaction
+            ? this.sessionTransaction
+            : super.getStreamExecutor()
+    }
+
+    /**
      * Queues a DDL statement to be sent to Spanner with the next batch, see
      * {@link flushDdl}.
      *
@@ -243,6 +253,14 @@ export class SpannerPostgresQueryRunner extends SpannerQueryRunner {
         } finally {
             this.ddlFlush = undefined
         }
+    }
+
+    /**
+     * Discards the DDL statements queued and not sent yet, so the ones of a
+     * failed operation are not sent when the query runner is released.
+     */
+    discardDdl(): void {
+        this.pendingDdl = []
     }
 
     /**
@@ -987,7 +1005,8 @@ export class SpannerPostgresQueryRunner extends SpannerQueryRunner {
      * @param item
      */
     protected getItemType(item: any): string | ObjectLiteral {
-        const { Int, Float, PGNumeric, SpannerDate } = this.driver.spannerLib
+        const { Int, Float, Float32, PGNumeric, SpannerDate } =
+            this.driver.spannerLib
 
         if (typeof item === "number") {
             return Number.isInteger(item) ? "int64" : "float64"
@@ -1001,6 +1020,8 @@ export class SpannerPostgresQueryRunner extends SpannerQueryRunner {
             return "int64"
         } else if (item instanceof Float) {
             return "float64"
+        } else if (item instanceof Float32) {
+            return "float32"
         } else if (item instanceof PGNumeric) {
             return { type: "pgNumeric" }
         } else if (item instanceof SpannerDate) {

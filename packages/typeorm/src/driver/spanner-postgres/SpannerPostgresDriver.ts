@@ -58,10 +58,13 @@ export class SpannerPostgresDriver extends SpannerDriver {
     private jsonbClass?: any
 
     /**
-     * Key of the property that holds the Spanner type of the items of an array
-     * parameter, when they cannot tell it.
+     * The Spanner type of the items of the array parameters whose items cannot
+     * tell it.
      */
-    private readonly itemTypeKey = Symbol("spannerParameterItemType")
+    private readonly arrayItemTypes = new WeakMap<
+        any[],
+        string | ObjectLiteral
+    >()
 
     // -------------------------------------------------------------------------
     // Public Implemented Properties
@@ -299,7 +302,9 @@ export class SpannerPostgresDriver extends SpannerDriver {
 
         if (Array.isArray(value) && columnMetadata.type !== "jsonb") {
             value = value.map((item) =>
-                this.hydrateScalarValue(item, columnMetadata),
+                item === null || item === undefined
+                    ? item
+                    : this.hydrateScalarValue(item, columnMetadata),
             )
         } else {
             value = this.hydrateScalarValue(value, columnMetadata)
@@ -358,7 +363,7 @@ export class SpannerPostgresDriver extends SpannerDriver {
      * @param value
      */
     getArrayItemType(value: any[]): string | ObjectLiteral | undefined {
-        return (value as any)[this.itemTypeKey]
+        return this.arrayItemTypes.get(value)
     }
 
     /**
@@ -839,8 +844,13 @@ export class SpannerPostgresDriver extends SpannerDriver {
         const type = column.type
 
         if (type === "jsonb") {
+            if (!forWrite)
+                throw new TypeORMError(
+                    `Spanner cannot compare jsonb values, so the "${column.databaseName}" column cannot be filtered by value: use a raw condition with a JSON operator, such as @>.`,
+                )
+
             // jsonb is bound as JSON text, see castParameter()
-            return forWrite ? JSON.stringify(value) : value
+            return JSON.stringify(value)
         } else if (type === "simple-array") {
             return DateUtils.simpleArrayToString(value)
         } else if (type === "simple-json") {
@@ -853,9 +863,7 @@ export class SpannerPostgresDriver extends SpannerDriver {
             )
             if (!items.some((item) => item !== null && item !== undefined)) {
                 // there is no item to infer the type of the array from
-                Object.defineProperty(items, this.itemTypeKey, {
-                    value: this.getSpannerType(type),
-                })
+                this.arrayItemTypes.set(items, this.getSpannerType(type))
             }
             return items
         }
@@ -880,6 +888,13 @@ export class SpannerPostgresDriver extends SpannerDriver {
                 return Spanner.float(value)
             } else if (typeof value === "string" && !isNaN(+value)) {
                 return Spanner.float(+value)
+            }
+        } else if (type === "float4" || type === "real") {
+            // a number is bound as float64, which Spanner does not coerce in arrays
+            if (typeof value === "number") {
+                return Spanner.float32(value)
+            } else if (typeof value === "string" && !isNaN(+value)) {
+                return Spanner.float32(+value)
             }
         } else if (type === "numeric" || type === "decimal") {
             return Spanner.pgNumeric(value.toString())
@@ -976,6 +991,8 @@ export class SpannerPostgresDriver extends SpannerDriver {
             type === "double precision"
         ) {
             return "float64"
+        } else if (type === "float4" || type === "real") {
+            return "float32"
         } else if (type === "numeric" || type === "decimal") {
             return { type: "pgNumeric" }
         } else if (type === "date") {

@@ -36,6 +36,18 @@ const Types = new EntitySchema<any>({
     },
 })
 
+const Arrays = new EntitySchema<any>({
+    name: "Arrays",
+    tableName: "pgd_arrays",
+    columns: {
+        id: { type: "varchar", length: 36, primary: true, generated: "uuid" },
+        bigs: { type: "bigint", array: true, nullable: true },
+        flags: { type: Boolean, array: true, nullable: true },
+        ats: { type: "timestamptz", array: true, nullable: true },
+        reals: { type: "real", array: true, nullable: true },
+    },
+})
+
 const Pair = new EntitySchema<any>({
     name: "Pair",
     tableName: "pgd_pair",
@@ -100,7 +112,7 @@ describe("driver > spanner-postgres > dml", () => {
     before(async () => {
         dataSources = await createTestingConnections({
             enabledDrivers: ["spanner-postgres"],
-            entities: [Types, Pair, Bulk, Stamped],
+            entities: [Types, Arrays, Pair, Bulk, Stamped],
             subscribers: [StampSubscriber],
             schemaCreate: true,
             dropSchema: true,
@@ -217,6 +229,14 @@ describe("driver > spanner-postgres > dml", () => {
                 expect(
                     (await repository.findOneByOrFail({ id: saved.id })).json,
                 ).to.equal(null)
+            }))
+
+        it("should reject a jsonb value in a condition, as Spanner cannot compare jsonb", () =>
+            forEachDataSource(async (dataSource) => {
+                const repository = dataSource.getRepository("Types")
+                await expect(
+                    repository.findBy({ json: { a: 1 } }),
+                ).to.be.rejectedWith(TypeORMError, /cannot compare jsonb/)
             }))
 
         it("should return jsonb already unwrapped from RETURNING and raw queries", () =>
@@ -421,6 +441,54 @@ describe("driver > spanner-postgres > dml", () => {
                             !["id", "createdAt"].includes(key),
                     ),
                 ).to.deep.equal([])
+            }))
+
+        it("should read the null items of an array as null", () =>
+            forEachDataSource(async (dataSource) => {
+                const repository = dataSource.getRepository("Arrays")
+                const at = new Date("2024-01-02T03:04:05.000Z")
+                const saved = await repository.save(
+                    repository.create({
+                        bigs: ["1", null],
+                        flags: [true, null],
+                        ats: [null, at],
+                        reals: [null, 1.5],
+                    }),
+                )
+
+                const loaded = await repository.findOneByOrFail({
+                    id: saved.id,
+                })
+                expect(loaded.bigs).to.deep.equal(["1", null])
+                expect(loaded.flags).to.deep.equal([true, null])
+                expect(loaded.ats).to.deep.equal([null, at])
+                expect(loaded.reals).to.deep.equal([null, 1.5])
+            }))
+
+        it("should bind an empty or all-null array with the type of its column", () =>
+            forEachDataSource(async (dataSource) => {
+                const repository = dataSource.getRepository("Arrays")
+                const empty = await repository.save(
+                    repository.create({ reals: [], bigs: [] }),
+                )
+                const nulls = await repository.save(
+                    repository.create({ reals: [null], flags: [null] }),
+                )
+
+                const loadedEmpty = await repository.findOneByOrFail({
+                    id: empty.id,
+                })
+                const loadedNulls = await repository.findOneByOrFail({
+                    id: nulls.id,
+                })
+                expect([loadedEmpty.reals, loadedEmpty.bigs]).to.deep.equal([
+                    [],
+                    [],
+                ])
+                expect([loadedNulls.reals, loadedNulls.flags]).to.deep.equal([
+                    [null],
+                    [null],
+                ])
             }))
 
         it("should bind a null or undefined raw parameter as text", () =>
@@ -883,6 +951,29 @@ describe("driver > spanner-postgres > dml", () => {
                         ["s3", 3],
                     ],
                 )
+            }))
+
+        it("should stream inside the transaction of the query runner", () =>
+            forEachDataSource(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                try {
+                    await queryRunner.startTransaction()
+                    await queryRunner.manager.save("Types", {
+                        str: "uncommitted",
+                    })
+
+                    const stream = await queryRunner.stream(
+                        `SELECT "str" FROM "pgd_types" WHERE "str" = $1`,
+                        ["uncommitted"],
+                    )
+                    expect(await collect(stream)).to.deep.equal([
+                        { str: "uncommitted" },
+                    ])
+
+                    await queryRunner.rollbackTransaction()
+                } finally {
+                    await queryRunner.release()
+                }
             }))
 
         it("should report a failing query to the onError callback", () =>

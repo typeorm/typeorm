@@ -268,6 +268,13 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
+     * Gets the Spanner object a stream runs its query on.
+     */
+    protected getStreamExecutor(): any {
+        return this.driver.instanceDatabase
+    }
+
+    /**
      * Converts the values of a query result, in place, before they are
      * returned to the caller.
      *
@@ -483,7 +490,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         try {
             this.driver.dataSource.logger.logQuery(query, parameters, this)
             const request = this.buildQueryRequest(query, parameters)
-            const stream = this.driver.instanceDatabase.runStream(request)
+            const stream = this.getStreamExecutor().runStream(request)
 
             if (onEnd) {
                 stream.on("end", onEnd)
