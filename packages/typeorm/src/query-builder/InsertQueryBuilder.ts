@@ -63,13 +63,6 @@ export class InsertQueryBuilder<
         if (valueSets.length === 0 && !this.expressionMap.insertFromSelect)
             return new InsertResult()
 
-        // an insert with more parameters than the database accepts in a single
-        // statement is split, and the statements run in one transaction. The
-        // listeners can still add values, so how it is split is decided after
-        // them, and here the most parameters the rows can have are counted
-        const mayBeSplit =
-            this.splitValueSetsByParameterLimit(valueSets, true) !== undefined
-
         // console.time("QueryBuilder.execute");
         // console.time(".database stuff");
         const queryRunner = this.obtainQueryRunner()
@@ -78,7 +71,7 @@ export class InsertQueryBuilder<
         try {
             // start transaction if it was enabled
             if (
-                (this.expressionMap.useTransaction === true || mayBeSplit) &&
+                this.expressionMap.useTransaction === true &&
                 queryRunner.isTransactionActive === false
             ) {
                 await queryRunner.startTransaction()
@@ -105,8 +98,15 @@ export class InsertQueryBuilder<
                 await broadcastResult.wait()
             }
 
+            // an insert with more parameters than the database accepts in a
+            // single statement is split, after the listeners as they can add
+            // values, and the statements run in one transaction
             const valueSetChunks =
                 this.splitValueSetsByParameterLimit(valueSets)
+            if (valueSetChunks && queryRunner.isTransactionActive === false) {
+                await queryRunner.startTransaction()
+                transactionStartedByUs = true
+            }
 
             let declareSql: string | null = null
             let selectOutputSql: string | null = null
@@ -453,12 +453,9 @@ export class InsertQueryBuilder<
      * single statement is enough.
      *
      * @param valueSets
-     * @param countAllColumns counts every column of a row as a parameter, even
-     * the ones the row has no value for yet
      */
     protected splitValueSetsByParameterLimit(
         valueSets: ObjectLiteral[],
-        countAllColumns: boolean = false,
     ): ObjectLiteral[][] | undefined {
         const { maxQueryParameters } = this.dataSource.driver
         if (!maxQueryParameters || this.expressionMap.insertFromSelect)
@@ -469,7 +466,6 @@ export class InsertQueryBuilder<
             (columns.length > 0
                 ? columns.filter(
                       (column) =>
-                          countAllColumns ||
                           column.isDiscriminator ||
                           !["undefined", "function"].includes(
                               typeof column.getEntityValue(valueSet),

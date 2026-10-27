@@ -1,5 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
+import sinon from "sinon"
 import type { DataSource } from "../../../../src/data-source/DataSource"
 import { EntitySchema } from "../../../../src/entity-schema/EntitySchema"
 import type { SpannerPostgresQueryRunner } from "../../../../src/driver/spanner-postgres/SpannerPostgresQueryRunner"
@@ -544,6 +545,32 @@ describe("driver > spanner-postgres > schema", () => {
                 }
             }))
 
+        it("should report the queued DDL to the subscribers when it is sent", () =>
+            forEachDataSource(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                const before = sinon.spy(queryRunner.broadcaster, "broadcast")
+                const after = sinon.spy(
+                    queryRunner.broadcaster,
+                    "broadcastAfterQueryEvent",
+                )
+                const ddl = `CREATE TABLE "rw_events" ("id" bigint NOT NULL, PRIMARY KEY ("id"))`
+                try {
+                    await queryRunner.query(ddl)
+                    expect(after.called).to.equal(false)
+
+                    await (queryRunner as SpannerPostgresQueryRunner).flushDdl()
+                    expect(before.calledWith("BeforeQuery", ddl)).to.equal(true)
+                    expect(after.calledOnce).to.equal(true)
+                    expect(after.firstCall.args.slice(1, 4)).to.deep.equal([
+                        ddl,
+                        undefined,
+                        true,
+                    ])
+                } finally {
+                    await queryRunner.release()
+                }
+            }))
+
         it("should find tables and columns inside a transaction, after DML", () =>
             forEachDataSource(async (dataSource) => {
                 const queryRunner = dataSource.createQueryRunner()
@@ -742,6 +769,38 @@ describe("driver > spanner-postgres > schema", () => {
                             }),
                         ),
                     ).to.be.rejectedWith(TypeORMError, /requires a primary key/)
+                } finally {
+                    await queryRunner.release()
+                }
+            }))
+
+        it("should only accept IS NOT NULL conditions in an index", () =>
+            forEachDataSource(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                try {
+                    await expect(
+                        queryRunner.createIndex(
+                            "pgs_account",
+                            new TableIndex({
+                                name: "IDX_pgs_account_partial",
+                                columnNames: ["big"],
+                                where: `"big" > 0`,
+                            }),
+                        ),
+                    ).to.be.rejectedWith(TypeORMError, /IS NOT NULL/)
+
+                    await queryRunner.createIndex(
+                        "pgs_account",
+                        new TableIndex({
+                            name: "IDX_pgs_account_not_null",
+                            columnNames: ["big"],
+                            where: `"big" IS NOT NULL`,
+                        }),
+                    )
+                    await queryRunner.dropIndex(
+                        "pgs_account",
+                        "IDX_pgs_account_not_null",
+                    )
                 } finally {
                     await queryRunner.release()
                 }

@@ -5,6 +5,7 @@ import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { TransactionAlreadyStartedError } from "../../error/TransactionAlreadyStartedError"
 import { QueryResult } from "../../query-runner/QueryResult"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { Table } from "../../schema-builder/table/Table"
 import { TableCheck } from "../../schema-builder/table/TableCheck"
 import { TableColumn } from "../../schema-builder/table/TableColumn"
@@ -987,13 +988,15 @@ export class SpannerPostgresQueryRunner extends SpannerQueryRunner {
     protected getParameterType(value: any): string | ObjectLiteral | undefined {
         if (value === null || value === undefined) return "string"
 
-        if (Array.isArray(value) && (value.length === 0 || value[0] == null)) {
-            return {
-                type: "array",
-                child:
-                    this.driver.getArrayItemType(value) ??
-                    this.getItemType(value.find((item) => item != null)),
-            }
+        if (Array.isArray(value)) {
+            const itemType = this.driver.getArrayItemType(value)
+            if (itemType || value.length === 0 || value[0] == null)
+                return {
+                    type: "array",
+                    child:
+                        itemType ??
+                        this.getItemType(value.find((item) => item != null)),
+                }
         }
 
         return undefined
@@ -1114,11 +1117,18 @@ export class SpannerPostgresQueryRunner extends SpannerQueryRunner {
      * @param statements
      */
     protected async updateSchema(statements: string[]): Promise<void> {
+        // the statements are reported to the subscribers when they are sent
         for (const statement of statements) {
             this.driver.dataSource.logger.logQuery(statement, undefined, this)
+            await this.broadcaster.broadcast(
+                "BeforeQuery",
+                statement,
+                undefined,
+            )
         }
 
         const query = statements.join(";\n")
+        const broadcasterResult = new BroadcasterResult()
         try {
             const queryStartTime = DateUtils.performanceNow()
             const [operation] =
@@ -1130,6 +1140,17 @@ export class SpannerPostgresQueryRunner extends SpannerQueryRunner {
                 this.driver.options.maxQueryExecutionTime
             const queryExecutionTime =
                 DateUtils.performanceNow() - queryStartTime
+            for (const statement of statements) {
+                this.broadcaster.broadcastAfterQueryEvent(
+                    broadcasterResult,
+                    statement,
+                    undefined,
+                    true,
+                    queryExecutionTime,
+                    undefined,
+                    undefined,
+                )
+            }
             if (
                 maxQueryExecutionTime &&
                 queryExecutionTime > maxQueryExecutionTime
@@ -1147,7 +1168,20 @@ export class SpannerPostgresQueryRunner extends SpannerQueryRunner {
                 undefined,
                 this,
             )
+            for (const statement of statements) {
+                this.broadcaster.broadcastAfterQueryEvent(
+                    broadcasterResult,
+                    statement,
+                    undefined,
+                    false,
+                    undefined,
+                    undefined,
+                    err,
+                )
+            }
             throw new QueryFailedError(query, undefined, err)
+        } finally {
+            await broadcasterResult.wait()
         }
     }
 
@@ -1693,6 +1727,17 @@ export class SpannerPostgresQueryRunner extends SpannerQueryRunner {
         const columns = index.columnNames
             .map((columnName) => this.driver.escape(columnName))
             .join(", ")
+        // Spanner only filters an index by columns that are not null
+        if (
+            index.where &&
+            !/^\s*\(?\s*"?[^"\s()]+"?\s+IS\s+NOT\s+NULL\s*\)?(\s+AND\s+\(?\s*"?[^"\s()]+"?\s+IS\s+NOT\s+NULL\s*\)?)*\s*$/i.test(
+                index.where,
+            )
+        )
+            throw new TypeORMError(
+                `Spanner only supports "<column> IS NOT NULL" conditions, joined with AND, in the WHERE clause of an index: the index "${index.name}" of the table "${table.name}" has "${index.where}".`,
+            )
+
         // a null filtered index is an index of the rows that have all its columns
         const where =
             index.where ||

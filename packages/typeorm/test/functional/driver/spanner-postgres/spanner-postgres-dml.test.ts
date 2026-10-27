@@ -1,5 +1,6 @@
 import "reflect-metadata"
 import { expect } from "chai"
+import sinon from "sinon"
 import type { DataSource } from "../../../../src/data-source/DataSource"
 import type { SpannerPostgresDriver } from "../../../../src/driver/spanner-postgres/SpannerPostgresDriver"
 import { EventSubscriber } from "../../../../src/decorator/listeners/EventSubscriber"
@@ -45,6 +46,7 @@ const Arrays = new EntitySchema<any>({
         flags: { type: Boolean, array: true, nullable: true },
         ats: { type: "timestamptz", array: true, nullable: true },
         reals: { type: "real", array: true, nullable: true },
+        jsons: { type: "jsonb", array: true, nullable: true },
     },
 })
 
@@ -465,6 +467,23 @@ describe("driver > spanner-postgres > dml", () => {
                 expect(loaded.reals).to.deep.equal([null, 1.5])
             }))
 
+        it("should round trip a jsonb array", () =>
+            forEachDataSource(async (dataSource) => {
+                const repository = dataSource.getRepository("Arrays")
+                const saved = await repository.save(
+                    repository.create({ jsons: [{ a: 1 }, [2, "x"], null] }),
+                )
+                const loaded = await repository.findOneByOrFail({
+                    id: saved.id,
+                })
+                expect(loaded.jsons).to.deep.equal([{ a: 1 }, [2, "x"], null])
+
+                await repository.update({ id: saved.id }, { jsons: [] })
+                expect(
+                    (await repository.findOneByOrFail({ id: saved.id })).jsons,
+                ).to.deep.equal([])
+            }))
+
         it("should bind an empty or all-null array with the type of its column", () =>
             forEachDataSource(async (dataSource) => {
                 const repository = dataSource.getRepository("Arrays")
@@ -579,6 +598,28 @@ describe("driver > spanner-postgres > dml", () => {
                 expect(await repository.countBy({ stamp: "stamped" })).to.equal(
                     600,
                 )
+            }))
+
+        it("should start a transaction when the listeners push an insert over the limit", () =>
+            forEachDataSource(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                const startTransaction = sinon.spy(
+                    queryRunner,
+                    "startTransaction",
+                )
+                try {
+                    // the listener adds a parameter to each row
+                    await dataSource
+                        .createQueryBuilder(queryRunner)
+                        .insert()
+                        .into("Stamped")
+                        .values(Array.from({ length: 600 }, (_, n) => ({ n })))
+                        .execute()
+                    expect(startTransaction.calledOnce).to.equal(true)
+                    expect(queryRunner.isTransactionActive).to.equal(false)
+                } finally {
+                    await queryRunner.release()
+                }
             }))
 
         it("should roll back the whole insert when a statement fails", () =>

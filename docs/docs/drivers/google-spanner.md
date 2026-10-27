@@ -137,6 +137,8 @@ A rollback discards the statements queued in the transaction. Spanner DDL is not
 - Foreign keys support `onDelete` `CASCADE` or `NO ACTION`, `onUpdate` `NO ACTION` only, and cannot be `deferrable`.
 - `changeColumn` can change the length, nullability, default and unique flag. It throws when the type, the primary key or the name changes. `renameColumn` is not supported.
 - The primary key of an existing table cannot be added, removed or changed, and every table needs a primary key.
+- `synchronize()` does not detect an identity added to or removed from an existing column (`@PrimaryGeneratedColumn()` or `generated: "increment"`), because Spanner does not report identity columns in `information_schema`. Recreate the column instead.
+- Index conditions (`where`) can only be `"<column>" IS NOT NULL`, joined with `AND`.
 - Views are not supported.
 - `createDatabase`, `dropDatabase` and `hasDatabase` throw. Manage databases with the Spanner Admin API.
 - Table names cannot contain hyphens. The query result cache table is therefore named `query_result_cache`.

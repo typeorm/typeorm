@@ -300,7 +300,11 @@ export class SpannerPostgresDriver extends SpannerDriver {
                   )
                 : value
 
-        if (Array.isArray(value) && columnMetadata.type !== "jsonb") {
+        // the value of a jsonb column can be a JSON array, which is not an array column
+        if (
+            Array.isArray(value) &&
+            (columnMetadata.type !== "jsonb" || columnMetadata.isArray)
+        ) {
             value = value.map((item) =>
                 item === null || item === undefined
                     ? item
@@ -353,7 +357,9 @@ export class SpannerPostgresDriver extends SpannerDriver {
      * @param column
      */
     castParameter(parameter: string, column: ColumnMetadata): string {
-        return column.type === "jsonb" ? `${parameter}::jsonb` : parameter
+        return column.type === "jsonb" && !column.isArray
+            ? `${parameter}::jsonb`
+            : parameter
     }
 
     /**
@@ -747,7 +753,7 @@ export class SpannerPostgresDriver extends SpannerDriver {
                 parameterIndexMap.set(key, escapedParameters.length - 1)
                 return this.createParameter(key, escapedParameters.length - 1)
             },
-        ) // todo: make replace only in value statements, otherwise problems
+        )
 
         return [sql, escapedParameters]
     }
@@ -848,6 +854,18 @@ export class SpannerPostgresDriver extends SpannerDriver {
                 throw new TypeORMError(
                     `Spanner cannot compare jsonb values, so the "${column.databaseName}" column cannot be filtered by value: use a raw condition with a JSON operator, such as @>.`,
                 )
+
+            if (column.isArray && Array.isArray(value)) {
+                // Spanner cannot cast a text array to jsonb[], so the items are
+                // JSON texts bound as an array of jsonb
+                const items = value.map((item) =>
+                    item === null || item === undefined
+                        ? null
+                        : JSON.stringify(item),
+                )
+                this.arrayItemTypes.set(items, { type: "jsonb" })
+                return items
+            }
 
             // jsonb is bound as JSON text, see castParameter()
             return JSON.stringify(value)
