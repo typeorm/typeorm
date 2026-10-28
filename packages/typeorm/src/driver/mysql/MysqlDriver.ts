@@ -1030,7 +1030,21 @@ export class MysqlDriver implements Driver {
                 ) {
                     // NOTE: When multiple rows is inserted by a single INSERT statement,
                     // `insertId` is the value generated for the first inserted row only.
-                    value = insertResult.insertId + entityIndex
+                    // Large IDs can be returned as strings; preserve their precision.
+                    if (
+                        typeof insertResult.insertId === "string" ||
+                        typeof insertResult.insertId === "bigint"
+                    ) {
+                        value =
+                            entityIndex === 0
+                                ? String(insertResult.insertId)
+                                : String(
+                                      BigInt(insertResult.insertId) +
+                                          BigInt(entityIndex),
+                                  )
+                    } else {
+                        value = insertResult.insertId + entityIndex
+                    }
                     // } else if (generatedColumn.generationStrategy === "uuid") {
                     //     console.log("getting db value:", generatedColumn.databaseName);
                     //     value = generatedColumn.getEntityValue(uuidMap);
