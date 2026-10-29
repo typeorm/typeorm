@@ -297,6 +297,7 @@ await repository.softDelete([{ firstName: "Jake" }, { age: 25 }, { id: 42 }])
 ```
 
 - `softRemove` and `recover` - This is alternative to `softDelete` and `restore`.
+  Changes made to the entities by `@BeforeSoftRemove` / `@BeforeRecover` listeners and subscribers are saved as part of the soft remove / recover. On SQL databases, other unsaved changes are not saved.
 
 ```typescript
 // You can soft-delete them using softRemove
