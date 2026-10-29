@@ -320,4 +320,38 @@ describe("query builder > soft-delete", () => {
                 expect(usersWithSoftDelete[1].picture.deletedAt).to.equal(null)
             }),
         ))
+
+    it("should reject empty criteria in softDelete and restore", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                let error: any
+                try {
+                    await dataSource
+                        .createQueryBuilder()
+                        .softDelete()
+                        .from(User)
+                        .where({})
+                        .execute()
+                } catch (err) {
+                    error = err
+                }
+                expect(error).to.exist
+                expect(error.message).to.include("Empty criteria(s) are not allowed")
+            }),
+        ))
+
+    it("should not duplicate deleteDateColumn condition on repeated getQuery calls", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const qb = dataSource
+                    .createQueryBuilder()
+                    .softDelete()
+                    .from(User)
+                    .where("name = :name", { name: "Alex Messer" })
+
+                const query1 = qb.getQuery()
+                const query2 = qb.getQuery()
+                expect(query1).to.equal(query2)
+            }),
+        ))
 })
