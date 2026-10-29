@@ -15,7 +15,7 @@ describe("query builder > soft-delete with native UUID keys", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
-            enabledDrivers: ["postgres"],
+            enabledDrivers: ["postgres", "cockroachdb"],
             entities: [Record, TransformedRecord, CompositeRecord],
         })
     })
@@ -70,6 +70,43 @@ describe("query builder > soft-delete with native UUID keys", () => {
                 }),
             ))
     }
+
+    it("should match CockroachDB UUID URNs without replacing the input ID", function () {
+        const cockroachDataSources = dataSources.filter(
+            (dataSource) => dataSource.options.type === "cockroachdb",
+        )
+        if (cockroachDataSources.length === 0) return this.skip()
+
+        return Promise.all(
+            cockroachDataSources.map(async (dataSource) => {
+                const repository = dataSource.getRepository(Record)
+                const record = await repository.save({ id: canonicalId })
+                record.id = `urn:uuid:${canonicalId}`
+
+                for (const operation of ["soft-delete", "restore"] as const) {
+                    const builder = dataSource.createQueryBuilder()
+                    const result = await (
+                        operation === "soft-delete"
+                            ? builder.softDelete()
+                            : builder.restore()
+                    )
+                        .from(Record)
+                        .whereEntity(record)
+                        .execute()
+
+                    expect(result.affected).to.equal(1)
+                    expect(record.id).to.equal(`urn:uuid:${canonicalId}`)
+                    expect(record.version).to.equal(
+                        operation === "soft-delete" ? 2 : 3,
+                    )
+                    expect(record.deletedAt === null).to.equal(
+                        operation === "restore",
+                    )
+                    expect(result.generatedMaps).to.have.lengthOf(1)
+                }
+            }),
+        )
+    })
 
     it("should match UUIDs in composite keys with Date values", () =>
         Promise.all(

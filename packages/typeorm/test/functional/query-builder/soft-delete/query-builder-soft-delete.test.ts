@@ -1,5 +1,6 @@
 import "../../../utils/test-setup"
 import { expect } from "chai"
+import sinon from "sinon"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -386,6 +387,45 @@ describe("query builder > soft-delete", () => {
                 expect(deletedRestored.version).to.equal(deletedBefore.version)
                 expect(liveRestored.deletedAt).to.equal(null)
                 expect(liveRestored.version).to.equal(live.version + 2)
+            }),
+        ))
+
+    // https://github.com/typeorm/typeorm/issues/13004
+    it("should not query again for filtered integer-valued keys", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (
+                    !["postgres", "cockroachdb", "mssql", "oracle"].includes(
+                        dataSource.options.type,
+                    )
+                )
+                    return
+                const repository = dataSource.getRepository(Document)
+                const [skipped, live] = await repository.save([
+                    { title: "skipped" },
+                    { title: "live" },
+                ])
+                await repository.softDelete(skipped.id)
+                const queryRunner = dataSource.createQueryRunner()
+                await queryRunner.connect()
+                const query = sinon.spy(queryRunner, "query")
+                try {
+                    await dataSource
+                        .createQueryBuilder()
+                        .softDelete()
+                        .from(Document)
+                        .whereEntity([skipped, live])
+                        .setQueryRunner(queryRunner)
+                        .execute()
+                    expect(query.callCount).to.equal(1)
+                    expect(live.version).to.equal(2)
+                    expect(live.deletedAt).to.be.instanceof(Date)
+                    expect(skipped.version).to.equal(1)
+                    expect(skipped.deletedAt).to.equal(null)
+                } finally {
+                    query.restore()
+                    await queryRunner.release()
+                }
             }),
         ))
 
