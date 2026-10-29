@@ -116,6 +116,15 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
                 await returningResultsEntityUpdator.update(
                     updateResult,
                     this.expressionMap.whereEntities,
+                    () =>
+                        this.expressionMap.whereEntityConditions.map(
+                            (condition) =>
+                                this.replacePropertyNamesForTheWholeQuery(
+                                    this.createWhereConditionExpression(
+                                        condition,
+                                    ),
+                                ),
+                        ),
                 )
             }
 
@@ -446,7 +455,10 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
             )
 
         this.expressionMap.wheres = []
-        const entities: Entity[] = Array.isArray(entity) ? entity : [entity]
+        this.expressionMap.whereEntityConditions = []
+        const entities: Entity[] = Array.isArray(entity)
+            ? [...entity]
+            : [entity]
         entities.forEach((entity) => {
             const entityIdMap =
                 this.expressionMap.mainAlias!.metadata.getEntityIdMap(entity)
@@ -456,6 +468,10 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
                 )
 
             this.orWhereInIds(entityIdMap)
+            this.expressionMap.whereEntityConditions.push(
+                this.expressionMap.wheres[this.expressionMap.wheres.length - 1]
+                    .condition,
+            )
         })
 
         this.expressionMap.whereEntities = entities
@@ -530,18 +546,6 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
         if (updateColumnAndValues.length <= 0) {
             throw new UpdateValuesMissingError()
         }
-
-        // only update rows that are not already soft deleted
-        this.expressionMap.wheres.push({
-            type: "and",
-            condition: `${this.escape(
-                metadata.deleteDateColumn.databaseName,
-            )} IS ${
-                this.expressionMap.queryType === "soft-delete"
-                    ? "NULL"
-                    : "NOT NULL"
-            }`,
-        })
 
         // get a table name and all column database names
         const whereExpression = this.createWhereExpression()
