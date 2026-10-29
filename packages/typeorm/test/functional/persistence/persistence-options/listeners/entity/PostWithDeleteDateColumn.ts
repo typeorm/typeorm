@@ -30,11 +30,15 @@ export class PostWithDeleteDateColumn {
     @VersionColumn()
     version: number
 
+    @Column({ type: "simple-json", nullable: true })
+    tags: string[] | null
+
     isSoftRemoved: boolean = false
 
     @BeforeSoftRemove()
     beforeSoftRemove() {
         this.title += "!"
+        this.tags?.push("soft-removed")
     }
 
     @AfterSoftRemove()

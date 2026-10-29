@@ -1,4 +1,5 @@
 import "reflect-metadata"
+import { expect } from "chai"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -162,6 +163,25 @@ describe("persistence > persistence options > listeners", () => {
                 )
                 loadedPost.title.should.be.equal("Bakhrom!")
                 loadedPost.description.should.be.equal("Hello")
+            }),
+        ))
+
+    it("soft-remove listeners should persist in-place changes to an already changed object value", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const post = new PostWithDeleteDateColumn()
+                post.title = "Bakhrom"
+                post.description = "Hello"
+                post.tags = ["a"]
+                await dataSource.manager.save(post)
+                post.tags = ["a", "b"]
+                await dataSource.manager.softRemove(post)
+
+                const loadedPost = await dataSource.manager.findOneOrFail(
+                    PostWithDeleteDateColumn,
+                    { where: { id: post.id }, withDeleted: true },
+                )
+                expect(loadedPost.tags).to.eql(["a", "b", "soft-removed"])
             }),
         ))
 

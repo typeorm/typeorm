@@ -115,9 +115,11 @@ export class SubjectExecutor {
                 ...this.softRemoveSubjects,
                 ...this.recoverSubjects,
             ]) {
+                // plain object and array values are deep-copied, so that
+                // listeners changing them in place are noticed
                 this.changeMapsBeforeListeners.set(
                     subject,
-                    subject.changeMaps.map((changeMap) => ({ ...changeMap })),
+                    OrmUtils.mergeDeep([], subject.changeMaps),
                 )
             }
 
@@ -762,6 +764,7 @@ export class SubjectExecutor {
                 if (
                     column &&
                     (!column.isUpdate ||
+                        column.asExpression ||
                         column.isDeleteDate ||
                         column.isVersion ||
                         column.isUpdateDate ||
@@ -778,11 +781,16 @@ export class SubjectExecutor {
                 )
                     return false
 
+                // column values are also compared by content, because the snapshot holds copies of
+                // object values; dates are not, because deepCompare only compares them to the second
                 return !changeMapsBeforeListeners.some(
                     (changeMap) =>
                         changeMap.column === column &&
                         changeMap.relation === relation &&
-                        changeMap.value === value,
+                        (changeMap.value === value ||
+                            (!!column &&
+                                !(value instanceof Date) &&
+                                OrmUtils.deepCompare(changeMap.value, value))),
                 )
             },
         )
