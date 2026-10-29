@@ -287,7 +287,7 @@ describe("driver > spanner-postgres > schema", () => {
             }
         })
 
-        it("should settle on an array default and recreate an index whose null filter changed", async () => {
+        it("should settle on array defaults and recreate an index whose null filter changed", async () => {
             const filtered = (nullFiltered: boolean) =>
                 new EntitySchema<any>({
                     name: "Filtered",
@@ -300,12 +300,29 @@ describe("driver > spanner-postgres > schema", () => {
                             array: true,
                             default: "{}",
                         },
+                        levels: {
+                            type: "bigint",
+                            array: true,
+                            default: [1, 2],
+                        },
+                        odd: {
+                            name: "x IS NOT NULL",
+                            type: "varchar",
+                            length: 20,
+                            nullable: true,
+                        },
                     },
                     indices: [
                         {
                             name: "IDX_pgs_filtered_code",
                             columns: ["code"],
                             nullFiltered,
+                        },
+                        // the filter Spanner reports has "IS NOT NULL" twice
+                        {
+                            name: "IDX_pgs_filtered_odd",
+                            columns: ["odd", "code"],
+                            nullFiltered: true,
                         },
                     ],
                 })
@@ -334,10 +351,11 @@ describe("driver > spanner-postgres > schema", () => {
                         expect(await schemaDiff(nullFiltered)).to.deep.equal([])
                         const queryRunner = nullFiltered.createQueryRunner()
                         try {
-                            const [tableIndex] = (await queryRunner.getTable(
-                                "pgs_filtered",
-                            ))!.indices
-                            expect(tableIndex.isNullFiltered).to.be.true
+                            const { indices } =
+                                (await queryRunner.getTable("pgs_filtered"))!
+                            expect(
+                                indices.map((index) => index.isNullFiltered),
+                            ).to.deep.equal([true, true])
                         } finally {
                             await queryRunner.release()
                         }
@@ -681,6 +699,38 @@ describe("driver > spanner-postgres > schema", () => {
                 } finally {
                     spy.restore()
                     await queryRunner.release()
+                }
+            }))
+
+        it("should send on release the DDL queued while it sends the queue", () =>
+            forEachDataSource(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                const spy = spyOnSchemaUpdates(dataSource)
+                try {
+                    await queryRunner.query(
+                        `CREATE TABLE "rw_first" ("id" bigint PRIMARY KEY)`,
+                    )
+                    const released = queryRunner.release()
+                    await queryRunner.query(
+                        `CREATE TABLE "rw_second" ("id" bigint PRIMARY KEY)`,
+                    )
+                    await released
+
+                    // sent by release, not by the next statement
+                    expect(spy.statements).to.deep.equal([
+                        [`CREATE TABLE "rw_first" ("id" bigint PRIMARY KEY)`],
+                        [`CREATE TABLE "rw_second" ("id" bigint PRIMARY KEY)`],
+                    ])
+                } finally {
+                    spy.restore()
+                }
+
+                const checker = dataSource.createQueryRunner()
+                try {
+                    expect(await checker.hasTable("rw_first")).to.be.true
+                    expect(await checker.hasTable("rw_second")).to.be.true
+                } finally {
+                    await checker.release()
                 }
             }))
 

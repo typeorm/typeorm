@@ -244,23 +244,28 @@ export class SpannerPostgresQueryRunner extends SpannerQueryRunner {
      * point.
      */
     async flushDdl(): Promise<void> {
-        // statements sent by another call must be applied before returning
-        if (this.ddlFlush) await this.ddlFlush
-        if (this.pendingDdl.length === 0) return
+        // statements sent by another call must be applied before returning,
+        // and the ones queued while a schema update runs are sent after it
+        while (this.ddlFlush || this.pendingDdl.length > 0) {
+            if (this.ddlFlush) {
+                await this.ddlFlush
+                continue
+            }
 
-        const statements = this.pendingDdl
-        this.pendingDdl = []
-        this.driver.queryRunnersWithDdl.delete(this)
+            const statements = this.pendingDdl
+            this.pendingDdl = []
+            this.driver.queryRunnersWithDdl.delete(this)
 
-        this.ddlFlush = this.updateSchema(statements)
-        try {
-            await this.ddlFlush
-        } catch (error) {
-            // the tables remembered may have changes that were not applied
-            this.loadedTables = []
-            throw error
-        } finally {
-            this.ddlFlush = undefined
+            this.ddlFlush = this.updateSchema(statements)
+            try {
+                await this.ddlFlush
+            } catch (error) {
+                // the tables remembered may have changes that were not applied
+                this.loadedTables = []
+                throw error
+            } finally {
+                this.ddlFlush = undefined
+            }
         }
     }
 
@@ -1570,19 +1575,21 @@ export class SpannerPostgresQueryRunner extends SpannerQueryRunner {
                 // Spanner reports `is_null_filtered` as NO for every index of
                 // a PostgreSQL database: the `WHERE` of the index is in
                 // `filter`, as `<column> IS NOT NULL` conditions joined with
-                // AND, with the column names unquoted. A unique index always
-                // has one, as its nulls are distinct
-                const filter: string = dbIndex["filter"] ?? ""
-                const isNullFiltered =
-                    (filter.match(/ IS NOT NULL/gi) ?? []).length ===
-                        columnNames.length &&
-                    columnNames.every(
-                        (columnName) =>
-                            filter.includes(`${columnName} IS NOT NULL`) ||
-                            filter.includes(
-                                `${this.driver.escape(columnName)} IS NOT NULL`,
+                // AND, sorted by column name, with the names unquoted. A
+                // unique index always has one, as its nulls are distinct
+                const notNullConditions = (names: string[]) =>
+                    names.map((name) => `${name} IS NOT NULL`).join(" AND ")
+                const isNullFiltered = [
+                    [...columnNames].sort(),
+                    columnNames,
+                ].some(
+                    (names) =>
+                        dbIndex["filter"] === notNullConditions(names) ||
+                        dbIndex["filter"] ===
+                            notNullConditions(
+                                names.map((name) => this.driver.escape(name)),
                             ),
-                    )
+                )
 
                 return new TableIndex({
                     name: dbIndex["index_name"],

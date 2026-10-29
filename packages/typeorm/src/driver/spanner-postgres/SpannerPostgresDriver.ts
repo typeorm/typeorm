@@ -578,6 +578,8 @@ export class SpannerPostgresDriver extends SpannerDriver {
 
         if (defaultValue === undefined || defaultValue === null) {
             return undefined
+        } else if (columnMetadata.isArray && Array.isArray(defaultValue)) {
+            return `'{${defaultValue.map((value) => String(value)).join(",")}}'`
         } else if (typeof defaultValue === "function") {
             return defaultValue()
         } else if (
