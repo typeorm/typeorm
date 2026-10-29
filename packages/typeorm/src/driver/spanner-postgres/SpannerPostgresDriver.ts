@@ -721,7 +721,7 @@ export class SpannerPostgresDriver extends SpannerDriver {
         sql = sql.replaceAll(
             /:(\.\.\.)?([A-Za-z0-9_.]+)/g,
             (full, isArray: string, key: string): string => {
-                if (!parameters.hasOwnProperty(key)) {
+                if (!Object.hasOwn(parameters, key)) {
                     return full
                 }
 

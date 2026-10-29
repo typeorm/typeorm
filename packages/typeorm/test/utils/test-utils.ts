@@ -548,6 +548,17 @@ export async function closeTestingConnections(connections: DataSource[]) {
     await Promise.all(
         connections.map(async (connection) => {
             if (connection?.isInitialized) {
+                // Spanner foreign key names are unique in the whole database,
+                // so the tables a test leaves in its schemas would conflict
+                // with the same tables another test creates in other schemas
+                if (connection.options.type === "spanner-postgres") {
+                    const queryRunner = connection.createQueryRunner()
+                    try {
+                        await queryRunner.clearDatabase()
+                    } finally {
+                        await queryRunner.release()
+                    }
+                }
                 await connection.destroy()
             }
         }),

@@ -287,6 +287,81 @@ describe("driver > spanner-postgres > schema", () => {
             }
         })
 
+        it("should settle on an array default and recreate an index whose null filter changed", async () => {
+            const filtered = (nullFiltered: boolean) =>
+                new EntitySchema<any>({
+                    name: "Filtered",
+                    tableName: "pgs_filtered",
+                    columns: {
+                        id: { type: "bigint", primary: true },
+                        code: { type: "varchar", length: 20, nullable: true },
+                        amounts: {
+                            type: "numeric",
+                            array: true,
+                            default: "{}",
+                        },
+                    },
+                    indices: [
+                        {
+                            name: "IDX_pgs_filtered_code",
+                            columns: ["code"],
+                            nullFiltered,
+                        },
+                    ],
+                })
+            const plainSources = await createTestingConnections({
+                enabledDrivers: ["spanner-postgres"],
+                entities: [filtered(false)],
+                schemaCreate: false,
+                dropSchema: false,
+            })
+            const filteredSources = await createTestingConnections({
+                enabledDrivers: ["spanner-postgres"],
+                entities: [filtered(true)],
+                schemaCreate: false,
+                dropSchema: false,
+            })
+            try {
+                await Promise.all(
+                    plainSources.map(async (plain, index) => {
+                        const nullFiltered = filteredSources[index]
+                        await plain.synchronize()
+                        // the database reports '{}'::numeric[] for the default
+                        expect(await schemaDiff(plain)).to.deep.equal([])
+
+                        expect(await schemaDiff(nullFiltered)).to.not.be.empty
+                        await nullFiltered.synchronize()
+                        expect(await schemaDiff(nullFiltered)).to.deep.equal([])
+                        const queryRunner = nullFiltered.createQueryRunner()
+                        try {
+                            const [tableIndex] = (await queryRunner.getTable(
+                                "pgs_filtered",
+                            ))!.indices
+                            expect(tableIndex.isNullFiltered).to.be.true
+                        } finally {
+                            await queryRunner.release()
+                        }
+
+                        await plain.synchronize()
+                        expect(await schemaDiff(plain)).to.deep.equal([])
+                    }),
+                )
+            } finally {
+                await Promise.all(
+                    plainSources.map(async (dataSource) => {
+                        const queryRunner = dataSource.createQueryRunner()
+                        try {
+                            await queryRunner.dropTable("pgs_filtered", true)
+                        } finally {
+                            await queryRunner.release()
+                        }
+                    }),
+                )
+                await closeTestingConnections(plainSources)
+                await closeTestingConnections(filteredSources)
+            }
+        })
+
         it("should apply defaults and constraints of the created schema", () =>
             forEachDataSource(async (dataSource) => {
                 await dataSource.synchronize(true)
@@ -684,6 +759,34 @@ describe("driver > spanner-postgres > schema", () => {
                         (dataSource.options as any).databaseId,
                     )
                 } finally {
+                    await queryRunner.release()
+                }
+            }))
+
+        it("should clear only the schemas of the data source", () =>
+            forEachDataSource(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                try {
+                    await queryRunner.createSchema("pgs_other", true)
+                    await queryRunner.createTable(
+                        new Table({
+                            name: "pgs_other.rw_kept",
+                            columns: [
+                                { name: "id", type: "bigint", isPrimary: true },
+                            ],
+                        }),
+                        true,
+                    )
+
+                    await queryRunner.clearDatabase()
+
+                    expect(await queryRunner.hasTable("pgs_account")).to.be
+                        .false
+                    expect(await queryRunner.hasTable("pgs_other.rw_kept")).to
+                        .be.true
+                } finally {
+                    await queryRunner.dropTable("pgs_other.rw_kept", true)
+                    await queryRunner.dropSchema("pgs_other", true)
                     await queryRunner.release()
                 }
             }))

@@ -510,6 +510,27 @@ describe("driver > spanner-postgres > dml", () => {
                 ])
             }))
 
+        it("should bind an empty or all-null raw array with a Spanner client that has no Float32", () =>
+            forEachDataSource(async (dataSource) => {
+                const driver = dataSource.driver as SpannerPostgresDriver
+                const spannerLib = driver.spannerLib
+                const withoutFloat32 = sinon
+                    .stub(driver, "spannerLib")
+                    .get(() => ({ ...spannerLib, Float32: undefined }))
+                try {
+                    expect(
+                        await dataSource.query(`SELECT $1::text[] AS x`, [[]]),
+                    ).to.deep.equal([{ x: [] }])
+                    expect(
+                        await dataSource.query(`SELECT $1::text[] AS x`, [
+                            [null],
+                        ]),
+                    ).to.deep.equal([{ x: [null] }])
+                } finally {
+                    withoutFloat32.restore()
+                }
+            }))
+
         it("should bind a null or undefined raw parameter as text", () =>
             forEachDataSource(async (dataSource) => {
                 expect(
@@ -806,6 +827,18 @@ describe("driver > spanner-postgres > dml", () => {
                         "with x as (select 2 as y) select y from x",
                     ),
                 ).to.deep.equal([{ y: 2 }])
+            }))
+
+        it("should accept a parameter named like a method of Object", () =>
+            forEachDataSource(async (dataSource) => {
+                const repository = dataSource.getRepository("Types")
+                await repository.save(repository.create({ str: "own" }))
+
+                const found = await repository
+                    .createQueryBuilder("t")
+                    .where("t.str = :hasOwnProperty", { hasOwnProperty: "own" })
+                    .getMany()
+                expect(found.map((row) => row.str)).to.deep.equal(["own"])
             }))
 
         it("should classify a statement as read-only only when it only reads", () =>

@@ -139,6 +139,9 @@ A rollback discards the statements queued in the transaction. Spanner DDL is not
 - The primary key of an existing table cannot be added, removed or changed, and every table needs a primary key.
 - `synchronize()` does not detect an identity added to or removed from an existing column (`@PrimaryGeneratedColumn()` or `generated: "increment"`), because Spanner does not report identity columns in `information_schema`. Recreate the column instead.
 - Index conditions (`where`) can only be `"<column>" IS NOT NULL`, joined with `AND`.
+- Unique indexes are always null filtered: Spanner skips the rows with a null in an indexed column, so several rows can have the same values with a null.
+- `dropSchema` and `schema:drop` drop the tables of the entity schemas and the configured `schema` only. The tables of other schemas of the database are kept.
+- Foreign key names are unique in the whole database, not in each schema: two tables in different schemas cannot have foreign keys with the same name.
 - Views are not supported.
 - `createDatabase`, `dropDatabase` and `hasDatabase` throw. Manage databases with the Spanner Admin API.
 - Table names cannot contain hyphens. The query result cache table is therefore named `query_result_cache`.

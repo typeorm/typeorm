@@ -399,10 +399,12 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (indexMetadata.isSpatial !== tableIndex.isSpatial) return true
 
             // a `where` already says which rows the index has, so the null
-            // filter is only compared when the entity does not set one
+            // filter is only compared when the entity does not set one; a
+            // unique index is always null filtered by Spanner
             if (
                 this.dataSource.options.type === "spanner-postgres" &&
                 !indexMetadata.where &&
+                !indexMetadata.isUnique &&
                 indexMetadata.isNullFiltered !== tableIndex.isNullFiltered
             )
                 return true

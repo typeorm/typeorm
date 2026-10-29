@@ -911,25 +911,36 @@ export class SpannerPostgresQueryRunner extends SpannerQueryRunner {
     }
 
     /**
-     * Removes all tables from the currently connected database: its foreign
-     * keys, indexes and tables, which are dropped in a single schema update.
-     * The schemas are kept.
+     * Removes all tables from the schemas of the data source (the schemas of
+     * its entities and the configured schema): their foreign keys, indexes
+     * and tables, which are dropped in a single schema update. The schemas
+     * are kept, and the other schemas of the database are not touched.
      */
     async clearDatabase(): Promise<void> {
+        const schemas = new Set<string>([
+            this.driver.schema ?? this.driver.searchSchema,
+        ])
+        for (const metadata of this.dataSource.entityMetadatas) {
+            if (metadata.schema) schemas.add(metadata.schema)
+        }
+        const schemasSql = [...schemas]
+            .map((schema) => this.escapeLiteral(schema))
+            .join(", ")
+
         const [foreignKeys, indices, tables] = await Promise.all([
             this.queryInformationSchema(
                 `SELECT "table_schema", "table_name", "constraint_name" ` +
                     `FROM "information_schema"."table_constraints" ` +
-                    `WHERE "constraint_type" = 'FOREIGN KEY' AND "table_schema" NOT IN (${this.systemSchemasSql})`,
+                    `WHERE "constraint_type" = 'FOREIGN KEY' AND "table_schema" IN (${schemasSql})`,
             ),
             this.queryInformationSchema(
                 `SELECT "table_schema", "index_name" FROM "information_schema"."indexes" ` +
                     `WHERE "index_type" <> 'PRIMARY_KEY' AND "spanner_is_managed" = 'NO' ` +
-                    `AND "table_schema" NOT IN (${this.systemSchemasSql})`,
+                    `AND "table_schema" IN (${schemasSql})`,
             ),
             this.queryInformationSchema(
                 `SELECT "table_schema", "table_name" FROM "information_schema"."tables" ` +
-                    `WHERE "table_type" = 'BASE TABLE' AND "table_schema" NOT IN (${this.systemSchemasSql})`,
+                    `WHERE "table_type" = 'BASE TABLE' AND "table_schema" IN (${schemasSql})`,
             ),
         ])
 
@@ -1373,7 +1384,7 @@ export class SpannerPostgresQueryRunner extends SpannerQueryRunner {
 
         // the indexes that Spanner creates to enforce a foreign key are managed by Spanner
         const indicesSql =
-            `SELECT "i"."table_schema", "i"."table_name", "i"."index_name", "i"."is_unique", "i"."is_null_filtered", "ic"."column_name" ` +
+            `SELECT "i"."table_schema", "i"."table_name", "i"."index_name", "i"."is_unique", "i"."filter", "ic"."column_name" ` +
             `FROM "information_schema"."indexes" "i" ` +
             `INNER JOIN "information_schema"."index_columns" "ic" ON "ic"."table_schema" = "i"."table_schema" ` +
             `AND "ic"."table_name" = "i"."table_name" AND "ic"."index_name" = "i"."index_name" ` +
@@ -1549,21 +1560,37 @@ export class SpannerPostgresQueryRunner extends SpannerQueryRunner {
             table.indices = OrmUtils.uniq(
                 tableIndices,
                 (dbIndex) => dbIndex["index_name"],
-            ).map(
-                (dbIndex) =>
-                    new TableIndex({
-                        name: dbIndex["index_name"],
-                        columnNames: tableIndices
-                            .filter(
-                                (index) =>
-                                    index["index_name"] ===
-                                    dbIndex["index_name"],
-                            )
-                            .map((index) => index["column_name"]),
-                        isUnique: dbIndex["is_unique"] === "YES",
-                        isNullFiltered: dbIndex["is_null_filtered"] === "YES",
-                    }),
-            )
+            ).map((dbIndex) => {
+                const columnNames: string[] = tableIndices
+                    .filter(
+                        (index) =>
+                            index["index_name"] === dbIndex["index_name"],
+                    )
+                    .map((index) => index["column_name"])
+                // Spanner reports `is_null_filtered` as NO for every index of
+                // a PostgreSQL database: the `WHERE` of the index is in
+                // `filter`, as `<column> IS NOT NULL` conditions joined with
+                // AND, with the column names unquoted. A unique index always
+                // has one, as its nulls are distinct
+                const filter: string = dbIndex["filter"] ?? ""
+                const isNullFiltered =
+                    (filter.match(/ IS NOT NULL/gi) ?? []).length ===
+                        columnNames.length &&
+                    columnNames.every(
+                        (columnName) =>
+                            filter.includes(`${columnName} IS NOT NULL`) ||
+                            filter.includes(
+                                `${this.driver.escape(columnName)} IS NOT NULL`,
+                            ),
+                    )
+
+                return new TableIndex({
+                    name: dbIndex["index_name"],
+                    columnNames,
+                    isUnique: dbIndex["is_unique"] === "YES",
+                    isNullFiltered,
+                })
+            })
 
             const tableChecks = dbChecks.filter((row) => isTable(row, dbTable))
             table.checks = OrmUtils.uniq(
