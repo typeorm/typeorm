@@ -320,6 +320,45 @@ export class EntityMetadataBuilder {
                     })
             })
 
+        // link many-to-many inverse sides whose relation with the owning side is set on only one of the two sides
+        entityMetadatas.forEach((entityMetadata) => {
+            entityMetadata.relations
+                .filter((relation) => relation.isManyToManyNotOwner)
+                .forEach((relation) => {
+                    if (!relation.inverseRelation) {
+                        // the owning side names this relation as its inverse side; when several do, the
+                        // junction registered last was kept, so link the owner of that junction
+                        const owner =
+                            relation.inverseEntityMetadata.relations.find(
+                                (inverseRelation) =>
+                                    inverseRelation.isManyToManyOwner &&
+                                    inverseRelation.inverseRelation ===
+                                        relation &&
+                                    inverseRelation.junctionEntityMetadata ===
+                                        relation.junctionEntityMetadata,
+                            )
+                        if (owner) {
+                            relation.inverseRelation = owner
+                            relation.inverseSidePropertyPath =
+                                owner.propertyPath
+                        }
+                    }
+
+                    // this relation names the owning side as its inverse side
+                    const junctionEntityMetadata =
+                        relation.inverseRelation?.isManyToManyOwner &&
+                        relation.inverseRelation.junctionEntityMetadata
+                    if (
+                        !relation.junctionEntityMetadata &&
+                        junctionEntityMetadata
+                    ) {
+                        relation.junctionEntityMetadata = junctionEntityMetadata
+                        relation.joinTableName =
+                            junctionEntityMetadata.tableName
+                    }
+                })
+        })
+
         // update entity metadata depend properties
         entityMetadatas.forEach((entityMetadata) => {
             entityMetadata.relationsWithJoinColumns =
