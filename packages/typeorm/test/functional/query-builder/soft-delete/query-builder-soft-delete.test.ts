@@ -483,6 +483,72 @@ describe("query builder > soft-delete", () => {
         ))
 
     // https://github.com/typeorm/typeorm/issues/13004
+    it("should preserve explicitly returned primary keys and column order", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (!dataSource.driver.isReturningSqlSupported("update")) return
+                if (dataSource.options.type === "spanner") return
+
+                const repository = dataSource.getRepository(Document)
+                const document = await repository.save({ title: "returned" })
+                const originalId = document.id
+                for (const operation of ["soft-delete", "restore"] as const) {
+                    const builder = dataSource.createQueryBuilder()
+                    const result = await (
+                        operation === "soft-delete"
+                            ? builder.softDelete()
+                            : builder.restore()
+                    )
+                        .from(Document)
+                        .whereEntity(document)
+                        .returning(["version", "id"])
+                        .execute()
+                    expect(result.generatedMaps).to.have.length(1)
+                    expect(result.generatedMaps[0].id).to.equal(originalId)
+                    expect(result.generatedMaps[0].version).to.equal(
+                        document.version,
+                    )
+                    expect(document.id).to.equal(originalId)
+                    expect(document.deletedAt === null).to.equal(
+                        operation === "restore",
+                    )
+                }
+            }),
+        ))
+
+    // https://github.com/typeorm/typeorm/issues/13004
+    it("should not interpret custom Oracle returning binds as automatic columns", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (dataSource.options.type !== "oracle") return
+                const repository = dataSource.getRepository(Document)
+                const document = await repository.save({ title: "custom" })
+                const originalId = document.id
+                const oracle = (
+                    dataSource.driver as import("../../../../src/driver/oracle/OracleDriver").OracleDriver
+                ).oracle
+                const result = await dataSource
+                    .createQueryBuilder()
+                    .softDelete()
+                    .from(Document)
+                    .whereEntity(document)
+                    .returning('"version" INTO :version')
+                    .setParameter("version", {
+                        type: oracle.NUMBER,
+                        dir: oracle.BIND_OUT,
+                    })
+                    .execute()
+                expect(result.raw).to.deep.equal([[2]])
+                expect(document.id).to.equal(originalId)
+                const stored = await repository.findOneOrFail({
+                    where: { id: originalId },
+                    withDeleted: true,
+                })
+                expect(stored.deletedAt).to.be.instanceOf(Date)
+            }),
+        ))
+
+    // https://github.com/typeorm/typeorm/issues/13004
     it("should reject empty criteria for soft-delete and restore like other write operations", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {

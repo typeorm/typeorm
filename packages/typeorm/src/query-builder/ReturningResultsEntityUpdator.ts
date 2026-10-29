@@ -42,19 +42,26 @@ export class ReturningResultsEntityUpdator {
             if (
                 driver.options.type === "oracle" &&
                 Array.isArray(updateResult.raw) &&
-                this.expressionMap.extraReturningColumns.length > 0
+                this.expressionMap.extraReturningColumns.length > 0 &&
+                typeof this.expressionMap.returning !== "string"
             ) {
+                const columns = (this.expressionMap.returning ?? []).flatMap(
+                    (propertyPath) =>
+                        metadata.findColumnsWithPropertyPath(propertyPath),
+                )
+                columns.push(
+                    ...this.expressionMap.extraReturningColumns.filter(
+                        (column) => !columns.includes(column),
+                    ),
+                )
                 // each out bind holds one column's values, one per updated row
                 const columnValues: unknown[][] = updateResult.raw
                 updateResult.raw = (columnValues[0] ?? []).map((_, rowIndex) =>
-                    this.expressionMap.extraReturningColumns.reduce(
-                        (row, column, columnIndex) => {
-                            row[column.databaseName] =
-                                columnValues[columnIndex][rowIndex]
-                            return row
-                        },
-                        {} as ObjectLiteral,
-                    ),
+                    columns.reduce((row, column, columnIndex) => {
+                        row[column.databaseName] =
+                            columnValues[columnIndex][rowIndex]
+                        return row
+                    }, {} as ObjectLiteral),
                 )
             }
             returnedRows = this.getReturnedRows(updateResult.raw, entities)
@@ -75,10 +82,27 @@ export class ReturningResultsEntityUpdator {
                             result,
                         )
                     if (returningColumns) {
+                        let entityColumns = returningColumns
+                        if (
+                            (this.expressionMap.queryType === "soft-delete" ||
+                                this.expressionMap.queryType === "restore") &&
+                            typeof this.expressionMap.returning !== "string"
+                        ) {
+                            // Identity columns locate the row; they must not replace
+                            // a transformed or numeric ID already held by the entity.
+                            const values = { ...result }
+                            for (const column of metadata.primaryColumns) {
+                                delete values[column.databaseName]
+                            }
+                            entityColumns = driver.createGeneratedMap(
+                                metadata,
+                                values,
+                            )!
+                        }
                         this.queryRunner.manager.merge(
                             metadata.target as any,
                             entity,
-                            returningColumns,
+                            entityColumns,
                         )
                         updateResult.generatedMaps.push(returningColumns)
                     }
@@ -328,8 +352,7 @@ export class ReturningResultsEntityUpdator {
      * Returns the row of each entity, in entity order.
      * Soft-delete and restore skip rows that are already in the target state, and the
      * database returns the updated rows in its own order, so their rows are matched to
-     * the entities by primary key. The primary columns are returned only for that and
-     * are left out of the rows, so they do not overwrite the entity ids.
+     * the entities by primary key.
      *
      * @param raw
      * @param entities
@@ -364,18 +387,44 @@ export class ReturningResultsEntityUpdator {
                     ),
                 {} as ObjectLiteral,
             ),
-            values: Object.fromEntries(
-                Object.entries(row).filter(
-                    ([key]) =>
-                        !metadata.primaryColumns.some(
-                            (column) => column.databaseName === key,
-                        ),
-                ),
-            ),
+            values: row,
         }))
+        const rowsById = new Map<string, typeof returnedRows>()
+        const getKey = (idMap: ObjectLiteral): string | undefined => {
+            const values = metadata.primaryColumns.map((column) =>
+                column.getEntityValue(idMap),
+            )
+            // Preserve deep comparison for custom object-valued primary keys.
+            if (
+                values.some(
+                    (value) => value !== null && typeof value === "object",
+                )
+            )
+                return undefined
+            return JSON.stringify(
+                values.map((value) => [typeof value, String(value)]),
+            )
+        }
+        for (const row of returnedRows) {
+            const key = getKey(row.idMap)
+            if (key === undefined) continue
+            const matches = rowsById.get(key)
+            if (matches) matches.push(row)
+            else rowsById.set(key, [row])
+        }
         return entities.map((entity) => {
-            const entityIdMap = metadata.getEntityIdMap(entity)
-            return returnedRows.find((returnedRow) =>
+            const entityIdMap = metadata.primaryColumns.reduce(
+                (idMap, column) =>
+                    OrmUtils.mergeDeep(
+                        idMap,
+                        column.createValueMap(column.getEntityValue(entity)),
+                    ),
+                {} as ObjectLiteral,
+            )
+            const key = getKey(entityIdMap)
+            const candidates =
+                key === undefined ? returnedRows : rowsById.get(key)
+            return candidates?.find((returnedRow) =>
                 OrmUtils.compareIds(entityIdMap, returnedRow.idMap),
             )?.values
         })
