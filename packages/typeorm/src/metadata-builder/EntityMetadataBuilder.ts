@@ -326,13 +326,16 @@ export class EntityMetadataBuilder {
                 .filter((relation) => relation.isManyToManyNotOwner)
                 .forEach((relation) => {
                     if (!relation.inverseRelation) {
-                        // the owning side names this relation as its inverse side
+                        // the owning side names this relation as its inverse side; when several do, the
+                        // junction registered last was kept, so link the owner of that junction
                         const owner =
                             relation.inverseEntityMetadata.relations.find(
                                 (inverseRelation) =>
                                     inverseRelation.isManyToManyOwner &&
                                     inverseRelation.inverseRelation ===
-                                        relation,
+                                        relation &&
+                                    inverseRelation.junctionEntityMetadata ===
+                                        relation.junctionEntityMetadata,
                             )
                         if (owner) {
                             relation.inverseRelation = owner

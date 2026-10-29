@@ -185,4 +185,99 @@ describe("relations > many-to-many > inverse side set on one side", () => {
                 ))
         })
     }
+
+    describe("two owning sides naming the same inverse side", () => {
+        interface Show {
+            id: number
+            pledges: Pledge[]
+            featuredPledges: Pledge[]
+        }
+
+        const ShowSchema = new EntitySchema<Show>({
+            name: "Show",
+            columns: {
+                id: { type: Number, primary: true },
+            },
+            relations: {
+                pledges: {
+                    target: "ShowPledge",
+                    type: "many-to-many",
+                    inverseSide: "shows",
+                    joinTable: {
+                        name: "show_regular_pledge",
+                        joinColumn: { name: "show_id" },
+                        inverseJoinColumn: { name: "pledge_id" },
+                    },
+                },
+                featuredPledges: {
+                    target: "ShowPledge",
+                    type: "many-to-many",
+                    inverseSide: "shows",
+                    joinTable: {
+                        name: "show_featured_pledge",
+                        joinColumn: { name: "featured_show_id" },
+                        inverseJoinColumn: { name: "featured_pledge_id" },
+                    },
+                },
+            },
+        })
+
+        const ShowPledgeSchema = new EntitySchema<{
+            id: number
+            shows: Show[]
+        }>({
+            name: "ShowPledge",
+            columns: {
+                id: { type: Number, primary: true },
+            },
+            relations: {
+                shows: { target: "Show", type: "many-to-many" },
+            },
+        })
+
+        let dataSources: DataSource[]
+        before(async () => {
+            dataSources = await createTestingConnections({
+                entities: [ShowSchema, ShowPledgeSchema],
+                schemaCreate: true,
+                dropSchema: true,
+            })
+        })
+        beforeEach(() => reloadTestingDatabases(dataSources))
+        after(() => closeTestingConnections(dataSources))
+
+        it("should link the inverse side to the owner of its join table", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const shows = dataSource
+                        .getMetadata(ShowPledgeSchema)
+                        .findRelationWithPropertyPath("shows")!
+
+                    expect(shows.inverseRelation).to.exist
+                    expect(shows.junctionEntityMetadata!.tableName).to.equal(
+                        shows.inverseRelation!.junctionEntityMetadata!
+                            .tableName,
+                    )
+
+                    const pledge = await dataSource
+                        .getRepository(ShowPledgeSchema)
+                        .save({ id: 1 })
+                    await dataSource.getRepository(ShowSchema).save({
+                        id: 1,
+                        pledges: [],
+                        featuredPledges: [],
+                        [shows.inverseRelation!.propertyName]: [pledge],
+                    })
+
+                    const pledges = await dataSource
+                        .getRepository(ShowPledgeSchema)
+                        .createQueryBuilder("pledge")
+                        .innerJoin("pledge.shows", "shows")
+                        .where("shows.id = :showId", { showId: 1 })
+                        .getMany()
+
+                    expect(pledges.map((p) => p.id)).to.eql([1])
+                }),
+            ))
+    })
 })
