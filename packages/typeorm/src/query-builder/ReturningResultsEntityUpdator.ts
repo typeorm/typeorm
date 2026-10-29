@@ -372,13 +372,38 @@ export class ReturningResultsEntityUpdator {
 
         const metadata = this.expressionMap.mainAlias!.metadata
         const driver = this.queryRunner.dataSource.driver
+        const canonicalUuid =
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+        const createPrimaryValueMap = (
+            column: ColumnMetadata,
+            value: unknown,
+        ) => {
+            // PostgreSQL returns canonical UUIDs; transformed IDs may be case-sensitive.
+            if (
+                (driver.options.type === "postgres" ||
+                    driver.options.type === "aurora-postgres") &&
+                column.type === "uuid" &&
+                !column.transformer &&
+                typeof value === "string" &&
+                !canonicalUuid.test(value)
+            )
+                value = value
+                    .replaceAll(/[{}-]/g, "")
+                    .toLowerCase()
+                    .replace(
+                        /^(.{8})(.{4})(.{4})(.{4})(.{12})$/,
+                        "$1-$2-$3-$4-$5",
+                    )
+            return column.createValueMap(value)
+        }
         const rows: ObjectLiteral[] = Array.isArray(raw) ? raw : [raw]
         const returnedRows = rows.map((row) => ({
             idMap: metadata.primaryColumns.reduce(
                 (idMap, column) =>
                     OrmUtils.mergeDeep(
                         idMap,
-                        column.createValueMap(
+                        createPrimaryValueMap(
+                            column,
                             driver.prepareHydratedValue(
                                 row[column.databaseName],
                                 column,
@@ -389,7 +414,7 @@ export class ReturningResultsEntityUpdator {
             ),
             values: row,
         }))
-        const rowsById = new Map<string, typeof returnedRows>()
+        const rowsById = new Map<string, (typeof returnedRows)[number]>()
         const getKey = (idMap: ObjectLiteral): string | undefined => {
             const values = metadata.primaryColumns.map((column) =>
                 column.getEntityValue(idMap),
@@ -408,23 +433,23 @@ export class ReturningResultsEntityUpdator {
         for (const row of returnedRows) {
             const key = getKey(row.idMap)
             if (key === undefined) continue
-            const matches = rowsById.get(key)
-            if (matches) matches.push(row)
-            else rowsById.set(key, [row])
+            rowsById.set(key, row)
         }
         return entities.map((entity) => {
             const entityIdMap = metadata.primaryColumns.reduce(
                 (idMap, column) =>
                     OrmUtils.mergeDeep(
                         idMap,
-                        column.createValueMap(column.getEntityValue(entity)),
+                        createPrimaryValueMap(
+                            column,
+                            column.getEntityValue(entity),
+                        ),
                     ),
                 {} as ObjectLiteral,
             )
             const key = getKey(entityIdMap)
-            const candidates =
-                key === undefined ? returnedRows : rowsById.get(key)
-            return candidates?.find((returnedRow) =>
+            if (key !== undefined) return rowsById.get(key)?.values
+            return returnedRows.find((returnedRow) =>
                 OrmUtils.compareIds(entityIdMap, returnedRow.idMap),
             )?.values
         })
