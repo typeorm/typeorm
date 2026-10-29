@@ -616,7 +616,9 @@ export class SpannerPostgresDriver extends SpannerDriver {
 
         if (/^NULL(?:::[a-z ]+)?$/i.test(value)) return undefined
 
-        const quoted = /^('(?:[^']|'')*')(?:::([a-z][a-z ]*))?$/i.exec(value)
+        const quoted = /^('(?:[^']|'')*')(?:::([a-z][a-z ]*(?:\[\])*))?$/i.exec(
+            value,
+        )
         if (quoted) {
             const cast = quoted[2]?.toLowerCase()
             return cast &&

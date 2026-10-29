@@ -1048,7 +1048,7 @@ export class SpannerPostgresQueryRunner extends SpannerQueryRunner {
             return "int64"
         } else if (item instanceof Float) {
             return "float64"
-        } else if (item instanceof Float32) {
+        } else if (Float32 && item instanceof Float32) {
             return "float32"
         } else if (item instanceof PGNumeric) {
             return { type: "pgNumeric" }

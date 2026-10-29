@@ -314,7 +314,7 @@ describe("driver > spanner-postgres > dml", () => {
                 const repository = dataSource.getRepository("Types")
                 const a = await repository.save(repository.create({ big: 7 }))
                 const b = await repository.save(
-                    repository.create({ big: BigInt(8) as any }),
+                    repository.create({ big: BigInt(8) }),
                 )
                 expect(
                     (await repository.findOneByOrFail({ id: a.id })).big,
@@ -390,7 +390,7 @@ describe("driver > spanner-postgres > dml", () => {
 
                 expect(await repository.countBy({ str: IsNull() })).to.equal(1)
                 expect(
-                    await repository.countBy({ str: In(["a", null as any]) }),
+                    await repository.countBy({ str: In(["a", null]) }),
                 ).to.equal(1)
                 expect(await repository.countBy({ str: In([]) })).to.equal(0)
 
@@ -423,14 +423,14 @@ describe("driver > spanner-postgres > dml", () => {
                 await repository.update(
                     { id: saved.id },
                     {
-                        flag: null as any,
-                        str: null as any,
-                        dec: null as any,
-                        day: null as any,
-                        at: null as any,
-                        bin: null as any,
-                        tags: null as any,
-                        json: null as any,
+                        flag: null,
+                        str: null,
+                        dec: null,
+                        day: null,
+                        at: null,
+                        bin: null,
+                        tags: null,
+                        json: null,
                     },
                 )
                 const reloaded = await repository.findOneByOrFail({
