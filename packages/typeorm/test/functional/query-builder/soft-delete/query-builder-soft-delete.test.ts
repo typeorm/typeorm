@@ -6,6 +6,7 @@ import {
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import type { DataSource } from "../../../../src/data-source/DataSource"
+import type { OracleDriver } from "../../../../src/driver/oracle/OracleDriver"
 import { User } from "./entity/User"
 import { LimitOnUpdateNotSupportedError } from "../../../../src/error/LimitOnUpdateNotSupportedError"
 import { Not, IsNull } from "../../../../src"
@@ -524,9 +525,7 @@ describe("query builder > soft-delete", () => {
                 const repository = dataSource.getRepository(Document)
                 const document = await repository.save({ title: "custom" })
                 const originalId = document.id
-                const oracle = (
-                    dataSource.driver as import("../../../../src/driver/oracle/OracleDriver").OracleDriver
-                ).oracle
+                const oracle = (dataSource.driver as OracleDriver).oracle
                 const result = await dataSource
                     .createQueryBuilder()
                     .softDelete()
