@@ -143,6 +143,30 @@ describe("driver > spanner-postgres > transactions", () => {
             )
         }))
 
+    it("should throw on a transaction started while another one starts", () =>
+        forEachDataSource(async (dataSource) => {
+            const queryRunner = dataSource.createQueryRunner()
+
+            const results = await Promise.allSettled([
+                queryRunner.startTransaction(),
+                queryRunner.startTransaction(),
+            ])
+
+            expect(results.map((result) => result.status)).to.have.members([
+                "fulfilled",
+                "rejected",
+            ])
+            const rejected = results.find(
+                (result) => result.status === "rejected",
+            ) as PromiseRejectedResult
+            expect(rejected.reason).to.be.instanceOf(
+                TransactionAlreadyStartedError,
+            )
+
+            await queryRunner.rollbackTransaction()
+            await queryRunner.release()
+        }))
+
     it("should throw on an EntityManager transaction nested in the same query runner", () =>
         forEachDataSource(async (dataSource) => {
             const queryRunner = dataSource.createQueryRunner()

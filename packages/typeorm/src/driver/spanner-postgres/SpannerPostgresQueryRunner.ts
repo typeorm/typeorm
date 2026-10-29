@@ -98,6 +98,8 @@ export class SpannerPostgresQueryRunner extends SpannerQueryRunner {
         if (this.isTransactionActive) throw new TransactionAlreadyStartedError()
 
         await this.flushDdl()
+        // another call may have started a transaction while the DDL was sent
+        if (this.isTransactionActive) throw new TransactionAlreadyStartedError()
 
         return super.startTransaction(isolationLevel)
     }
@@ -112,7 +114,9 @@ export class SpannerPostgresQueryRunner extends SpannerQueryRunner {
     }
 
     /**
-     * Rollbacks transaction. The DDL queued in it is discarded.
+     * Rollbacks transaction. The DDL queued in it and not sent yet is
+     * discarded. The DDL a statement of the transaction already sent stays
+     * applied, as Spanner DDL is not transactional.
      */
     async rollbackTransaction(): Promise<void> {
         if (this.isTransactionActive) this.discardDdl()
