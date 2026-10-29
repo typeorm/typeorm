@@ -324,7 +324,7 @@ describe("query builder > soft-delete", () => {
     it("should reject empty criteria in softDelete and restore", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
-                let error: any
+                let error: Error | undefined
                 try {
                     await dataSource
                         .createQueryBuilder()
@@ -336,7 +336,7 @@ describe("query builder > soft-delete", () => {
                     error = err
                 }
                 expect(error).to.exist
-                expect(error.message).to.include("Empty criteria(s) are not allowed")
+                expect(error!.message).to.include("Empty criteria(s) are not allowed")
             }),
         ))
 
