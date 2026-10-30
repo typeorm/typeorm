@@ -346,4 +346,21 @@ describe("column > virtual columns", () => {
                 })
             }),
         ))
+
+    it("should expand virtual column in WHERE clause with QueryBuilder object-style condition", () =>
+        dataSources.map((dataSource) => {
+            const query = dataSource
+                .createQueryBuilder(Company, "company")
+                .select(["company.name", "company.totalEmployeesCount"])
+                .where({ "company.totalEmployeesCount": MoreThan(2) })
+                .getSql()
+
+            // The virtual column's query expression should appear in the WHERE clause
+            // instead of the non-existent "company.totalEmployeesCount" column reference.
+            let expectedQuery = `SELECT "company"."name" AS "company_name", (SELECT COUNT("name") FROM "employees" WHERE "companyName" = "company"."name") AS "company_totalEmployeesCount" FROM "companies" "company" WHERE (SELECT COUNT("name") FROM "employees" WHERE "companyName" = "company"."name") > 2`
+            if (DriverUtils.isMySQLFamily(dataSource.driver)) {
+                expectedQuery = expectedQuery.replaceAll('"', "`")
+            }
+            expect(query).to.equal(expectedQuery)
+        }))
 })
