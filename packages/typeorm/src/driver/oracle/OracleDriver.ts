@@ -18,6 +18,7 @@ import { DateUtils } from "../../util/DateUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
 import type { Driver } from "../Driver"
+import type { PoolStats } from "../types/PoolStats"
 import { DriverUtils } from "../DriverUtils"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { CteCapabilities } from "../types/CteCapabilities"
@@ -378,6 +379,29 @@ export class OracleDriver implements Driver {
         await Promise.all(this.slaves.map((slave) => this.closePool(slave)))
         this.master = undefined
         this.slaves = []
+    }
+
+    /**
+     * Returns statistics for the primary and replica connection pools.
+     *
+     * @returns Current pool statistics, or undefined if no pool exists.
+     */
+    getPoolStats(): PoolStats | undefined {
+        if (!this.master) return undefined
+
+        return DriverUtils.aggregatePoolStats(
+            [this.master, ...this.slaves].map((pool) => {
+                const { connectionsOpen, connectionsInUse } = pool
+                const stats: PoolStats = {
+                    total: connectionsOpen,
+                    active: connectionsInUse,
+                    idle: connectionsOpen - connectionsInUse,
+                }
+                const queue = pool.getStatistics()
+                if (queue) stats.waiting = queue.currentQueueLength
+                return stats
+            }),
+        )
     }
 
     /**
