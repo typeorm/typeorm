@@ -6,6 +6,7 @@ import {
 } from "../../../utils/test-utils"
 import type { DataSource } from "../../../../src/data-source/DataSource"
 import { expect } from "chai"
+import { Event } from "./entity/Event"
 
 describe("driver > postgres > DataSource options", () => {
     let dataSources: DataSource[]
@@ -73,6 +74,58 @@ describe("driver > postgres > DataSource options > custom extension installation
                 const installedExtensions = result.map((r: any) => r.extname)
                 expect(installedExtensions).to.include("tablefunc")
                 expect(installedExtensions).to.include("xml2")
+            }),
+        ))
+})
+
+describe("driver > postgres > DataSource options > dateAsString", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            entities: [Event],
+            enabledDrivers: ["postgres"],
+            driverSpecific: {
+                dateAsString: true,
+            },
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    it("should return date and date[] values as strings in raw results", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const [row] = await dataSource.query(
+                    `SELECT '2026-01-01'::date AS "date", ARRAY['2026-01-01'::date, NULL] AS "dates", '{}'::date[] AS "emptyDates", '2026-01-01T00:00:00Z'::timestamptz AS "timestamp"`,
+                )
+                expect(row.date).to.equal("2026-01-01")
+                expect(row.dates).to.deep.equal(["2026-01-01", null])
+                expect(row.emptyDates).to.deep.equal([])
+                expect(row.timestamp).to.be.instanceOf(Date)
+            }),
+        ))
+
+    it("should return date values as strings in streamed results", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                const stream = await queryRunner.stream(
+                    `SELECT '2026-01-01'::date AS "date"`,
+                )
+                const rows: unknown[] = []
+                for await (const row of stream) rows.push(row)
+                await queryRunner.release()
+                expect(rows).to.deep.equal([{ date: "2026-01-01" }])
+            }),
+        ))
+
+    it("should hydrate date array columns as strings", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const repository = dataSource.getRepository(Event)
+                await repository.save({ dates: ["2026-01-01", "2026-01-02"] })
+                const [event] = await repository.find()
+                expect(event.dates).to.deep.equal(["2026-01-01", "2026-01-02"])
             }),
         ))
 })
