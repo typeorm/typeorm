@@ -113,7 +113,7 @@ export class InitCommand implements yargs.CommandModule {
                 )
                 await CommandUtils.createFile(
                     basePath + "/src/controllers/UserController.ts",
-                    InitCommand.getControllerTemplate(projectIsEsm),
+                    InitCommand.getControllerTemplate(projectIsEsm, database),
                 )
             }
 
@@ -419,8 +419,18 @@ export const Routes = [{
      * Gets contents of the user controller file (used when express is enabled).
      *
      * @param isEsm
+     * @param database
      */
-    protected static getControllerTemplate(isEsm: boolean): string {
+    protected static getControllerTemplate(
+        isEsm: boolean,
+        database: string,
+    ): string {
+        // Spanner has no auto-increment: the id is a string
+        const parseId =
+            database === "spanner-postgres"
+                ? "request.params.id"
+                : "parseInt(request.params.id)"
+
         return `import { AppDataSource } from "../data-source${
             isEsm ? ".js" : ""
         }"
@@ -436,7 +446,7 @@ export class UserController {
     }
 
     async one(request: Request, response: Response, next: NextFunction) {
-        const id = parseInt(request.params.id)
+        const id = ${parseId}
 
 
         const user = await this.userRepository.findOne({
@@ -462,7 +472,7 @@ export class UserController {
     }
 
     async remove(request: Request, response: Response, next: NextFunction) {
-        const id = parseInt(request.params.id)
+        const id = ${parseId}
 
         let userToRemove = await this.userRepository.findOneBy({ id })
 

@@ -1039,8 +1039,15 @@ export class InsertQueryBuilder<
 
         let inserted: string[] = [...conflict, ...overwrite]
         if (metadata) {
-            const updateDates = metadata.columns
-                .filter((column) => column.isUpdateDate)
+            // TypeORM sets these columns in every insert, so the update writes
+            // them too, as excluded.<column>
+            const managed = metadata.columns
+                .filter(
+                    (column) =>
+                        column.isUpdateDate ||
+                        column.isVersion ||
+                        column.isDiscriminator,
+                )
                 .map((column) => column.databaseName)
             inserted = this.getInsertedColumns().map(
                 (column) => column.databaseName,
@@ -1049,7 +1056,7 @@ export class InsertQueryBuilder<
                 (column) =>
                     !overwrite.includes(column) &&
                     !conflict.includes(column) &&
-                    !updateDates.includes(column),
+                    !managed.includes(column),
             )
             if (kept.length > 0) {
                 throw new TypeORMError(

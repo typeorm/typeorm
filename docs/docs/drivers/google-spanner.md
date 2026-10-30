@@ -159,7 +159,8 @@ Spanner accepts `ON CONFLICT` only on the primary key:
 
 - `orIgnore()` generates `ON CONFLICT (<primary key>) DO NOTHING`.
 - A conflict target other than the primary key, `ON CONSTRAINT`, or a `WHERE` clause in the update throws a `TypeORMError`.
-- `orUpdate` must overwrite every inserted column, except the primary key and the update date columns, and must not overwrite a column that is not inserted.
+- `orUpdate` must overwrite every inserted column, except the primary key the update date, version and discriminator columns, and must not overwrite a column that is not inserted.
+- Spanner only accepts `excluded.<column>` as the new value, so on a conflict a `@VersionColumn` takes the inserted value (`1`) instead of adding one.
 
 ### Migrations
 
