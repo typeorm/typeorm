@@ -9,6 +9,7 @@ import {
 } from "../../utils/test-utils"
 import { CommandUtils } from "../../../src/commands/CommandUtils"
 import { MigrationGenerateCommand } from "../../../src/commands/MigrationGenerateCommand"
+import { MigrationExecutor } from "../../../src/migration/MigrationExecutor"
 import { Post } from "./entity/Post"
 import { resultsTemplates } from "./templates/result-templates-generate"
 
@@ -168,6 +169,105 @@ describe("commands - migration generate", () => {
             )
 
             getConnectionOptionsStub.restore()
+        }
+    })
+
+    it("warns when pending unapplied migrations exist", async () => {
+        const consoleLogStub = sinon.stub(console, "log")
+        const getPendingMigrationsStub = sinon
+            .stub(MigrationExecutor.prototype, "getPendingMigrations")
+            .resolves([
+                {
+                    id: 1,
+                    timestamp: 1610975184784,
+                    name: "TestPendingMigration1610975184784",
+                    instance: undefined,
+                },
+            ])
+
+        try {
+            const connectionOption = connectionOptions[0]
+            createFileStub.resetHistory()
+
+            baseConnectionOptions = await connectionOptionsReader.get()
+            getConnectionOptionsStub = sinon
+                .stub(ConnectionOptionsReader.prototype, "get")
+                .resolves([
+                    {
+                        ...baseConnectionOptions[0],
+                        entities: [Post],
+                    },
+                ])
+
+            loadDataSourceStub.resolves(new DataSource(connectionOption))
+
+            await migrationGenerateCommand.handler(
+                testHandlerArgs({
+                    dataSource: "dummy-path",
+                    timestamp: "1610975184784",
+                    exitProcess: false,
+                }),
+            )
+
+            sinon.assert.calledWith(
+                consoleLogStub,
+                sinon.match(/Warning: There are 1 pending migration\(s\)/),
+            )
+
+            getConnectionOptionsStub.restore()
+        } finally {
+            consoleLogStub.restore()
+            getPendingMigrationsStub.restore()
+        }
+    })
+
+    it("skips warning when skipPendingCheck option is passed", async () => {
+        const consoleLogStub = sinon.stub(console, "log")
+        const getPendingMigrationsStub = sinon
+            .stub(MigrationExecutor.prototype, "getPendingMigrations")
+            .resolves([
+                {
+                    id: 1,
+                    timestamp: 1610975184784,
+                    name: "TestPendingMigration1610975184784",
+                    instance: undefined,
+                },
+            ])
+
+        try {
+            const connectionOption = connectionOptions[0]
+            createFileStub.resetHistory()
+
+            baseConnectionOptions = await connectionOptionsReader.get()
+            getConnectionOptionsStub = sinon
+                .stub(ConnectionOptionsReader.prototype, "get")
+                .resolves([
+                    {
+                        ...baseConnectionOptions[0],
+                        entities: [Post],
+                    },
+                ])
+
+            loadDataSourceStub.resolves(new DataSource(connectionOption))
+
+            await migrationGenerateCommand.handler(
+                testHandlerArgs({
+                    dataSource: "dummy-path",
+                    timestamp: "1610975184784",
+                    skipPendingCheck: true,
+                    exitProcess: false,
+                }),
+            )
+
+            sinon.assert.neverCalledWith(
+                consoleLogStub,
+                sinon.match(/Warning: There are 1 pending migration\(s\)/),
+            )
+
+            getConnectionOptionsStub.restore()
+        } finally {
+            consoleLogStub.restore()
+            getPendingMigrationsStub.restore()
         }
     })
 })
