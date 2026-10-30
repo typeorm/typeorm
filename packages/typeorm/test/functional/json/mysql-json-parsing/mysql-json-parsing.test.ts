@@ -174,4 +174,21 @@ describe("mysql json parsing", () => {
                 expect(loaded.jsonString).to.equal("")
             }),
         ))
+    it("should handle edge case of JSON strings", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const repo = dataSource.getRepository(JsonEntity)
+                const entity = new JsonEntity()
+                const expectedJsonString = JSON.stringify({ key: "value" })
+                entity.jsonString = expectedJsonString
+
+                const saved = await repo.save(entity)
+                const loaded = await repo.findOneByOrFail({ id: saved.id })
+
+                expect(loaded.jsonString).to.be.a("object")
+                expect(loaded.jsonString).to.deep.equal(
+                    JSON.parse(expectedJsonString),
+                )
+            }),
+        ))
 })
