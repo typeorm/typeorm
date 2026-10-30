@@ -68,6 +68,23 @@ describe("relations > multiple-primary-keys > one-to-many", () => {
             }),
         ))
 
+    // see https://github.com/typeorm/typeorm/issues/13021
+    it("should correctly load relation items with query strategy", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await insertSimpleTestData(dataSource)
+
+                const [user] = await dataSource.getRepository(User).find({
+                    relations: { settings: true },
+                    relationLoadStrategy: "query",
+                })
+
+                expect(user!).not.to.be.undefined
+                expect(user!.settings).to.be.an("array")
+                expect(user!.settings!.length).to.equal(2)
+            }),
+        ))
+
     it("should correctly update relation items", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
