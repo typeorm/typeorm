@@ -911,6 +911,26 @@ This will skip the first 5 users and take 10 users after them.
 `limit` and `offset` may not work as you expect once you have more complicated queries with joins or subqueries.
 Using `take` and `skip` will prevent those issues.
 
+### Counting a paginated query
+
+`getManyAndCount()` returns the entities of the current page together with the
+total number of rows the query matches. On a joined query that uses `take`, it
+can only infer that total from the page it loaded when the ordering cannot split
+a root entity across several `LIMIT` slots. That holds when every `ORDER BY`
+criteria is a plain column of the main alias; ordering by a joined column or by
+a select alias for a computed expression does not qualify, and the total is
+resolved with a separate `COUNT` query instead.
+
+```typescript
+const [users, total] = await dataSource
+    .getRepository(User)
+    .createQueryBuilder("user")
+    .leftJoinAndSelect("user.photos", "photo")
+    .orderBy("photo.name", "DESC") // joined column, so a COUNT query runs
+    .take(10)
+    .getManyAndCount()
+```
+
 ## Set locking
 
 QueryBuilder supports both optimistic and pessimistic locking.
