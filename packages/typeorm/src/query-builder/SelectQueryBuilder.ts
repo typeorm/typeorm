@@ -6,6 +6,7 @@ import { DriverUtils } from "../driver/DriverUtils"
 import type { MysqlDriver } from "../driver/mysql/MysqlDriver"
 import type { ReactNativeDriver } from "../driver/react-native/ReactNativeDriver"
 import type { AbstractSqliteDriver } from "../driver/sqlite-abstract/AbstractSqliteDriver"
+import type { SpannerPostgresDriver } from "../driver/spanner-postgres/SpannerPostgresDriver"
 import type { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
 import { TypeORMError } from "../error"
 import { EntityNotFoundError } from "../error/EntityNotFoundError"
@@ -2858,6 +2859,14 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     driver.options.type === "sap"
                 ) {
                     return " FOR UPDATE" + lockTablesClause + onLockExpression
+                } else if (driver.options.type === "spanner-postgres") {
+                    // Spanner only supports a plain FOR UPDATE, without wait policies
+                    if (onLockExpression) {
+                        throw new TypeORMError(
+                            `Lock wait policies (NOWAIT, SKIP LOCKED) are not supported by the "spanner-postgres" driver`,
+                        )
+                    }
+                    return " FOR UPDATE"
                 } else if (driver.options.type === "mssql") {
                     return ""
                 } else {
@@ -3155,7 +3164,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             return `COUNT(DISTINCT(CONCAT(${columnsExpression})))`
         }
 
-        if (this.dataSource.driver.options.type === "spanner") {
+        if (DriverUtils.isSpannerFamily(this.dataSource.driver)) {
             // spanner also has gotta be different from everyone else.
             // they do not support concatenation of different column types without casting them to string
 
@@ -3163,8 +3172,12 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 return `COUNT(DISTINCT(${columns[0]}))`
             }
 
+            const stringType =
+                this.dataSource.driver.options.type === "spanner"
+                    ? "STRING"
+                    : "TEXT"
             const columnsExpression = columns
-                .map((column) => `CAST(${column} AS STRING)`)
+                .map((column) => `CAST(${column} AS ${stringType})`)
                 .join(", '|;|', ")
             return `COUNT(DISTINCT(CONCAT(${columnsExpression})))`
         }
@@ -4445,6 +4458,16 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     if (this.dataSource.driver.options.type === "mssql") {
                         parameterValue = (
                             this.dataSource.driver as SqlServerDriver
+                        ).parametrizeValues(column, parameterValue)
+                    }
+
+                    // so does Spanner, as it does not infer the type of the column
+                    if (
+                        this.dataSource.driver.options.type ===
+                        "spanner-postgres"
+                    ) {
+                        parameterValue = (
+                            this.dataSource.driver as SpannerPostgresDriver
                         ).parametrizeValues(column, parameterValue)
                     }
 

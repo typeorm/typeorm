@@ -16,6 +16,7 @@ import type { QueryDeepPartialEntity } from "./QueryPartialEntity"
 import type { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
 import { TypeORMError } from "../error"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
+import type { SpannerPostgresDriver } from "../driver/spanner-postgres/SpannerPostgresDriver"
 import type { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
 import { DriverUtils } from "../driver/DriverUtils"
 import { isUint8Array } from "../util/Uint8ArrayUtils"
@@ -584,8 +585,9 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                             )
                         } else if (
                             (this.dataSource.driver.options.type === "sap" ||
-                                this.dataSource.driver.options.type ===
-                                    "spanner") &&
+                                DriverUtils.isSpannerFamily(
+                                    this.dataSource.driver,
+                                )) &&
                             value === null
                         ) {
                             updateColumnAndValues.push(
@@ -661,6 +663,14 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                                     this.dataSource.driver as
                                         AbstractSqliteDriver | ReactNativeDriver
                                 ).wrapWithJsonFunction(paramName, column, true)
+                            } else if (
+                                this.dataSource.driver.options.type ===
+                                "spanner-postgres"
+                            ) {
+                                expression = (
+                                    this.dataSource
+                                        .driver as SpannerPostgresDriver
+                                ).castParameter(paramName, column)
                             } else {
                                 expression = paramName
                             }
@@ -710,7 +720,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                     )
                 } else if (
                     (this.dataSource.driver.options.type === "sap" ||
-                        this.dataSource.driver.options.type === "spanner") &&
+                        DriverUtils.isSpannerFamily(this.dataSource.driver)) &&
                     value === null
                 ) {
                     updateColumnAndValues.push(this.escape(key) + " = NULL")

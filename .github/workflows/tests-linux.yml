@@ -309,6 +309,37 @@ jobs:
       - uses: ./.github/actions/upload-coverage
         with:
           name: spanner-node-${{ inputs.node-version }}-linux
+  spanner-postgres:
+    runs-on: ubuntu-latest
+    services:
+      spanner:
+        image: roryq/spanner-emulator:latest
+        ports:
+          - "9010:9010"
+          - "9020:9020"
+        env:
+          SPANNER_PROJECT_ID: typeorm
+          SPANNER_INSTANCE_ID: typeorm
+          SPANNER_DATABASE_ID: typeorm
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-node
+        with:
+          node-version: ${{ inputs.node-version }}
+          download-build: true
+
+      - run: jq 'map(select(.type == "spanner-postgres"))' ormconfig.sample.json > ormconfig.json
+
+      # The PostgreSQL dialect database is created by the test setup
+      - name: healthcheck
+        run: |
+          timeout 30 bash -c 'until curl -sf http://localhost:9020/v1/projects/typeorm/instances/typeorm > /dev/null; do sleep 1; done'
+
+      - run: pnpm exec c8 pnpm run test:ci
+
+      - uses: ./.github/actions/upload-coverage
+        with:
+          name: spanner-postgres-node-${{ inputs.node-version }}-linux
   sqljs:
     runs-on: ubuntu-latest
     steps:

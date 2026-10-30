@@ -7,6 +7,7 @@ import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../../utils/test-utils"
+import { DriverUtils } from "../../../../src/driver/DriverUtils"
 import { Example } from "../query-data/entity/Example"
 import sinon from "sinon"
 import { expect } from "chai"
@@ -68,7 +69,7 @@ describe("entity subscriber > transaction flow", () => {
         for (const connection of dataSources) {
             if (
                 connection.driver.options.type === "mssql" ||
-                connection.driver.options.type === "spanner"
+                DriverUtils.isSpannerFamily(connection.driver)
             ) {
                 continue
             }
@@ -155,7 +156,7 @@ describe("entity subscriber > transaction flow", () => {
         for (const connection of dataSources) {
             if (
                 connection.driver.options.type === "mssql" ||
-                connection.driver.options.type === "spanner"
+                DriverUtils.isSpannerFamily(connection.driver)
             ) {
                 continue
             }
@@ -224,7 +225,7 @@ describe("entity subscriber > transaction flow", () => {
         for (const connection of dataSources) {
             if (
                 connection.driver.options.type === "mssql" ||
-                connection.driver.options.type === "spanner"
+                DriverUtils.isSpannerFamily(connection.driver)
             ) {
                 continue
             }

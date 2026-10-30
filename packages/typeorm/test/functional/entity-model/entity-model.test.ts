@@ -43,8 +43,11 @@ describe("entity-model", () => {
     describe("upsert", function () {
         it("should upsert successfully", async () => {
             // These must run sequentially as we have the global context of the `Post` ActiveRecord class
+            // Spanner (PostgreSQL) only upserts on the primary key, not on "externalId"
             for (const connection of dataSources.filter(
-                (c) => c.driver.supportedUpsertTypes.length > 0,
+                (c) =>
+                    c.driver.supportedUpsertTypes.length > 0 &&
+                    c.driver.options.type !== "spanner-postgres",
             )) {
                 Post.useDataSource(connection) // change connection each time because of AR specifics
 
