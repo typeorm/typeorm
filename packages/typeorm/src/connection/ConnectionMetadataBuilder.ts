@@ -39,6 +39,8 @@ export class ConnectionMetadataBuilder {
             ...(await importClassesFromDirectories(
                 this.dataSource.logger,
                 migrationDirectories,
+                undefined,
+                this.dataSource.options.fileLoader,
             )),
         ]
         return allMigrationClasses.map(
@@ -62,6 +64,8 @@ export class ConnectionMetadataBuilder {
             ...(await importClassesFromDirectories(
                 this.dataSource.logger,
                 subscriberDirectories,
+                undefined,
+                this.dataSource.options.fileLoader,
             )),
         ]
         return getMetadataArgsStorage()
@@ -99,6 +103,8 @@ export class ConnectionMetadataBuilder {
             ...(await importClassesFromDirectories(
                 this.dataSource.logger,
                 entityDirectories,
+                undefined,
+                this.dataSource.options.fileLoader,
             )),
         ]
         allEntityClasses.forEach((entityClass) => {
