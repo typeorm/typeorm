@@ -2944,13 +2944,15 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             // however not in the case when nothing (even partial) was selected from this target (for example joins without selection)
             return []
 
+        const uniqueColumns = [...new Set(columns)]
         const nonSelectedPrimaryColumns = this.expressionMap.queryEntity
             ? metadata.primaryColumns.filter(
-                  (primaryColumn) => columns.indexOf(primaryColumn) === -1,
+                  (primaryColumn) => uniqueColumns.indexOf(primaryColumn) === -1,
               )
             : []
-        const allColumns = [...columns, ...nonSelectedPrimaryColumns]
+        const allColumns = [...uniqueColumns, ...nonSelectedPrimaryColumns]
         const finalSelects: SelectQuery[] = []
+        const seenAliases = new Set<string>()
 
         allColumns.forEach((column) => {
             const selectionPath = this.buildColumnSelectionExpression(
@@ -2964,32 +2966,40 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             )
             if (selections.length) {
                 selections.forEach((selection) => {
-                    finalSelects.push({
-                        selection: selectionPath,
-                        aliasName:
-                            selection.aliasName ??
-                            DriverUtils.buildAlias(
-                                this.dataSource.driver,
-                                undefined,
-                                aliasName,
-                                column.databaseName,
-                            ),
-                        // todo: need to keep in mind that custom selection.aliasName breaks hydrator. fix it later!
-                        virtual: selection.virtual,
-                    })
+                    const alias =
+                        selection.aliasName ??
+                        DriverUtils.buildAlias(
+                            this.dataSource.driver,
+                            undefined,
+                            aliasName,
+                            column.databaseName,
+                        )
+                    if (!seenAliases.has(alias)) {
+                        seenAliases.add(alias)
+                        finalSelects.push({
+                            selection: selectionPath,
+                            aliasName: alias,
+                            // todo: need to keep in mind that custom selection.aliasName breaks hydrator. fix it later!
+                            virtual: selection.virtual,
+                        })
+                    }
                 })
             } else {
-                finalSelects.push({
-                    selection: selectionPath,
-                    aliasName: DriverUtils.buildAlias(
-                        this.dataSource.driver,
-                        undefined,
-                        aliasName,
-                        column.databaseName,
-                    ),
-                    // todo: need to keep in mind that custom selection.aliasName breaks hydrator. fix it later!
-                    virtual: hasMainAlias,
-                })
+                const alias = DriverUtils.buildAlias(
+                    this.dataSource.driver,
+                    undefined,
+                    aliasName,
+                    column.databaseName,
+                )
+                if (!seenAliases.has(alias)) {
+                    seenAliases.add(alias)
+                    finalSelects.push({
+                        selection: selectionPath,
+                        aliasName: alias,
+                        // todo: need to keep in mind that custom selection.aliasName breaks hydrator. fix it later!
+                        virtual: hasMainAlias,
+                    })
+                }
             }
         })
         return finalSelects
