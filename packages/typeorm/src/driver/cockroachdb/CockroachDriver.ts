@@ -920,7 +920,15 @@ export class CockroachDriver implements Driver {
     createFullType(column: TableColumn): string {
         let type = column.type
 
-        if (column.length) {
+        if (this.spatialTypes.indexOf(column.type as ColumnType) >= 0) {
+            if (column.spatialFeatureType != null && column.srid != null) {
+                type = `${column.type}(${column.spatialFeatureType},${column.srid})`
+            } else if (column.spatialFeatureType != null) {
+                type = `${column.type}(${column.spatialFeatureType})`
+            } else {
+                type = column.type
+            }
+        } else if (column.length) {
             type += "(" + column.length + ")"
         } else if (
             column.precision !== null &&
@@ -934,14 +942,6 @@ export class CockroachDriver implements Driver {
             column.precision !== undefined
         ) {
             type += "(" + column.precision + ")"
-        } else if (this.spatialTypes.indexOf(column.type as ColumnType) >= 0) {
-            if (column.spatialFeatureType != null && column.srid != null) {
-                type = `${column.type}(${column.spatialFeatureType},${column.srid})`
-            } else if (column.spatialFeatureType != null) {
-                type = `${column.type}(${column.spatialFeatureType})`
-            } else {
-                type = column.type
-            }
         }
 
         if (column.isArray) type += " array"
@@ -1040,7 +1040,10 @@ export class CockroachDriver implements Driver {
                 tableColumn.type !== this.normalizeType(columnMetadata) ||
                 tableColumn.length !== columnMetadata.length ||
                 tableColumn.isArray !== columnMetadata.isArray ||
-                tableColumn.precision !== columnMetadata.precision ||
+                (this.spatialTypes.indexOf(
+                    this.normalizeType(columnMetadata) as ColumnType,
+                ) === -1 &&
+                    tableColumn.precision !== columnMetadata.precision) ||
                 (columnMetadata.scale !== undefined &&
                     tableColumn.scale !== columnMetadata.scale) ||
                 tableColumn.comment !==
