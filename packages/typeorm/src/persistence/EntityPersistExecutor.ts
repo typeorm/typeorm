@@ -126,15 +126,14 @@ export class EntityPersistExecutor {
                     new OneToManySubjectBuilder(subjects).build()
                     new OneToOneInverseSideSubjectBuilder(subjects).build()
                     new ManyToManySubjectBuilder(subjects).build()
-                } else {
-                    subjects.forEach((subject) => {
-                        if (subject.mustBeRemoved) {
-                            new ManyToManySubjectBuilder(
-                                subjects,
-                            ).buildForAllRemoval(subject)
-                        }
-                    })
                 }
+                subjects.forEach((subject) => {
+                    if (subject.mustBeRemoved) {
+                        new ManyToManySubjectBuilder(
+                            subjects,
+                        ).buildForAllRemoval(subject)
+                    }
+                })
                 // console.timeEnd("other subjects...");
                 // console.timeEnd("building subjects...");
                 // console.log("subjects", subjects);
