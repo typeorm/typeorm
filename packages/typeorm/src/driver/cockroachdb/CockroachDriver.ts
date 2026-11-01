@@ -1040,7 +1040,10 @@ export class CockroachDriver implements Driver {
                 tableColumn.type !== this.normalizeType(columnMetadata) ||
                 tableColumn.length !== columnMetadata.length ||
                 tableColumn.isArray !== columnMetadata.isArray ||
-                tableColumn.precision !== columnMetadata.precision ||
+                (this.spatialTypes.indexOf(
+                    this.normalizeType(columnMetadata) as ColumnType,
+                ) === -1 &&
+                    tableColumn.precision !== columnMetadata.precision) ||
                 (columnMetadata.scale !== undefined &&
                     tableColumn.scale !== columnMetadata.scale) ||
                 tableColumn.comment !==
