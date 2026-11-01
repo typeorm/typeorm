@@ -64,6 +64,7 @@ export interface PostgresDataSourceOptions
 
     /**
      * The Postgres extension to use to generate UUID columns. Defaults to uuid-ossp.
+     * If not set and the server is Postgres 13 or newer, the built-in gen_random_uuid() function is used.
      * If pgcrypto is selected, TypeORM will use the gen_random_uuid() function from this extension.
      * If uuid-ossp is selected, TypeORM will use the uuid_generate_v4() function from this extension.
      */

@@ -1662,7 +1662,10 @@ export class PostgresDriver implements Driver {
     }
 
     get uuidGenerator(): string {
-        return this.options.uuidExtension === "pgcrypto"
+        // gen_random_uuid() is built into Postgres 13+, so no extension is needed
+        return this.options.uuidExtension === "pgcrypto" ||
+            (!this.options.uuidExtension &&
+                VersionUtils.isGreaterOrEqual(this.version, "13.0"))
             ? "gen_random_uuid()"
             : "uuid_generate_v4()"
     }

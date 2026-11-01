@@ -42,7 +42,7 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 
 - `ssl` - Object with ssl parameters. See [TLS/SSL](https://node-postgres.com/features/ssl).
 
-- `uuidExtension` - The Postgres extension to use when generating UUIDs. Defaults to `uuid-ossp`. It can be changed to `pgcrypto` if the `uuid-ossp` extension is unavailable.
+- `uuidExtension` - The Postgres extension to use when generating UUIDs. Defaults to `uuid-ossp`. If not set and the server is Postgres 13 or newer, the built-in `gen_random_uuid()` function is used instead. It can be changed to `pgcrypto` if the `uuid-ossp` extension is unavailable.
 
 - `poolErrorHandler` - A function that gets called when the underlying pool emits `'error'` event. Takes a single parameter (error instance) and defaults to logging with `warn` level.
 

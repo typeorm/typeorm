@@ -106,7 +106,7 @@ describe("github issues > #8273 Adding @Generated('uuid') doesn't update column 
                 await queryRunner.changeColumn(table!, column, newColumn)
 
                 let columnDefault = await getColumnDefault(queryRunner, "uuid")
-                expect(columnDefault).to.equal("uuid_generate_v4()")
+                expect(columnDefault).to.equal("gen_random_uuid()")
 
                 await queryRunner.executeMemoryDownSql()
 
@@ -141,7 +141,7 @@ describe("github issues > #8273 Adding @Generated('uuid') doesn't update column 
                     queryRunner,
                     "uuidWithGenerated",
                 )
-                expect(columnDefault).to.equal("uuid_generate_v4()")
+                expect(columnDefault).to.equal("gen_random_uuid()")
 
                 await queryRunner.release()
             }),
