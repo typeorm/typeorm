@@ -920,7 +920,15 @@ export class CockroachDriver implements Driver {
     createFullType(column: TableColumn): string {
         let type = column.type
 
-        if (column.length) {
+        if (this.spatialTypes.indexOf(column.type as ColumnType) >= 0) {
+            if (column.spatialFeatureType != null && column.srid != null) {
+                type = `${column.type}(${column.spatialFeatureType},${column.srid})`
+            } else if (column.spatialFeatureType != null) {
+                type = `${column.type}(${column.spatialFeatureType})`
+            } else {
+                type = column.type
+            }
+        } else if (column.length) {
             type += "(" + column.length + ")"
         } else if (
             column.precision !== null &&
@@ -934,14 +942,6 @@ export class CockroachDriver implements Driver {
             column.precision !== undefined
         ) {
             type += "(" + column.precision + ")"
-        } else if (this.spatialTypes.indexOf(column.type as ColumnType) >= 0) {
-            if (column.spatialFeatureType != null && column.srid != null) {
-                type = `${column.type}(${column.spatialFeatureType},${column.srid})`
-            } else if (column.spatialFeatureType != null) {
-                type = `${column.type}(${column.spatialFeatureType})`
-            } else {
-                type = column.type
-            }
         }
 
         if (column.isArray) type += " array"
