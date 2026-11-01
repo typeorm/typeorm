@@ -69,16 +69,21 @@ export class OneToManySubjectBuilder {
         // to handle such situations, we pass the data to relation.inverseEntityMetadata.getEntityIdMap to extract the key without any other properties.
 
         let relatedEntityDatabaseRelationIds: ObjectLiteral[] = []
-        let relatedEntityDatabaseRelation: ObjectLiteral[] | undefined
+        const databaseEntityMap = new Map<ObjectLiteral, ObjectLiteral>()
         if (subject.databaseEntity) {
             // related entities in the database can exist only if this entity (post) is saved
-            relatedEntityDatabaseRelation =
+            const relatedEntityDatabaseRelation: ObjectLiteral[] | undefined =
                 relation.getEntityValue(subject.databaseEntity)
             if (relatedEntityDatabaseRelation) {
                 relatedEntityDatabaseRelationIds =
-                    relatedEntityDatabaseRelation.map((entity) =>
-                        relation.inverseEntityMetadata.getEntityIdMap(entity)!,
-                    )
+                    relatedEntityDatabaseRelation.map((entity) => {
+                        const idMap =
+                            relation.inverseEntityMetadata.getEntityIdMap(
+                                entity,
+                            )!
+                        databaseEntityMap.set(idMap, entity)
+                        return idMap
+                    })
             }
         }
 
@@ -188,15 +193,9 @@ export class OneToManySubjectBuilder {
             ).forEach((removedRelatedEntityRelationId) => {
                 // by example: removedRelatedEntityRelationId is category that was bind in the database before, but now its unbind
 
-                const removedDatabaseEntity =
-                    relatedEntityDatabaseRelation?.find((entity) =>
-                        OrmUtils.compareIds(
-                            relation.inverseEntityMetadata.getEntityIdMap(
-                                entity,
-                            ),
-                            removedRelatedEntityRelationId,
-                        ),
-                    )
+                const removedDatabaseEntity = databaseEntityMap.get(
+                    removedRelatedEntityRelationId,
+                )
 
                 // todo: probably we can improve this in the future by finding entity with column those values,
                 // todo: maybe it was already in persistence process. This is possible due to unique requirements of join columns
