@@ -69,9 +69,10 @@ export class OneToManySubjectBuilder {
         // to handle such situations, we pass the data to relation.inverseEntityMetadata.getEntityIdMap to extract the key without any other properties.
 
         let relatedEntityDatabaseRelationIds: ObjectLiteral[] = []
+        let relatedEntityDatabaseRelation: ObjectLiteral[] | undefined
         if (subject.databaseEntity) {
             // related entities in the database can exist only if this entity (post) is saved
-            const relatedEntityDatabaseRelation: ObjectLiteral[] | undefined =
+            relatedEntityDatabaseRelation =
                 relation.getEntityValue(subject.databaseEntity)
             if (relatedEntityDatabaseRelation) {
                 relatedEntityDatabaseRelationIds =
@@ -187,6 +188,16 @@ export class OneToManySubjectBuilder {
             ).forEach((removedRelatedEntityRelationId) => {
                 // by example: removedRelatedEntityRelationId is category that was bind in the database before, but now its unbind
 
+                const removedDatabaseEntity =
+                    relatedEntityDatabaseRelation?.find((entity) =>
+                        OrmUtils.compareIds(
+                            relation.inverseEntityMetadata.getEntityIdMap(
+                                entity,
+                            ),
+                            removedRelatedEntityRelationId,
+                        ),
+                    )
+
                 // todo: probably we can improve this in the future by finding entity with column those values,
                 // todo: maybe it was already in persistence process. This is possible due to unique requirements of join columns
                 // we create a new subject which operations will be executed in subject operation executor
@@ -194,6 +205,7 @@ export class OneToManySubjectBuilder {
                     metadata: relation.inverseEntityMetadata,
                     parentSubject: subject,
                     identifier: removedRelatedEntityRelationId,
+                    databaseEntity: removedDatabaseEntity,
                 })
 
                 const orphanedRowAction =
