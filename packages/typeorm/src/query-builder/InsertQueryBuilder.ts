@@ -171,13 +171,17 @@ export class InsertQueryBuilder<
 
             // load returning results and set them to the entity if entity updation is enabled
             // Skip for INSERT FROM SELECT as there are no entities to update
+            // the entities carrying the generated values. For an upsert the
+            // updator works on clones (so the caller's objects are not mutated),
+            // so after-insert listeners must be given those instead of valueSets.
+            let insertedEntities = valueSets
             if (
                 !this.expressionMap.insertFromSelect &&
                 this.expressionMap.updateEntity === true &&
                 this.expressionMap.mainAlias!.hasMetadata
             ) {
                 // console.time(".updating entity");
-                await returningResultsEntityUpdator.insert(
+                insertedEntities = await returningResultsEntityUpdator.insert(
                     insertResult,
                     valueSets,
                 )
@@ -192,11 +196,11 @@ export class InsertQueryBuilder<
                 this.expressionMap.mainAlias!.hasMetadata
             ) {
                 const broadcastResult = new BroadcasterResult()
-                valueSets.forEach((valueSet) => {
+                insertedEntities.forEach((insertedEntity) => {
                     queryRunner.broadcaster.broadcastAfterInsertEvent(
                         broadcastResult,
                         this.expressionMap.mainAlias!.metadata,
-                        valueSet,
+                        insertedEntity,
                     )
                 })
                 await broadcastResult.wait()

@@ -8,18 +8,23 @@ import {
     reloadTestingDatabases,
 } from "../../utils/test-utils"
 import { User } from "./entity/User"
+import { Account } from "./entity/Account"
+import { Order } from "./entity/Order"
 
 describe("github issues > #12094 upsert must not mutate input entities", () => {
     let dataSources: DataSource[]
 
     before(async () => {
         dataSources = await createTestingConnections({
-            entities: [User],
+            entities: [User, Account, Order],
             schemaCreate: true,
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(dataSources))
+    beforeEach(() => {
+        Account.observedIds = []
+        return reloadTestingDatabases(dataSources)
+    })
     after(() => closeTestingConnections(dataSources))
 
     it("should not mutate the input object when upsert inserts a new row", () =>
@@ -81,6 +86,41 @@ describe("github issues > #12094 upsert must not mutate input entities", () => {
                 // the return value remains the channel for generated values
                 expect(result.identifiers).to.have.length(1)
                 expect(result.identifiers[0].id).to.be.a("number")
+            }),
+        ))
+
+    it("should still expose the generated id to after-insert listeners without mutating the input", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const repository = dataSource.getRepository(Account)
+
+                // an actual entity instance, so the @AfterInsert listener fires
+                const input = Object.assign(new Account(), {
+                    email: "dave@example.com",
+                })
+
+                await repository.upsert(input, ["email"])
+
+                // the input object is left untouched...
+                expect(input.id).to.be.undefined
+                // ...but the after-insert listener still saw the generated id
+                const lastObserved = Account.observedIds.at(-1)
+                expect(lastObserved).to.be.a("number")
+            }),
+        ))
+
+    it("should not mutate embedded objects of the input during upsert", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const repository = dataSource.getRepository(Order)
+
+                const input: any = { reference: "ref-1", meta: {} }
+
+                await repository.upsert(input, ["reference"])
+
+                // the embedded "meta" object must stay exactly as passed in,
+                // the re-selected default must not leak back into it
+                expect(input.meta).to.deep.equal({})
             }),
         ))
 })

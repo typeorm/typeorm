@@ -2,6 +2,8 @@ import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { QueryRunner } from "../query-runner/QueryRunner"
 import type { QueryExpressionMap } from "./QueryExpressionMap"
 import type { ColumnMetadata } from "../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
+import type { EmbeddedMetadata } from "../metadata/EmbeddedMetadata"
 import type { UpdateResult } from "./result/UpdateResult"
 import type { InsertResult } from "./result/InsertResult"
 import { TypeORMError } from "../error"
@@ -144,7 +146,7 @@ export class ReturningResultsEntityUpdator {
     async insert(
         insertResult: InsertResult,
         entities: ObjectLiteral[],
-    ): Promise<void> {
+    ): Promise<ObjectLiteral[]> {
         const metadata = this.expressionMap.mainAlias!.metadata
         let insertionColumns = metadata.getInsertionReturningColumns()
 
@@ -169,7 +171,9 @@ export class ReturningResultsEntityUpdator {
         // insertResult.identifiers.
         const isUpsert = this.expressionMap.onUpdate != null
         const targetEntities = isUpsert
-            ? entities.map((entity) => OrmUtils.cloneObject(entity))
+            ? entities.map((entity) =>
+                  this.cloneEntityForUpsert(entity, metadata),
+              )
             : entities
 
         const generatedMaps = targetEntities.map((entity, entityIndex) => {
@@ -296,6 +300,52 @@ export class ReturningResultsEntityUpdator {
             insertResult.identifiers.push(entityId)
             insertResult.generatedMaps.push(generatedMaps[entityIndex])
         })
+
+        // Returns the entities carrying the generated values. For a plain insert
+        // these are the original input objects (mutated in place as before); for
+        // an upsert they are the clones, so callers never see their objects
+        // mutated while after-insert listeners still receive the generated values.
+        return targetEntities
+    }
+
+    /**
+     * Clones an entity for an upsert so the caller's object is never mutated.
+     * OrmUtils.cloneObject is shallow, so embedded objects would still be shared
+     * by reference and merged into in place; clone the embedded tree as well to
+     * keep the original fully untouched.
+     */
+    protected cloneEntityForUpsert(
+        entity: ObjectLiteral,
+        metadata: EntityMetadata,
+    ): ObjectLiteral {
+        const clone = OrmUtils.cloneObject(entity)
+        this.cloneEmbeddeds(clone, metadata.embeddeds)
+        return clone
+    }
+
+    /**
+     * Replaces each embedded object on the target with a shallow clone,
+     * recursing into nested embeddeds. Only the embedded tree is followed
+     * (never relations), so there is no risk of cyclic traversal.
+     */
+    protected cloneEmbeddeds(
+        target: ObjectLiteral,
+        embeddeds: EmbeddedMetadata[],
+    ): void {
+        for (const embedded of embeddeds) {
+            const value = target[embedded.propertyName]
+            if (
+                value != null &&
+                typeof value === "object" &&
+                !Array.isArray(value)
+            ) {
+                const embeddedClone = OrmUtils.cloneObject(value)
+                target[embedded.propertyName] = embeddedClone
+                if (embedded.embeddeds.length > 0) {
+                    this.cloneEmbeddeds(embeddedClone, embedded.embeddeds)
+                }
+            }
+        }
     }
 
     /**
