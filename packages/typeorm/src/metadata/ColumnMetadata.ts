@@ -702,11 +702,21 @@ export class ColumnMetadata {
                     if (Object.keys(map).length > 0)
                         return { [this.propertyName]: map }
                 } else {
-                    const value =
-                        this.relationMetadata.joinColumns[0].referencedColumn!.getEntityValue(
-                            entity[this.relationMetadata!.propertyName],
-                        )
-                    if (value) {
+                    const referencedColumn =
+                        this.relationMetadata.joinColumns[0].referencedColumn!
+                    let value = referencedColumn.getEntityValue(
+                        entity[this.relationMetadata!.propertyName],
+                    )
+                    if (value !== undefined && value !== null) {
+                        if (
+                            (referencedColumn.generationStrategy ===
+                                "increment" ||
+                                referencedColumn.generationStrategy ===
+                                    "rowid") &&
+                            referencedColumn.type === "bigint"
+                        ) {
+                            value = String(value)
+                        }
                         return { [this.propertyName]: value }
                     }
                 }
