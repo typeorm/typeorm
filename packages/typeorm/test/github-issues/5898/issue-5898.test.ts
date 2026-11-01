@@ -119,7 +119,7 @@ describe("github issues > #5898 Postgres primary key of type uuid: default value
                     "document",
                     "id",
                 )
-                expect(columnDefault).to.equal("uuid_generate_v4()")
+                expect(columnDefault).to.equal("gen_random_uuid()")
 
                 await queryRunner.executeMemoryDownSql()
 
@@ -160,7 +160,7 @@ describe("github issues > #5898 Postgres primary key of type uuid: default value
                     "user",
                     "id",
                 )
-                expect(columnDefault).to.equal("uuid_generate_v4()")
+                expect(columnDefault).to.equal("gen_random_uuid()")
 
                 await queryRunner.release()
             }),
