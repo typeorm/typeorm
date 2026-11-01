@@ -5,6 +5,7 @@ import type { ColumnMetadata } from "../metadata/ColumnMetadata"
 import type { UpdateResult } from "./result/UpdateResult"
 import type { InsertResult } from "./result/InsertResult"
 import { TypeORMError } from "../error"
+import { OrmUtils } from "../util/OrmUtils"
 
 /**
  * Updates entity with returning results in the entity insert and update operations.
@@ -157,7 +158,21 @@ export class ReturningResultsEntityUpdator {
             return needToCheckGenerated === true
         })
 
-        const generatedMaps = entities.map((entity, entityIndex) => {
+        // Upsert (orUpdate) must not mutate the caller's input objects. For
+        // drivers without RETURNING (e.g. mysql, sqlite) the generated primary
+        // key is fabricated from the driver insert id and merged back into each
+        // entity in place; on an ON DUPLICATE KEY UPDATE / ON CONFLICT DO UPDATE
+        // this writes a wrong id onto rows that were updated, silently
+        // corrupting the passed-in objects (issue #12094). When this is an
+        // upsert, work on clones so the originals are left untouched; the
+        // generated values are still surfaced via insertResult.generatedMaps and
+        // insertResult.identifiers.
+        const isUpsert = this.expressionMap.onUpdate != null
+        const targetEntities = isUpsert
+            ? entities.map((entity) => OrmUtils.cloneObject(entity))
+            : entities
+
+        const generatedMaps = targetEntities.map((entity, entityIndex) => {
             if (
                 Array.isArray(insertResult.raw) &&
                 this.expressionMap.extraReturningColumns.length > 0
@@ -222,7 +237,7 @@ export class ReturningResultsEntityUpdator {
                 "insert",
             )
         ) {
-            const entityIds = entities.map((entity) => {
+            const entityIds = targetEntities.map((entity) => {
                 const entityId = metadata.getEntityIdMap(entity)!
 
                 // We have to check for an empty `entityId` - if we don't, the query against the database
@@ -261,7 +276,7 @@ export class ReturningResultsEntityUpdator {
                 .setOption("create-pojo") // use POJO because created object can contain default values, e.g. property = null and those properties might be overridden by merge process
                 .getMany()
 
-            entities.forEach((entity, entityIndex) => {
+            targetEntities.forEach((entity, entityIndex) => {
                 this.queryRunner.manager.merge(
                     metadata.target as any,
                     generatedMaps[entityIndex],
@@ -276,7 +291,7 @@ export class ReturningResultsEntityUpdator {
             })
         }
 
-        entities.forEach((entity, entityIndex) => {
+        targetEntities.forEach((entity, entityIndex) => {
             const entityId = metadata.getEntityIdMap(entity)!
             insertResult.identifiers.push(entityId)
             insertResult.generatedMaps.push(generatedMaps[entityIndex])
