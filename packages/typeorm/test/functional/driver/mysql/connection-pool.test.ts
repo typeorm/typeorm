@@ -57,6 +57,35 @@ describe("driver > mysql > connection pool", () => {
             }),
         ))
 
+    it("should discard the connection when a streamed query fails with a read-only error", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const connectionId = await getConnectionId(dataSource)
+
+                const queryRunner = dataSource.createQueryRunner()
+                try {
+                    const readStream = await queryRunner.stream(
+                        "CALL raise_error(1290)",
+                    )
+                    readStream.resume()
+                    await expect(
+                        new Promise<void>((ok, fail) => {
+                            readStream.once("end", ok)
+                            readStream.once("error", fail)
+                        }),
+                    ).to.eventually.be.rejected.then((err) => {
+                        expect(err.errno).to.equal(1290)
+                    })
+                } finally {
+                    await queryRunner.release()
+                }
+
+                expect(await getConnectionId(dataSource)).to.not.equal(
+                    connectionId,
+                )
+            }),
+        ))
+
     it("should return the connection to the pool when a query fails with another error", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {

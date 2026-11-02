@@ -275,10 +275,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             return useStructuredResult ? result : result.raw
         } catch (err) {
-            // ER_OPTION_PREVENTS_STATEMENT, ER_CANT_EXECUTE_IN_READ_ONLY_TRANSACTION, ER_READ_ONLY_MODE:
-            // the connection can be attached to a server that no longer accepts writes,
-            // e.g. a writer demoted by an Aurora failover, so it must not be reused
-            if ([1290, 1792, 1836].includes(err.errno))
+            if (this.isReadOnlyError(err))
                 this.destroyConnectionOnRelease = true
 
             const queryExecutionTime =
@@ -340,6 +337,11 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                     query,
                     parameters,
                 )
+                // added before onError, which can release this query runner
+                databaseQuery.on("error", (err: { errno?: number }) => {
+                    if (this.isReadOnlyError(err))
+                        this.destroyConnectionOnRelease = true
+                })
                 if (onEnd) databaseQuery.on("end", onEnd)
                 if (onError) databaseQuery.on("error", onError)
                 ok(databaseQuery.stream())
@@ -2618,6 +2620,19 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Checks if the given error is a read-only error. A connection that gets one can be
+     * attached to a server that no longer accepts writes, e.g. a writer demoted by an
+     * Aurora failover, so it must not be reused.
+     *
+     * @param error error emitted by the driver
+     * @returns whether the error is a read-only error
+     */
+    protected isReadOnlyError(error: { errno?: number } | undefined): boolean {
+        // ER_OPTION_PREVENTS_STATEMENT, ER_CANT_EXECUTE_IN_READ_ONLY_TRANSACTION, ER_READ_ONLY_MODE
+        return [1290, 1792, 1836].includes(error?.errno ?? 0)
+    }
 
     protected async loadViews(viewNames?: string[]): Promise<View[]> {
         const hasTable = await this.hasTable(this.getTypeormMetadataTableName())
