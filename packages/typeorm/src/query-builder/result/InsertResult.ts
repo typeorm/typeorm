@@ -8,6 +8,9 @@ export class InsertResult {
     static from(queryResult: QueryResult) {
         const result = new this()
         result.raw = queryResult.raw
+        if (typeof queryResult.affected === "number") {
+            result.affected = queryResult.affected
+        }
         return result
     }
 
@@ -27,4 +30,11 @@ export class InsertResult {
      * Raw SQL result returned by executed query.
      */
     raw: any
+
+    /**
+     * Number of rows actually inserted/updated by the statement, when the
+     * underlying driver reports it. With a conflict clause (orIgnore/orUpdate)
+     * this can be lower than the number of entities passed to the query.
+     */
+    affected?: number
 }
