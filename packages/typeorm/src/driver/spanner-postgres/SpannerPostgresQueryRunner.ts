@@ -172,6 +172,11 @@ export class SpannerPostgresQueryRunner extends SpannerQueryRunner {
             return useStructuredResult ? new QueryResult() : []
         }
 
+        if (this.isCommentQuery(query))
+            throw new TypeORMError(
+                `Cloud Spanner does not support COMMENT ON, in any dialect: ${query}`,
+            )
+
         await this.flushAllDdl()
 
         return super.query(query, parameters, useStructuredResult)
@@ -1132,6 +1137,17 @@ export class SpannerPostgresQueryRunner extends SpannerQueryRunner {
         return /^(?:create|alter|drop|grant|revoke|analyze)\b/i.test(
             this.skipLeadingComments(query),
         )
+    }
+
+    /**
+     * Tells if a statement is `COMMENT ON`, which Spanner rejects both as DDL
+     * ("Statement is not supported") and as a query ("Utility SQL statements
+     * are not supported").
+     *
+     * @param query
+     */
+    protected isCommentQuery(query: string): boolean {
+        return /^comment\s+on\b/i.test(this.skipLeadingComments(query))
     }
 
     /**

@@ -788,6 +788,25 @@ export class SpannerPostgresDriver extends SpannerDriver {
     }
 
     /**
+     * Normalizes a numeric literal to compare it exactly, with no conversion
+     * to a JavaScript number, which loses the digits of a `bigint` beyond
+     * `Number.MAX_SAFE_INTEGER`: it drops the leading zeros of the integer
+     * part and the trailing zeros of the fraction (`01.50` is `1.5`).
+     *
+     * @param value A literal that matches `-?\d+(\.\d+)?`
+     */
+    protected normalizeNumericLiteral(value: string): string {
+        const negative = value.startsWith("-")
+        const [integer, fraction = ""] = value.replace(/^-/, "").split(".")
+        const digits = integer.replace(/^0+(?=\d)/, "")
+        const decimals = fraction.replace(/0+$/, "")
+        const isZero = /^0*$/.test(digits) && decimals === ""
+        return `${negative && !isZero ? "-" : ""}${digits}${
+            decimals ? "." + decimals : ""
+        }`
+    }
+
+    /**
      * Checks if "DEFAULT" values in the column metadata and in the database are equal.
      * Numbers are compared by value, JSON by content and SQL expressions
      * ignoring case.
@@ -816,7 +835,10 @@ export class SpannerPostgresDriver extends SpannerDriver {
                 : value
         const isNumber = (value: string) => /^-?\d+(\.\d+)?$/.test(value)
         if (isNumber(unquote(a)) && isNumber(unquote(b)))
-            return Number(unquote(a)) === Number(unquote(b))
+            return (
+                this.normalizeNumericLiteral(unquote(a)) ===
+                this.normalizeNumericLiteral(unquote(b))
+            )
 
         if (a.startsWith("'") && b.startsWith("'")) {
             try {

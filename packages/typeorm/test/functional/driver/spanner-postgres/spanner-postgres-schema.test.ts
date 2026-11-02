@@ -3,6 +3,7 @@ import { expect } from "chai"
 import sinon from "sinon"
 import type { DataSource } from "../../../../src/data-source/DataSource"
 import { EntitySchema } from "../../../../src/entity-schema/EntitySchema"
+import type { SpannerPostgresDriver } from "../../../../src/driver/spanner-postgres/SpannerPostgresDriver"
 import type { SpannerPostgresQueryRunner } from "../../../../src/driver/spanner-postgres/SpannerPostgresQueryRunner"
 import { DataTypeNotSupportedError } from "../../../../src/error/DataTypeNotSupportedError"
 import { TypeORMError } from "../../../../src/error/TypeORMError"
@@ -956,6 +957,45 @@ describe("driver > spanner-postgres > schema", () => {
                 } finally {
                     await queryRunner.release()
                 }
+            }))
+
+        it("should reject COMMENT ON, which Spanner does not support", () =>
+            forEachDataSource(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                try {
+                    for (const statement of [
+                        "COMMENT ON TABLE pgs_account IS 'x'",
+                        "  /* a */ comment on column pgs_account.name is 'x'",
+                    ])
+                        await expect(
+                            queryRunner.query(statement),
+                        ).to.be.rejectedWith(
+                            TypeORMError,
+                            /does not support COMMENT ON/,
+                        )
+                } finally {
+                    await queryRunner.release()
+                }
+            }))
+
+        it("should compare numeric defaults exactly", () =>
+            forEachDataSource(async (dataSource) => {
+                const driver = dataSource.driver as SpannerPostgresDriver
+                const same = (a: string, b: string) =>
+                    driver.compareDefaultValues(a, b)
+
+                // beyond Number.MAX_SAFE_INTEGER
+                expect(same("9007199254740992", "9007199254740993")).to.be.false
+                expect(same("'9007199254740993'", "9007199254740993")).to.be
+                    .true
+                expect(same("-9007199254740993", "-9007199254740992")).to.be
+                    .false
+                // equal values written differently
+                expect(same("1.50", "1.5")).to.be.true
+                expect(same("01", "1")).to.be.true
+                expect(same("-0", "0")).to.be.true
+                expect(same("10", "1")).to.be.false
+                expect(same("0.1", "0.10000000000000001")).to.be.false
             }))
 
         it("should reject changes of a column Spanner cannot make", () =>

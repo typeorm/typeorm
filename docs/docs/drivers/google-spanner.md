@@ -143,6 +143,7 @@ A rollback discards the statements queued in the transaction and not sent yet. S
 - `dropSchema` and `schema:drop` drop the tables of the entity schemas and the configured `schema` only. The tables of other schemas of the database are kept.
 - Foreign key names are unique in the whole database, not in each schema: two tables in different schemas cannot have foreign keys with the same name.
 - Views are not supported.
+- `COMMENT ON` is not supported by Spanner. `queryRunner.query()` throws a `TypeORMError` for it, and the `comment` option of a column is ignored.
 - `createDatabase`, `dropDatabase` and `hasDatabase` throw. Manage databases with the Spanner Admin API.
 - Table names cannot contain hyphens. The query result cache table is therefore named `query_result_cache`.
 - Identifiers are limited to 63 characters, and longer names are truncated without an error, as in PostgreSQL. The names TypeORM generates fit, but an explicit table, column or index name longer than 63 characters is truncated, and `synchronize()` then sees a difference on every run.
