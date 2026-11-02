@@ -114,12 +114,16 @@ export class SubjectChangedColumnsComputer {
                                   )
                                 : DateUtils.mixedDateToDateString(
                                       normalizedValue,
+                                      { utc: column.utc },
                                   )
                             databaseValue = column.isArray
                                 ? databaseValue.map((date: Date) =>
                                       DateUtils.mixedDateToDateString(date),
                                   )
-                                : DateUtils.mixedDateToDateString(databaseValue)
+                                : DateUtils.mixedDateToDateString(
+                                      databaseValue,
+                                      { utc: column.utc },
+                                  )
                             break
 
                         case "time":

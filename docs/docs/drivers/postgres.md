@@ -6,6 +6,8 @@ Databases that are PostgreSQL-compatible can also be used with TypeORM via the `
 
 To use YugabyteDB, refer to [their ORM docs](https://docs.yugabyte.com/stable/drivers-orms/nodejs/typeorm/) to get started. Note that because some Postgres features are [not supported](https://docs.yugabyte.com/stable/develop/postgresql-compatibility/#unsupported-postgresql-features) by YugabyteDB, some TypeORM functionality may be limited.
 
+To use Appwrite Managed PostgreSQL, refer to [their TypeORM guide](https://appwrite.io/docs/products/databases/postgresql/integrations/typeorm). Appwrite managed PostgreSQL works as standard Postgres with `sslmode=require`.
+
 ## Installation
 
 ```shell

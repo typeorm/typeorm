@@ -1,3 +1,15 @@
+## [1.1.2](https://github.com/typeorm/typeorm/compare/1.1.1...1.1.2) (2026-10-07)
+
+### Bug Fixes
+
+- **cockroachdb:** release all query runners before closing pool ([#12891](https://github.com/typeorm/typeorm/issues/12891)) ([3dddc4b](https://github.com/typeorm/typeorm/commit/3dddc4b8361d24e8bff5ef761167dfecf8ecaad7))
+- **data-source:** prevent connection leaks in `DataSource.initialize()` ([#12704](https://github.com/typeorm/typeorm/issues/12704)) ([67991e8](https://github.com/typeorm/typeorm/commit/67991e8d82997e18536f94b6009033be54164fe6))
+- handle schema and table name correctly in generated columns in metadata table ([#12423](https://github.com/typeorm/typeorm/issues/12423)) ([4a6a44b](https://github.com/typeorm/typeorm/commit/4a6a44b507f73a5e00b25323f2752e0abcf26d7a))
+- **metadata-builder:** keep the STI discriminator index on entities with embeddeds ([#12841](https://github.com/typeorm/typeorm/issues/12841)) ([7a9009d](https://github.com/typeorm/typeorm/commit/7a9009d299c178b37adeb5369e5d6de6efd6d93d))
+- **postgres,cockroachdb:** compare spatial columns against their default feature type and SRID ([#12812](https://github.com/typeorm/typeorm/issues/12812)) ([a5bd2e5](https://github.com/typeorm/typeorm/commit/a5bd2e5dc01ffa63ef8957ad47a5f7f68ebbeffb))
+- prevent composite primary key collisions during hydration ([#12905](https://github.com/typeorm/typeorm/issues/12905)) ([c64a1f0](https://github.com/typeorm/typeorm/commit/c64a1f052fc39f6688b6b73b83d065d7147ba8bb))
+- read closure-table primary values through column metadata ([#12907](https://github.com/typeorm/typeorm/issues/12907)) ([876eb04](https://github.com/typeorm/typeorm/commit/876eb0486aeed73ff0908ebb8b5896b63f1d4a19))
+
 ## [1.1.1](https://github.com/typeorm/typeorm/compare/1.1.0...1.1.1) (2026-09-01)
 
 ### Bug Fixes

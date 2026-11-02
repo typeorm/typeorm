@@ -338,19 +338,33 @@ export class DbQueryResultCache implements QueryResultCache {
         queryRunner?: QueryRunner,
     ): Promise<void> {
         const _queryRunner: QueryRunner = queryRunner ?? this.getQueryRunner()
-        await Promise.all(
-            identifiers.map((identifier) => {
+        const removals = []
+        try {
+            for (const identifier of identifiers) {
                 const qb = _queryRunner.manager.createQueryBuilder()
-                return qb
-                    .delete()
-                    .from(this.queryResultCacheTable)
-                    .where(`${qb.escape("identifier")} = :identifier`, {
-                        identifier,
-                    })
-                    .execute()
-            }),
-        )
-
+                removals.push(
+                    qb
+                        .delete()
+                        .from(this.queryResultCacheTable)
+                        .where(`${qb.escape("identifier")} = :identifier`, {
+                            identifier,
+                        })
+                        .execute(),
+                )
+            }
+            await Promise.all(removals)
+        } catch (error) {
+            // A failed deletion can leave other queries using the same runner.
+            await Promise.allSettled(removals)
+            if (!queryRunner) {
+                try {
+                    await _queryRunner.release()
+                } catch {
+                    // Preserve the deletion error if cleanup also fails.
+                }
+            }
+            throw error
+        }
         if (!queryRunner) {
             await _queryRunner.release()
         }

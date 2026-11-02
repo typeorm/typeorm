@@ -310,6 +310,82 @@ user.profile = { name: "John", nickname: "Malkovich" }
 Will be stored in a single database column as `{"name":"John","nickname":"Malkovich"}` value.
 When you'll load data from the database, you will have your object/array/primitive back via JSON.parse
 
+### `simple-enum` column type
+
+There is a special column type called `simple-enum` which stores enum values in a single column.
+It is useful when the same entity has to work across databases that do not all support native enums,
+because TypeORM maps it to whatever each driver supports: a native enum type where one exists,
+and a string column with a `CHECK` constraint elsewhere.
+For example:
+
+```typescript
+export enum UserRole {
+    ADMIN = "admin",
+    EDITOR = "editor",
+    GHOST = "ghost",
+}
+
+@Entity()
+export class User {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    @Column({
+        type: "simple-enum",
+        enum: UserRole,
+        default: UserRole.GHOST,
+    })
+    role: UserRole
+}
+```
+
+The allowed values can also be given as an array:
+
+```typescript
+export type UserRoleType = "admin" | "editor" | "ghost"
+
+@Entity()
+export class User {
+    @PrimaryGeneratedColumn()
+    id: number
+
+    @Column({
+        type: "simple-enum",
+        enum: ["admin", "editor", "ghost"],
+        default: "ghost",
+    })
+    role: UserRoleType
+}
+```
+
+> Note: String, numeric and heterogeneous enums are supported.
+> Numeric values are converted back to numbers when loading.
+
+How the values are stored depends on the driver:
+
+- MySQL, MariaDB and Aurora MySQL use the native `enum` column type
+- PostgreSQL, CockroachDB and Aurora PostgreSQL use a native `enum` database type
+- SQLite (including `better-sqlite3`, `sql.js`, Cordova, Expo, NativeScript, Capacitor and
+  React Native) and SQL Server store the values in a string column and add a `CHECK` constraint
+- SAP HANA stores the values in an `nvarchar` column without a `CHECK` constraint
+
+`simple-enum` is not supported by Oracle or Spanner.
+
+On PostgreSQL, CockroachDB and SQLite you can store an array of enum values with `array: true`:
+
+```typescript
+@Column({
+    type: "simple-enum",
+    enum: UserRole,
+    array: true,
+    default: [UserRole.EDITOR],
+})
+roles: UserRole[]
+```
+
+Arrays are stored as a comma-separated list on SQLite, so enum values must not contain a comma.
+No `CHECK` constraint is created for array columns on SQLite.
+
 ### Columns with generated values
 
 You can create column with generated value using `@Generated` decorator. For example:
