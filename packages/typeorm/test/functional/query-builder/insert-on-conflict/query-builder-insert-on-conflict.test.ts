@@ -10,13 +10,14 @@ import {
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
 import { Tag } from "./entity/Tag"
+import { Widget } from "./entity/Widget"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("query builder > insert > on conflict", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
-            entities: [Category, Post, Tag],
+            entities: [Category, Post, Tag, Widget],
             enabledDrivers: ["cockroachdb", "postgres", "better-sqlite3"], // since on conflict statement is only supported in postgres and sqlite >= 3.24.0
         })
     })
@@ -436,6 +437,57 @@ describe("query builder > insert > on conflict", () => {
                 expect(tagX.id).to.equal(dbX.id)
                 expect(tagY.id).to.equal(dbY.id)
                 expect(tagX.id).to.not.equal(tagY.id)
+            }),
+        ))
+
+    // https://github.com/typeorm/typeorm/issues/12994
+    // identity matching must compare hydrated (domain) values, not raw
+    // RETURNING values: a transformed column (or a boolean stored as 0/1)
+    // never equals the entity's domain value without being hydrated first,
+    // which previously broke the match on an otherwise correctly matching row
+    it("orIgnore matches returned rows by key even when an identifying column has a transformer", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const repository = dataSource.getRepository(Widget)
+
+                // "dup" already exists, so it is skipped on the insert below
+                await repository.insert({ name: "dup", code: "DUP" })
+                const existingDup = await repository.findOneByOrFail({
+                    name: "dup",
+                })
+
+                const widgets = [
+                    repository.create({ name: "dup", code: "DUP" }),
+                    repository.create({ name: "new", code: "NEW" }),
+                ]
+                await repository
+                    .createQueryBuilder()
+                    .insert()
+                    .values(widgets)
+                    .orIgnore()
+                    .execute()
+
+                const [widgetDup, widgetNew] = widgets
+                const dbNew = await repository.findOneByOrFail({
+                    name: "new",
+                })
+
+                // the inserted entity gets its own generated id, correctly
+                // matched by key even though "code" round-trips through a
+                // transformer (domain "NEW" vs raw returned "new")
+                expect(widgetNew.id).to.be.a("string")
+                expect(widgetNew.id).to.equal(dbNew.id)
+
+                // the skipped entity never receives the inserted row's id,
+                // nor is it silently turned into the pre-existing row
+                expect(widgetDup.id).to.not.equal(widgetNew.id)
+                expect(widgetDup.id).to.not.equal(existingDup.id)
+
+                // the pre-existing row is untouched, nothing new created
+                expect(await repository.countBy({ name: "dup" })).to.equal(1)
+                expect(
+                    (await repository.findOneByOrFail({ name: "dup" })).code,
+                ).to.equal("DUP")
             }),
         ))
 })

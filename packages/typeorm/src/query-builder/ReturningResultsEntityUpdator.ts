@@ -356,6 +356,18 @@ export class ReturningResultsEntityUpdator {
             }
         }
 
+        // If some returned rows were never consumed, the identity matching
+        // could not reliably account for every row (e.g. no entity carried a
+        // pre-insert value for any identifying column, or a mismatch broke
+        // the walk early). Falling back to the -1-filled array here would
+        // make the caller discard generated values for entities that were
+        // actually inserted, which is strictly worse than positional
+        // mapping. Returning undefined restores the pre-existing positional
+        // fallback instead. Note: when raw.length === 0 (every row was
+        // genuinely skipped) rawIndex stays 0 and 0 < 0 is false, so this
+        // check is skipped and the correct all -1 array is returned.
+        if (rawIndex < raw.length) return undefined
+
         return rawRowIndexes
     }
 
@@ -364,12 +376,20 @@ export class ReturningResultsEntityUpdator {
      * every identifying column the entity has a value for and that is present
      * in the row. Requires at least one such column to match, so a row is never
      * assigned to an entity it cannot be positively identified with.
+     *
+     * The RETURNING row holds raw, untransformed database values (e.g. 0/1 for
+     * booleans on better-sqlite3, or a raw value for a column with a custom
+     * transformer), while `column.getEntityValue(entity)` returns the
+     * untransformed domain value too, but in the shape the driver produces on
+     * hydration, not the raw wire shape. We hydrate the raw row value through
+     * the driver before comparing so both sides live in the same domain space.
      */
     protected entityMatchesReturnedRow(
         identifyingColumns: ColumnMetadata[],
         entity: ObjectLiteral,
         row: ObjectLiteral,
     ): boolean {
+        const driver = this.queryRunner.dataSource.driver
         let comparedColumns = 0
         for (const column of identifyingColumns) {
             const entityValue = column.getEntityValue(entity)
@@ -377,10 +397,14 @@ export class ReturningResultsEntityUpdator {
             if (!(column.databaseName in row)) continue
 
             comparedColumns++
-            const rowValue = row[column.databaseName]
+            const hydratedRowValue = driver.prepareHydratedValue(
+                row[column.databaseName],
+                column,
+            )
+            if (column.compareEntityValue(entity, hydratedRowValue)) continue
             if (
-                entityValue !== rowValue &&
-                String(entityValue) !== String(rowValue)
+                entityValue !== hydratedRowValue &&
+                String(entityValue) !== String(hydratedRowValue)
             )
                 return false
         }
