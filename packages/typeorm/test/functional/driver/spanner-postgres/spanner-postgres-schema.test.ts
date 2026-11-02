@@ -910,6 +910,78 @@ describe("driver > spanner-postgres > schema", () => {
                     await queryRunner.release()
                 }
             }))
+
+        it("should drop by name a table whose indexes and foreign keys changed through its table object", () =>
+            forEachDataSource(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                try {
+                    await queryRunner.createTable(
+                        new Table({
+                            name: "pgs_obj_parent",
+                            columns: [
+                                { name: "id", type: "bigint", isPrimary: true },
+                            ],
+                        }),
+                    )
+                    const child = new Table({
+                        name: "pgs_obj_child",
+                        columns: [
+                            { name: "id", type: "bigint", isPrimary: true },
+                            { name: "parent_id", type: "bigint" },
+                            { name: "a", type: "bigint", isNullable: true },
+                            { name: "b", type: "bigint", isNullable: true },
+                        ],
+                        indices: [
+                            new TableIndex({
+                                name: "pgs_obj_child_b",
+                                columnNames: ["b"],
+                            }),
+                        ],
+                        foreignKeys: [
+                            new TableForeignKey({
+                                name: "pgs_obj_child_old",
+                                columnNames: ["parent_id"],
+                                referencedTableName: "pgs_obj_parent",
+                                referencedColumnNames: ["id"],
+                            }),
+                        ],
+                    })
+                    await queryRunner.createTable(child)
+
+                    // the changes go through the table object, not its name
+                    await queryRunner.dropForeignKey(child, "pgs_obj_child_old")
+                    await queryRunner.createIndex(
+                        child,
+                        new TableIndex({
+                            name: "pgs_obj_child_a",
+                            columnNames: ["a"],
+                        }),
+                    )
+                    await queryRunner.createForeignKey(
+                        child,
+                        new TableForeignKey({
+                            name: "pgs_obj_child_parent",
+                            columnNames: ["parent_id"],
+                            referencedTableName: "pgs_obj_parent",
+                            referencedColumnNames: ["id"],
+                        }),
+                    )
+                    await queryRunner.dropIndex(child, "pgs_obj_child_b")
+                    await (queryRunner as SpannerPostgresQueryRunner).flushDdl()
+
+                    // Spanner does not drop a table with indexes or foreign keys
+                    await queryRunner.dropTable("pgs_obj_child")
+                    await queryRunner.dropTable("pgs_obj_parent")
+                    await (queryRunner as SpannerPostgresQueryRunner).flushDdl()
+
+                    expect(await queryRunner.hasTable("pgs_obj_child")).to.be
+                        .false
+                    expect(await queryRunner.hasTable("pgs_obj_parent")).to.be
+                        .false
+                } finally {
+                    await queryRunner.release()
+                }
+            }))
     })
 
     describe("what Spanner cannot do", () => {

@@ -530,6 +530,109 @@ export class SpannerPostgresQueryRunner extends SpannerQueryRunner {
     }
 
     /**
+     * Creates a new index, also in the table this query runner remembers.
+     *
+     * @param tableOrName
+     * @param index
+     */
+    async createIndex(
+        tableOrName: Table | string,
+        index: TableIndex,
+    ): Promise<void> {
+        await super.createIndex(tableOrName, index)
+
+        this.updateCachedTable(tableOrName, (table) => {
+            if (!table.indices.some(({ name }) => name === index.name))
+                table.addIndex(index.clone())
+        })
+    }
+
+    /**
+     * Drops an index from the table, also from the table this query runner
+     * remembers.
+     *
+     * @param tableOrName
+     * @param indexOrName
+     * @param ifExists
+     */
+    async dropIndex(
+        tableOrName: Table | string,
+        indexOrName: TableIndex | string,
+        ifExists?: boolean,
+    ): Promise<void> {
+        const dropped =
+            indexOrName instanceof TableIndex ||
+            !(tableOrName instanceof Table) ||
+            tableOrName.indices.some(({ name }) => name === indexOrName)
+
+        await super.dropIndex(tableOrName, indexOrName, ifExists)
+
+        const indexName =
+            indexOrName instanceof TableIndex ? indexOrName.name : indexOrName
+        if (dropped)
+            this.updateCachedTable(tableOrName, (table) => {
+                const index = table.indices.find(
+                    ({ name }) => name === indexName,
+                )
+                if (index) table.removeIndex(index)
+            })
+    }
+
+    /**
+     * Creates a new foreign key, also in the table this query runner
+     * remembers.
+     *
+     * @param tableOrName
+     * @param foreignKey
+     */
+    async createForeignKey(
+        tableOrName: Table | string,
+        foreignKey: TableForeignKey,
+    ): Promise<void> {
+        await super.createForeignKey(tableOrName, foreignKey)
+
+        this.updateCachedTable(tableOrName, (table) => {
+            if (!table.foreignKeys.some(({ name }) => name === foreignKey.name))
+                table.addForeignKey(foreignKey.clone())
+        })
+    }
+
+    /**
+     * Drops a foreign key from the table, also from the table this query
+     * runner remembers.
+     *
+     * @param tableOrName
+     * @param foreignKeyOrName
+     * @param ifExists
+     */
+    async dropForeignKey(
+        tableOrName: Table | string,
+        foreignKeyOrName: TableForeignKey | string,
+        ifExists?: boolean,
+    ): Promise<void> {
+        const dropped =
+            foreignKeyOrName instanceof TableForeignKey ||
+            !(tableOrName instanceof Table) ||
+            tableOrName.foreignKeys.some(
+                ({ name }) => name === foreignKeyOrName,
+            )
+
+        await super.dropForeignKey(tableOrName, foreignKeyOrName, ifExists)
+
+        const foreignKeyName =
+            foreignKeyOrName instanceof TableForeignKey
+                ? foreignKeyOrName.name
+                : foreignKeyOrName
+        if (dropped)
+            this.updateCachedTable(tableOrName, (table) => {
+                const foreignKey = table.foreignKeys.find(
+                    ({ name }) => name === foreignKeyName,
+                )
+                if (foreignKey) table.removeForeignKey(foreignKey)
+            })
+    }
+
+    /**
      * Creates a new view. Not supported: TypeORM keeps the definition of a view
      * in the `typeorm_metadata` table, which cannot hold it in Spanner because
      * the columns of its primary key are not nullable.
@@ -1325,6 +1428,28 @@ export class SpannerPostgresQueryRunner extends SpannerQueryRunner {
                 (table) => this.getTablePath(table) === tablePath,
             ) ?? super.getCachedTable(tableName)
         )
+    }
+
+    /**
+     * Applies a change made through a table object to the table this query
+     * runner remembers with the same name, when it is a different object: a
+     * change made by name already changed it, and the following changes by
+     * name, like dropping the table, read it.
+     *
+     * @param tableOrName
+     * @param update
+     */
+    protected updateCachedTable(
+        tableOrName: Table | string,
+        update: (table: Table) => void,
+    ): void {
+        if (!(tableOrName instanceof Table)) return
+
+        const tablePath = this.getTablePath(tableOrName)
+        const cachedTable = this.loadedTables.find(
+            (table) => this.getTablePath(table) === tablePath,
+        )
+        if (cachedTable && cachedTable !== tableOrName) update(cachedTable)
     }
 
     /**
