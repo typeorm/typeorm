@@ -1,4 +1,5 @@
 import type { Driver } from "../driver/Driver"
+import type { PoolStats } from "../driver/types/PoolStats"
 import { registerQueryBuilders } from "../query-builder"
 import type { Repository } from "../repository/Repository"
 import type { EntitySubscriberInterface } from "../subscriber/EntitySubscriberInterface"
@@ -318,6 +319,20 @@ export class DataSource {
         if (this.queryResultCache) await this.queryResultCache.disconnect()
 
         ObjectUtils.assign(this, { isInitialized: false })
+    }
+
+    /**
+     * Returns a snapshot of local connection pool statistics, aggregated across
+     * primary and replica pools. Unsupported metrics are omitted, and drivers
+     * without pool statistics return undefined.
+     * Can be used only after the data source has been initialized.
+     *
+     * @returns Current pool statistics, or undefined if unsupported.
+     */
+    getPoolStats(): PoolStats | undefined {
+        if (!this.isInitialized) throw new CannotExecuteNotConnectedError()
+
+        return this.driver.getPoolStats?.()
     }
 
     /**

@@ -132,6 +132,7 @@ export type * from "./schema-builder/options/ViewOptions"
 export type * from "./driver/types/DatabaseType"
 export type * from "./driver/types/GeoJsonTypes"
 export type * from "./driver/types/ReplicationMode"
+export type * from "./driver/types/PoolStats"
 export * from "./driver/sqlserver/MssqlParameter"
 export type * from "./subscriber/event/QueryEvent"
 
