@@ -52,6 +52,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected databaseConnectionPromise: Promise<any>
 
+    /**
+     * Whether the database connection has to be destroyed instead of being returned
+     * to the pool once the query runner is released.
+     */
+    protected destroyConnectionOnRelease = false
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -102,10 +108,17 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
     /**
      * Releases used database connection.
      * You cannot use query runner methods once its released.
+     * A connection that failed with a read-only error is destroyed instead.
      */
     release(): Promise<void> {
         this.isReleased = true
-        if (this.databaseConnection) this.databaseConnection.release()
+        if (this.databaseConnection) {
+            if (this.destroyConnectionOnRelease) {
+                this.databaseConnection.destroy()
+            } else {
+                this.databaseConnection.release()
+            }
+        }
         return Promise.resolve()
     }
 
@@ -262,6 +275,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             return useStructuredResult ? result : result.raw
         } catch (err) {
+            // ER_OPTION_PREVENTS_STATEMENT, ER_CANT_EXECUTE_IN_READ_ONLY_TRANSACTION, ER_READ_ONLY_MODE:
+            // the connection can be attached to a server that no longer accepts writes,
+            // e.g. a writer demoted by an Aurora failover, so it must not be reused
+            if ([1290, 1792, 1836].includes(err.errno))
+                this.destroyConnectionOnRelease = true
+
             const queryExecutionTime =
                 DateUtils.performanceNow() - queryStartTime
 
