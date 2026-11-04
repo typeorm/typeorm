@@ -150,8 +150,16 @@ describe(`OrmUtils`, () => {
             const result: Record<string, unknown> = OrmUtils.mergeDeep({}, a)
 
             // the memo rewires each cycle into the result instead of recursing
+            expect(result).to.have.keys("a", "b")
             expect(result.a).to.not.equal(a)
             expect(result.a).to.equal((result.a as Record<string, unknown>).a)
+
+            // the nested branch is copied too, and its back-reference lands
+            // inside the result rather than on the original
+            const copiedB = result.b as Record<string, unknown>
+            expect(copiedB).to.not.equal(b)
+            expect(copiedB.a).to.not.equal(a)
+            expect((copiedB.a as Record<string, unknown>).b).to.equal(copiedB)
         })
 
         it("should reference copy complex instances of classes.", () => {
