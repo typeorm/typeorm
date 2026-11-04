@@ -127,6 +127,12 @@ export class EntitySchemaOptions<T> {
     expression?: string | ((dataSource: DataSource) => SelectQueryBuilder<any>)
 
     /**
+     * Indicates if view should be materialized view.
+     * It's supported by Postgres and Oracle.
+     */
+    materialized?: boolean
+
+    /**
      * Inheritance options.
      */
     inheritance?: EntitySchemaInheritanceOptions

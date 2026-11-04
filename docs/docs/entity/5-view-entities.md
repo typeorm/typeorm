@@ -185,6 +185,37 @@ However, `unique` is currently the only supported option for indexes in material
 name: string
 ```
 
+## View Entities with EntitySchema
+
+A view can also be defined with an [`EntitySchema`](./6-separating-entity-definition.md) instead of a decorated class.
+Set `type` to `"view"` and provide the `expression`. To create a materialized view, set `materialized` to `true`:
+
+```typescript
+import { EntitySchema } from "typeorm"
+
+export const PostCategorySchema = new EntitySchema({
+    name: "PostCategory",
+    type: "view",
+    materialized: true,
+    expression: `
+        SELECT "post"."id" AS "id", "post"."name" AS "name", "category"."name" AS "categoryName"
+        FROM "post" "post"
+        LEFT JOIN "category" "category" ON "post"."categoryId" = "category"."id"
+    `,
+    columns: {
+        id: {
+            type: Number,
+        },
+        name: {
+            type: String,
+        },
+        categoryName: {
+            type: String,
+        },
+    },
+})
+```
+
 ## Complete example
 
 Lets create two entities and a view containing aggregated data from these entities:
