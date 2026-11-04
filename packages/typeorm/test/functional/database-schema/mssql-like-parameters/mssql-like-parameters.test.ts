@@ -50,6 +50,24 @@ describe("database schema > mssql LIKE parameter lengths", () => {
 
     for (const property of ["unicode", "ascii"] as const) {
         for (const operator of [Like, ILike]) {
+            for (const wrap of [Equal, Not]) {
+                for (const length of [20, 21]) {
+                    it(`searches ${property} with ${operator.name} wrapping ${wrap.name} and ${length + 2}-character patterns`, () =>
+                        Promise.all(
+                            dataSources.map(async (dataSource) => {
+                                const rows = await findBy(dataSource, {
+                                    [property]: operator(
+                                        wrap(`%${"A".repeat(length)}%`),
+                                    ),
+                                })
+                                expect(rows.map((row) => row.id)).to.deep.equal(
+                                    length === 20 ? [1] : [],
+                                )
+                            }),
+                        ))
+                }
+            }
+
             for (const length of [18, 19, 20, 21, 100]) {
                 it(`searches ${property} with ${operator.name} and ${length + 2}-character patterns`, () =>
                     Promise.all(

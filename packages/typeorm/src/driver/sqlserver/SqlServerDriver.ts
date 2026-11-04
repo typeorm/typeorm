@@ -1097,22 +1097,22 @@ export class SqlServerDriver implements Driver {
                 this.parametrizeValues(column, value.child)
             } else if (value.type !== "raw") {
                 value.transformValue({
-                    to: (v) => {
-                        const parameter = this.parametrizeValues(column, v)
-                        if (
-                            (value.type === "like" || value.type === "ilike") &&
-                            typeof v === "string" &&
-                            (parameter.type === "varchar" ||
-                                parameter.type === "nvarchar") &&
-                            Number(parameter.params[0]) < v.length
-                        ) {
-                            // Wildcards can make a pattern longer than its column.
-                            parameter.params[0] = v.length
-                        }
-                        return parameter
-                    },
+                    to: (v) => this.parametrizeValues(column, v),
                     from: (v) => v,
                 })
+            }
+
+            const parameter = value.value
+            if (
+                (value.type === "like" || value.type === "ilike") &&
+                InstanceChecker.isMssqlParameter(parameter) &&
+                typeof parameter.value === "string" &&
+                (parameter.type === "varchar" ||
+                    parameter.type === "nvarchar") &&
+                Number(parameter.params[0]) < parameter.value.length
+            ) {
+                // Wildcards can make a pattern longer than its column.
+                parameter.params[0] = parameter.value.length
             }
 
             return value

@@ -50,6 +50,20 @@ describe("SQL Server LIKE parameter lengths", () => {
     for (const type of ["nvarchar", "varchar"] as const) {
         const property = type === "nvarchar" ? "unicode" : "ascii"
         for (const operator of [Like, ILike]) {
+            for (const wrap of [Equal, Not]) {
+                it(`widens ${operator.name} wrapping ${wrap.name} for ${type}(20)`, () => {
+                    const pattern = `%${"A".repeat(20)}%`
+                    const [parameter] = parameters(
+                        property,
+                        operator(wrap(pattern)),
+                    )
+
+                    expect(parameter.type).to.equal(type)
+                    expect(parameter.value).to.equal(pattern)
+                    expect(parameter.params).to.deep.equal([22])
+                })
+            }
+
             for (const length of [18, 19, 20, 100]) {
                 it(`binds ${operator.name} with ${length + 2} characters for ${type}(20)`, () => {
                     const pattern = `%${"A".repeat(length)}%`
@@ -107,6 +121,16 @@ describe("SQL Server LIKE parameter lengths", () => {
         expect(parameters("inferred", Like(pattern))[0].params).to.deep.equal(
             [],
         )
+    })
+
+    it("preserves MAX and inferred lengths in wrapped patterns", () => {
+        const pattern = `%${"A".repeat(100)}%`
+        expect(
+            parameters("unlimited", Like(Equal(pattern)))[0].params,
+        ).to.deep.equal(["MAX"])
+        expect(
+            parameters("inferred", ILike(Not(pattern)))[0].params,
+        ).to.deep.equal([])
     })
 
     it("preserves independently bound raw patterns", () => {
