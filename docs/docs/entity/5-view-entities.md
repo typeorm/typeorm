@@ -188,7 +188,7 @@ name: string
 ## View Entities with EntitySchema
 
 A view can also be defined with an [`EntitySchema`](./6-separating-entity-definition.md) instead of a decorated class.
-Set `type` to `"view"` and provide the `expression`. To create a materialized view, set `materialized` to `true`:
+Set `type` to `"view"` and provide the `expression`. To create a materialized view, set `materialized` to `true`. Materialized views are supported by Postgres and Oracle. MySQL ignores the option and creates a regular view. The example below is written for Postgres:
 
 ```typescript
 import { EntitySchema } from "typeorm"
