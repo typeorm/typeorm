@@ -234,12 +234,9 @@ await manager.delete(User, 1)
 await manager.delete(User, [1, 2, 3])
 await manager.delete(User, { firstName: "Timber" })
 
-// Bulk deletes with different conditions for each operation
+// An array of condition objects is OR'd into one query
 await manager.delete(User, [{ firstName: "Timber" }, { age: 18 }, { id: 42 }])
-// executes three separate DELETE queries:
-// DELETE FROM user WHERE firstName = Timber
-// DELETE FROM user WHERE age = 18
-// DELETE FROM user WHERE id = 42
+// executes DELETE FROM user WHERE firstName = Timber OR age = 18 OR id = 42
 ```
 
 You can pass an **array of condition objects** to match multiple distinct sets of rows in a single call (conditions are OR'd together). This is different from passing a primitive array, which is treated as a list of IDs:
