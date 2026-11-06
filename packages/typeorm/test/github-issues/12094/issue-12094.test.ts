@@ -10,13 +10,14 @@ import {
 import { User } from "./entity/User"
 import { Account } from "./entity/Account"
 import { Order } from "./entity/Order"
+import { ReadonlyMetaOrder } from "./entity/ReadonlyMetaOrder"
 
 describe("github issues > #12094 upsert must not mutate input entities", () => {
     let dataSources: DataSource[]
 
     before(async () => {
         dataSources = await createTestingConnections({
-            entities: [User, Account, Order],
+            entities: [User, Account, Order, ReadonlyMetaOrder],
             schemaCreate: true,
             dropSchema: true,
         })
@@ -124,6 +125,22 @@ describe("github issues > #12094 upsert must not mutate input entities", () => {
                 // the embedded "meta" object must stay exactly as passed in,
                 // the re-selected default must not leak back into it
                 expect(input.meta).to.deep.equal({})
+            }),
+        ))
+
+    it("should upsert an entity whose embedded is exposed through a read-only getter", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const repository = dataSource.getRepository(ReadonlyMetaOrder)
+
+                const input = new ReadonlyMetaOrder()
+                input.reference = "ref-ro"
+
+                // cloning the entity for the upsert must not assign through the
+                // getter-only "meta" accessor, which would otherwise throw
+                const result = await repository.upsert(input, ["reference"])
+
+                expect(result.identifiers[0].id).to.be.a("number")
             }),
         ))
 })

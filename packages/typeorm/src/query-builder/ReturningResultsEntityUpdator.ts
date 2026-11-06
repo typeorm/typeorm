@@ -340,7 +340,16 @@ export class ReturningResultsEntityUpdator {
                 !Array.isArray(value)
             ) {
                 const embeddedClone = OrmUtils.cloneObject(value)
-                target[embedded.propertyName] = embeddedClone
+                // Define an own data property rather than assigning through
+                // `target[propertyName] = ...`: the clone keeps the entity
+                // prototype, so a getter-only mapped embedded would make a
+                // plain assignment throw after the insert has already run.
+                Object.defineProperty(target, embedded.propertyName, {
+                    value: embeddedClone,
+                    writable: true,
+                    enumerable: true,
+                    configurable: true,
+                })
                 if (embedded.embeddeds.length > 0) {
                     this.cloneEmbeddeds(embeddedClone, embedded.embeddeds)
                 }
