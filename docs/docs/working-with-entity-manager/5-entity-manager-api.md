@@ -185,17 +185,6 @@ await manager.update(User, { age: 18 }, { category: "ADULT" })
 
 await manager.update(User, 1, { firstName: "Rizzrak" })
 // executes UPDATE user SET firstName = Rizzrak WHERE id = 1
-
-// Bulk updates with different conditions for each operation
-await manager.update(User, [
-    { criteria: { id: 1 }, data: { firstName: "Rizzrak" } },
-    { criteria: { id: 2 }, data: { firstName: "Karzzir" } },
-    { criteria: { age: 18 }, data: { category: "ADULT" } },
-])
-// executes three separate UPDATE queries:
-// UPDATE user SET firstName = Rizzrak WHERE id = 1
-// UPDATE user SET firstName = Karzzir WHERE id = 2
-// UPDATE user SET category = ADULT WHERE age = 18
 ```
 
 You can pass an **array of condition objects** to match multiple distinct sets of rows in a single call (conditions are OR'd together):
