@@ -2,12 +2,14 @@ import { expect } from "chai"
 import "reflect-metadata"
 
 import type { DataSource } from "../../../../src/data-source/DataSource"
+import { IsNull } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import { Category } from "./entity/Category"
+import { NullableTag } from "./entity/NullableTag"
 import { Post } from "./entity/Post"
 import { Tag } from "./entity/Tag"
 import { Widget } from "./entity/Widget"
@@ -17,7 +19,7 @@ describe("query builder > insert > on conflict", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
-            entities: [Category, Post, Tag, Widget],
+            entities: [Category, NullableTag, Post, Tag, Widget],
             enabledDrivers: ["cockroachdb", "postgres", "better-sqlite3"], // since on conflict statement is only supported in postgres and sqlite >= 3.24.0
         })
     })
@@ -488,6 +490,56 @@ describe("query builder > insert > on conflict", () => {
                 expect(
                     (await repository.findOneByOrFail({ name: "dup" })).code,
                 ).to.equal("DUP")
+            }),
+        ))
+
+    // https://github.com/typeorm/typeorm/issues/12994
+    // identity matching must not treat a real NULL as equal to the literal
+    // string "null": String(null) === String("null"), so a skipped entity
+    // keyed on "null" must not consume the row of an inserted entity keyed
+    // on an actual NULL
+    it("orIgnore does not match a skipped 'null' string key against an inserted NULL key", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const repository = dataSource.getRepository(NullableTag)
+
+                // the literal string "null" already exists, so it is skipped
+                // on the insert below
+                await repository.insert({ name: "null" })
+                const existingNull = await repository.findOneByOrFail({
+                    name: "null",
+                })
+
+                const tags = [
+                    repository.create({ name: "null" }), // skipped (string)
+                    repository.create({ name: null }), // inserted (real NULL)
+                ]
+                await repository
+                    .createQueryBuilder()
+                    .insert()
+                    .values(tags)
+                    .orIgnore()
+                    .execute()
+
+                const [tagString, tagNull] = tags
+                const dbNull = await repository.findOneByOrFail({
+                    name: IsNull(),
+                })
+
+                // the entity keyed on a real NULL gets its own generated id
+                expect(tagNull.id).to.be.a("string")
+                expect(tagNull.id).to.equal(dbNull.id)
+
+                // the skipped "null" string entity never receives the inserted
+                // row's id, nor is it turned into the pre-existing row
+                expect(tagString.id).to.not.equal(tagNull.id)
+                expect(tagString.id).to.not.equal(existingNull.id)
+
+                // the pre-existing "null" row is untouched
+                expect(await repository.countBy({ name: "null" })).to.equal(1)
+                expect(
+                    (await repository.findOneByOrFail({ name: "null" })).id,
+                ).to.equal(existingNull.id)
             }),
         ))
 })

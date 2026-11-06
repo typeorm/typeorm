@@ -402,6 +402,12 @@ export class ReturningResultsEntityUpdator {
                 column,
             )
             if (column.compareEntityValue(entity, hydratedRowValue)) continue
+            // A real NULL must never be treated as equal to a non-null value.
+            // The String() fallback below would otherwise match null against
+            // the literal string "null", letting a skipped entity consume
+            // another entity's returned row.
+            if ((entityValue === null) !== (hydratedRowValue === null))
+                return false
             if (
                 entityValue !== hydratedRowValue &&
                 String(entityValue) !== String(hydratedRowValue)
