@@ -176,6 +176,8 @@ await repository.updateAll(
 
 When an upsert operation results in an update (due to a conflict), special columns like `@UpdateDateColumn` and `@VersionColumn` are automatically updated to their current values.
 
+`upsert` does not mutate the entity objects you pass in. Generated values such as an auto-increment or default primary key are **not** written back onto the input objects; read them from the returned `InsertResult` instead (`identifiers`, `generatedMaps`, or `raw` — see below).
+
 Columns marked with `update: false` or defined as computed generated columns (via `asExpression`/`generatedType`) are **never** included in the update set on conflict. If all non-conflict columns are excluded by these rules (i.e. there are no updatable columns), the upsert degrades to an insert-or-ignore operation and the existing row is left completely unchanged. On databases that support conflict targets (e.g. PostgreSQL, CockroachDB), this is scoped to the specified conflict columns; on MySQL-family databases, `INSERT IGNORE` is used which applies to all unique constraints.
 
 ```typescript
