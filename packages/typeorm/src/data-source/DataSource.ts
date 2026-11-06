@@ -202,7 +202,10 @@ export class DataSource {
     setOptions(options: Partial<DataSourceOptions>): this {
         Object.assign(this.options, options)
 
-        if (options.logger || options.logging) {
+        // MysqlDriver works on its own copy of the options
+        Object.assign(this.driver.options, options)
+
+        if (options.logger !== undefined || options.logging !== undefined) {
             this.logger = new LoggerFactory().create(
                 options.logger ?? this.options.logger,
                 options.logging ?? this.options.logging,
@@ -217,16 +220,24 @@ export class DataSource {
             this.queryResultCache = new QueryResultCacheFactory(this).create()
         }
 
-        // todo: we must update the database in the driver as well, if it was set by setOptions method
-        //  in the future we need to refactor the code and remove "database" from the driver, and instead
-        //  use database (and options) from a single place - data source.
-        if (options.database) {
+        // todo: the driver resolves these only once, in its constructor, so they have to follow the new options.
+        //  in the future we need to refactor the code and remove them from the driver, and instead
+        //  use them (and options) from a single place - data source.
+        if ("replication" in options) {
+            this.driver.isReplicated = !!options.replication
+        }
+
+        if (options.database || "url" in options || "replication" in options) {
             this.driver.database = DriverUtils.buildDriverOptions(
-                this.options,
+                "replication" in this.options && this.options.replication
+                    ? this.options.replication.master
+                    : this.options,
             ).database
         }
 
-        // todo: need to take a look if we need to update schema and other "poor" properties
+        if ("schema" in options && options.schema) {
+            this.driver.schema = options.schema
+        }
 
         return this
     }
