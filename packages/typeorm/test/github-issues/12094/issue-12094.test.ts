@@ -1,7 +1,7 @@
 import { expect } from "chai"
 import "reflect-metadata"
 
-import type { DataSource } from "../../../src"
+import type { DataSource, QueryDeepPartialEntity } from "../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -114,7 +114,10 @@ describe("github issues > #12094 upsert must not mutate input entities", () => {
             dataSources.map(async (dataSource) => {
                 const repository = dataSource.getRepository(Order)
 
-                const input: any = { reference: "ref-1", meta: {} }
+                const input: QueryDeepPartialEntity<Order> = {
+                    reference: "ref-1",
+                    meta: {},
+                }
 
                 await repository.upsert(input, ["reference"])
 
