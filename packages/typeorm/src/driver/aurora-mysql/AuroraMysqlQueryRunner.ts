@@ -2374,7 +2374,7 @@ export class AuroraMysqlQueryRunner
                         tableColumn.default =
                             dbColumn["COLUMN_DEFAULT"] === "CURRENT_TIMESTAMP"
                                 ? dbColumn["COLUMN_DEFAULT"]
-                                : `'${dbColumn["COLUMN_DEFAULT"]}'`
+                                : `'${dbColumn["COLUMN_DEFAULT"].replaceAll("'", "''")}'`
                     }
 
                     if (dbColumn["EXTRA"].indexOf("on update") !== -1) {
