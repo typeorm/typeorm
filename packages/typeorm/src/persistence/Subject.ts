@@ -142,6 +142,7 @@ export class Subject {
         metadata: EntityMetadata
         parentSubject?: Subject
         entity?: ObjectLiteral
+        databaseEntity?: ObjectLiteral
         canBeInserted?: boolean
         canBeUpdated?: boolean
         mustBeRemoved?: boolean
@@ -153,6 +154,8 @@ export class Subject {
         this.metadata = options.metadata
         this.entity = options.entity
         this.parentSubject = options.parentSubject
+        if (options.databaseEntity !== undefined)
+            this.databaseEntity = options.databaseEntity
         if (options.canBeInserted !== undefined)
             this.canBeInserted = options.canBeInserted
         if (options.canBeUpdated !== undefined)
