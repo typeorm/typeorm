@@ -873,6 +873,43 @@ describe("repository > basic methods", () => {
                     )
                 }),
             ))
+        it("github issues > #12957: should not change the generated primary key when upserting a loaded entity", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (
+                        !dataSource.driver.supportedUpsertTypes.includes(
+                            "on-conflict-do-update",
+                        )
+                    )
+                        return
+
+                    const postRepository = dataSource.getRepository(Post)
+                    const externalId = "external-generated-id-test"
+
+                    await postRepository.insert({
+                        externalId,
+                        title: "Initial title",
+                    })
+
+                    // the loaded entity carries its generated id
+                    const loaded = await postRepository.findOneByOrFail({
+                        externalId,
+                    })
+                    // upsert merges the returned values back into the entity, so keep the original id
+                    const originalId = loaded.id
+                    loaded.title = "Updated title"
+
+                    await postRepository.upsert(loaded, ["externalId"])
+
+                    const posts = await postRepository.findBy({ externalId })
+                    posts.length.should.be.equal(1)
+                    posts[0].title.should.be.equal("Updated title")
+                    posts[0].id!.should.be.equal(
+                        originalId,
+                        "primary key should not be changed by upsert",
+                    )
+                }),
+            ))
         it("should throw if using an unsupported driver", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {
