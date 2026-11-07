@@ -10,29 +10,16 @@ import { Post } from "./entity/Post"
 
 describe("github issues > #2131 InsertResult return the same primary key", () => {
     let dataSources: DataSource[]
-    const posts: Post[] = [
-        {
-            id: null,
-            title: "Post 1",
-        },
-        {
-            id: null,
-            title: "Post 2",
-        },
-        {
-            id: null,
-            title: "Post 3",
-        },
-        {
-            id: null,
-            title: "Post 4",
-        },
-    ]
 
     before(async () => {
         dataSources = await createTestingConnections({
             entities: [__dirname + "/entity/*{.js,.ts}"],
-            enabledDrivers: ["better-sqlite3", "mysql", "aurora-mysql"],
+            enabledDrivers: [
+                "better-sqlite3",
+                "sqljs",
+                "mysql",
+                "aurora-mysql",
+            ],
         })
     })
     beforeEach(() => reloadTestingDatabases(dataSources))
@@ -41,6 +28,25 @@ describe("github issues > #2131 InsertResult return the same primary key", () =>
     it("should get correct insert ids for multiple entities inserted", () =>
         Promise.all(
             dataSources.map(async (connection) => {
+                const posts: Post[] = [
+                    {
+                        id: null,
+                        title: "Post 1",
+                    },
+                    {
+                        id: null,
+                        title: "Post 2",
+                    },
+                    {
+                        id: null,
+                        title: "Post 3",
+                    },
+                    {
+                        id: null,
+                        title: "Post 4",
+                    },
+                ]
+
                 await connection
                     .createQueryBuilder()
                     .insert()
