@@ -23,6 +23,45 @@ describe("query builder > joins", () => {
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
+    // Regression coverage for #12973: relation traversal must not move a
+    // later child join ahead of an explicitly added mapped join.
+    for (const method of [
+        "innerJoinAndMapOne",
+        "leftJoinAndMapOne",
+        "innerJoinAndMapMany",
+        "leftJoinAndMapMany",
+    ] as const) {
+        it(`should preserve call order with ${method}`, async () => {
+            for (const dataSource of dataSources) {
+                const query = dataSource.manager
+                    .createQueryBuilder(Post, "post")
+                    .leftJoinAndSelect("post.categories", "categories")
+                query[method](
+                    "post.images",
+                    Image,
+                    "mapped",
+                    "mapped.id = post.id",
+                ).leftJoinAndSelect(
+                    "categories.images",
+                    "images",
+                    "images.id = mapped.id",
+                )
+                const sql = query.getSql()
+                const joinAlias = (alias: string) =>
+                    sql.indexOf(`${dataSource.driver.escape(alias)} ON`)
+                expect(joinAlias("categories")).to.be.greaterThan(-1)
+                expect(joinAlias("mapped")).to.be.greaterThan(
+                    joinAlias("categories"),
+                )
+                expect(joinAlias("images")).to.be.greaterThan(
+                    joinAlias("mapped"),
+                )
+                // Also exercise the ON condition's reference to the mapped alias.
+                await query.getMany()
+            }
+        })
+    }
+
     describe("leftJoinAndSelect", () => {
         it("should load data for all relation types", () =>
             Promise.all(
