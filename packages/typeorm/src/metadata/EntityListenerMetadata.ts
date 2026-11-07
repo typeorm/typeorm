@@ -103,7 +103,7 @@ export class EntityListenerMetadata {
         }
 
         // Call the Embedded Method
-        this.callEntityEmbeddedMethod(
+        return this.callEntityEmbeddedMethod(
             entity,
             this.embeddedMetadata.propertyPath.split("."),
         )
@@ -122,21 +122,23 @@ export class EntityListenerMetadata {
     protected callEntityEmbeddedMethod(
         entity: ObjectLiteral,
         propertyPaths: string[],
-    ): void {
+    ): Promise<unknown> | void {
         const propertyPath = propertyPaths.shift()
         if (!propertyPath || !entity[propertyPath]) return
 
         if (propertyPaths.length === 0) {
             if (Array.isArray(entity[propertyPath])) {
-                entity[propertyPath].map((embedded: ObjectLiteral) =>
-                    embedded[this.propertyName](),
+                const results: unknown[] = entity[propertyPath].map(
+                    (embedded: ObjectLiteral) => embedded[this.propertyName](),
                 )
+                if (results.some((result) => result instanceof Promise))
+                    return Promise.all(results)
             } else {
-                entity[propertyPath][this.propertyName]()
+                return entity[propertyPath][this.propertyName]()
             }
         } else {
             if (entity[propertyPath])
-                this.callEntityEmbeddedMethod(
+                return this.callEntityEmbeddedMethod(
                     entity[propertyPath],
                     propertyPaths,
                 )

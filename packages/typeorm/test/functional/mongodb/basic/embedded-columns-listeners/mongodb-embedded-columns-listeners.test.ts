@@ -112,4 +112,30 @@ describe("mongodb > embedded columns listeners", () => {
                 loadedPost.tags![1].name.should.be.equal("Tag #2")
             }),
         ))
+    it("should await async listeners in entity array embeddeds", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const postRepository = dataSource.getMongoRepository(Post)
+
+                const post = new Post()
+                post.title = "Post"
+                post.text = "Everything about post"
+                const tag1 = new Tags()
+                tag1.name = "Tag #1"
+                const tag2 = new Tags()
+                tag2.name = "Tag #2"
+                post.tags = [tag1, tag2]
+                await postRepository.save(post)
+
+                const cursor = postRepository.createEntityCursor()
+                const loadedPost = await cursor.next()
+
+                expect(loadedPost).to.be.not.empty
+                loadedPost!.title.should.be.eql("Post")
+                loadedPost!.text.should.be.eql("Everything about post")
+                expect(loadedPost!.tags).to.be.not.empty
+                loadedPost!.tags![0].loaded.should.be.true
+                loadedPost!.tags![1].loaded.should.be.true
+            }),
+        ))
 })
