@@ -2,9 +2,31 @@ import { expect } from "chai"
 
 import { PlatformTools } from "../../../src/platform/PlatformTools"
 
+const INSTALLED_CLIENT_LIBRARIES = [
+    "@google-cloud/spanner",
+    "@sap/hana-client",
+    "@sap/hana-client/extension/Stream",
+    "better-sqlite3",
+    "ioredis",
+    "mongodb",
+    "mssql",
+    "mysql2",
+    "oracledb",
+    "pg-query-stream",
+    "pg",
+    "redis",
+    "sql.js",
+    "typeorm-aurora-data-api-driver",
+]
+
+const NOT_INSTALLED_CLIENT_LIBRARIES = [
+    "expo-sqlite",
+    "react-native-sqlite-storage",
+]
+
 describe("PlatformTools > load", () => {
-    describe("module validation", () => {
-        it("should throw TypeError for unknown module names", () => {
+    describe("invalid modules", () => {
+        it("should throw TypeError for unknown modules that don't exist", () => {
             expect(() =>
                 PlatformTools.load("nonexistent-fake-module-xyz"),
             ).to.throw(
@@ -13,9 +35,7 @@ describe("PlatformTools > load", () => {
             )
         })
 
-        it("should throw TypeError for built-in modules not in the switch", () => {
-            // "path" is a Node.js built-in but not in the PlatformTools switch,
-            // so it must be rejected to prevent loading arbitrary modules
+        it("should throw TypeError for unknown modules that do exist", () => {
             expect(() => PlatformTools.load("path")).to.throw(
                 TypeError,
                 "Invalid Package for PlatformTools.load: path",
@@ -23,48 +43,28 @@ describe("PlatformTools > load", () => {
         })
     })
 
-    describe("static require calls for bundler compatibility", () => {
-        it("should include all known modules as static require cases", () => {
-            // Modules in the switch will throw MODULE_NOT_FOUND (not "Invalid
-            // Package") when uninstalled. Modules missing from the switch will
-            // throw TypeError with "Invalid Package" instead.
-            // This test verifies each supported module is covered by checking
-            // that the error is NOT the "Invalid Package" rejection.
-            // issue #12721
-            const expectedModules = [
-                "typeorm-aurora-data-api-driver",
-                "better-sqlite3",
-                "expo-sqlite",
-                "@google-cloud/spanner",
-                "mssql",
-                "mongodb",
-                "mysql2",
-                "oracledb",
-                "pg",
-                "pg-native",
-                "pg-query-stream",
-                "react-native-sqlite-storage",
-                "@sap/hana-client",
-                "@sap/hana-client/extension/Stream",
-                "sql.js",
-                "redis",
-                "ioredis",
-            ]
+    describe("installed modules", () => {
+        for (const library of INSTALLED_CLIENT_LIBRARIES) {
+            it(`should be loaded for "${library}"`, () => {
+                expect(() => PlatformTools.load(library)).not.to.throw()
+            })
+        }
 
-            for (const mod of expectedModules) {
-                // Each must be recognized (not throw "Invalid Package" TypeError).
-                // Some may fail to resolve at runtime (not installed), but the
-                // key assertion is that they are in the switch and not rejected
-                // as "unknown".
-                try {
-                    PlatformTools.load(mod)
-                } catch (error) {
-                    expect(error.message).to.not.include(
-                        "Invalid Package",
-                        `Module "${mod}" is not in the static require switch`,
-                    )
-                }
-            }
+        it("should throw when library fails to load for reasons other than MODULE_NOT_FOUND", () => {
+            // `libpq` is in `ignoredBuiltDependencies`
+            expect(() => PlatformTools.load("pg-native")).to.throw(
+                "Could not locate the bindings file",
+            )
         })
+    })
+
+    describe("not installed modules", () => {
+        for (const library of NOT_INSTALLED_CLIENT_LIBRARIES) {
+            it(`should throw for "${library}" with MODULE_NOT_FOUND`, () => {
+                expect(() => PlatformTools.load(library)).to.throw(
+                    "Cannot find module",
+                )
+            })
+        }
     })
 })

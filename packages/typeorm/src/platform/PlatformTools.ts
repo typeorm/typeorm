@@ -40,6 +40,8 @@ export class PlatformTools {
     static load(name: string): any {
         /* eslint-disable @typescript-eslint/no-require-imports */
         try {
+            // Use literal requires on purpose so bundlers can trace the client libraries.
+            // Wrapped in try-catch so bundlers can identify the libraries as optional dependencies.
             switch (name) {
                 // AWS Aurora Data API (PostgreSQL/MySQL)
                 case "typeorm-aurora-data-api-driver":
@@ -94,13 +96,7 @@ export class PlatformTools {
                 throw error
             }
 
-            try {
-                return require(
-                    path.resolve(process.cwd() + "/node_modules/" + name),
-                )
-            } catch {
-                throw error
-            }
+            return require(path.join(process.cwd(), "node_modules", name))
         }
         /* eslint-enable @typescript-eslint/no-require-imports */
 
