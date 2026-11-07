@@ -38,80 +38,71 @@ export class PlatformTools {
      * @returns the module
      */
     static load(name: string): any {
+        /* eslint-disable @typescript-eslint/no-require-imports */
         try {
             switch (name) {
+                // AWS Aurora Data API (PostgreSQL/MySQL)
                 case "typeorm-aurora-data-api-driver":
-                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("typeorm-aurora-data-api-driver")
+                // better-sqlite3
                 case "better-sqlite3":
-                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("better-sqlite3")
+                // Expo
                 case "expo-sqlite":
-                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("expo-sqlite")
+                // Google Cloud Spanner
                 case "@google-cloud/spanner":
-                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("@google-cloud/spanner")
+                // Microsoft SQL Server
                 case "mssql":
-                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("mssql")
+                // MongoDB
                 case "mongodb":
-                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("mongodb")
+                // MySQL / MariaDB
                 case "mysql2":
-                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("mysql2")
+                // Oracle
                 case "oracledb":
-                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("oracledb")
+                // PostgreSQL
                 case "pg":
-                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("pg")
                 case "pg-native":
-                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("pg-native")
                 case "pg-query-stream":
-                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("pg-query-stream")
+                // React Native
                 case "react-native-sqlite-storage":
-                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("react-native-sqlite-storage")
+                // SAP HANA
                 case "@sap/hana-client":
-                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("@sap/hana-client")
                 case "@sap/hana-client/extension/Stream":
-                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("@sap/hana-client/extension/Stream")
+                // sql.js
                 case "sql.js":
-                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("sql.js")
+                // redis
                 case "redis":
-                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("redis")
                 case "ioredis":
-                    // eslint-disable-next-line @typescript-eslint/no-require-imports
                     return require("ioredis")
             }
-        } catch (e: any) {
-            if (
-                e?.code !== "MODULE_NOT_FOUND" ||
-                !(
-                    e.message === `Cannot find module '${name}'` ||
-                    e.message.startsWith(`Cannot find module '${name}'\n`)
-                )
-            ) {
-                throw e
+        } catch (error) {
+            if (error?.code !== "MODULE_NOT_FOUND") {
+                throw error
             }
 
             try {
-                // eslint-disable-next-line @typescript-eslint/no-require-imports
                 return require(
                     path.resolve(process.cwd() + "/node_modules/" + name),
                 )
             } catch {
-                throw e
+                throw error
             }
         }
+        /* eslint-enable @typescript-eslint/no-require-imports */
 
         throw new TypeError(`Invalid Package for PlatformTools.load: ${name}`)
     }

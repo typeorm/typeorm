@@ -58,8 +58,8 @@ describe("PlatformTools > load", () => {
                 // as "unknown".
                 try {
                     PlatformTools.load(mod)
-                } catch (e: any) {
-                    expect(e.message).to.not.include(
+                } catch (error) {
+                    expect(error.message).to.not.include(
                         "Invalid Package",
                         `Module "${mod}" is not in the static require switch`,
                     )
