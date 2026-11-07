@@ -307,6 +307,8 @@ const entitiesAfterSoftRemove = await repository.softRemove(entities)
 await repository.recover(entitiesAfterSoftRemove)
 ```
 
+> **Tip:** To query soft-deleted entities, use `find({ withDeleted: true })` for global inclusion, or QueryBuilder's `withDeletedJoin()` for per-relation control. See [Select QueryBuilder > Per-join soft-delete control](../query-builder/1-select-query-builder.md#per-join-soft-delete-control) for details.
+
 - `increment` - Increments some column by provided value of entities that match given options.
 
 ```typescript

@@ -25,6 +25,32 @@ There are several options you can specify for relations:
     - _soft-delete_ will mark children as soft-deleted.
     - _disable_ will keep the relation intact. To delete, one has to use their own repository.
 
+### Soft-deleted relations and querying
+
+When a related entity has `@DeleteDateColumn`, TypeORM automatically adds `deletedAt IS NULL` to the JOIN condition when loading relations. This means soft-deleted related entities are excluded by default.
+
+To include soft-deleted related entities, you have two options:
+
+```typescript
+// Option 1: withDeleted() — global, includes ALL soft-deleted entities (main + relations)
+const users = await dataSource
+    .createQueryBuilder(User, "user")
+    .leftJoinAndSelect("user.posts", "post")
+    .leftJoinAndSelect("post.comments", "comment")
+    .withDeleted()
+    .getMany()
+
+// Option 2: withDeletedJoin() — per-join, includes soft-deleted only on the specified join
+const users = await dataSource
+    .createQueryBuilder(User, "user")
+    .leftJoinAndSelect("user.posts", "post")
+    .withDeletedJoin() // only soft-deleted posts are included
+    .leftJoinAndSelect("post.comments", "comment") // soft-deleted comments are still excluded
+    .getMany()
+```
+
+See [Select QueryBuilder > Per-join soft-delete control](../query-builder/1-select-query-builder.md#per-join-soft-delete-control) for the full API reference.
+
 ## Cascades
 
 Cascades example:

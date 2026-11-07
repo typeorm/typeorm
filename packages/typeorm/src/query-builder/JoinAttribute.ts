@@ -37,6 +37,12 @@ export class JoinAttribute {
     condition?: string
 
     /**
+     * Indicates if soft-deleted rows should be included for this specific join.
+     * When true, the "deletedAt IS NULL" condition is not added to this join's ON clause.
+     */
+    withDeleted?: boolean
+
+    /**
      * Property + alias of the object where to joined data should be mapped.
      */
     mapToProperty?: string
