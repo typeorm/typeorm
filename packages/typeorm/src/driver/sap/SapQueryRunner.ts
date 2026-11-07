@@ -3204,7 +3204,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                                 tableColumn.type === "alphanum" ||
                                 tableColumn.type === "shorttext"
                             ) {
-                                tableColumn.default = `'${dbColumn["DEFAULT_VALUE"]}'`
+                                tableColumn.default = `'${dbColumn["DEFAULT_VALUE"].replaceAll("'", "''")}'`
                             } else if (tableColumn.type === "boolean") {
                                 tableColumn.default =
                                     dbColumn["DEFAULT_VALUE"] === "1"

@@ -1,13 +1,14 @@
 import { expect } from "chai"
-import type { DataSource } from "../../../src"
+import type { DataSource } from "../../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
-} from "../../utils/test-utils"
+} from "../../../../utils/test-utils"
 import { Note } from "./entity/Note"
 
-describe("github issues > #13042 String column default containing a single quote produces invalid DDL", () => {
+// GitHub issue #13042 - a string default containing a single quote produced invalid DDL
+describe("schema builder > idempotency > string default with a single quote", () => {
     let dataSources: DataSource[]
 
     before(async () => {
@@ -22,6 +23,7 @@ describe("github issues > #13042 String column default containing a single quote
                 "mssql",
                 "mysql",
                 "postgres",
+                "sap",
                 "sqljs",
             ],
         })
