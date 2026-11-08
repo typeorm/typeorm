@@ -32,25 +32,32 @@ export class PlatformTools {
      * This operation only supports on node platform
      */
     static load(name: string): any {
-        const KNOWN_MODULES = [
-            // Expo
-            "expo-sqlite",
-            // React Native
-            "react-native-sqlite-storage",
-            // sql.js
-            "sql.js",
-            // redis
-            "redis",
-            "ioredis",
-        ]
-
-        if (!KNOWN_MODULES.includes(name)) {
-            throw new TypeError(
-                `Invalid Package for PlatformTools.load: ${name}`,
-            )
+        /* eslint-disable @typescript-eslint/no-require-imports */
+        try {
+            // Use literal requires on purpose so bundlers can trace the client libraries.
+            // Wrapped in try-catch so bundlers can identify the libraries as optional dependencies.
+            switch (name) {
+                // Expo
+                case "expo-sqlite":
+                    return require("expo-sqlite")
+                // React Native
+                case "react-native-sqlite-storage":
+                    return require("react-native-sqlite-storage")
+                // sql.js
+                case "sql.js":
+                    return require("sql.js")
+                // redis
+                case "redis":
+                    return require("redis")
+                case "ioredis":
+                    return require("ioredis")
+            }
+        } catch (error) {
+            throw error
         }
+        /* eslint-enable @typescript-eslint/no-require-imports */
 
-        return require(name)
+        throw new TypeError(`Invalid Package for PlatformTools.load: ${name}`)
     }
 
     /**

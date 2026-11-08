@@ -38,57 +38,69 @@ export class PlatformTools {
      * @returns the module
      */
     static load(name: string): any {
-        const KNOWN_MODULES = [
-            // AWS Aurora Data API (PostgreSQL/MySQL)
-            "typeorm-aurora-data-api-driver",
-            // better-sqlite3
-            "better-sqlite3",
-            // Expo
-            "expo-sqlite",
-            // Google Cloud Spanner
-            "@google-cloud/spanner",
-            // Microsoft SQL Server
-            "mssql",
-            // MongoDB
-            "mongodb",
-            // MySQL / MariaDB
-            "mysql2",
-            // Oracle
-            "oracledb",
-            // PostgreSQL
-            "pg",
-            "pg-native",
-            "pg-query-stream",
-            // React Native
-            "react-native-sqlite-storage",
-            // SAP HANA
-            "@sap/hana-client",
-            "@sap/hana-client/extension/Stream",
-            // sql.js
-            "sql.js",
-            // redis
-            "redis",
-            "ioredis",
-        ]
-
-        if (!KNOWN_MODULES.includes(name)) {
-            throw new TypeError(
-                `Invalid Package for PlatformTools.load: ${name}`,
-            )
-        }
-
-        // if name is not absolute or relative, then try to load package from the node_modules of the directory we are currently in
-        // this is useful when we are using typeorm package globally installed and it accesses drivers
-        // that are not installed globally
+        /* eslint-disable @typescript-eslint/no-require-imports */
         try {
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
-            return require(name)
-        } catch {
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
-            return require(
-                path.resolve(process.cwd() + "/node_modules/" + name),
-            )
+            // Use literal requires on purpose so bundlers can trace the client libraries.
+            // Wrapped in try-catch so bundlers can identify the libraries as optional dependencies.
+            switch (name) {
+                // AWS Aurora Data API (PostgreSQL/MySQL)
+                case "typeorm-aurora-data-api-driver":
+                    return require("typeorm-aurora-data-api-driver")
+                // better-sqlite3
+                case "better-sqlite3":
+                    return require("better-sqlite3")
+                // Expo
+                case "expo-sqlite":
+                    return require("expo-sqlite")
+                // Google Cloud Spanner
+                case "@google-cloud/spanner":
+                    return require("@google-cloud/spanner")
+                // Microsoft SQL Server
+                case "mssql":
+                    return require("mssql")
+                // MongoDB
+                case "mongodb":
+                    return require("mongodb")
+                // MySQL / MariaDB
+                case "mysql2":
+                    return require("mysql2")
+                // Oracle
+                case "oracledb":
+                    return require("oracledb")
+                // PostgreSQL
+                case "pg":
+                    return require("pg")
+                case "pg-native":
+                    return require("pg-native")
+                case "pg-query-stream":
+                    return require("pg-query-stream")
+                // React Native
+                case "react-native-sqlite-storage":
+                    return require("react-native-sqlite-storage")
+                // SAP HANA
+                case "@sap/hana-client":
+                    return require("@sap/hana-client")
+                case "@sap/hana-client/extension/Stream":
+                    return require("@sap/hana-client/extension/Stream")
+                // sql.js
+                case "sql.js":
+                    return require("sql.js")
+                // redis
+                case "redis":
+                    return require("redis")
+                case "ioredis":
+                    return require("ioredis")
+            }
+        } catch (error) {
+            if (error?.code !== "MODULE_NOT_FOUND") {
+                throw error
+            }
+
+            return require(path.join(process.cwd(), "node_modules", name))
         }
+        /* eslint-enable @typescript-eslint/no-require-imports */
+
+        throw new TypeError(`Invalid Package for PlatformTools.load: ${name}`)
     }
 
     /**
@@ -126,7 +138,7 @@ export class PlatformTools {
     }
 
     /**
-     * Gets file extension. Does "path.extname".
+     * Returns the extension of the given path. Does "path.extname".
      *
      * @param pathStr
      */
@@ -135,7 +147,7 @@ export class PlatformTools {
     }
 
     /**
-     * Resolved given path. Does "path.resolve".
+     * Resolves the given paths. Does "path.resolve".
      *
      * @param paths
      */
@@ -144,7 +156,7 @@ export class PlatformTools {
     }
 
     /**
-     * Synchronously checks if file exist. Does "fs.existsSync".
+     * Synchronously checks if file exists. Does "fs.existsSync".
      *
      * @param pathStr
      */
