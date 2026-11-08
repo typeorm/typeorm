@@ -644,7 +644,8 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                         : metadata.expression!(this.dataSource).getQuery()
                 return (
                     this.getTablePath(view) === this.getTablePath(metadata) &&
-                    viewExpression === metadataExpression
+                    viewExpression === metadataExpression &&
+                    !ViewUtils.isMaterializedChanged(view, metadata)
                 )
             })
             if (existView) continue
@@ -688,7 +689,11 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                     ? viewMetadata.expression.trim()
                     : viewMetadata.expression!(this.dataSource).getQuery()
 
-            if (viewExpression === metadataExpression) continue
+            if (
+                viewExpression === metadataExpression &&
+                !ViewUtils.isMaterializedChanged(view, viewMetadata)
+            )
+                continue
 
             this.dataSource.logger.logSchemaBuild(
                 `dropping an old view: ${view.name}`,
