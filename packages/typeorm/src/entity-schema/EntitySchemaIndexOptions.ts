@@ -48,6 +48,12 @@ export interface EntitySchemaIndexOptions {
     nullFiltered?: boolean
 
     /**
+     * Indicates if NULL values in a unique index should be treated as equal, meaning there will be only one NULL
+     * allowed in the index. Works only in PostgreSQL.
+     */
+    nullsNotDistinct?: boolean
+
+    /**
      * Fulltext parser.
      * Works only in MySQL.
      */
