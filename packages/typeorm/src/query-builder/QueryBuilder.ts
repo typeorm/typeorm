@@ -1022,7 +1022,40 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
             return columnsExpression
         } else if (typeof this.expressionMap.returning === "string") {
-            return this.expressionMap.returning
+            let returning = this.expressionMap.returning
+            if (
+                this.expressionMap.onIgnore &&
+                this.expressionMap.extraReturningColumns.length > 0 &&
+                driver.isReturningSqlSupported(returningType)
+            ) {
+                const isWildcard =
+                    returning.trim() === "*" || returning.includes(".*")
+                if (!isWildcard) {
+                    const extraColumns =
+                        this.expressionMap.extraReturningColumns.filter(
+                            (column) => {
+                                const pattern = new RegExp(
+                                    `\\b${column.databaseName}\\b`,
+                                    "i",
+                                )
+                                return !pattern.test(returning)
+                            },
+                        )
+                    if (extraColumns.length > 0) {
+                        const extraStr = extraColumns
+                            .map((column) => {
+                                const name = this.escape(column.databaseName)
+                                if (driver.options.type === "mssql") {
+                                    return "INSERTED." + name
+                                }
+                                return name
+                            })
+                            .join(", ")
+                        returning += ", " + extraStr
+                    }
+                }
+            }
+            return returning
         }
 
         return ""

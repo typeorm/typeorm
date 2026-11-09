@@ -6,6 +6,7 @@ import type { UpdateResult } from "./result/UpdateResult"
 import type { InsertResult } from "./result/InsertResult"
 import { TypeORMError } from "../error"
 import { OrmUtils } from "../util/OrmUtils"
+import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 
 /**
  * Updates entity with returning results in the entity insert and update operations.
@@ -186,22 +187,79 @@ export class ReturningResultsEntityUpdator {
                 "insert",
             ) &&
             Array.isArray(insertResult.raw) &&
-            (this.expressionMap.onIgnore ||
-                insertResult.raw.length < entities.length)
+            insertResult.raw.length < entities.length
 
         const matchedRaw: (ObjectLiteral | undefined)[] = []
         if (isMatchingRequired) {
             const usedRawIndices = new Set<number>()
+
+            // Build signature index for O(1) candidate lookup on bulk collections
+            const identifyingColumns = (
+                this.expressionMap.extraReturningColumns.length > 0
+                    ? this.expressionMap.extraReturningColumns
+                    : metadata.columns
+            ).filter(
+                (c) =>
+                    !c.isGenerated &&
+                    !c.isCreateDate &&
+                    !c.isUpdateDate &&
+                    !c.isDeleteDate &&
+                    !c.isVersion,
+            )
+
+            const signatureToRawIndices = new Map<string, number[]>()
+            for (let r = 0; r < insertResult.raw.length; r++) {
+                const rawItem = insertResult.raw[r]
+                const sig = this.getEntityMatchingSignature(
+                    rawItem,
+                    identifyingColumns,
+                    true,
+                )
+                if (sig !== undefined) {
+                    let list = signatureToRawIndices.get(sig)
+                    if (!list) {
+                        list = []
+                        signatureToRawIndices.set(sig, list)
+                    }
+                    list.push(r)
+                }
+            }
+
             for (let i = 0; i < entities.length; i++) {
                 const entity = entities[i]
                 let foundMatch: ObjectLiteral | undefined = undefined
-                for (let r = 0; r < insertResult.raw.length; r++) {
-                    if (usedRawIndices.has(r)) continue
-                    const rawItem = insertResult.raw[r]
-                    if (this.doesEntityMatchRaw(entity, rawItem)) {
-                        foundMatch = rawItem
-                        usedRawIndices.add(r)
-                        break
+
+                // Fast O(1) candidate lookup by identifying signature
+                const entitySig = this.getEntityMatchingSignature(
+                    entity,
+                    identifyingColumns,
+                    false,
+                )
+                if (
+                    entitySig !== undefined &&
+                    signatureToRawIndices.has(entitySig)
+                ) {
+                    const candidates = signatureToRawIndices.get(entitySig)!
+                    while (candidates.length > 0) {
+                        const candidateIndex = candidates.shift()!
+                        if (!usedRawIndices.has(candidateIndex)) {
+                            usedRawIndices.add(candidateIndex)
+                            foundMatch = insertResult.raw[candidateIndex]
+                            break
+                        }
+                    }
+                }
+
+                // Fallback to sequential match if no signature match was found
+                if (!foundMatch) {
+                    for (let r = 0; r < insertResult.raw.length; r++) {
+                        if (usedRawIndices.has(r)) continue
+                        const rawItem = insertResult.raw[r]
+                        if (this.doesEntityMatchRaw(entity, rawItem)) {
+                            foundMatch = rawItem
+                            usedRawIndices.add(r)
+                            break
+                        }
                     }
                 }
                 matchedRaw.push(foundMatch)
@@ -319,8 +377,48 @@ export class ReturningResultsEntityUpdator {
     }
 
     /**
+     * Computes a deterministic string signature from identifying columns
+     * for O(1) indexed correlation during bulk inserts.
+     *
+     * @param entityOrRaw
+     * @param columns
+     * @param isRaw
+     */
+    protected getEntityMatchingSignature(
+        entityOrRaw: ObjectLiteral,
+        columns: ColumnMetadata[],
+        isRaw: boolean,
+    ): string | undefined {
+        const parts: string[] = []
+        for (const col of columns) {
+            let val: any
+            if (isRaw) {
+                val = entityOrRaw[col.databaseName]
+            } else {
+                val = col.getEntityValue(entityOrRaw)
+                if (val !== undefined && val !== null && col.transformer) {
+                    val = ApplyValueTransformers.transformTo(
+                        col.transformer,
+                        val,
+                    )
+                }
+            }
+            if (
+                val === undefined ||
+                val === null ||
+                typeof val === "function"
+            ) {
+                return undefined
+            }
+            parts.push(col.databaseName + "=" + String(val))
+        }
+        return parts.length > 0 ? parts.join(";") : undefined
+    }
+
+    /**
      * Checks if a raw row returned from the database matches an entity.
      * Used when rows can be skipped (e.g. insert on conflict / orIgnore).
+     * Handles composite keys, transformers, functions, and default-only entities.
      *
      * @param entity
      * @param rawItem
@@ -332,39 +430,66 @@ export class ReturningResultsEntityUpdator {
         const metadata = this.expressionMap.mainAlias!.metadata
         const driver = this.queryRunner.dataSource.driver
 
-        // 1. If entity has primary keys set, check if they match the rawItem
-        let hasPrimaryKeys = false
-        let allPrimaryKeysMatch = true
+        // 1. Primary key check
+        let allPrimaryKeysDefined = metadata.primaryColumns.length > 0
+        let hasMismatchedPrimaryKey = false
+        let hasDefinedPrimaryKey = false
         for (const primaryColumn of metadata.primaryColumns) {
             const entityValue = primaryColumn.getEntityValue(entity)
             if (entityValue !== undefined && entityValue !== null) {
-                hasPrimaryKeys = true
+                if (typeof entityValue === "function") {
+                    continue
+                }
+                hasDefinedPrimaryKey = true
                 const rawValue = rawItem[primaryColumn.databaseName]
                 if (rawValue === undefined) {
-                    allPrimaryKeysMatch = false
+                    hasMismatchedPrimaryKey = true
                     break
                 }
                 const hydratedRawValue = driver.prepareHydratedValue(
                     rawValue,
                     primaryColumn,
                 )
-                if (
-                    !OrmUtils.deepCompare(entityValue, hydratedRawValue) &&
-                    entityValue != rawValue
-                ) {
-                    allPrimaryKeysMatch = false
+                let isMatch =
+                    OrmUtils.deepCompare(entityValue, hydratedRawValue) ||
+                    entityValue == rawValue
+                if (!isMatch && primaryColumn.transformer) {
+                    const transformed = ApplyValueTransformers.transformTo(
+                        primaryColumn.transformer,
+                        entityValue,
+                    )
+                    const hydratedFromRaw =
+                        ApplyValueTransformers.transformFrom(
+                            primaryColumn.transformer,
+                            hydratedRawValue,
+                        )
+                    isMatch =
+                        OrmUtils.deepCompare(transformed, rawValue) ||
+                        transformed == rawValue ||
+                        OrmUtils.deepCompare(transformed, hydratedRawValue) ||
+                        OrmUtils.deepCompare(entityValue, hydratedFromRaw) ||
+                        entityValue == hydratedFromRaw
+                }
+                if (!isMatch) {
+                    hasMismatchedPrimaryKey = true
                     break
                 }
             } else {
-                allPrimaryKeysMatch = false
+                allPrimaryKeysDefined = false
             }
         }
-        if (hasPrimaryKeys) {
-            return allPrimaryKeysMatch
+
+        if (hasMismatchedPrimaryKey) {
+            return false
+        }
+        if (allPrimaryKeysDefined) {
+            return true
         }
 
-        // 2. If entity does not have primary keys set, match by the inserted / non-generated column values
+        // 2. Non-generated / inserted column check
+        let hasMismatch = false
         let matchedColumnsCount = 0
+
         for (const column of metadata.columns) {
             if (
                 column.isGenerated ||
@@ -378,24 +503,60 @@ export class ReturningResultsEntityUpdator {
 
             if (column.databaseName in rawItem) {
                 const entityValue = column.getEntityValue(entity)
-                if (entityValue !== undefined) {
+                if (entityValue !== undefined && entityValue !== null) {
+                    if (typeof entityValue === "function") {
+                        continue
+                    }
                     const rawValue = rawItem[column.databaseName]
                     const hydratedRawValue = driver.prepareHydratedValue(
                         rawValue,
                         column,
                     )
-                    if (
-                        !OrmUtils.deepCompare(entityValue, hydratedRawValue) &&
-                        entityValue != rawValue
-                    ) {
-                        return false
+                    let isMatch =
+                        OrmUtils.deepCompare(entityValue, hydratedRawValue) ||
+                        entityValue == rawValue
+                    if (!isMatch && column.transformer) {
+                        const transformed = ApplyValueTransformers.transformTo(
+                            column.transformer,
+                            entityValue,
+                        )
+                        const hydratedFromRaw =
+                            ApplyValueTransformers.transformFrom(
+                                column.transformer,
+                                hydratedRawValue,
+                            )
+                        isMatch =
+                            OrmUtils.deepCompare(transformed, rawValue) ||
+                            transformed == rawValue ||
+                            OrmUtils.deepCompare(
+                                transformed,
+                                hydratedRawValue,
+                            ) ||
+                            OrmUtils.deepCompare(
+                                entityValue,
+                                hydratedFromRaw,
+                            ) ||
+                            entityValue == hydratedFromRaw
+                    }
+                    if (!isMatch) {
+                        hasMismatch = true
+                        break
                     }
                     matchedColumnsCount++
                 }
             }
         }
 
-        return matchedColumnsCount > 0
+        if (hasMismatch) {
+            return false
+        }
+
+        if (matchedColumnsCount > 0 || hasDefinedPrimaryKey) {
+            return true
+        }
+
+        // Default-only entity (no defined non-generated values): match if no mismatch
+        return !hasMismatch
     }
 
     getUpdationReturningColumns(): ColumnMetadata[] {

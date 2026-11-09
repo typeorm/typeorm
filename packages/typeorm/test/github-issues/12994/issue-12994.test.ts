@@ -305,5 +305,242 @@ describe("github issues > #12994 insert().orIgnore() writes returned rows onto w
 
             await queryRunner.release()
         })
+
+        it("should include identifying columns in string-form returning clause when onIgnore is true", () => {
+            if (!fakeDataSource) return
+
+            const qb = fakeDataSource
+                .createQueryBuilder()
+                .insert()
+                .into(Tag)
+                .values([{ name: "a" }])
+                .returning("id")
+                .orIgnore()
+
+            ;(qb as any).expressionMap.extraReturningColumns = [
+                metadata.findColumnWithPropertyName("name"),
+            ]
+            const returningString = (qb as any).createReturningExpression(
+                "insert",
+            )
+            expect(returningString).to.include("id")
+            expect(returningString).to.include("name")
+        })
+
+        it("should handle default-only entities when rows are skipped", async () => {
+            if (!fakeDataSource) return
+
+            const expressionMap = new QueryExpressionMap(fakeDataSource)
+            const mainAlias = new Alias()
+            mainAlias.metadata = metadata
+            expressionMap.setMainAlias(mainAlias)
+            expressionMap.onIgnore = true
+            expressionMap.extraReturningColumns = metadata.columns
+
+            const queryRunner = fakeDataSource.createQueryRunner()
+            const updator = new ReturningResultsEntityUpdator(
+                queryRunner,
+                expressionMap,
+            )
+
+            const entityA = new Tag()
+            const entityB = new Tag()
+            const entities = [entityA, entityB]
+
+            // 1 row returned by DB for 2 default-only entities
+            const insertResult = new InsertResult()
+            insertResult.raw = [{ id: "generated-default-id" }]
+
+            await updator.insert(insertResult, entities)
+
+            expect(entityA.id).to.equal("generated-default-id")
+            expect(entityB.id).to.be.undefined
+            expect(insertResult.identifiers[0]).to.deep.equal({
+                id: "generated-default-id",
+            })
+            expect(insertResult.identifiers[1]).to.be.undefined
+
+            await queryRunner.release()
+        })
+
+        it("should match entities with transformers and ignore computed function values", async () => {
+            if (!fakeDataSource) return
+
+            const expressionMap = new QueryExpressionMap(fakeDataSource)
+            const mainAlias = new Alias()
+            mainAlias.metadata = metadata
+            expressionMap.setMainAlias(mainAlias)
+            expressionMap.onIgnore = true
+            expressionMap.extraReturningColumns = metadata.columns
+
+            const queryRunner = fakeDataSource.createQueryRunner()
+            const updator = new ReturningResultsEntityUpdator(
+                queryRunner,
+                expressionMap,
+            )
+
+            // Modify name column with transformer temporarily
+            const nameColumn = metadata.findColumnWithPropertyName("name")
+            const originalTransformer = nameColumn.transformer
+            nameColumn.transformer = {
+                to: (val: string) => (val ? val.toLowerCase() : val),
+                from: (val: string) => (val ? val.toUpperCase() : val),
+            }
+
+            try {
+                const tagA = new Tag()
+                tagA.name = "HELLO"
+
+                // Raw item from DB has transformed value "hello"
+                const rawItem = { id: "uuid-1", name: "hello" }
+                const isMatch = (updator as any).doesEntityMatchRaw(
+                    tagA,
+                    rawItem,
+                )
+                expect(isMatch).to.be.true
+
+                // Function value (() => "NOW()") should be skipped during comparison
+                const tagWithFunc = new Tag()
+                ;(tagWithFunc as any).name = () => "NOW()"
+                const doesFuncMatch = (updator as any).doesEntityMatchRaw(
+                    tagWithFunc,
+                    rawItem,
+                )
+                expect(doesFuncMatch).to.be.true
+            } finally {
+                nameColumn.transformer = originalTransformer
+                await queryRunner.release()
+            }
+        })
+
+        it("should handle partial composite primary keys without prematurely rejecting", async () => {
+            if (!fakeDataSource) return
+
+            const mockMeta = {
+                ...metadata,
+                primaryColumns: [
+                    {
+                        databaseName: "orgId",
+                        propertyName: "orgId",
+                        getEntityValue: (ent: any) => ent.orgId,
+                        isGenerated: false,
+                    },
+                    {
+                        databaseName: "id",
+                        propertyName: "id",
+                        getEntityValue: (ent: any) => ent.id,
+                        isGenerated: true,
+                    },
+                ],
+                columns: [
+                    {
+                        databaseName: "orgId",
+                        propertyName: "orgId",
+                        getEntityValue: (ent: any) => ent.orgId,
+                        isGenerated: false,
+                    },
+                    {
+                        databaseName: "id",
+                        propertyName: "id",
+                        getEntityValue: (ent: any) => ent.id,
+                        isGenerated: true,
+                    },
+                    {
+                        databaseName: "name",
+                        propertyName: "name",
+                        getEntityValue: (ent: any) => ent.name,
+                        isGenerated: false,
+                    },
+                ],
+            }
+
+            const expressionMap = new QueryExpressionMap(fakeDataSource)
+            const mainAlias = new Alias()
+            mainAlias.metadata = mockMeta
+            expressionMap.setMainAlias(mainAlias)
+            expressionMap.onIgnore = true
+
+            const queryRunner = fakeDataSource.createQueryRunner()
+            const updator = new ReturningResultsEntityUpdator(
+                queryRunner,
+                expressionMap,
+            )
+
+            // Entity has orgId set, but generated id is undefined
+            const entityPartialPK = {
+                orgId: "org-1",
+                id: undefined,
+                name: "test",
+            }
+            const rawMatching = { orgId: "org-1", id: "gen-1", name: "test" }
+            const rawMismatchingOrg = {
+                orgId: "org-2",
+                id: "gen-2",
+                name: "test",
+            }
+
+            const matchResult = (updator as any).doesEntityMatchRaw(
+                entityPartialPK,
+                rawMatching,
+            )
+            expect(matchResult).to.be.true
+
+            const mismatchResult = (updator as any).doesEntityMatchRaw(
+                entityPartialPK,
+                rawMismatchingOrg,
+            )
+            expect(mismatchResult).to.be.false
+
+            await queryRunner.release()
+        })
+
+        it("should match bulk entities correctly via fast signature indexing", async () => {
+            if (!fakeDataSource) return
+
+            const expressionMap = new QueryExpressionMap(fakeDataSource)
+            const mainAlias = new Alias()
+            mainAlias.metadata = metadata
+            expressionMap.setMainAlias(mainAlias)
+            expressionMap.onIgnore = true
+            expressionMap.extraReturningColumns = metadata.columns
+
+            const queryRunner = fakeDataSource.createQueryRunner()
+            const updator = new ReturningResultsEntityUpdator(
+                queryRunner,
+                expressionMap,
+            )
+
+            const entities = []
+            for (let i = 0; i < 50; i++) {
+                const tag = new Tag()
+                tag.name = `item-${i}`
+                entities.push(tag)
+            }
+
+            // Even items skipped, odd items inserted
+            const raw = []
+            for (let i = 1; i < 50; i += 2) {
+                raw.push({ id: `uuid-${i}`, name: `item-${i}` })
+            }
+
+            const insertResult = new InsertResult()
+            insertResult.raw = raw
+
+            await updator.insert(insertResult, entities)
+
+            for (let i = 0; i < 50; i++) {
+                if (i % 2 === 1) {
+                    expect(entities[i].id).to.equal(`uuid-${i}`)
+                    expect(insertResult.identifiers[i]).to.deep.equal({
+                        id: `uuid-${i}`,
+                    })
+                } else {
+                    expect(entities[i].id).to.be.undefined
+                    expect(insertResult.identifiers[i]).to.be.undefined
+                }
+            }
+
+            await queryRunner.release()
+        })
     })
 })
