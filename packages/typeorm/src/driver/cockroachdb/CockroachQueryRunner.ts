@@ -3337,12 +3337,35 @@ export class CockroachQueryRunner
         const dbConstraints: ObjectLiteral[] = await this.query(constraintsSql)
         const dbIndices: ObjectLiteral[] = await this.query(indicesSql)
         const dbForeignKeys: ObjectLiteral[] = await this.query(foreignKeysSql)
+
+        // Group the catalog rows once, so loading stays linear in the schema size.
+        const tableKey = (row: ObjectLiteral) =>
+            JSON.stringify([row["table_schema"], row["table_name"]])
+        const constraintName = (row: ObjectLiteral) => row["constraint_name"]
+        const columnsByTable = OrmUtils.groupInMap(dbColumns, tableKey)
+        const constraintsByTable = OrmUtils.groupInMap(dbConstraints, tableKey)
+        const constraintsByName = OrmUtils.groupInMap(
+            dbConstraints,
+            constraintName,
+        )
+        const indicesByTable = OrmUtils.groupInMap(dbIndices, tableKey)
+        const indicesByName = OrmUtils.groupInMap(dbIndices, constraintName)
+        const foreignKeysByTable = OrmUtils.groupInMap(dbForeignKeys, tableKey)
+        const foreignKeysByName = OrmUtils.groupInMap(
+            dbForeignKeys,
+            constraintName,
+        )
         const dbEnums: ObjectLiteral[] = await this.query(enumsSql)
 
         // create tables for loaded tables
         return Promise.all(
             dbTables.map(async (dbTable) => {
                 const table = new Table()
+                const key = tableKey(dbTable)
+                const tableColumns = columnsByTable.get(key) ?? []
+                const tableConstraints = constraintsByTable.get(key) ?? []
+                const tableIndices = indicesByTable.get(key) ?? []
+                const tableForeignKeys = foreignKeysByTable.get(key) ?? []
 
                 const getSchemaFromKey = (dbObject: any, key: string) => {
                     return dbObject[key] === currentSchema &&
@@ -3363,404 +3386,365 @@ export class CockroachQueryRunner
 
                 // create columns from the loaded columns
                 table.columns = await Promise.all(
-                    dbColumns
-                        .filter(
-                            (dbColumn) =>
-                                dbColumn["table_name"] ===
-                                    dbTable["table_name"] &&
-                                dbColumn["table_schema"] ===
-                                    dbTable["table_schema"],
+                    tableColumns.map(async (dbColumn) => {
+                        const columnConstraints = tableConstraints.filter(
+                            (dbConstraint) =>
+                                dbConstraint["column_name"] ===
+                                dbColumn["column_name"],
                         )
-                        .map(async (dbColumn) => {
-                            const columnConstraints = dbConstraints.filter(
-                                (dbConstraint) => {
-                                    return (
-                                        dbConstraint["table_name"] ===
-                                            dbColumn["table_name"] &&
-                                        dbConstraint["table_schema"] ===
-                                            dbColumn["table_schema"] &&
-                                        dbConstraint["column_name"] ===
-                                            dbColumn["column_name"]
-                                    )
-                                },
+
+                        const tableColumn = new TableColumn()
+                        tableColumn.name = dbColumn["column_name"]
+
+                        tableColumn.type =
+                            dbColumn["crdb_sql_type"].toLowerCase()
+                        if (
+                            dbColumn["crdb_sql_type"].indexOf("COLLATE") !== -1
+                        ) {
+                            tableColumn.collation = dbColumn[
+                                "crdb_sql_type"
+                            ].slice(
+                                dbColumn["crdb_sql_type"].indexOf("COLLATE") +
+                                    "COLLATE".length +
+                                    1,
+                            )
+                            tableColumn.type = tableColumn.type.slice(
+                                0,
+                                dbColumn["crdb_sql_type"].indexOf("COLLATE") -
+                                    1,
+                            )
+                        }
+
+                        if (tableColumn.type.indexOf("(") !== -1)
+                            tableColumn.type = tableColumn.type.slice(
+                                0,
+                                tableColumn.type.indexOf("("),
                             )
 
-                            const tableColumn = new TableColumn()
-                            tableColumn.name = dbColumn["column_name"]
-
-                            tableColumn.type =
-                                dbColumn["crdb_sql_type"].toLowerCase()
+                        if (
+                            tableColumn.type === "numeric" ||
+                            tableColumn.type === "decimal"
+                        ) {
                             if (
-                                dbColumn["crdb_sql_type"].indexOf("COLLATE") !==
-                                -1
-                            ) {
-                                tableColumn.collation = dbColumn[
-                                    "crdb_sql_type"
-                                ].slice(
-                                    dbColumn["crdb_sql_type"].indexOf(
-                                        "COLLATE",
-                                    ) +
-                                        "COLLATE".length +
-                                        1,
-                                )
-                                tableColumn.type = tableColumn.type.slice(
-                                    0,
-                                    dbColumn["crdb_sql_type"].indexOf(
-                                        "COLLATE",
-                                    ) - 1,
-                                )
-                            }
-
-                            if (tableColumn.type.indexOf("(") !== -1)
-                                tableColumn.type = tableColumn.type.slice(
-                                    0,
-                                    tableColumn.type.indexOf("("),
-                                )
-
-                            if (
-                                tableColumn.type === "numeric" ||
-                                tableColumn.type === "decimal"
-                            ) {
-                                if (
-                                    dbColumn["numeric_precision"] !== null &&
-                                    !this.isDefaultColumnPrecision(
-                                        table,
-                                        tableColumn,
-                                        dbColumn["numeric_precision"],
-                                    )
-                                ) {
-                                    tableColumn.precision = parseInt(
-                                        dbColumn["numeric_precision"],
-                                    )
-                                } else if (
-                                    dbColumn["numeric_scale"] !== null &&
-                                    !this.isDefaultColumnScale(
-                                        table,
-                                        tableColumn,
-                                        dbColumn["numeric_scale"],
-                                    )
-                                ) {
-                                    tableColumn.precision = undefined
-                                }
-                                if (
-                                    dbColumn["numeric_scale"] !== null &&
-                                    !this.isDefaultColumnScale(
-                                        table,
-                                        tableColumn,
-                                        dbColumn["numeric_scale"],
-                                    )
-                                ) {
-                                    tableColumn.scale = parseInt(
-                                        dbColumn["numeric_scale"],
-                                    )
-                                } else if (
-                                    dbColumn["numeric_precision"] !== null &&
-                                    !this.isDefaultColumnPrecision(
-                                        table,
-                                        tableColumn,
-                                        dbColumn["numeric_precision"],
-                                    )
-                                ) {
-                                    tableColumn.scale = undefined
-                                }
-                            }
-
-                            // docs: https://www.postgresql.org/docs/current/xtypes.html
-                            // When you define a new base type, PostgreSQL automatically provides support for arrays of that type.
-                            // The array type typically has the same name as the base type with the underscore character (_) prepended.
-                            // ----
-                            // so, we must remove this underscore character from enum type name
-                            let udtName = dbColumn["udt_name"]
-                            if (udtName.startsWith("_")) {
-                                udtName = udtName.slice(1)
-                            }
-
-                            const enumType = dbEnums.find((dbEnum) => {
-                                return dbEnum["name"] === udtName
-                            })
-                            if (enumType) {
-                                // check if `enumName` is specified by user
-                                const builtEnumName = this.buildEnumName(
+                                dbColumn["numeric_precision"] !== null &&
+                                !this.isDefaultColumnPrecision(
                                     table,
                                     tableColumn,
-                                    false,
-                                    true,
+                                    dbColumn["numeric_precision"],
                                 )
-                                const enumName =
-                                    builtEnumName !== enumType["name"]
-                                        ? enumType["name"]
-                                        : undefined
-
-                                tableColumn.type = "enum"
-                                tableColumn.enum = enumType["value"].split("|")
-                                tableColumn.enumName = enumName
-                            }
-
-                            if (
-                                dbColumn["data_type"].toLowerCase() === "array"
                             ) {
-                                tableColumn.isArray = true
-                                if (!enumType) {
-                                    const type = dbColumn["crdb_sql_type"]
-                                        .replace("[]", "")
-                                        .toLowerCase()
-                                    tableColumn.type =
-                                        this.dataSource.driver.normalizeType({
-                                            type: type,
-                                        })
-                                }
-                            }
-
-                            // check only columns that have length property
-                            if (
-                                this.driver.withLengthColumnTypes.indexOf(
-                                    tableColumn.type as ColumnType,
-                                ) !== -1 &&
-                                dbColumn["character_maximum_length"]
+                                tableColumn.precision = parseInt(
+                                    dbColumn["numeric_precision"],
+                                )
+                            } else if (
+                                dbColumn["numeric_scale"] !== null &&
+                                !this.isDefaultColumnScale(
+                                    table,
+                                    tableColumn,
+                                    dbColumn["numeric_scale"],
+                                )
                             ) {
-                                const length =
-                                    dbColumn[
-                                        "character_maximum_length"
-                                    ].toString()
-                                tableColumn.length =
-                                    !this.isDefaultColumnLength(
-                                        table,
-                                        tableColumn,
-                                        length,
-                                    )
-                                        ? length
-                                        : ""
+                                tableColumn.precision = undefined
                             }
-                            tableColumn.isNullable =
-                                dbColumn["is_nullable"] === "YES"
+                            if (
+                                dbColumn["numeric_scale"] !== null &&
+                                !this.isDefaultColumnScale(
+                                    table,
+                                    tableColumn,
+                                    dbColumn["numeric_scale"],
+                                )
+                            ) {
+                                tableColumn.scale = parseInt(
+                                    dbColumn["numeric_scale"],
+                                )
+                            } else if (
+                                dbColumn["numeric_precision"] !== null &&
+                                !this.isDefaultColumnPrecision(
+                                    table,
+                                    tableColumn,
+                                    dbColumn["numeric_precision"],
+                                )
+                            ) {
+                                tableColumn.scale = undefined
+                            }
+                        }
 
-                            const primaryConstraint = columnConstraints.find(
-                                (constraint) =>
-                                    constraint["constraint_type"] === "PRIMARY",
+                        // docs: https://www.postgresql.org/docs/current/xtypes.html
+                        // When you define a new base type, PostgreSQL automatically provides support for arrays of that type.
+                        // The array type typically has the same name as the base type with the underscore character (_) prepended.
+                        // ----
+                        // so, we must remove this underscore character from enum type name
+                        let udtName = dbColumn["udt_name"]
+                        if (udtName.startsWith("_")) {
+                            udtName = udtName.slice(1)
+                        }
+
+                        const enumType = dbEnums.find((dbEnum) => {
+                            return dbEnum["name"] === udtName
+                        })
+                        if (enumType) {
+                            // check if `enumName` is specified by user
+                            const builtEnumName = this.buildEnumName(
+                                table,
+                                tableColumn,
+                                false,
+                                true,
                             )
-                            if (primaryConstraint) {
-                                tableColumn.isPrimary = true
-                                // find another columns involved in primary key constraint
-                                const anotherPrimaryConstraints =
-                                    dbConstraints.filter(
-                                        (constraint) =>
-                                            constraint["table_name"] ===
-                                                dbColumn["table_name"] &&
-                                            constraint["table_schema"] ===
-                                                dbColumn["table_schema"] &&
-                                            constraint["column_name"] !==
-                                                dbColumn["column_name"] &&
-                                            constraint["constraint_type"] ===
-                                                "PRIMARY",
-                                    )
+                            const enumName =
+                                builtEnumName !== enumType["name"]
+                                    ? enumType["name"]
+                                    : undefined
 
-                                // collect all column names
-                                const columnNames =
-                                    anotherPrimaryConstraints.map(
-                                        (constraint) =>
-                                            constraint["column_name"],
-                                    )
-                                columnNames.push(dbColumn["column_name"])
+                            tableColumn.type = "enum"
+                            tableColumn.enum = enumType["value"].split("|")
+                            tableColumn.enumName = enumName
+                        }
 
-                                // build default primary key constraint name
-                                const pkName =
-                                    this.dataSource.namingStrategy.primaryKeyName(
-                                        table,
-                                        columnNames,
-                                    )
-
-                                // if primary key has user-defined constraint name, write it in table column
-                                if (
-                                    primaryConstraint["constraint_name"] !==
-                                    pkName
-                                ) {
-                                    tableColumn.primaryKeyConstraintName =
-                                        primaryConstraint["constraint_name"]
-                                }
+                        if (dbColumn["data_type"].toLowerCase() === "array") {
+                            tableColumn.isArray = true
+                            if (!enumType) {
+                                const type = dbColumn["crdb_sql_type"]
+                                    .replace("[]", "")
+                                    .toLowerCase()
+                                tableColumn.type =
+                                    this.dataSource.driver.normalizeType({
+                                        type: type,
+                                    })
                             }
+                        }
 
-                            const uniqueConstraints = columnConstraints.filter(
-                                (constraint) =>
-                                    constraint["constraint_type"] === "UNIQUE",
+                        // check only columns that have length property
+                        if (
+                            this.driver.withLengthColumnTypes.indexOf(
+                                tableColumn.type as ColumnType,
+                            ) !== -1 &&
+                            dbColumn["character_maximum_length"]
+                        ) {
+                            const length =
+                                dbColumn["character_maximum_length"].toString()
+                            tableColumn.length = !this.isDefaultColumnLength(
+                                table,
+                                tableColumn,
+                                length,
                             )
-                            const isConstraintComposite =
-                                uniqueConstraints.every((uniqueConstraint) => {
-                                    return dbConstraints.some(
-                                        (dbConstraint) =>
-                                            dbConstraint["constraint_type"] ===
-                                                "UNIQUE" &&
-                                            dbConstraint["constraint_name"] ===
-                                                uniqueConstraint[
-                                                    "constraint_name"
-                                                ] &&
-                                            dbConstraint["column_name"] !==
-                                                dbColumn["column_name"],
-                                    )
-                                })
-                            tableColumn.isUnique =
-                                uniqueConstraints.length > 0 &&
-                                !isConstraintComposite
+                                ? length
+                                : ""
+                        }
+                        tableColumn.isNullable =
+                            dbColumn["is_nullable"] === "YES"
 
+                        const primaryConstraint = columnConstraints.find(
+                            (constraint) =>
+                                constraint["constraint_type"] === "PRIMARY",
+                        )
+                        if (primaryConstraint) {
+                            tableColumn.isPrimary = true
+                            // find another columns involved in primary key constraint
+                            const anotherPrimaryConstraints =
+                                tableConstraints.filter(
+                                    (constraint) =>
+                                        constraint["column_name"] !==
+                                            dbColumn["column_name"] &&
+                                        constraint["constraint_type"] ===
+                                            "PRIMARY",
+                                )
+
+                            // collect all column names
+                            const columnNames = anotherPrimaryConstraints.map(
+                                (constraint) => constraint["column_name"],
+                            )
+                            columnNames.push(dbColumn["column_name"])
+
+                            // build default primary key constraint name
+                            const pkName =
+                                this.dataSource.namingStrategy.primaryKeyName(
+                                    table,
+                                    columnNames,
+                                )
+
+                            // if primary key has user-defined constraint name, write it in table column
                             if (
-                                dbColumn["column_default"] !== null &&
-                                dbColumn["column_default"] !== undefined
+                                primaryConstraint["constraint_name"] !== pkName
                             ) {
-                                if (
-                                    dbColumn["column_default"] ===
-                                    "unique_rowid()"
-                                ) {
-                                    tableColumn.isGenerated = true
-                                    tableColumn.generationStrategy = "rowid"
-                                } else if (
-                                    dbColumn["column_default"].indexOf(
-                                        "nextval",
-                                    ) !== -1
-                                ) {
-                                    tableColumn.isGenerated = true
-                                    tableColumn.generationStrategy = "increment"
-                                } else if (
-                                    dbColumn["column_default"] ===
-                                    "gen_random_uuid()"
-                                ) {
-                                    tableColumn.isGenerated = true
-                                    tableColumn.generationStrategy = "uuid"
-                                } else {
-                                    tableColumn.default = dbColumn[
-                                        "column_default"
-                                    ].replaceAll(/:::[\w\s[\]"]+/g, "")
+                                tableColumn.primaryKeyConstraintName =
+                                    primaryConstraint["constraint_name"]
+                            }
+                        }
+
+                        const uniqueConstraints = columnConstraints.filter(
+                            (constraint) =>
+                                constraint["constraint_type"] === "UNIQUE",
+                        )
+                        const isConstraintComposite = uniqueConstraints.every(
+                            (uniqueConstraint) => {
+                                return (
+                                    constraintsByName.get(
+                                        uniqueConstraint["constraint_name"],
+                                    ) ?? []
+                                ).some(
+                                    (dbConstraint) =>
+                                        dbConstraint["constraint_type"] ===
+                                            "UNIQUE" &&
+                                        dbConstraint["column_name"] !==
+                                            dbColumn["column_name"],
+                                )
+                            },
+                        )
+                        tableColumn.isUnique =
+                            uniqueConstraints.length > 0 &&
+                            !isConstraintComposite
+
+                        if (
+                            dbColumn["column_default"] !== null &&
+                            dbColumn["column_default"] !== undefined
+                        ) {
+                            if (
+                                dbColumn["column_default"] === "unique_rowid()"
+                            ) {
+                                tableColumn.isGenerated = true
+                                tableColumn.generationStrategy = "rowid"
+                            } else if (
+                                dbColumn["column_default"].indexOf(
+                                    "nextval",
+                                ) !== -1
+                            ) {
+                                tableColumn.isGenerated = true
+                                tableColumn.generationStrategy = "increment"
+                            } else if (
+                                dbColumn["column_default"] ===
+                                "gen_random_uuid()"
+                            ) {
+                                tableColumn.isGenerated = true
+                                tableColumn.generationStrategy = "uuid"
+                            } else {
+                                tableColumn.default = dbColumn[
+                                    "column_default"
+                                ].replaceAll(/:::[\w\s[\]"]+/g, "")
+                                tableColumn.default =
+                                    tableColumn.default.replace(
+                                        /^(-?[\d.]+)$/,
+                                        "($1)",
+                                    )
+
+                                if (enumType) {
                                     tableColumn.default =
                                         tableColumn.default.replace(
-                                            /^(-?[\d.]+)$/,
-                                            "($1)",
+                                            `.${enumType["name"]}`,
+                                            "",
                                         )
-
-                                    if (enumType) {
-                                        tableColumn.default =
-                                            tableColumn.default.replace(
-                                                `.${enumType["name"]}`,
-                                                "",
-                                            )
-                                    }
                                 }
                             }
+                        }
 
-                            if (
-                                (dbColumn["is_generated"] === "YES" ||
-                                    dbColumn["is_generated"] === "ALWAYS") &&
-                                dbColumn["generation_expression"]
-                            ) {
-                                tableColumn.generatedType =
-                                    dbColumn["generated_type"] === "s"
-                                        ? "STORED"
-                                        : "VIRTUAL"
-                                // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
-                                const asExpressionQuery =
-                                    this.selectTypeormMetadataSql({
-                                        schema: dbTable["table_schema"],
-                                        table: dbTable["table_name"],
-                                        type: MetadataTableType.GENERATED_COLUMN,
-                                        name: tableColumn.name,
-                                    })
+                        if (
+                            (dbColumn["is_generated"] === "YES" ||
+                                dbColumn["is_generated"] === "ALWAYS") &&
+                            dbColumn["generation_expression"]
+                        ) {
+                            tableColumn.generatedType =
+                                dbColumn["generated_type"] === "s"
+                                    ? "STORED"
+                                    : "VIRTUAL"
+                            // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
+                            const asExpressionQuery =
+                                this.selectTypeormMetadataSql({
+                                    schema: dbTable["table_schema"],
+                                    table: dbTable["table_name"],
+                                    type: MetadataTableType.GENERATED_COLUMN,
+                                    name: tableColumn.name,
+                                })
 
-                                const results = await this.query(
-                                    asExpressionQuery.query,
-                                    asExpressionQuery.parameters,
+                            const results = await this.query(
+                                asExpressionQuery.query,
+                                asExpressionQuery.parameters,
+                            )
+                            if (results[0]?.value) {
+                                tableColumn.asExpression = results[0].value
+                            } else {
+                                tableColumn.asExpression = ""
+                            }
+                        }
+
+                        tableColumn.comment =
+                            dbColumn["description"] ?? undefined
+                        if (dbColumn["character_set_name"])
+                            tableColumn.charset = dbColumn["character_set_name"]
+
+                        if (
+                            tableColumn.type === "geometry" ||
+                            tableColumn.type === "geography"
+                        ) {
+                            const sql =
+                                `SELECT * FROM (` +
+                                `SELECT "f_table_schema" "table_schema", "f_table_name" "table_name", ` +
+                                `"f_${tableColumn.type}_column" "column_name", "srid", "type", "coord_dimension" ` +
+                                `FROM "${tableColumn.type}_columns"` +
+                                `) AS _ ` +
+                                `WHERE "column_name" = '${dbColumn["column_name"]}' AND ` +
+                                `"table_schema" = '${dbColumn["table_schema"]}' AND ` +
+                                `"table_name" = '${dbColumn["table_name"]}'`
+
+                            const results: ObjectLiteral[] =
+                                await this.query(sql)
+
+                            if (results.length > 0) {
+                                // "geometry_columns" folds the Z dimension into
+                                // "coord_dimension" and only keeps the M suffix in
+                                // "type", while "geography_columns" reports the
+                                // full suffix in "type", so the suffix is only
+                                // appended when it is missing.
+                                //
+                                // Unlike PostGIS, CockroachDB also drops the M
+                                // suffix from "geometry_columns"."type", which makes
+                                // PointM indistinguishable from PointZ there. The
+                                // declared type in "crdb_sql_type" still carries it.
+                                let spatialFeatureType: string =
+                                    /^\w+\((\w+)/.exec(
+                                        dbColumn["crdb_sql_type"] ?? "",
+                                    )?.[1] ?? results[0].type
+                                const coordDimension = parseInt(
+                                    results[0].coord_dimension,
                                 )
-                                if (results[0]?.value) {
-                                    tableColumn.asExpression = results[0].value
-                                } else {
-                                    tableColumn.asExpression = ""
+                                const upperType =
+                                    spatialFeatureType.toUpperCase()
+                                if (
+                                    coordDimension === 3 &&
+                                    !upperType.endsWith("Z") &&
+                                    !upperType.endsWith("M")
+                                ) {
+                                    spatialFeatureType += "Z"
+                                } else if (
+                                    coordDimension === 4 &&
+                                    !upperType.endsWith("Z") &&
+                                    !upperType.endsWith("M")
+                                ) {
+                                    spatialFeatureType += "ZM"
                                 }
+                                tableColumn.spatialFeatureType =
+                                    spatialFeatureType
+                                tableColumn.srid = results[0].srid
+                                    ? parseInt(results[0].srid)
+                                    : undefined
                             }
+                        }
 
-                            tableColumn.comment =
-                                dbColumn["description"] ?? undefined
-                            if (dbColumn["character_set_name"])
-                                tableColumn.charset =
-                                    dbColumn["character_set_name"]
-
-                            if (
-                                tableColumn.type === "geometry" ||
-                                tableColumn.type === "geography"
-                            ) {
-                                const sql =
-                                    `SELECT * FROM (` +
-                                    `SELECT "f_table_schema" "table_schema", "f_table_name" "table_name", ` +
-                                    `"f_${tableColumn.type}_column" "column_name", "srid", "type", "coord_dimension" ` +
-                                    `FROM "${tableColumn.type}_columns"` +
-                                    `) AS _ ` +
-                                    `WHERE "column_name" = '${dbColumn["column_name"]}' AND ` +
-                                    `"table_schema" = '${dbColumn["table_schema"]}' AND ` +
-                                    `"table_name" = '${dbColumn["table_name"]}'`
-
-                                const results: ObjectLiteral[] =
-                                    await this.query(sql)
-
-                                if (results.length > 0) {
-                                    // "geometry_columns" folds the Z dimension into
-                                    // "coord_dimension" and only keeps the M suffix in
-                                    // "type", while "geography_columns" reports the
-                                    // full suffix in "type", so the suffix is only
-                                    // appended when it is missing.
-                                    //
-                                    // Unlike PostGIS, CockroachDB also drops the M
-                                    // suffix from "geometry_columns"."type", which makes
-                                    // PointM indistinguishable from PointZ there. The
-                                    // declared type in "crdb_sql_type" still carries it.
-                                    let spatialFeatureType: string =
-                                        /^\w+\((\w+)/.exec(
-                                            dbColumn["crdb_sql_type"] ?? "",
-                                        )?.[1] ?? results[0].type
-                                    const coordDimension = parseInt(
-                                        results[0].coord_dimension,
-                                    )
-                                    const upperType =
-                                        spatialFeatureType.toUpperCase()
-                                    if (
-                                        coordDimension === 3 &&
-                                        !upperType.endsWith("Z") &&
-                                        !upperType.endsWith("M")
-                                    ) {
-                                        spatialFeatureType += "Z"
-                                    } else if (
-                                        coordDimension === 4 &&
-                                        !upperType.endsWith("Z") &&
-                                        !upperType.endsWith("M")
-                                    ) {
-                                        spatialFeatureType += "ZM"
-                                    }
-                                    tableColumn.spatialFeatureType =
-                                        spatialFeatureType
-                                    tableColumn.srid = results[0].srid
-                                        ? parseInt(results[0].srid)
-                                        : undefined
-                                }
-                            }
-
-                            return tableColumn
-                        }),
+                        return tableColumn
+                    }),
                 )
 
                 // find unique constraints of table, group them by constraint name and build TableUnique.
                 const tableUniqueConstraints = OrmUtils.uniq(
-                    dbConstraints.filter((dbConstraint) => {
-                        return (
-                            dbConstraint["table_name"] ===
-                                dbTable["table_name"] &&
-                            dbConstraint["table_schema"] ===
-                                dbTable["table_schema"] &&
-                            dbConstraint["constraint_type"] === "UNIQUE"
-                        )
-                    }),
+                    tableConstraints.filter(
+                        (dbConstraint) =>
+                            dbConstraint["constraint_type"] === "UNIQUE",
+                    ),
                     (dbConstraint) => dbConstraint["constraint_name"],
                 )
 
                 table.uniques = tableUniqueConstraints.map((constraint) => {
-                    const uniques = dbConstraints.filter(
-                        (dbC) =>
-                            dbC["constraint_name"] ===
-                            constraint["constraint_name"],
-                    )
+                    const uniques =
+                        constraintsByName.get(constraint["constraint_name"]) ??
+                        []
                     return new TableUnique({
                         name: constraint["constraint_name"],
                         columnNames: uniques.map((u) => u["column_name"]),
@@ -3769,24 +3753,17 @@ export class CockroachQueryRunner
 
                 // find check constraints of table, group them by constraint name and build TableCheck.
                 const tableCheckConstraints = OrmUtils.uniq(
-                    dbConstraints.filter((dbConstraint) => {
-                        return (
-                            dbConstraint["table_name"] ===
-                                dbTable["table_name"] &&
-                            dbConstraint["table_schema"] ===
-                                dbTable["table_schema"] &&
-                            dbConstraint["constraint_type"] === "CHECK"
-                        )
-                    }),
+                    tableConstraints.filter(
+                        (dbConstraint) =>
+                            dbConstraint["constraint_type"] === "CHECK",
+                    ),
                     (dbConstraint) => dbConstraint["constraint_name"],
                 )
 
                 table.checks = tableCheckConstraints.map((constraint) => {
-                    const checks = dbConstraints.filter(
-                        (dbC) =>
-                            dbC["constraint_name"] ===
-                            constraint["constraint_name"],
-                    )
+                    const checks =
+                        constraintsByName.get(constraint["constraint_name"]) ??
+                        []
                     return new TableCheck({
                         name: constraint["constraint_name"],
                         columnNames: checks.map((c) => c["column_name"]),
@@ -3799,15 +3776,10 @@ export class CockroachQueryRunner
 
                 // find exclusion constraints of table, group them by constraint name and build TableExclusion.
                 const tableExclusionConstraints = OrmUtils.uniq(
-                    dbConstraints.filter((dbConstraint) => {
-                        return (
-                            dbConstraint["table_name"] ===
-                                dbTable["table_name"] &&
-                            dbConstraint["table_schema"] ===
-                                dbTable["table_schema"] &&
-                            dbConstraint["constraint_type"] === "EXCLUDE"
-                        )
-                    }),
+                    tableConstraints.filter(
+                        (dbConstraint) =>
+                            dbConstraint["constraint_type"] === "EXCLUDE",
+                    ),
                     (dbConstraint) => dbConstraint["constraint_name"],
                 )
 
@@ -3822,24 +3794,16 @@ export class CockroachQueryRunner
 
                 // find foreign key constraints of table, group them by constraint name and build TableForeignKey.
                 const tableForeignKeyConstraints = OrmUtils.uniq(
-                    dbForeignKeys.filter((dbForeignKey) => {
-                        return (
-                            dbForeignKey["table_name"] ===
-                                dbTable["table_name"] &&
-                            dbForeignKey["table_schema"] ===
-                                dbTable["table_schema"]
-                        )
-                    }),
+                    tableForeignKeys,
                     (dbForeignKey) => dbForeignKey["constraint_name"],
                 )
 
                 table.foreignKeys = tableForeignKeyConstraints.map(
                     (dbForeignKey) => {
-                        const foreignKeys = dbForeignKeys.filter(
-                            (dbFk) =>
-                                dbFk["constraint_name"] ===
+                        const foreignKeys =
+                            foreignKeysByName.get(
                                 dbForeignKey["constraint_name"],
-                        )
+                            ) ?? []
 
                         // if referenced table located in currently used schema, we don't need to concat schema name to table name.
                         const schema = getSchemaFromKey(
@@ -3870,21 +3834,13 @@ export class CockroachQueryRunner
 
                 // find index constraints of table, group them by constraint name and build TableIndex.
                 const tableIndexConstraints = OrmUtils.uniq(
-                    dbIndices.filter((dbIndex) => {
-                        return (
-                            dbIndex["table_name"] === dbTable["table_name"] &&
-                            dbIndex["table_schema"] === dbTable["table_schema"]
-                        )
-                    }),
+                    tableIndices,
                     (dbIndex) => dbIndex["constraint_name"],
                 )
 
                 table.indices = tableIndexConstraints.map((constraint) => {
-                    const indices = dbIndices.filter(
-                        (index) =>
-                            index["constraint_name"] ===
-                            constraint["constraint_name"],
-                    )
+                    const indices =
+                        indicesByName.get(constraint["constraint_name"]) ?? []
                     return new TableIndex(<TableIndexOptions>{
                         table: table,
                         name: constraint["constraint_name"],
