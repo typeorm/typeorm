@@ -3341,9 +3341,19 @@ export class CockroachQueryRunner
         // Group the catalog rows once, so loading stays linear in the schema size.
         const tableKey = (row: ObjectLiteral) =>
             JSON.stringify([row["table_schema"], row["table_name"]])
+        const columnKey = (row: ObjectLiteral) =>
+            JSON.stringify([
+                row["table_schema"],
+                row["table_name"],
+                row["column_name"],
+            ])
         const constraintName = (row: ObjectLiteral) => row["constraint_name"]
         const columnsByTable = OrmUtils.groupInMap(dbColumns, tableKey)
         const constraintsByTable = OrmUtils.groupInMap(dbConstraints, tableKey)
+        const constraintsByColumn = OrmUtils.groupInMap(
+            dbConstraints,
+            columnKey,
+        )
         const constraintsByName = OrmUtils.groupInMap(
             dbConstraints,
             constraintName,
@@ -3365,6 +3375,9 @@ export class CockroachQueryRunner
                 const tableColumns = columnsByTable.get(key) ?? []
                 const tableConstraints = constraintsByTable.get(key) ?? []
                 const tableIndices = indicesByTable.get(key) ?? []
+                const tablePrimaryConstraints = tableConstraints.filter(
+                    (constraint) => constraint["constraint_type"] === "PRIMARY",
+                )
                 const tableForeignKeys = foreignKeysByTable.get(key) ?? []
 
                 const getSchemaFromKey = (dbObject: any, key: string) => {
@@ -3387,11 +3400,8 @@ export class CockroachQueryRunner
                 // create columns from the loaded columns
                 table.columns = await Promise.all(
                     tableColumns.map(async (dbColumn) => {
-                        const columnConstraints = tableConstraints.filter(
-                            (dbConstraint) =>
-                                dbConstraint["column_name"] ===
-                                dbColumn["column_name"],
-                        )
+                        const columnConstraints =
+                            constraintsByColumn.get(columnKey(dbColumn)) ?? []
 
                         const tableColumn = new TableColumn()
                         tableColumn.name = dbColumn["column_name"]
@@ -3541,12 +3551,10 @@ export class CockroachQueryRunner
                             tableColumn.isPrimary = true
                             // find another columns involved in primary key constraint
                             const anotherPrimaryConstraints =
-                                tableConstraints.filter(
+                                tablePrimaryConstraints.filter(
                                     (constraint) =>
                                         constraint["column_name"] !==
-                                            dbColumn["column_name"] &&
-                                        constraint["constraint_type"] ===
-                                            "PRIMARY",
+                                        dbColumn["column_name"],
                                 )
 
                             // collect all column names
