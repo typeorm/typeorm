@@ -2973,7 +2973,7 @@ export class AuroraMysqlQueryRunner
 
         if (column.enum)
             c += ` (${column.enum
-                .map((value) => "'" + value + "'")
+                .map((value) => "'" + value.replaceAll("'", "''") + "'")
                 .join(", ")})`
         if (column.charset) c += ` CHARACTER SET "${column.charset}"`
         if (column.collation) c += ` COLLATE "${column.collation}"`
