@@ -1509,9 +1509,14 @@ export class PostgresDriver implements Driver {
                     )
                 ) || // enums in postgres are always strings
                 tableColumn.isGenerated !== columnMetadata.isGenerated ||
-                (tableColumn.spatialFeatureType ?? "").toLowerCase() !==
-                    (columnMetadata.spatialFeatureType ?? "").toLowerCase() ||
-                tableColumn.srid !== columnMetadata.srid ||
+                // Spatial columns declared without a feature type or SRID are
+                // created as plain geometry, which PostGIS reports back as
+                // "Geometry" with SRID 0, so compare against those defaults.
+                (tableColumn.spatialFeatureType ?? "geometry").toLowerCase() !==
+                    (
+                        columnMetadata.spatialFeatureType ?? "geometry"
+                    ).toLowerCase() ||
+                (tableColumn.srid ?? 0) !== (columnMetadata.srid ?? 0) ||
                 tableColumn.generatedType !== columnMetadata.generatedType ||
                 (tableColumn.asExpression ?? "").trim() !==
                     (columnMetadata.asExpression ?? "").trim() ||

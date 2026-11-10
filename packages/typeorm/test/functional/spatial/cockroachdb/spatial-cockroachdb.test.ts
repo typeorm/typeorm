@@ -81,10 +81,7 @@ describe("spatial-cockroachdb", () => {
                     .createSchemaBuilder()
                     .log()
 
-                const dimensionalPostChanges = sqlInMemory.upQueries.filter(
-                    (query) => query.query.includes("dimensional_post"),
-                )
-                expect(dimensionalPostChanges).to.have.length(0)
+                expect(sqlInMemory.upQueries).to.eql([])
             }),
         ))
 

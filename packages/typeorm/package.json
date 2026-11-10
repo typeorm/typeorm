@@ -1,6 +1,6 @@
 {
   "name": "typeorm",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Data-Mapper ORM for TypeScript and ES2023+. Supports MySQL/MariaDB, PostgreSQL, MS SQL Server, Oracle, SAP HANA, SQLite, MongoDB databases.",
   "homepage": "https://typeorm.io",
   "bugs": {
@@ -76,7 +76,7 @@
     "typeorm-ts-node-esm": "./cli-ts-node-esm.js"
   },
   "scripts": {
-    "compile": "gulp clean && tsc",
+    "compile": "gulp clean:compiled && tsc",
     "lint": "eslint",
     "package": "gulp package",
     "test": "pnpm run compile && pnpm run test:fast --",
