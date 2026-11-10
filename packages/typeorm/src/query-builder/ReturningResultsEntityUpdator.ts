@@ -240,12 +240,16 @@ export class ReturningResultsEntityUpdator {
                     signatureToRawIndices.has(entitySig)
                 ) {
                     const candidates = signatureToRawIndices.get(entitySig)!
-                    while (candidates.length > 0) {
-                        const candidateIndex = candidates.shift()!
+                    for (let c = 0; c < candidates.length; c++) {
+                        const candidateIndex = candidates[c]
                         if (!usedRawIndices.has(candidateIndex)) {
-                            usedRawIndices.add(candidateIndex)
-                            foundMatch = insertResult.raw[candidateIndex]
-                            break
+                            const candidateRaw =
+                                insertResult.raw[candidateIndex]
+                            if (this.doesEntityMatchRaw(entity, candidateRaw)) {
+                                usedRawIndices.add(candidateIndex)
+                                foundMatch = candidateRaw
+                                break
+                            }
                         }
                     }
                 }
@@ -410,7 +414,11 @@ export class ReturningResultsEntityUpdator {
             ) {
                 return undefined
             }
-            parts.push(col.databaseName + "=" + String(val))
+            const colName = col.databaseName
+            const valStr = String(val)
+            parts.push(
+                `${colName.length}:${colName}=${valStr.length}:${valStr}`,
+            )
         }
         return parts.length > 0 ? parts.join(";") : undefined
     }

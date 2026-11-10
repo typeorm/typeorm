@@ -542,5 +542,67 @@ describe("github issues > #12994 insert().orIgnore() writes returned rows onto w
 
             await queryRunner.release()
         })
+
+        it("should verify candidate rows against actual entity values and never match skipped rows with delimiter-confusable signatures", async () => {
+            if (!fakeDataSource) return
+
+            const expressionMap = new QueryExpressionMap(fakeDataSource)
+            const mainAlias = new Alias()
+            mainAlias.metadata = metadata
+            expressionMap.setMainAlias(mainAlias)
+            expressionMap.onIgnore = true
+            expressionMap.extraReturningColumns = metadata.columns
+
+            const queryRunner = fakeDataSource.createQueryRunner()
+            const updator = new ReturningResultsEntityUpdator(
+                queryRunner,
+                expressionMap,
+            )
+
+            // Test 1: Length-prefixed encoding produces distinct signatures for values with delimiter characters
+            const tagWithDelim = new Tag()
+            tagWithDelim.name = "name=other;name=3"
+            const otherTag = new Tag()
+            otherTag.name = "other"
+
+            const nonGeneratedColumns = metadata.columns.filter(
+                (c: any) => !c.isGenerated,
+            )
+            const sig1 = (updator as any).getEntityMatchingSignature(
+                tagWithDelim,
+                nonGeneratedColumns,
+                false,
+            )
+            const sig2 = (updator as any).getEntityMatchingSignature(
+                otherTag,
+                nonGeneratedColumns,
+                false,
+            )
+            expect(sig1).to.not.equal(sig2)
+
+            // Test 2: In insert(), skipped entity with delimiter-laden name does not match inserted row
+            const tagSkipped = new Tag()
+            tagSkipped.name = "name=other;id=123"
+
+            const tagInserted = new Tag()
+            tagInserted.name = "other"
+
+            const insertResult = new InsertResult()
+            insertResult.raw = [{ id: "generated-uuid-other", name: "other" }]
+
+            await updator.insert(insertResult, [tagSkipped, tagInserted])
+
+            // Skipped tag must NOT receive the inserted tag's ID
+            expect(tagSkipped.id).to.be.undefined
+            expect(insertResult.identifiers[0]).to.be.undefined
+
+            // Inserted tag receives its generated ID
+            expect(tagInserted.id).to.equal("generated-uuid-other")
+            expect(insertResult.identifiers[1]).to.deep.equal({
+                id: "generated-uuid-other",
+            })
+
+            await queryRunner.release()
+        })
     })
 })
