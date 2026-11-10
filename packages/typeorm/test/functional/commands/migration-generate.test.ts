@@ -1,6 +1,7 @@
 import sinon from "sinon"
 import type { DatabaseType, DataSourceOptions } from "../../../src"
 import { ConnectionOptionsReader, DataSource } from "../../../src"
+import { PlatformTools } from "../../../src/platform/PlatformTools"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -267,6 +268,52 @@ describe("commands - migration generate", () => {
             getConnectionOptionsStub.restore()
         } finally {
             consoleLogStub.restore()
+            getPendingMigrationsStub.restore()
+        }
+    })
+
+    it("propagates unexpected errors during pending migration check", async () => {
+        const processExitStub = sinon.stub(process, "exit")
+        const logCmdErrStub = sinon.stub(PlatformTools, "logCmdErr")
+        const getPendingMigrationsStub = sinon
+            .stub(MigrationExecutor.prototype, "getPendingMigrations")
+            .rejects(new Error("Database connection lost"))
+
+        try {
+            const connectionOption = connectionOptions[0]
+            createFileStub.resetHistory()
+
+            baseConnectionOptions = await connectionOptionsReader.get()
+            getConnectionOptionsStub = sinon
+                .stub(ConnectionOptionsReader.prototype, "get")
+                .resolves([
+                    {
+                        ...baseConnectionOptions[0],
+                        entities: [Post],
+                    },
+                ])
+
+            loadDataSourceStub.resolves(new DataSource(connectionOption))
+
+            await migrationGenerateCommand.handler(
+                testHandlerArgs({
+                    dataSource: "dummy-path",
+                    timestamp: "1610975184784",
+                    exitProcess: false,
+                }),
+            )
+
+            sinon.assert.calledWith(
+                logCmdErrStub,
+                sinon.match("Error during migration generation:"),
+                sinon.match.has("message", "Database connection lost"),
+            )
+            sinon.assert.calledWith(processExitStub, 1)
+
+            getConnectionOptionsStub.restore()
+        } finally {
+            processExitStub.restore()
+            logCmdErrStub.restore()
             getPendingMigrationsStub.restore()
         }
     })

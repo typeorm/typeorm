@@ -104,24 +104,18 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
 
             try {
                 if (!args.skipPendingCheck) {
-                    try {
-                        const migrationExecutor = new MigrationExecutor(
-                            dataSource,
+                    const migrationExecutor = new MigrationExecutor(dataSource)
+                    const pendingMigrations =
+                        await migrationExecutor.getPendingMigrations()
+                    if (pendingMigrations.length > 0) {
+                        const migrationNames = pendingMigrations
+                            .map((m) => m.name)
+                            .join(", ")
+                        console.log(
+                            ansi.yellow(
+                                `Warning: There are ${pendingMigrations.length} pending migration(s) (${migrationNames}) that have not been executed. Generating a migration against the current database state may produce duplicate or conflicting schema statements. Consider running 'typeorm migration:run' first, or pass '--skipPendingCheck'.`,
+                            ),
                         )
-                        const pendingMigrations =
-                            await migrationExecutor.getPendingMigrations()
-                        if (pendingMigrations.length > 0) {
-                            const migrationNames = pendingMigrations
-                                .map((m) => m.name)
-                                .join(", ")
-                            console.log(
-                                ansi.yellow(
-                                    `Warning: There are ${pendingMigrations.length} pending migration(s) (${migrationNames}) that have not been executed. Generating a migration against the current database state may produce duplicate or conflicting schema statements. Consider running 'typeorm migration:run' first, or pass '--skipPendingCheck'.`,
-                                ),
-                            )
-                        }
-                    } catch {
-                        // ignore errors during pending migration check (e.g. if driver lacks migration table support)
                     }
                 }
 
