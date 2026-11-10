@@ -4,7 +4,7 @@ export class Counters {
     @Column()
     likes: number
 
-    @Column({ type: "int", nullable: true })
+    @Column({ type: Number, nullable: true })
     stars: number | null
 }
 
