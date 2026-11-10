@@ -878,7 +878,12 @@ export class PostgresDriver implements Driver {
                   )
                 : value
 
-        if (columnMetadata.type === Boolean) {
+        if (columnMetadata.type === Number) {
+            // convert to number if number
+            value = !isNaN(+value) ? parseInt(value) : value
+        } else if (columnMetadata.type === String) {
+            // nothing to convert
+        } else if (columnMetadata.type === Boolean) {
             value = value ? true : false
         } else if (
             columnMetadata.type === "datetime" ||
@@ -990,9 +995,6 @@ export class PostgresDriver implements Driver {
                         ? parseInt(value)
                         : value
             }
-        } else if (columnMetadata.type === Number) {
-            // convert to number if number
-            value = !isNaN(+value) ? parseInt(value) : value
         }
 
         if (columnMetadata.transformer)
