@@ -668,6 +668,67 @@ export class MysqlDriver implements Driver {
      * @param value
      * @param columnMetadata
      */
+    /**
+     * Resolves the effective mysql2 timezone option for date hydration.
+     */
+    private resolveConnectionTimezone(): string | undefined {
+        const extra: unknown = this.options?.extra
+        if (typeof extra === "object" && extra !== null) {
+            const extraTimezone = (extra as Record<string, unknown>).timezone
+            if (typeof extraTimezone === "string") {
+                return extraTimezone
+            }
+        }
+        return this.options?.timezone
+    }
+
+    /**
+     * Parses a numeric UTC offset timezone string into minutes.
+     *
+     * @param timezone
+     */
+    private parseTimezoneOffsetMinutes(timezone: string): number | undefined {
+        const match = /^([+-])(\d{2})(?::?(\d{2}))?$/.exec(timezone)
+        if (!match) {
+            return undefined
+        }
+        const hours = Number(match[2])
+        const minutes = Number(match[3] ?? "0")
+        if (hours > 23 || minutes > 59) {
+            return undefined
+        }
+        const totalMinutes = hours * 60 + minutes
+        if (totalMinutes === 0) {
+            return 0
+        }
+        return (match[1] === "+" ? 1 : -1) * totalMinutes
+    }
+
+    /**
+     * Formats a hydrated Date for a DATE column using the connection timezone.
+     *
+     * @param value
+     * @param columnUtc
+     */
+    private formatHydratedDate(value: Date, columnUtc: boolean): string {
+        const timezone = this.resolveConnectionTimezone()
+        if (timezone === undefined || timezone === "local") {
+            return DateUtils.mixedDateToDateString(value)
+        }
+        if (timezone === "Z" || timezone === "z") {
+            return DateUtils.mixedDateToDateString(value, { utc: true })
+        }
+        const offsetMinutes = this.parseTimezoneOffsetMinutes(timezone)
+        if (offsetMinutes !== undefined) {
+            const shifted =
+                offsetMinutes === 0
+                    ? value
+                    : new Date(value.getTime() + offsetMinutes * 60_000)
+            return DateUtils.mixedDateToDateString(shifted, { utc: true })
+        }
+        return DateUtils.mixedDateToDateString(value, { utc: columnUtc })
+    }
+
     prepareHydratedValue(value: any, columnMetadata: ColumnMetadata): any {
         if (value === null || value === undefined)
             return columnMetadata.transformer
@@ -689,9 +750,12 @@ export class MysqlDriver implements Driver {
         ) {
             value = DateUtils.normalizeHydratedDate(value)
         } else if (columnMetadata.type === "date") {
-            value = DateUtils.mixedDateToDateString(value, {
-                utc: columnMetadata.utc,
-            })
+            value =
+                value instanceof Date && !Number.isNaN(value.getTime())
+                    ? this.formatHydratedDate(value, columnMetadata.utc)
+                    : DateUtils.mixedDateToDateString(value, {
+                          utc: columnMetadata.utc,
+                      })
         } else if (columnMetadata.type === "json") {
             // Only parse if it's a valid JSON string representation,
             // but not if it's already an object or a JSON primitive.
