@@ -77,6 +77,7 @@ export type WithLengthColumnType =
     | "string" // cockroachdb, spanner
     | "vector" // mariadb, mysql, mssql, postgres, sap
     | "halfvec" // postgres, sap
+    | "sparsevec" // postgres
     | "half_vector" // sap
     | "real_vector" // sap
 

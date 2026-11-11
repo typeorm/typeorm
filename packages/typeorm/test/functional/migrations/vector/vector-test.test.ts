@@ -49,6 +49,18 @@ describe("migrations > vector type", () => {
                 table!
                     .findColumnByName("halfvec_four_dimensions")!
                     .length!.should.be.equal("4")
+                table!
+                    .findColumnByName("bit_embedding")!
+                    .type.should.be.equal("bit")
+                table!
+                    .findColumnByName("bit_embedding")!
+                    .length!.should.be.equal("8")
+                table!
+                    .findColumnByName("sparse_embedding")!
+                    .type.should.be.equal("sparsevec")
+                table!
+                    .findColumnByName("sparse_embedding")!
+                    .length!.should.be.equal("5")
             }),
         ))
 
@@ -59,7 +71,7 @@ describe("migrations > vector type", () => {
 
                 const queryRunner = dataSource.createQueryRunner()
                 await queryRunner.query(
-                    'INSERT INTO "post"("embedding", "embedding_three_dimensions", "halfvec_embedding", "halfvec_four_dimensions") VALUES (\'[1,2,3,4]\', \'[4,5,6]\', \'[1.5,2.5]\', \'[1,2,3,4]\')',
+                    'INSERT INTO "post"("embedding", "embedding_three_dimensions", "halfvec_embedding", "halfvec_four_dimensions", "bit_embedding", "sparse_embedding") VALUES (\'[1,2,3,4]\', \'[4,5,6]\', \'[1.5,2.5]\', \'[1,2,3,4]\', B\'10110101\', \'{1:0.5,3:0.7}/5\')',
                 )
 
                 const result = await queryRunner.query('SELECT * FROM "post"')
@@ -70,6 +82,8 @@ describe("migrations > vector type", () => {
                 result[0].embedding_three_dimensions.should.equal("[4,5,6]")
                 result[0].halfvec_embedding.should.equal("[1.5,2.5]")
                 result[0].halfvec_four_dimensions.should.equal("[1,2,3,4]")
+                result[0].bit_embedding.should.equal("10110101")
+                result[0].sparse_embedding.should.equal("{1:0.5,3:0.7}/5")
             }),
         ))
 })
