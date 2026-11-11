@@ -28,6 +28,36 @@ Different RDBMS-es have their own specific options.
   Example: `subscribers: [PostSubscriber, AppSubscriber, "subscribers/*.js", "modules/**/subscribers/*.js"]`.
   Learn more about [Subscribers](../listeners-and-subscribers.md).
 
+- `fileLoader` - Optional asynchronous function used to load files found by
+  `entities`, `migrations`, and `subscribers` glob patterns. Receives an absolute
+  filesystem path and returns the module's exports. By default, TypeORM uses
+  Node's native `import` or `require`. Supply a loader when your runtime needs to
+  transform files before executing them. Loader errors are propagated without
+  retrying with the native loader. Directly supplied classes are unaffected.
+
+    For example, in a Vitest test or setup module:
+
+    ```ts
+    import { pathToFileURL } from "node:url"
+
+    const dataSource = new DataSource({
+        type: "mysql",
+        // ...connection options
+        entities: ["./src/entity/*.ts"],
+        migrations: ["./src/migration/*.ts"],
+        subscribers: ["./src/subscriber/*.ts"],
+        fileLoader: (filePath) =>
+            import(/* @vite-ignore */ pathToFileURL(filePath).href),
+    })
+    ```
+
+    Define this callback in a module transformed by Vitest, so imported files use
+    the same module graph as the tests. Your Vitest transformer must support
+    TypeScript's legacy decorators and, if your entities rely on inferred column
+    types, decorator metadata (for example, configure SWC with
+    `legacyDecorator: true` and `decoratorMetadata: true`). Merely switching a
+    native Node `require` to native `import` does not apply Vitest's transforms.
+
 - `logging` - Indicates if logging is enabled or not.
   If set to `true` then query and error logging will be enabled.
   You can also specify different types of logging to be enabled, for example `["query", "error", "schema"]`.
