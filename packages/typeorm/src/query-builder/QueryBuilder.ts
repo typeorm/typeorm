@@ -509,10 +509,26 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     getQueryAndParameters(): [string, any[]] {
         const query = this.getQuery()
         const parameters = this.getParameters()
-        return this.dataSource.driver.escapeQueryWithParameters(
-            query,
-            parameters,
-        )
+
+        // comments are not SQL, so they must not be scanned for parameters.
+        // They are masked before escaping and restored afterwards, which also
+        // covers the comments of query builders embedded as sub-queries or CTEs.
+        const comments: string[] = []
+        const maskedQuery = query.replaceAll(/\/\*[\s\S]*?\*\//g, (comment) => {
+            comments.push(comment)
+            return `/*${comments.length - 1}*/`
+        })
+
+        const [sql, escapedParameters] =
+            this.dataSource.driver.escapeQueryWithParameters(
+                maskedQuery,
+                parameters,
+            )
+
+        return [
+            sql.replaceAll(/\/\*(\d+)\*\//g, (_, index) => comments[index]),
+            escapedParameters,
+        ]
     }
 
     /**
