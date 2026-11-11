@@ -1,5 +1,6 @@
 import type { QueryRunner } from "../query-runner/QueryRunner"
 import type { Subject } from "./Subject"
+import type { SubjectChangeMap } from "./SubjectChangeMap"
 import { SubjectTopologicalSorter } from "./SubjectTopologicalSorter"
 import { SubjectChangedColumnsComputer } from "./SubjectChangedColumnsComputer"
 import { SubjectWithoutIdentifierError } from "../error/SubjectWithoutIdentifierError"
@@ -75,6 +76,11 @@ export class SubjectExecutor {
      */
     protected recoverSubjects: Subject[] = []
 
+    /**
+     * Change maps of the soft-remove and recover subjects before the "before" listeners were called.
+     */
+    private changeMapsBeforeListeners = new Map<Subject, SubjectChangeMap[]>()
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -105,6 +111,18 @@ export class SubjectExecutor {
         // broadcast "before" events before we start insert / update / remove operations
         let broadcasterResult: BroadcasterResult | undefined = undefined
         if (this.options?.listeners !== false) {
+            for (const subject of [
+                ...this.softRemoveSubjects,
+                ...this.recoverSubjects,
+            ]) {
+                // plain object and array values are deep-copied, so that
+                // listeners changing them in place are noticed
+                this.changeMapsBeforeListeners.set(
+                    subject,
+                    OrmUtils.mergeDeep([], subject.changeMaps),
+                )
+            }
+
             // console.time(".broadcastBeforeEventsForAll");
             broadcasterResult = this.broadcastBeforeEventsForAll()
             if (broadcasterResult.promises.length > 0)
@@ -725,6 +743,77 @@ export class SubjectExecutor {
     }
 
     /**
+     * Updates the columns and relations that "before soft remove" or "before recover" listeners
+     * changed on a subject. Special and non-updatable columns are skipped, and tree parents are
+     * skipped because tree tables are not maintained here.
+     *
+     * @param subject Subject that is going to be soft-removed or recovered.
+     * @param isRecover Whether the subject is going to be recovered.
+     */
+    private async updateListenerChanges(
+        subject: Subject,
+        isRecover: boolean,
+    ): Promise<void> {
+        const changeMapsBeforeListeners =
+            this.changeMapsBeforeListeners.get(subject)
+        const deleteDateColumn = subject.metadata.deleteDateColumn
+        if (!changeMapsBeforeListeners || !deleteDateColumn) return
+
+        subject.changeMaps = subject.changeMaps.filter(
+            ({ column, relation, value }) => {
+                if (
+                    column &&
+                    (!column.isUpdate ||
+                        column.asExpression ||
+                        column.isDeleteDate ||
+                        column.isVersion ||
+                        column.isUpdateDate ||
+                        column.isCreateDate ||
+                        column.relationMetadata?.isTreeParent)
+                )
+                    return false
+                if (
+                    relation &&
+                    (relation.isTreeParent ||
+                        relation.joinColumns.every(
+                            (joinColumn) => !joinColumn.isUpdate,
+                        ))
+                )
+                    return false
+
+                // column values are also compared by content, because the snapshot holds copies of
+                // object values; dates are not, because deepCompare only compares them to the second
+                return !changeMapsBeforeListeners.some(
+                    (changeMap) =>
+                        changeMap.column === column &&
+                        changeMap.relation === relation &&
+                        (changeMap.value === value ||
+                            (!!column &&
+                                !(value instanceof Date) &&
+                                OrmUtils.deepCompare(changeMap.value, value))),
+                )
+            },
+        )
+        const updateMap = subject.createValueSetAndPopChangeMap()
+        if (Object.keys(updateMap).length === 0) return
+
+        const updateQueryBuilder = this.queryRunner.manager
+            .createQueryBuilder()
+            .update(subject.metadata.target)
+            .set(updateMap)
+            .whereEntity(subject.identifier!)
+            .updateEntity(false)
+            .callListeners(false)
+        await updateQueryBuilder
+            .andWhere(
+                `${updateQueryBuilder.escape(deleteDateColumn.databaseName)} IS ${
+                    isRecover ? "NOT NULL" : "NULL"
+                }`,
+            )
+            .execute()
+    }
+
+    /**
      * Soft-removes all given subjects in the database.
      */
     protected async executeSoftRemoveOperations(): Promise<void> {
@@ -771,6 +860,8 @@ export class SubjectExecutor {
                     partialEntity,
                 )
             } else {
+                await this.updateListenerChanges(subject, false)
+
                 // here we execute our soft-deletion query
                 // we need to enable entity soft-deletion because we update a subject identifier
                 // which is not same object as our entity that's why we don't need to worry about our entity to get dirty
@@ -882,6 +973,8 @@ export class SubjectExecutor {
                     partialEntity,
                 )
             } else {
+                await this.updateListenerChanges(subject, true)
+
                 // here we execute our restory query
                 // we need to enable entity restory because we update a subject identifier
                 // which is not same object as our entity that's why we don't need to worry about our entity to get dirty
