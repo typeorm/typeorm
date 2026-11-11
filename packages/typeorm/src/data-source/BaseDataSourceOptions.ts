@@ -173,11 +173,16 @@ export interface BaseDataSourceOptions {
               /**
                * Type of caching.
                *
-               * - "database" means cached values will be stored in the separate table in database. This is default value.
+               * - "database" means cached values will be stored in the separate table in database. This is the default value.
+               * - "in-memory" means cached values will be stored in application memory using an LRU cache mechanism.
                * - "redis" means cached values will be stored inside redis. You must provide redis connection options.
                */
               readonly type?:
-                  "database" | "redis" | "ioredis" | "ioredis/cluster" // todo: add mongodb and other cache providers as well in the future
+                  | "database"
+                  | "in-memory"
+                  | "redis"
+                  | "ioredis"
+                  | "ioredis/cluster" // todo: add mongodb and other cache providers as well in the future
 
               /**
                * Factory function for custom cache providers that implement QueryResultCache.
@@ -191,7 +196,7 @@ export interface BaseDataSourceOptions {
               readonly tableName?: string
 
               /**
-               * Used to provide redis connection options.
+               * Used to provide redis/in-memory cache connection options.
                */
               readonly options?: any
 

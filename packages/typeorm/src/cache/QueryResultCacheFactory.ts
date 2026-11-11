@@ -3,6 +3,7 @@ import { DbQueryResultCache } from "./DbQueryResultCache"
 import type { QueryResultCache } from "./QueryResultCache"
 import type { DataSource } from "../data-source/DataSource"
 import { TypeORMError } from "../error/TypeORMError"
+import { InMemoryResultCache } from "./InMemoryResultCache"
 
 /**
  * Caches query result into Redis database.
@@ -39,6 +40,8 @@ export class QueryResultCacheFactory {
             cache.type === "ioredis/cluster"
         ) {
             return new RedisQueryResultCache(this.dataSource, cache.type)
+        } else if (cache.type === "in-memory") {
+            return new InMemoryResultCache(cache.options)
         } else {
             return new DbQueryResultCache(this.dataSource)
         }
