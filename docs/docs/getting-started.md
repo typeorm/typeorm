@@ -807,8 +807,59 @@ The owning side of a relationship contains a column with a foreign key in the da
 
 ### Relations in ESM projects
 
-If you use ESM in your TypeScript project, you should use the `Relation` wrapper type in relation properties to avoid circular dependency issues.
-Let's modify our entities:
+If you use ESM in your TypeScript project, you may encounter circular dependency issues when entities import each other.
+There are two approaches to handle this:
+
+#### Approach 1: Using the `Relation` wrapper type
+
+Use the `Relation` wrapper type in relation properties. This is the recommended approach for `@OneToOne`, `@ManyToOne`, and `@OneToMany` relations:
+
+```typescript
+import {
+    Entity,
+    Column,
+    PrimaryGeneratedColumn,
+    OneToOne,
+    JoinColumn,
+    Relation,
+} from "typeorm"
+import { Photo } from "./Photo"
+
+@Entity()
+export class PhotoMetadata {
+    /* ... other columns */
+
+    @OneToOne(() => Photo, (photo) => photo.metadata)
+    @JoinColumn()
+    photo: Relation<Photo>
+}
+```
+
+```typescript
+import {
+    Entity,
+    Column,
+    PrimaryGeneratedColumn,
+    OneToOne,
+    Relation,
+} from "typeorm"
+import { PhotoMetadata } from "./PhotoMetadata"
+
+@Entity()
+export class Photo {
+    /* ... other columns */
+
+    @OneToOne(() => PhotoMetadata, (photoMetadata) => photoMetadata.photo)
+    metadata: Relation<PhotoMetadata>
+}
+```
+
+#### Approach 2: Using `import type` with string-based entity references
+
+For `@ManyToMany` relations or when you prefer a different pattern, you can use `import type` combined with string-based entity references.
+This approach is documented in the [Relations FAQ](/docs/relations/relations-faq.md#avoid-circular-import-errors).
+
+> **Note:** See the [Relations FAQ](/docs/relations/relations-faq.md#avoid-circular-import-errors) for the full example and additional details on avoiding circular import errors.
 
 ```typescript
 import {
