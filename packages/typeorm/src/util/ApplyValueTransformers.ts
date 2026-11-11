@@ -22,8 +22,12 @@ export class ApplyValueTransformers {
         entityValue: any,
     ) {
         if (InstanceChecker.isFindOperator(entityValue)) {
-            entityValue.transformValue(transformer)
-            return entityValue
+            // Clone before mutating so callers reusing a shared
+            // FindOperator across multiple queries are not affected by
+            // repeated transformer application (#11733).
+            const cloned = entityValue.clone()
+            cloned.transformValue(transformer)
+            return cloned
         }
 
         if (Array.isArray(transformer)) {

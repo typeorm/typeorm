@@ -1088,14 +1088,18 @@ export class SqlServerDriver implements Driver {
      */
     parametrizeValues(column: ColumnMetadata, value: any) {
         if (value instanceof FindOperator) {
-            if (value.type !== "raw") {
-                value.transformValue({
-                    to: (v) => this.parametrizeValues(column, v),
-                    from: (v) => v,
-                })
-            }
+            if (value.type === "raw") return value
 
-            return value
+            // Clone before mutating so callers that reuse a shared
+            // FindOptionsWhere<T> object across multiple queries see the
+            // original FindOperator unchanged (#11733).
+            const cloned = value.clone()
+            cloned.transformValue({
+                to: (v) => this.parametrizeValues(column, v),
+                from: (v) => v,
+            })
+
+            return cloned
         }
 
         return this.parametrizeValue(column, value)
