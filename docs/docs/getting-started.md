@@ -808,6 +808,8 @@ The owning side of a relationship contains a column with a foreign key in the da
 ### Relations in ESM projects
 
 If you use ESM in your TypeScript project, you should use the `Relation` wrapper type in relation properties to avoid circular dependency issues.
+For the relation decorator arguments, you must use `import type` instead of a regular import — this prevents the JavaScript bundler from resolving the circular dependency at runtime.
+
 Let's modify our entities:
 
 ```typescript
@@ -819,7 +821,7 @@ import {
     JoinColumn,
     Relation,
 } from "typeorm"
-import { Photo } from "./Photo"
+import type { Photo } from "./Photo"
 
 @Entity()
 export class PhotoMetadata {
@@ -839,7 +841,7 @@ import {
     OneToOne,
     Relation,
 } from "typeorm"
-import { PhotoMetadata } from "./PhotoMetadata"
+import type { PhotoMetadata } from "./PhotoMetadata"
 
 @Entity()
 export class Photo {
@@ -849,6 +851,8 @@ export class Photo {
     metadata: Relation<PhotoMetadata>
 }
 ```
+
+For additional patterns and edge cases when dealing with circular dependencies in ESM projects, see [Avoid circular import errors](/docs/relations/relations-faq#avoid-circular-import-errors) in the Relations FAQ.
 
 ### Loading objects with their relations
 
