@@ -203,7 +203,7 @@ const datasource = new DataSource({
             password: "test",
             database: "test",
         },
-        slaves: [
+        users: [
             {
                 host: "server2",
                 port: 3306,
