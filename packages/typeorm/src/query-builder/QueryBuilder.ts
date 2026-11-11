@@ -1526,18 +1526,27 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         containedWhere = containedWhere[part]
                     }
 
-                    // Use the correct alias & the property path from the column
-                    const aliasPath = this.expressionMap
-                        .aliasNamePrefixingEnabled
-                        ? `${alias.name}.${column.propertyPath}`
-                        : column.propertyPath
-
                     const parameterValue = column.getEntityValue(
                         containedWhere,
                         true,
                     )
 
-                    yield [aliasPath, parameterValue]
+                    // For virtual columns, expand the query expression in WHERE
+                    // conditions instead of using the column property path (which
+                    // does not exist in the database).
+                    if (column.isVirtualProperty && column.query) {
+                        const escapedAlias = this.escape(alias.name)
+                        const queryExpression = `(${column.query(escapedAlias)})`
+                        yield [queryExpression, parameterValue, column]
+                    } else {
+                        // Use the correct alias & the property path from the column
+                        const aliasPath = this.expressionMap
+                            .aliasNamePrefixingEnabled
+                            ? `${alias.name}.${column.propertyPath}`
+                            : column.propertyPath
+
+                        yield [aliasPath, parameterValue, column]
+                    }
                 }
             }
         } else {
@@ -1547,7 +1556,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     ? `${this.alias}.${key}`
                     : key
 
-                yield [aliasPath, parameterValue]
+                yield [aliasPath, parameterValue, undefined]
             }
         }
     }
@@ -1644,6 +1653,115 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         }
     }
 
+    /**
+     * Builds a SQL WHERE condition for a virtual column by wrapping the
+     * computed query expression in the appropriate operator syntax.
+     * Returns a partial WhereClauseCondition suitable for use in the
+     * expression map; undefined is returned when the parameter value is
+     * null (to avoid generating IS NULL for virtual column sub-queries).
+     */
+    protected buildConditionForVirtualColumn(
+        queryExpression: string,
+        parameterValue: any,
+    ): WhereClauseCondition | undefined {
+        if (parameterValue === null || parameterValue === undefined) {
+            return undefined
+        }
+
+        if (InstanceChecker.isFindOperator(parameterValue)) {
+            return this.buildOperatorConditionForVirtualColumn(
+                queryExpression,
+                parameterValue,
+            )
+        }
+
+        return {
+            operator: "equal",
+            parameters: [queryExpression, this.createParameter(parameterValue)],
+        }
+    }
+
+    /** Handles FindOperator types for virtual column conditions. */
+    protected buildOperatorConditionForVirtualColumn(
+        queryExpression: string,
+        parameterValue: any,
+    ): WhereClauseCondition {
+        if (parameterValue.type === "raw" && parameterValue.getSql) {
+            return parameterValue.getSql(queryExpression)
+        }
+
+        if (parameterValue.type === "not") {
+            if (parameterValue.child) {
+                const childCondition = this.buildConditionForVirtualColumn(
+                    queryExpression,
+                    parameterValue.child,
+                )
+                if (childCondition) {
+                    return {
+                        operator: "not",
+                        condition: childCondition,
+                    }
+                }
+            }
+            return {
+                operator: "notEqual",
+                parameters: [queryExpression, this.createParameter(parameterValue.value)],
+            }
+        }
+
+        if (
+            parameterValue.type === "and" ||
+            parameterValue.type === "or"
+        ) {
+            const values: any[] = parameterValue.value ?? []
+            const subConditions = values
+                .map((operator) => {
+                    const subCondition =
+                        this.buildOperatorConditionForVirtualColumn(
+                            queryExpression,
+                            operator,
+                        )
+                    if (subCondition === undefined) return undefined
+                    return this.createWhereConditionExpression(subCondition)
+                })
+                .filter((c) => c !== undefined) as string[]
+            return {
+                operator: parameterValue.type,
+                parameters: subConditions,
+            }
+        }
+
+        if (parameterValue.useParameter) {
+            if (parameterValue.multipleParameters) {
+                const params = parameterValue.value.map((v: any) =>
+                    this.createParameter(v),
+                )
+                return {
+                    operator: parameterValue.type,
+                    parameters: [queryExpression, ...params],
+                }
+            } else {
+                let value = parameterValue.value
+                if (
+                    parameterValue.type === "jsonContains" &&
+                    value !== null &&
+                    typeof value === "object"
+                ) {
+                    value = JSON.stringify(value)
+                }
+                return {
+                    operator: parameterValue.type,
+                    parameters: [queryExpression, this.createParameter(value)],
+                }
+            }
+        }
+
+        return {
+            operator: parameterValue.type,
+            parameters: [queryExpression, this.createParameter(parameterValue.value)],
+        }
+    }
+
     protected getWhereCondition(
         where:
             | string
@@ -1694,16 +1812,28 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             const conditions: WhereClauseCondition = []
 
             // Filter the conditions and set up the parameter values
-            for (const [aliasPath, parameterValue] of this.getPredicates(
+            for (const [aliasPath, parameterValue, column] of this.getPredicates(
                 where,
             )) {
-                conditions.push({
-                    type: "and",
-                    condition: this.getWherePredicateCondition(
+                // For virtual columns, build the SQL condition directly to avoid
+                // incorrect escaping of the query expression.
+                if (column?.isVirtualProperty) {
+                    const condition = this.buildConditionForVirtualColumn(
                         aliasPath,
                         parameterValue,
-                    ),
-                })
+                    )
+                    if (condition !== undefined) {
+                        conditions.push({ type: "and", condition })
+                    }
+                } else {
+                    conditions.push({
+                        type: "and",
+                        condition: this.getWherePredicateCondition(
+                            aliasPath,
+                            parameterValue,
+                        ),
+                    })
+                }
             }
 
             clauses.push({ type: "or", condition: conditions })
