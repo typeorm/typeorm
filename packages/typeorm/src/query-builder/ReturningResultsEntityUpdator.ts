@@ -375,8 +375,8 @@ export class ReturningResultsEntityUpdator {
             const entityId = wasInserted
                 ? metadata.getEntityIdMap(entity)
                 : undefined
-            insertResult.identifiers.push(entityId as any)
-            insertResult.generatedMaps.push(generatedMaps[entityIndex] as any)
+            insertResult.identifiers.push(entityId)
+            insertResult.generatedMaps.push(generatedMaps[entityIndex])
         })
     }
 
@@ -384,9 +384,10 @@ export class ReturningResultsEntityUpdator {
      * Computes a deterministic string signature from identifying columns
      * for O(1) indexed correlation during bulk inserts.
      *
-     * @param entityOrRaw
-     * @param columns
-     * @param isRaw
+     * @param entityOrRaw Entity or raw row object to extract signature values from.
+     * @param columns Identifying column metadata used to compose the signature.
+     * @param isRaw Whether `entityOrRaw` is a database raw row rather than an entity.
+     * @returns Delimiter-safe signature string, or `undefined` if any identifying value is missing or non-deterministic.
      */
     protected getEntityMatchingSignature(
         entityOrRaw: ObjectLiteral,
@@ -395,7 +396,7 @@ export class ReturningResultsEntityUpdator {
     ): string | undefined {
         const parts: string[] = []
         for (const col of columns) {
-            let val: any
+            let val: unknown
             if (isRaw) {
                 val = entityOrRaw[col.databaseName]
             } else {
@@ -446,6 +447,7 @@ export class ReturningResultsEntityUpdator {
             const entityValue = primaryColumn.getEntityValue(entity)
             if (entityValue !== undefined && entityValue !== null) {
                 if (typeof entityValue === "function") {
+                    allPrimaryKeysDefined = false
                     continue
                 }
                 hasDefinedPrimaryKey = true
@@ -497,6 +499,7 @@ export class ReturningResultsEntityUpdator {
         // 2. Non-generated / inserted column check
         let hasMismatch = false
         let matchedColumnsCount = 0
+        let hasComparableColumnValue = false
 
         for (const column of metadata.columns) {
             if (
@@ -509,12 +512,14 @@ export class ReturningResultsEntityUpdator {
                 continue
             }
 
-            if (column.databaseName in rawItem) {
-                const entityValue = column.getEntityValue(entity)
-                if (entityValue !== undefined && entityValue !== null) {
-                    if (typeof entityValue === "function") {
-                        continue
-                    }
+            const entityValue = column.getEntityValue(entity)
+            if (
+                entityValue !== undefined &&
+                entityValue !== null &&
+                typeof entityValue !== "function"
+            ) {
+                hasComparableColumnValue = true
+                if (column.databaseName in rawItem) {
                     const rawValue = rawItem[column.databaseName]
                     const hydratedRawValue = driver.prepareHydratedValue(
                         rawValue,
@@ -563,8 +568,8 @@ export class ReturningResultsEntityUpdator {
             return true
         }
 
-        // Default-only entity (no defined non-generated values): match if no mismatch
-        return !hasMismatch
+        // Only default-only entities (no comparable non-generated values) may claim an unverified row
+        return !hasComparableColumnValue
     }
 
     getUpdationReturningColumns(): ColumnMetadata[] {

@@ -1026,20 +1026,26 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             if (
                 this.expressionMap.onIgnore &&
                 this.expressionMap.extraReturningColumns.length > 0 &&
-                driver.isReturningSqlSupported(returningType)
+                driver.isReturningSqlSupported(returningType) &&
+                driver.options.type !== "oracle" &&
+                returning.trim().length > 0
             ) {
-                const isWildcard =
-                    returning.trim() === "*" || returning.includes(".*")
+                const items = this.splitReturningExpressions(returning)
+                const isWildcard = items.some((rawItem) => {
+                    const intoIdx = rawItem.search(/\s+INTO\s+/i)
+                    const item = (
+                        intoIdx !== -1 ? rawItem.slice(0, intoIdx) : rawItem
+                    ).trim()
+                    return item === "*" || item.endsWith(".*")
+                })
                 if (!isWildcard) {
                     const extraColumns =
                         this.expressionMap.extraReturningColumns.filter(
-                            (column) => {
-                                const pattern = new RegExp(
-                                    `\\b${column.databaseName}\\b`,
-                                    "i",
-                                )
-                                return !pattern.test(returning)
-                            },
+                            (column) =>
+                                !this.hasUnaliasedReturningColumn(
+                                    items,
+                                    column.databaseName,
+                                ),
                         )
                     if (extraColumns.length > 0) {
                         const extraStr = extraColumns
@@ -1051,7 +1057,20 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                                 return name
                             })
                             .join(", ")
-                        returning += ", " + extraStr
+                        if (driver.options.type === "mssql") {
+                            const intoMatch = /\s+INTO\s+/i.exec(returning)
+                            if (intoMatch) {
+                                returning =
+                                    returning.slice(0, intoMatch.index) +
+                                    ", " +
+                                    extraStr +
+                                    returning.slice(intoMatch.index)
+                            } else {
+                                returning += ", " + extraStr
+                            }
+                        } else {
+                            returning += ", " + extraStr
+                        }
                     }
                 }
             }
@@ -1059,6 +1078,176 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         }
 
         return ""
+    }
+
+    /**
+     * Splits a raw RETURNING / OUTPUT expression string by top-level commas,
+     * respecting quoted identifiers, string literals, brackets, and parentheses.
+     *
+     * @param returning
+     */
+    protected splitReturningExpressions(returning: string): string[] {
+        const expressions: string[] = []
+        let current = ""
+        let parenDepth = 0
+        let quoteChar: string | null = null
+        let inBracket = false
+
+        for (let i = 0; i < returning.length; i++) {
+            const ch = returning[i]
+            if (quoteChar) {
+                current += ch
+                if (ch === quoteChar) {
+                    if (returning[i + 1] === quoteChar) {
+                        current += returning[++i]
+                    } else {
+                        quoteChar = null
+                    }
+                }
+            } else if (inBracket) {
+                current += ch
+                if (ch === "]") {
+                    if (returning[i + 1] === "]") {
+                        current += returning[++i]
+                    } else {
+                        inBracket = false
+                    }
+                }
+            } else if (ch === '"' || ch === "'" || ch === "`") {
+                quoteChar = ch
+                current += ch
+            } else if (ch === "[") {
+                inBracket = true
+                current += ch
+            } else if (ch === "(") {
+                parenDepth++
+                current += ch
+            } else if (ch === ")") {
+                if (parenDepth > 0) parenDepth--
+                current += ch
+            } else if (ch === "," && parenDepth === 0) {
+                expressions.push(current.trim())
+                current = ""
+            } else {
+                current += ch
+            }
+        }
+        if (current.trim().length > 0) {
+            expressions.push(current.trim())
+        }
+        return expressions
+    }
+
+    /**
+     * Removes surrounding SQL identifier quotes/brackets and unescapes doubled delimiter chars.
+     *
+     * @param token
+     */
+    protected unquoteIdentifier(token: string): string {
+        if (token.startsWith('"') && token.endsWith('"') && token.length >= 2) {
+            return token.slice(1, -1).replaceAll('""', '"')
+        }
+        if (token.startsWith("`") && token.endsWith("`") && token.length >= 2) {
+            return token.slice(1, -1).replaceAll("``", "`")
+        }
+        if (token.startsWith("[") && token.endsWith("]") && token.length >= 2) {
+            return token.slice(1, -1).replaceAll("]]", "]")
+        }
+        return token
+    }
+
+    /**
+     * Checks whether any item in a parsed RETURNING / OUTPUT clause returns
+     * the given column directly under its database column name without an alias.
+     *
+     * @param items
+     * @param columnName
+     */
+    protected hasUnaliasedReturningColumn(
+        items: string[],
+        columnName: string,
+    ): boolean {
+        for (const rawItem of items) {
+            const intoIdx = rawItem.search(/\s+INTO\s+/i)
+            const item = (
+                intoIdx !== -1 ? rawItem.slice(0, intoIdx) : rawItem
+            ).trim()
+            if (!item) continue
+
+            const parts: string[] = []
+            let part = ""
+            let quoteChar: string | null = null
+            let inBracket = false
+            let hasAliasOrExpression = false
+
+            for (let i = 0; i < item.length; i++) {
+                const ch = item[i]
+                if (quoteChar) {
+                    part += ch
+                    if (ch === quoteChar) {
+                        if (item[i + 1] === quoteChar) {
+                            part += item[++i]
+                        } else {
+                            quoteChar = null
+                        }
+                    }
+                } else if (inBracket) {
+                    part += ch
+                    if (ch === "]") {
+                        if (item[i + 1] === "]") {
+                            part += item[++i]
+                        } else {
+                            inBracket = false
+                        }
+                    }
+                } else if (ch === '"' || ch === "`") {
+                    quoteChar = ch
+                    part += ch
+                } else if (ch === "[") {
+                    inBracket = true
+                    part += ch
+                } else if (ch === ".") {
+                    parts.push(part)
+                    part = ""
+                } else if (
+                    /\s/.test(ch) ||
+                    ch === "(" ||
+                    ch === ")" ||
+                    ch === "'"
+                ) {
+                    hasAliasOrExpression = true
+                    break
+                } else {
+                    part += ch
+                }
+            }
+
+            if (hasAliasOrExpression) {
+                continue
+            }
+            if (part.length > 0) {
+                parts.push(part)
+            }
+            if (parts.length === 0) continue
+
+            const lastToken = parts[parts.length - 1]
+            const isQuoted =
+                (lastToken.startsWith('"') && lastToken.endsWith('"')) ||
+                (lastToken.startsWith("`") && lastToken.endsWith("`")) ||
+                (lastToken.startsWith("[") && lastToken.endsWith("]"))
+            const unquotedName = this.unquoteIdentifier(lastToken)
+
+            if (isQuoted) {
+                if (unquotedName === columnName) {
+                    return true
+                }
+            } else if (
+                unquotedName.toLowerCase() === columnName.toLowerCase()
+            ) {
+                return true
+            }
+        }
+        return false
     }
 
     /**
