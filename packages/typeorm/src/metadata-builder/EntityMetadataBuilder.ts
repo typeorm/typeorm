@@ -563,7 +563,14 @@ export class EntityMetadataBuilder {
                             c.target === entityMetadata.target,
                     )
                     if (childArgs?.options.default) {
-                        args.options.default = childArgs.options.default
+                        // the inherited args are shared with the parent and every other child, so copy them
+                        args = {
+                            ...args,
+                            options: {
+                                ...args.options,
+                                default: childArgs.options.default,
+                            },
+                        }
                     }
                 }
 
