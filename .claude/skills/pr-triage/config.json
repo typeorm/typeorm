@@ -1,0 +1,89 @@
+{
+    "weights": {
+        "value": { "severity": 0.4, "demand": 0.35, "reach": 0.25 },
+        "ease": { "size": 0.5, "readiness": 0.5 },
+        "easeInfluence": 0.4,
+        "trackRecordInfluence": 0.4,
+        "demandCap": 60,
+        "participantWeight": 1.5,
+        "pingWeight": 2,
+        "sizeHalfPoint": 150
+    },
+    "reach": {
+        "core": 1.0,
+        "cli": 0.7,
+        "docs": 0.3,
+        "infra": 0.2,
+        "tests": 0.15,
+        "drivers": {
+            "postgres": 0.85,
+            "mysql": 0.75,
+            "sqlite-abstract": 0.55,
+            "better-sqlite3": 0.45,
+            "sqlite": 0.4,
+            "sqlserver": 0.4,
+            "oracle": 0.25,
+            "mongodb": 0.25,
+            "cockroachdb": 0.2,
+            "sqljs": 0.15,
+            "react-native": 0.15,
+            "expo": 0.15,
+            "capacitor": 0.12,
+            "cordova": 0.1,
+            "nativescript": 0.08,
+            "aurora-postgres": 0.1,
+            "aurora-mysql": 0.1,
+            "sap": 0.1,
+            "spanner": 0.1
+        }
+    },
+    "driverAliases": {
+        "pg": "postgres",
+        "postgresql": "postgres",
+        "mariadb": "mysql",
+        "mssql": "sqlserver",
+        "sql-server": "sqlserver",
+        "cockroach": "cockroachdb",
+        "mongo": "mongodb",
+        "sqlite3": "sqlite",
+        "better-sqlite": "better-sqlite3",
+        "hana": "sap",
+        "sap-hana": "sap",
+        "sql.js": "sqljs"
+    },
+    "severityByType": {
+        "fix": 3,
+        "perf": 2.5,
+        "feat": 2,
+        "refactor": 1.5,
+        "docs": 1.5,
+        "test": 1,
+        "chore": 1,
+        "build": 1,
+        "ci": 1,
+        "style": 1
+    },
+    "trust": {
+        "merged0": 0.2,
+        "merged1": 0.45,
+        "merged2": 0.6,
+        "merged5": 0.8,
+        "merged20": 0.9,
+        "burst": 0.1,
+        "burstOpenPrs": 4
+    },
+    "sentiment": {
+        "urgent": 0.1,
+        "positive": 0.05,
+        "neutral": 0,
+        "unknown": 0,
+        "contested": -0.1,
+        "blocked": 0
+    },
+    "staleDays": 180,
+    "closeCandidateMaxValue": 0.45,
+    "nudgeMinValue": 0.6,
+    "quickWin": { "minEase": 0.8, "maxSrcLines": 60, "minValue": 0.55 },
+    "botLoginPattern": "\\[bot\\]$|^(qodo|chatgpt-codex-connector|pkg-pr-new|coderabbitai|sonarqubecloud|sonarcloud|codecov|coveralls|github-actions|dependabot|renovate|socket-security|copilot)",
+    "pingPattern": "\\b(any (update|news|progress)|when (will|can) (this|it) be (merged|released)|please (merge|review)|bump|still (happening|an issue|relevant)|same (issue|problem) here|also (affected|hitting|seeing)|we need this|waiting for this|is there an eta)\\b|(^|\\s)\\+1(\\s|$)|^\\s*👍\\s*$"
+}
