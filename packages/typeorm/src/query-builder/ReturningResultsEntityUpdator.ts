@@ -5,6 +5,7 @@ import type { ColumnMetadata } from "../metadata/ColumnMetadata"
 import type { UpdateResult } from "./result/UpdateResult"
 import type { InsertResult } from "./result/InsertResult"
 import { TypeORMError } from "../error"
+import { OrmUtils } from "../util/OrmUtils"
 
 /**
  * Updates entity with returning results in the entity insert and update operations.
@@ -214,6 +215,18 @@ export class ReturningResultsEntityUpdator {
             return generatedMap
         })
 
+        // drivers without RETURNING derive generated ids from the statement's insert id,
+        // which assumes every row was inserted; a multi-row upsert that updates some rows breaks that
+        if (
+            this.expressionMap.onUpdate &&
+            entities.length > 1 &&
+            !this.queryRunner.dataSource.driver.isReturningSqlSupported(
+                "insert",
+            )
+        ) {
+            await this.reloadUpsertedGeneratedIds(entities, generatedMaps)
+        }
+
         // for postgres and mssql we use returning/output statement to get values of inserted default and generated values
         // for other drivers we have to re-select this data from the database
         if (
@@ -262,16 +275,22 @@ export class ReturningResultsEntityUpdator {
                 .getMany()
 
             entities.forEach((entity, entityIndex) => {
+                // rows come back in database order, which differs from the input order for upserts
+                const returningRow = returningResult.find(
+                    (row: ObjectLiteral) =>
+                        metadata.compareEntities(entity, row),
+                )
+
                 this.queryRunner.manager.merge(
                     metadata.target as any,
                     generatedMaps[entityIndex],
-                    returningResult[entityIndex],
+                    returningRow,
                 )
 
                 this.queryRunner.manager.merge(
                     metadata.target as any,
                     entity,
-                    returningResult[entityIndex],
+                    returningRow,
                 )
             })
         }
@@ -280,6 +299,104 @@ export class ReturningResultsEntityUpdator {
             const entityId = metadata.getEntityIdMap(entity)!
             insertResult.identifiers.push(entityId)
             insertResult.generatedMaps.push(generatedMaps[entityIndex])
+        })
+    }
+
+    /**
+     * Re-selects generated primary keys of upserted rows by their conflict columns
+     * and merges them into the entities and generated maps.
+     *
+     * @param entities - Upserted value sets, in input order.
+     * @param generatedMaps - Generated values per entity, updated in place.
+     */
+    protected async reloadUpsertedGeneratedIds(
+        entities: ObjectLiteral[],
+        generatedMaps: ObjectLiteral[],
+    ): Promise<void> {
+        const metadata = this.expressionMap.mainAlias!.metadata
+        const generatedPrimaryColumns = metadata.primaryColumns.filter(
+            (column) => column.isGenerated,
+        )
+        const conflict = this.expressionMap.onUpdate.conflict
+        const conflictColumns = (
+            typeof conflict === "string" ? [conflict] : (conflict ?? [])
+        ).map((databaseName) =>
+            metadata.findColumnWithDatabaseName(databaseName),
+        )
+
+        if (
+            generatedPrimaryColumns.length === 0 ||
+            conflictColumns.length === 0 ||
+            conflictColumns.some((column) => !column || column.relationMetadata)
+        )
+            return
+
+        const uniqueColumns = conflictColumns as ColumnMetadata[]
+
+        // without a value for every conflict column the criteria could match unrelated rows
+        if (
+            entities.some((entity) =>
+                uniqueColumns.some(
+                    (column) => column.getEntityValue(entity) == null,
+                ),
+            )
+        )
+            return
+
+        const criteria = entities.map((entity) =>
+            uniqueColumns.reduce(
+                (map, column) =>
+                    OrmUtils.mergeDeep(
+                        map,
+                        column.createValueMap(column.getEntityValue(entity)),
+                    ),
+                {} as ObjectLiteral,
+            ),
+        )
+
+        const rows: ObjectLiteral[] = await this.queryRunner.manager
+            .createQueryBuilder()
+            .select(
+                [...generatedPrimaryColumns, ...uniqueColumns].map(
+                    (column) => metadata.targetName + "." + column.propertyPath,
+                ),
+            )
+            .from(metadata.target, metadata.targetName)
+            .where(criteria)
+            .withDeleted()
+            .setOption("create-pojo")
+            .getMany()
+
+        const isMatch = (
+            row: ObjectLiteral,
+            entity: ObjectLiteral,
+            normalize: (value: string) => string,
+        ) =>
+            uniqueColumns.every(
+                (column) =>
+                    normalize(String(column.getEntityValue(row))) ===
+                    normalize(String(column.getEntityValue(entity))),
+            )
+
+        entities.forEach((entity, entityIndex) => {
+            // a case-insensitive collation can match a row whose stored value differs in case
+            const row =
+                rows.find((row) => isMatch(row, entity, (value) => value)) ??
+                rows.find((row) =>
+                    isMatch(row, entity, (value) => value.toLowerCase()),
+                )
+            if (!row) return
+
+            const ids = generatedPrimaryColumns.reduce(
+                (map, column) =>
+                    OrmUtils.mergeDeep(
+                        map,
+                        column.createValueMap(column.getEntityValue(row)),
+                    ),
+                {} as ObjectLiteral,
+            )
+            OrmUtils.mergeDeep(generatedMaps[entityIndex], ids)
+            this.queryRunner.manager.merge(metadata.target as any, entity, ids)
         })
     }
 
