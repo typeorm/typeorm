@@ -30,6 +30,12 @@ export interface PostgresDataSourceOptions
     readonly nativeDriver?: any
 
     /**
+     * The `pg-query-stream` module, used by `stream()`
+     * This defaults to `require("pg-query-stream")`.
+     */
+    readonly queryStream?: any
+
+    /**
      * A boolean determining whether to pass time values in UTC or local time. (default: false).
      */
     readonly useUTC?: boolean
