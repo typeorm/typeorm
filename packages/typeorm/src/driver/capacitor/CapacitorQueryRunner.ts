@@ -3,6 +3,7 @@ import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { QueryResult } from "../../query-runner/QueryResult"
 import { Broadcaster } from "../../subscriber/Broadcaster"
+import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
 import type { CapacitorDriver } from "./CapacitorDriver"
 import { NamedPlaceholdersNotSupportedError } from "../../error/NamedPlaceholdersNotSupportedError"
@@ -68,13 +69,17 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
         const databaseConnection = await this.connect()
 
         this.driver.dataSource.logger.logQuery(query, parameters, this)
+        await this.broadcaster.broadcast("BeforeQuery", query, parameters)
+
+        const broadcasterResult = new BroadcasterResult()
+        const queryStartTime = Date.now()
 
         const spaceIndex = query.indexOf(" ")
         const command = spaceIndex === -1 ? query : query.slice(0, spaceIndex)
 
-        try {
-            let raw: any
+        let raw: any
 
+        try {
             if (
                 [
                     "BEGIN",
@@ -91,24 +96,6 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
             } else {
                 raw = await databaseConnection.query(query, parameters ?? [])
             }
-
-            const result = new QueryResult()
-
-            if (raw?.hasOwnProperty("values")) {
-                result.raw = raw.values
-                result.records = raw.values
-            }
-
-            if (raw?.hasOwnProperty("changes")) {
-                result.affected = raw.changes.changes
-                result.raw = raw.changes.lastId ?? raw.changes.changes
-            }
-
-            if (!useStructuredResult) {
-                return result.raw
-            }
-
-            return result
         } catch (err) {
             this.driver.dataSource.logger.logQueryError(
                 err,
@@ -116,9 +103,55 @@ export class CapacitorQueryRunner extends AbstractSqliteQueryRunner {
                 parameters,
                 this,
             )
+            this.broadcaster.broadcastAfterQueryEvent(
+                broadcasterResult,
+                query,
+                parameters,
+                false,
+                undefined,
+                undefined,
+                err,
+            )
+            try {
+                await broadcasterResult.wait()
+            } catch {
+                // a subscriber failing must not hide the original query error
+            }
 
             throw new QueryFailedError(query, parameters, err)
         }
+
+        const queryEndTime = Date.now()
+        const queryExecutionTime = queryEndTime - queryStartTime
+
+        this.broadcaster.broadcastAfterQueryEvent(
+            broadcasterResult,
+            query,
+            parameters,
+            true,
+            queryExecutionTime,
+            raw,
+            undefined,
+        )
+        await broadcasterResult.wait()
+
+        const result = new QueryResult()
+
+        if (raw?.hasOwnProperty("values")) {
+            result.raw = raw.values
+            result.records = raw.values
+        }
+
+        if (raw?.hasOwnProperty("changes")) {
+            result.affected = raw.changes.changes
+            result.raw = raw.changes.lastId ?? raw.changes.changes
+        }
+
+        if (!useStructuredResult) {
+            return result.raw
+        }
+
+        return result
     }
 
     // -------------------------------------------------------------------------
