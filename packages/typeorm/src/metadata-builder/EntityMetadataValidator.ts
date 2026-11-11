@@ -185,8 +185,12 @@ export class EntityMetadataValidator {
                 )
         }
 
-        // Postgres supports only STORED generated columns.
-        if (driver.options.type === "postgres") {
+        // these drivers support only STORED generated columns.
+        if (
+            ["postgres", "aurora-postgres", "spanner"].includes(
+                driver.options.type,
+            )
+        ) {
             const virtualColumn = entityMetadata.columns.find(
                 (column) =>
                     column.asExpression &&
@@ -195,7 +199,7 @@ export class EntityMetadataValidator {
             )
             if (virtualColumn)
                 throw new TypeORMError(
-                    `Column "${virtualColumn.propertyName}" of Entity "${entityMetadata.name}" is defined as VIRTUAL, but Postgres supports only STORED generated columns.`,
+                    `Column "${virtualColumn.propertyName}" of Entity "${entityMetadata.name}" is defined as VIRTUAL, but ${driver.options.type} supports only STORED generated columns.`,
                 )
         }
 
