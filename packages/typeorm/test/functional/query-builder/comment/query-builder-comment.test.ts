@@ -120,4 +120,17 @@ describe("query builder > comment", () => {
                 expect(sql).to.match(/^\/\* Hello World \*\/ /)
             }),
         ))
+
+    // https://github.com/typeorm/typeorm/issues/11579
+    it("should not replace property names inside the comment", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const sql = dataSource.manager
+                    .createQueryBuilder(Test, "test")
+                    .comment("test.id id")
+                    .getSql()
+
+                expect(sql).to.match(/^\/\* test.id id \*\/ /)
+            }),
+        ))
 })

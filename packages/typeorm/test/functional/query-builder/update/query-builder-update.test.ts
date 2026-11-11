@@ -9,6 +9,7 @@ import type { DataSource } from "../../../../src/data-source/DataSource"
 import { User } from "./entity/User"
 import { LimitOnUpdateNotSupportedError } from "../../../../src/error/LimitOnUpdateNotSupportedError"
 import { Photo } from "./entity/Photo"
+import { Task } from "./entity/Task"
 import { UpdateValuesMissingError } from "../../../../src/error/UpdateValuesMissingError"
 import { EntityPropertyNotFoundError } from "../../../../src/error/EntityPropertyNotFoundError"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
@@ -310,6 +311,32 @@ describe("query builder > update", () => {
                     error = err
                 }
                 expect(error).to.be.an.instanceof(EntityPropertyNotFoundError)
+            }),
+        ))
+
+    // https://github.com/typeorm/typeorm/issues/11579
+    it("should not escape the UPDATE keyword when a column is named UPDATE", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await dataSource.manager.save([
+                    dataSource.manager.create(Task, { update: 1 }),
+                    dataSource.manager.create(Task, { update: 2 }),
+                ])
+
+                const query = dataSource
+                    .createQueryBuilder()
+                    .update(Task)
+                    .set({ update: 3 })
+                    .where({ update: 1 })
+
+                expect(query.getQuery()).to.match(/^UPDATE /)
+
+                await query.execute()
+
+                const tasks = await dataSource
+                    .getRepository(Task)
+                    .find({ order: { id: "ASC" } })
+                expect(tasks.map((task) => task.update)).to.deep.equal([3, 2])
             }),
         ))
 })
