@@ -119,28 +119,39 @@ export function Index(
         | { synchronize: false },
     maybeOptions?: IndexOptions,
 ): ClassDecorator & PropertyDecorator {
-    // normalize parameters
-    const name =
-        typeof nameOrFieldsOrOptions === "string"
-            ? nameOrFieldsOrOptions
-            : undefined
-    const fields =
-        typeof nameOrFieldsOrOptions === "string"
-            ? <
-                  | ((object?: any) => any[] | { [key: string]: number })
-                  | string[]
-              >maybeFieldsOrOptions
-            : (nameOrFieldsOrOptions as string[])
-    let options =
+    let name: string | undefined = undefined
+    let fields:
+        | ((object?: any) => any[] | { [key: string]: number })
+        | string[]
+        | undefined = undefined
+    let options: IndexOptions | undefined = undefined
+
+    if (typeof nameOrFieldsOrOptions === "string") {
+        name = nameOrFieldsOrOptions
+        if (
+            Array.isArray(maybeFieldsOrOptions) ||
+            typeof maybeFieldsOrOptions === "function"
+        ) {
+            fields = maybeFieldsOrOptions
+            options = maybeOptions
+        } else if (
+            ObjectUtils.isObject(maybeFieldsOrOptions) &&
+            !Array.isArray(maybeFieldsOrOptions)
+        ) {
+            options = maybeFieldsOrOptions as IndexOptions
+        }
+    } else if (
+        Array.isArray(nameOrFieldsOrOptions) ||
+        typeof nameOrFieldsOrOptions === "function"
+    ) {
+        fields = nameOrFieldsOrOptions
+        options = maybeFieldsOrOptions as IndexOptions
+    } else if (
         ObjectUtils.isObject(nameOrFieldsOrOptions) &&
         !Array.isArray(nameOrFieldsOrOptions)
-            ? (nameOrFieldsOrOptions as IndexOptions)
-            : maybeOptions
-    options ??=
-        ObjectUtils.isObject(maybeFieldsOrOptions) &&
-        !Array.isArray(maybeFieldsOrOptions)
-            ? (maybeFieldsOrOptions as IndexOptions)
-            : maybeOptions
+    ) {
+        options = nameOrFieldsOrOptions as IndexOptions
+    }
 
     return function (
         clsOrObject: Function | Object,
