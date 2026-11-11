@@ -1032,9 +1032,11 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             ) {
                 const items = this.splitReturningExpressions(returning)
                 const isWildcard = items.some((rawItem) => {
-                    const intoIdx = rawItem.search(/\s+INTO\s+/i)
+                    const intoInfo = this.findTopLevelIntoKeyword(rawItem)
                     const item = (
-                        intoIdx !== -1 ? rawItem.slice(0, intoIdx) : rawItem
+                        intoInfo
+                            ? rawItem.slice(0, intoInfo.insertIndex)
+                            : rawItem
                     ).trim()
                     return item === "*" || item.endsWith(".*")
                 })
@@ -1048,27 +1050,17 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                                 ),
                         )
                     if (extraColumns.length > 0) {
-                        const extraStr = extraColumns
-                            .map((column) => {
-                                const name = this.escape(column.databaseName)
-                                if (driver.options.type === "mssql") {
-                                    return "INSERTED." + name
-                                }
-                                return name
-                            })
-                            .join(", ")
                         if (driver.options.type === "mssql") {
-                            const intoMatch = /\s+INTO\s+/i.exec(returning)
-                            if (intoMatch) {
-                                returning =
-                                    returning.slice(0, intoMatch.index) +
-                                    ", " +
-                                    extraStr +
-                                    returning.slice(intoMatch.index)
-                            } else {
-                                returning += ", " + extraStr
-                            }
+                            returning = this.expandMssqlCustomOutputClause(
+                                returning,
+                                extraColumns,
+                            )
                         } else {
+                            const extraStr = extraColumns
+                                .map((column) =>
+                                    this.escape(column.databaseName),
+                                )
+                                .join(", ")
                             returning += ", " + extraStr
                         }
                     }
@@ -1081,45 +1073,280 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     }
 
     /**
-     * Splits a raw RETURNING / OUTPUT expression string by top-level commas,
-     * respecting quoted identifiers, string literals, brackets, and parentheses.
+     * Advances past a SQL quoted identifier, string literal, bracketed identifier,
+     * or SQL comment starting at `index`.
      *
-     * @param returning
+     * @param sql SQL fragment being scanned.
+     * @param index Starting index inside `sql`.
+     * @returns Ending index (inclusive) and delimiter kind, or `undefined` if `index` does not start a delimiter.
+     */
+    protected advancePastSqlDelimiter(
+        sql: string,
+        index: number,
+    ):
+        | { endIndex: number; kind: "string" | "identifier" | "comment" }
+        | undefined {
+        const ch = sql[index]
+        if (ch === "'" || ch === '"' || ch === "`") {
+            for (let i = index + 1; i < sql.length; i++) {
+                if (sql[i] === ch) {
+                    if (sql[i + 1] === ch) {
+                        i++
+                    } else {
+                        return {
+                            endIndex: i,
+                            kind: ch === "'" ? "string" : "identifier",
+                        }
+                    }
+                }
+            }
+            return {
+                endIndex: sql.length - 1,
+                kind: ch === "'" ? "string" : "identifier",
+            }
+        }
+        if (ch === "[") {
+            for (let i = index + 1; i < sql.length; i++) {
+                if (sql[i] === "]") {
+                    if (sql[i + 1] === "]") {
+                        i++
+                    } else {
+                        return { endIndex: i, kind: "identifier" }
+                    }
+                }
+            }
+            return { endIndex: sql.length - 1, kind: "identifier" }
+        }
+        if (ch === "-" && sql[index + 1] === "-") {
+            const newlineIdx = sql.indexOf("\n", index + 2)
+            return {
+                endIndex: newlineIdx === -1 ? sql.length - 1 : newlineIdx,
+                kind: "comment",
+            }
+        }
+        if (ch === "/" && sql[index + 1] === "*") {
+            const closeIdx = sql.indexOf("*/", index + 2)
+            return {
+                endIndex: closeIdx === -1 ? sql.length - 1 : closeIdx + 1,
+                kind: "comment",
+            }
+        }
+        return undefined
+    }
+
+    /**
+     * Finds the top-level SQL `INTO` keyword outside quoted strings, identifiers,
+     * comments, and parenthesized expressions.
+     *
+     * @param sql SQL fragment to inspect.
+     * @returns Offsets for inserting expressions before `INTO` and slicing after `INTO`, or `undefined` if absent.
+     */
+    protected findTopLevelIntoKeyword(sql: string):
+        | {
+              insertIndex: number
+              keywordIndex: number
+              afterKeywordIndex: number
+          }
+        | undefined {
+        let parenDepth = 0
+        for (let i = 0; i < sql.length; i++) {
+            const delim = this.advancePastSqlDelimiter(sql, i)
+            if (delim) {
+                i = delim.endIndex
+                continue
+            }
+            const ch = sql[i]
+            if (ch === "(") {
+                parenDepth++
+            } else if (ch === ")") {
+                if (parenDepth > 0) parenDepth--
+            } else if (
+                parenDepth === 0 &&
+                sql.slice(i, i + 4).toUpperCase() === "INTO"
+            ) {
+                const prevOk = i === 0 || !/[a-zA-Z0-9_$]/.test(sql[i - 1])
+                const nextOk =
+                    i + 4 === sql.length || !/[a-zA-Z0-9_$]/.test(sql[i + 4])
+                if (prevOk && nextOk) {
+                    let insertIndex = i
+                    while (insertIndex > 0 && /\s/.test(sql[insertIndex - 1])) {
+                        insertIndex--
+                    }
+                    return {
+                        insertIndex,
+                        keywordIndex: i,
+                        afterKeywordIndex: i + 4,
+                    }
+                }
+            }
+        }
+        return undefined
+    }
+
+    /**
+     * Appends extra identifying columns to a custom SQL Server `OUTPUT` clause,
+     * inserting `INSERTED.<col>` before any top-level `INTO` target and extending
+     * any explicit `INTO <target> (<columns>)` column list to match.
+     *
+     * @param returning Custom MSSQL output clause supplied by the caller.
+     * @param extraColumns Identifying columns required for correlation.
+     * @returns Expanded MSSQL `OUTPUT` clause.
+     */
+    protected expandMssqlCustomOutputClause(
+        returning: string,
+        extraColumns: ColumnMetadata[],
+    ): string {
+        const extraOutputExprs = extraColumns
+            .map((column) => "INSERTED." + this.escape(column.databaseName))
+            .join(", ")
+        const intoInfo = this.findTopLevelIntoKeyword(returning)
+        if (!intoInfo) {
+            return returning + ", " + extraOutputExprs
+        }
+
+        const beforeInto = returning.slice(0, intoInfo.insertIndex)
+        const leadingIntoWs =
+            returning.slice(intoInfo.insertIndex, intoInfo.keywordIndex) || " "
+        const afterIntoKeyword = this.appendMssqlTargetColumns(
+            returning.slice(intoInfo.afterKeywordIndex),
+            extraColumns,
+        )
+        const prefix =
+            beforeInto.trim().length > 0
+                ? beforeInto + ", " + extraOutputExprs
+                : extraOutputExprs
+        return (
+            prefix +
+            leadingIntoWs +
+            returning.slice(intoInfo.keywordIndex, intoInfo.afterKeywordIndex) +
+            afterIntoKeyword
+        )
+    }
+
+    /**
+     * Appends matching target column names if an MSSQL `OUTPUT ... INTO <target>`
+     * clause specifies an explicit parenthesized column list.
+     *
+     * @param afterInto SQL substring immediately following the `INTO` keyword.
+     * @param extraColumns Identifying columns being added to the output list.
+     * @returns Possibly updated suffix with appended target columns inside `(...)`.
+     */
+    protected appendMssqlTargetColumns(
+        afterInto: string,
+        extraColumns: ColumnMetadata[],
+    ): string {
+        const skipWsAndComments = (startPos: number): number => {
+            let p = startPos
+            while (p < afterInto.length) {
+                if (/\s/.test(afterInto[p])) {
+                    p++
+                    continue
+                }
+                const delim = this.advancePastSqlDelimiter(afterInto, p)
+                if (delim?.kind === "comment") {
+                    p = delim.endIndex + 1
+                    continue
+                }
+                break
+            }
+            return p
+        }
+
+        let pos = skipWsAndComments(0)
+        // Consume one or more dot-separated target identifier segments (@var, #tmp, [dbo].[tbl], tbl)
+        while (pos < afterInto.length) {
+            const delim = this.advancePastSqlDelimiter(afterInto, pos)
+            if (delim?.kind === "identifier") {
+                pos = delim.endIndex + 1
+            } else if (/[@#$a-zA-Z0-9_]/.test(afterInto[pos])) {
+                while (
+                    pos < afterInto.length &&
+                    /[@#$a-zA-Z0-9_]/.test(afterInto[pos])
+                ) {
+                    pos++
+                }
+            } else {
+                break
+            }
+            const nextPos = skipWsAndComments(pos)
+            if (afterInto[nextPos] === ".") {
+                pos = skipWsAndComments(nextPos + 1)
+            } else {
+                pos = nextPos
+                break
+            }
+        }
+
+        if (afterInto[pos] !== "(") {
+            return afterInto
+        }
+
+        const openParenIndex = pos
+        let depth = 1
+        let hasExistingTargets = false
+        let lastContentEnd = openParenIndex + 1
+
+        for (let i = openParenIndex + 1; i < afterInto.length; i++) {
+            const delim = this.advancePastSqlDelimiter(afterInto, i)
+            if (delim) {
+                if (delim.kind !== "comment") {
+                    hasExistingTargets = true
+                    lastContentEnd = delim.endIndex + 1
+                }
+                i = delim.endIndex
+                continue
+            }
+            const ch = afterInto[i]
+            if (ch === "(") {
+                depth++
+                hasExistingTargets = true
+                lastContentEnd = i + 1
+            } else if (ch === ")") {
+                depth--
+                if (depth === 0) {
+                    const extraTargetCols = extraColumns
+                        .map((column) => this.escape(column.databaseName))
+                        .join(", ")
+                    const insertion = hasExistingTargets
+                        ? ", " + extraTargetCols
+                        : extraTargetCols
+                    return (
+                        afterInto.slice(0, lastContentEnd) +
+                        insertion +
+                        afterInto.slice(lastContentEnd)
+                    )
+                }
+                hasExistingTargets = true
+                lastContentEnd = i + 1
+            } else if (!/\s/.test(ch)) {
+                hasExistingTargets = true
+                lastContentEnd = i + 1
+            }
+        }
+        return afterInto
+    }
+
+    /**
+     * Splits a raw RETURNING / OUTPUT expression string by top-level commas,
+     * respecting quoted identifiers, string literals, comments, brackets, and parentheses.
+     *
+     * @param returning Raw RETURNING or OUTPUT string expression.
+     * @returns Top-level comma-separated expressions.
      */
     protected splitReturningExpressions(returning: string): string[] {
         const expressions: string[] = []
         let current = ""
         let parenDepth = 0
-        let quoteChar: string | null = null
-        let inBracket = false
 
         for (let i = 0; i < returning.length; i++) {
+            const delim = this.advancePastSqlDelimiter(returning, i)
+            if (delim) {
+                current += returning.slice(i, delim.endIndex + 1)
+                i = delim.endIndex
+                continue
+            }
             const ch = returning[i]
-            if (quoteChar) {
-                current += ch
-                if (ch === quoteChar) {
-                    if (returning[i + 1] === quoteChar) {
-                        current += returning[++i]
-                    } else {
-                        quoteChar = null
-                    }
-                }
-            } else if (inBracket) {
-                current += ch
-                if (ch === "]") {
-                    if (returning[i + 1] === "]") {
-                        current += returning[++i]
-                    } else {
-                        inBracket = false
-                    }
-                }
-            } else if (ch === '"' || ch === "'" || ch === "`") {
-                quoteChar = ch
-                current += ch
-            } else if (ch === "[") {
-                inBracket = true
-                current += ch
-            } else if (ch === "(") {
+            if (ch === "(") {
                 parenDepth++
                 current += ch
             } else if (ch === ")") {
@@ -1141,7 +1368,8 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     /**
      * Removes surrounding SQL identifier quotes/brackets and unescapes doubled delimiter chars.
      *
-     * @param token
+     * @param token Identifier token possibly wrapped in SQL quotes or brackets.
+     * @returns Unquoted database identifier name.
      */
     protected unquoteIdentifier(token: string): string {
         if (token.startsWith('"') && token.endsWith('"') && token.length >= 2) {
@@ -1160,63 +1388,55 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * Checks whether any item in a parsed RETURNING / OUTPUT clause returns
      * the given column directly under its database column name without an alias.
      *
-     * @param items
-     * @param columnName
+     * @param items Parsed RETURNING / OUTPUT items.
+     * @param columnName Target database column name to look for.
+     * @returns `true` if `columnName` is returned directly without an alias.
      */
     protected hasUnaliasedReturningColumn(
         items: string[],
         columnName: string,
     ): boolean {
         for (const rawItem of items) {
-            const intoIdx = rawItem.search(/\s+INTO\s+/i)
+            const intoInfo = this.findTopLevelIntoKeyword(rawItem)
             const item = (
-                intoIdx !== -1 ? rawItem.slice(0, intoIdx) : rawItem
+                intoInfo ? rawItem.slice(0, intoInfo.insertIndex) : rawItem
             ).trim()
             if (!item) continue
 
             const parts: string[] = []
             let part = ""
-            let quoteChar: string | null = null
-            let inBracket = false
             let hasAliasOrExpression = false
+            let sawTrailingSeparator = false
 
             for (let i = 0; i < item.length; i++) {
+                const delim = this.advancePastSqlDelimiter(item, i)
+                if (delim) {
+                    if (delim.kind === "comment") {
+                        if (part.length > 0 || parts.length > 0) {
+                            sawTrailingSeparator = true
+                        }
+                        i = delim.endIndex
+                        continue
+                    }
+                    if (delim.kind === "string" || sawTrailingSeparator) {
+                        hasAliasOrExpression = true
+                        break
+                    }
+                    part += item.slice(i, delim.endIndex + 1)
+                    i = delim.endIndex
+                    continue
+                }
                 const ch = item[i]
-                if (quoteChar) {
-                    part += ch
-                    if (ch === quoteChar) {
-                        if (item[i + 1] === quoteChar) {
-                            part += item[++i]
-                        } else {
-                            quoteChar = null
-                        }
+                if (/\s/.test(ch)) {
+                    if (part.length > 0 || parts.length > 0) {
+                        sawTrailingSeparator = true
                     }
-                } else if (inBracket) {
-                    part += ch
-                    if (ch === "]") {
-                        if (item[i + 1] === "]") {
-                            part += item[++i]
-                        } else {
-                            inBracket = false
-                        }
-                    }
-                } else if (ch === '"' || ch === "`") {
-                    quoteChar = ch
-                    part += ch
-                } else if (ch === "[") {
-                    inBracket = true
-                    part += ch
+                } else if (ch === "(" || ch === ")" || sawTrailingSeparator) {
+                    hasAliasOrExpression = true
+                    break
                 } else if (ch === ".") {
                     parts.push(part)
                     part = ""
-                } else if (
-                    /\s/.test(ch) ||
-                    ch === "(" ||
-                    ch === ")" ||
-                    ch === "'"
-                ) {
-                    hasAliasOrExpression = true
-                    break
                 } else {
                     part += ch
                 }

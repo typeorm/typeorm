@@ -12,6 +12,7 @@ import { InsertResult } from "../../../../src/query-builder/result/InsertResult"
 import { ReturningResultsEntityUpdator } from "../../../../src/query-builder/ReturningResultsEntityUpdator"
 import { QueryExpressionMap } from "../../../../src/query-builder/QueryExpressionMap"
 import { Alias } from "../../../../src/query-builder/Alias"
+import { PostgresDriver } from "../../../../src/driver/postgres/PostgresDriver"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -20,6 +21,7 @@ import {
 import { Tag } from "./entity/Tag"
 import { BracketTag } from "./entity/BracketTag"
 import { CompositeTenantItem } from "./entity/CompositeTenantItem"
+import { EventLog } from "./entity/EventLog"
 
 class TestableReturningResultsEntityUpdator extends ReturningResultsEntityUpdator {
     public checkEntityMatchRaw(
@@ -138,7 +140,7 @@ describe("query builder > insert > on ignore returning correlation", () => {
 
         before(async () => {
             const connections = await createTestingConnections({
-                entities: [Tag, BracketTag, CompositeTenantItem],
+                entities: [Tag, BracketTag, CompositeTenantItem, EventLog],
                 enabledDrivers: ["better-sqlite3"],
             })
             expect(connections).to.have.lengthOf(1)
@@ -426,8 +428,64 @@ describe("query builder > insert > on ignore returning correlation", () => {
                     'OUTPUT INSERTED.id, INSERTED."name" INTO @OutputTable',
                 )
             } finally {
-                delete (dataSource.driver as unknown as Record<string, unknown>)
-                    .buildTableVariableDeclaration
+                await queryRunner.release()
+            }
+        })
+
+        it("should expand MSSQL OUTPUT INTO while ignoring INTO inside comments and literals", async () => {
+            const { queryRunner, queryStub } =
+                setupEmulatedReturningQueryRunner(
+                    [{ id: "uuid-mssql-comment", name: "mssql-tag" }],
+                    "mssql",
+                )
+            try {
+                const tag = new Tag()
+                tag.name = "mssql-tag"
+
+                await dataSource
+                    .createQueryBuilder(queryRunner)
+                    .insert()
+                    .into(Tag)
+                    .values([tag])
+                    .orIgnore()
+                    .returning(
+                        "INSERTED.id /* INTO note */, 'text INTO x' AS note INTO @OutputTable",
+                    )
+                    .execute()
+
+                const executedSql = queryStub.firstCall.args[0] as string
+                expect(executedSql).to.include(
+                    "OUTPUT INSERTED.id /* INTO note */, 'text INTO x' AS note, INSERTED.\"name\" INTO @OutputTable",
+                )
+            } finally {
+                await queryRunner.release()
+            }
+        })
+
+        it("should expand MSSQL OUTPUT INTO explicit target column list when appending identifying columns", async () => {
+            const { queryRunner, queryStub } =
+                setupEmulatedReturningQueryRunner(
+                    [{ id: "uuid-mssql-cols", name: "mssql-tag" }],
+                    "mssql",
+                )
+            try {
+                const tag = new Tag()
+                tag.name = "mssql-tag"
+
+                await dataSource
+                    .createQueryBuilder(queryRunner)
+                    .insert()
+                    .into(Tag)
+                    .values([tag])
+                    .orIgnore()
+                    .returning("INSERTED.id INTO @OutputTable (id)")
+                    .execute()
+
+                const executedSql = queryStub.firstCall.args[0] as string
+                expect(executedSql).to.include(
+                    'OUTPUT INSERTED.id, INSERTED."name" INTO @OutputTable (id, "name")',
+                )
+            } finally {
                 await queryRunner.release()
             }
         })
@@ -674,6 +732,123 @@ describe("query builder > insert > on ignore returning correlation", () => {
                 expect(tagInsertedOther.id).to.equal("generated-uuid-other")
                 expect(collisionResult.identifiers[1]).to.deep.equal({
                     id: "generated-uuid-other",
+                })
+            } finally {
+                await queryRunner.release()
+            }
+        })
+
+        it("should treat explicit null values as comparable and reject skipped null rows when non-null row is inserted", async () => {
+            const nullRow = new EventLog()
+            nullRow.category = "shared"
+            nullRow.code = null
+            const activeRow = new EventLog()
+            activeRow.category = "shared"
+            activeRow.code = "active"
+
+            const { queryRunner, queryStub } =
+                setupEmulatedReturningQueryRunner(
+                    [
+                        {
+                            id: "uuid-active-event",
+                            category: "shared",
+                            code: "active",
+                        },
+                    ],
+                    "postgres",
+                )
+            try {
+                const result = await dataSource
+                    .createQueryBuilder(queryRunner)
+                    .insert()
+                    .into(EventLog)
+                    .values([nullRow, activeRow])
+                    .orIgnore()
+                    .execute()
+
+                expect(queryStub.calledOnce).to.be.true
+                expect(nullRow.id).to.be.undefined
+                expect(result.identifiers[0]).to.be.undefined
+                expect(activeRow.id).to.equal("uuid-active-event")
+                expect(result.identifiers[1]).to.deep.equal({
+                    id: "uuid-active-event",
+                })
+
+                // Signature must distinguish null from literal string "null"
+                const updator = createUpdatorFor(EventLog, {
+                    allColumnsExtra: true,
+                })
+                try {
+                    const nonGenCols = updator.metadata.columns.filter(
+                        (col) =>
+                            !col.isGenerated &&
+                            col.propertyName !== "occurredAt",
+                    )
+                    const nullEntity = { category: "c", code: null }
+                    const stringNullEntity = { category: "c", code: "null" }
+                    expect(
+                        updator.updator.computeMatchingSignature(
+                            nullEntity,
+                            nonGenCols,
+                            false,
+                        ),
+                    ).to.not.equal(
+                        updator.updator.computeMatchingSignature(
+                            stringNullEntity,
+                            nonGenCols,
+                            false,
+                        ),
+                    )
+                } finally {
+                    await updator.queryRunner.release()
+                }
+            } finally {
+                await queryRunner.release()
+            }
+        })
+
+        it("should correlate timestamp string inputs with Date returning values via PostgresDriver normalization", async () => {
+            const { queryRunner } = setupEmulatedReturningQueryRunner(
+                [
+                    {
+                        id: "uuid-ts-inserted",
+                        category: "audit",
+                        code: null,
+                        occurredAt: new Date("2026-11-11T12:30:00.500Z"),
+                    },
+                ],
+                "postgres",
+            )
+            sinon
+                .stub(dataSource.driver, "preparePersistentValue")
+                .callsFake(PostgresDriver.prototype.preparePersistentValue)
+            sinon
+                .stub(dataSource.driver, "prepareHydratedValue")
+                .callsFake(PostgresDriver.prototype.prepareHydratedValue)
+            try {
+                const skippedTs = new EventLog()
+                skippedTs.category = "audit"
+                skippedTs.code = null
+                skippedTs.occurredAt = "2026-11-11T10:00:00Z"
+
+                const insertedTs = new EventLog()
+                insertedTs.category = "audit"
+                insertedTs.code = null
+                insertedTs.occurredAt = "2026-11-11T12:30:00.500Z"
+
+                const result = await dataSource
+                    .createQueryBuilder(queryRunner)
+                    .insert()
+                    .into(EventLog)
+                    .values([skippedTs, insertedTs])
+                    .orIgnore()
+                    .execute()
+
+                expect(skippedTs.id).to.be.undefined
+                expect(result.identifiers[0]).to.be.undefined
+                expect(insertedTs.id).to.equal("uuid-ts-inserted")
+                expect(result.identifiers[1]).to.deep.equal({
+                    id: "uuid-ts-inserted",
                 })
             } finally {
                 await queryRunner.release()

@@ -14,12 +14,14 @@ export class InsertResult {
     /**
      * Contains inserted entity id.
      * Has entity-like structure (not just column database name and values).
+     * Entries are `undefined` at positions whose rows were skipped (for example, by `orIgnore()`).
      */
     identifiers: (ObjectLiteral | undefined)[] = []
 
     /**
      * Generated values returned by a database.
      * Has entity-like structure (not just column database name and values).
+     * Entries are `undefined` at positions whose rows were skipped (for example, by `orIgnore()`).
      */
     generatedMaps: (ObjectLiteral | undefined)[] = []
 

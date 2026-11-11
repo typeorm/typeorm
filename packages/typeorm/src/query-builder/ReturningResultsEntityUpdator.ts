@@ -381,6 +381,64 @@ export class ReturningResultsEntityUpdator {
     }
 
     /**
+     * Normalizes a column value for signature indexing and cross-driver matching.
+     *
+     * @param entityOrRaw Entity or raw row object to read from.
+     * @param col Target column metadata.
+     * @param isRaw Whether `entityOrRaw` is a database raw row rather than an entity.
+     * @returns Encoded value string or `undefined` if missing or non-deterministic.
+     */
+    protected normalizeColumnSignaturePart(
+        entityOrRaw: ObjectLiteral,
+        col: ColumnMetadata,
+        isRaw: boolean,
+    ): string | undefined {
+        const driver = this.queryRunner.dataSource.driver
+        let val: unknown
+        if (isRaw) {
+            if (!(col.databaseName in entityOrRaw)) {
+                return undefined
+            }
+            val = entityOrRaw[col.databaseName]
+            if (val === undefined) {
+                return undefined
+            }
+            if (val !== null && !col.transformer) {
+                val = driver.preparePersistentValue(
+                    driver.prepareHydratedValue(val, col),
+                    col,
+                )
+            }
+        } else {
+            const rawEntityVal = col.getEntityValue(entityOrRaw)
+            if (
+                rawEntityVal === undefined ||
+                typeof rawEntityVal === "function"
+            ) {
+                return undefined
+            }
+            val = driver.preparePersistentValue(rawEntityVal, col)
+        }
+        if (val === undefined || typeof val === "function") {
+            return undefined
+        }
+        if (val === null) {
+            return "n:null"
+        }
+        if (val instanceof Date) {
+            const iso = Number.isNaN(val.getTime())
+                ? String(val)
+                : val.toISOString()
+            return `d:${iso.length}:${iso}`
+        }
+        if (typeof val === "object") {
+            return undefined
+        }
+        const valStr = String(val)
+        return `v:${valStr.length}:${valStr}`
+    }
+
+    /**
      * Computes a deterministic string signature from identifying columns
      * for O(1) indexed correlation during bulk inserts.
      *
@@ -396,48 +454,110 @@ export class ReturningResultsEntityUpdator {
     ): string | undefined {
         const parts: string[] = []
         for (const col of columns) {
-            let val: unknown
-            if (isRaw) {
-                val = entityOrRaw[col.databaseName]
-            } else {
-                val = col.getEntityValue(entityOrRaw)
-                if (val !== undefined && val !== null && col.transformer) {
-                    val = ApplyValueTransformers.transformTo(
-                        col.transformer,
-                        val,
-                    )
-                }
-            }
-            if (
-                val === undefined ||
-                val === null ||
-                typeof val === "function"
-            ) {
+            const encoded = this.normalizeColumnSignaturePart(
+                entityOrRaw,
+                col,
+                isRaw,
+            )
+            if (encoded === undefined) {
                 return undefined
             }
             const colName = col.databaseName
-            const valStr = String(val)
-            parts.push(
-                `${colName.length}:${colName}=${valStr.length}:${valStr}`,
-            )
+            parts.push(`${colName.length}:${colName}=${encoded}`)
         }
         return parts.length > 0 ? parts.join(";") : undefined
     }
 
     /**
+     * Compares an entity's supplied column value against a returned raw value,
+     * normalizing persistent/hydrated formats (such as Date strings and transformers)
+     * and keeping explicit `null` distinct from unset (`undefined`).
+     *
+     * @param column Column metadata for the field being compared.
+     * @param entityValue Value read from the input entity (`!== undefined`, non-function).
+     * @param rawValue Value returned in the raw database row.
+     * @returns `true` if the column values represent the same stored value.
+     */
+    protected doesColumnValueMatch(
+        column: ColumnMetadata,
+        entityValue: unknown,
+        rawValue: unknown,
+    ): boolean {
+        if (rawValue === undefined) {
+            return false
+        }
+        const driver = this.queryRunner.dataSource.driver
+        const hydratedRawValue = driver.prepareHydratedValue(rawValue, column)
+        const persistentEntityValue = driver.preparePersistentValue(
+            entityValue,
+            column,
+        )
+
+        if (entityValue === null) {
+            if (rawValue === null || hydratedRawValue === null) {
+                return true
+            }
+            return (
+                column.transformer !== undefined &&
+                (OrmUtils.deepCompare(persistentEntityValue, rawValue) ||
+                    (persistentEntityValue !== null &&
+                        persistentEntityValue !== undefined &&
+                        persistentEntityValue == rawValue))
+            )
+        }
+
+        let isMatch =
+            OrmUtils.deepCompare(entityValue, hydratedRawValue) ||
+            (rawValue !== null && entityValue == rawValue) ||
+            OrmUtils.deepCompare(persistentEntityValue, hydratedRawValue) ||
+            OrmUtils.deepCompare(persistentEntityValue, rawValue)
+
+        if (!isMatch && !column.transformer) {
+            const persistentRawValue = driver.preparePersistentValue(
+                hydratedRawValue,
+                column,
+            )
+            isMatch = OrmUtils.deepCompare(
+                persistentEntityValue,
+                persistentRawValue,
+            )
+        }
+
+        if (!isMatch && column.transformer) {
+            const transformed = ApplyValueTransformers.transformTo(
+                column.transformer,
+                entityValue,
+            )
+            const hydratedFromRaw = ApplyValueTransformers.transformFrom(
+                column.transformer,
+                hydratedRawValue,
+            )
+            isMatch =
+                OrmUtils.deepCompare(transformed, rawValue) ||
+                (transformed != null &&
+                    rawValue != null &&
+                    transformed == rawValue) ||
+                OrmUtils.deepCompare(transformed, hydratedRawValue) ||
+                OrmUtils.deepCompare(entityValue, hydratedFromRaw) ||
+                (hydratedFromRaw != null && entityValue == hydratedFromRaw)
+        }
+        return isMatch
+    }
+
+    /**
      * Checks if a raw row returned from the database matches an entity.
      * Used when rows can be skipped (e.g. insert on conflict / orIgnore).
-     * Handles composite keys, transformers, functions, and default-only entities.
+     * Handles composite keys, transformers, explicit nulls, timestamps, functions, and default-only entities.
      *
-     * @param entity
-     * @param rawItem
+     * @param entity Input entity or value set.
+     * @param rawItem Raw row returned from the database.
+     * @returns `true` if the raw row corresponds to `entity`.
      */
     protected doesEntityMatchRaw(
         entity: ObjectLiteral,
         rawItem: ObjectLiteral,
     ): boolean {
         const metadata = this.expressionMap.mainAlias!.metadata
-        const driver = this.queryRunner.dataSource.driver
 
         // 1. Primary key check
         let allPrimaryKeysDefined = metadata.primaryColumns.length > 0
@@ -452,35 +572,13 @@ export class ReturningResultsEntityUpdator {
                 }
                 hasDefinedPrimaryKey = true
                 const rawValue = rawItem[primaryColumn.databaseName]
-                if (rawValue === undefined) {
-                    hasMismatchedPrimaryKey = true
-                    break
-                }
-                const hydratedRawValue = driver.prepareHydratedValue(
-                    rawValue,
-                    primaryColumn,
-                )
-                let isMatch =
-                    OrmUtils.deepCompare(entityValue, hydratedRawValue) ||
-                    entityValue == rawValue
-                if (!isMatch && primaryColumn.transformer) {
-                    const transformed = ApplyValueTransformers.transformTo(
-                        primaryColumn.transformer,
+                if (
+                    !this.doesColumnValueMatch(
+                        primaryColumn,
                         entityValue,
+                        rawValue,
                     )
-                    const hydratedFromRaw =
-                        ApplyValueTransformers.transformFrom(
-                            primaryColumn.transformer,
-                            hydratedRawValue,
-                        )
-                    isMatch =
-                        OrmUtils.deepCompare(transformed, rawValue) ||
-                        transformed == rawValue ||
-                        OrmUtils.deepCompare(transformed, hydratedRawValue) ||
-                        OrmUtils.deepCompare(entityValue, hydratedFromRaw) ||
-                        entityValue == hydratedFromRaw
-                }
-                if (!isMatch) {
+                ) {
                     hasMismatchedPrimaryKey = true
                     break
                 }
@@ -515,43 +613,18 @@ export class ReturningResultsEntityUpdator {
             const entityValue = column.getEntityValue(entity)
             if (
                 entityValue !== undefined &&
-                entityValue !== null &&
                 typeof entityValue !== "function"
             ) {
                 hasComparableColumnValue = true
                 if (column.databaseName in rawItem) {
                     const rawValue = rawItem[column.databaseName]
-                    const hydratedRawValue = driver.prepareHydratedValue(
-                        rawValue,
-                        column,
-                    )
-                    let isMatch =
-                        OrmUtils.deepCompare(entityValue, hydratedRawValue) ||
-                        entityValue == rawValue
-                    if (!isMatch && column.transformer) {
-                        const transformed = ApplyValueTransformers.transformTo(
-                            column.transformer,
+                    if (
+                        !this.doesColumnValueMatch(
+                            column,
                             entityValue,
+                            rawValue,
                         )
-                        const hydratedFromRaw =
-                            ApplyValueTransformers.transformFrom(
-                                column.transformer,
-                                hydratedRawValue,
-                            )
-                        isMatch =
-                            OrmUtils.deepCompare(transformed, rawValue) ||
-                            transformed == rawValue ||
-                            OrmUtils.deepCompare(
-                                transformed,
-                                hydratedRawValue,
-                            ) ||
-                            OrmUtils.deepCompare(
-                                entityValue,
-                                hydratedFromRaw,
-                            ) ||
-                            entityValue == hydratedFromRaw
-                    }
-                    if (!isMatch) {
+                    ) {
                         hasMismatch = true
                         break
                     }
