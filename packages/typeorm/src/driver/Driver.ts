@@ -302,4 +302,16 @@ export interface Driver {
         indexA: IndexMetadata,
         indexB: TableIndex,
     ) => boolean
+
+    /**
+     * Prepares a transaction that failed with the given error to be retried by
+     * `EntityManager.transaction()`, which then re-runs the whole callback.
+     * Returns true once the transaction has been restarted, or false if it
+     * must be rolled back and the error thrown instead.
+     */
+    retryTransaction?: (
+        queryRunner: QueryRunner,
+        error: unknown,
+        attempt: number,
+    ) => Promise<boolean>
 }
