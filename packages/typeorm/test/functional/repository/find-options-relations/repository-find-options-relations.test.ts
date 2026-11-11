@@ -1,5 +1,7 @@
 import "reflect-metadata"
 import "../../../utils/test-setup"
+import { expect } from "chai"
+import sinon from "sinon"
 import {
     closeTestingConnections,
     createTestingConnections,
@@ -12,6 +14,30 @@ import { Post } from "./entity/Post"
 import { Photo } from "./entity/Photo"
 import { Counters } from "./entity/Counters"
 import { EntityPropertyNotFoundError } from "../../../../src/error/EntityPropertyNotFoundError"
+import type { QueryRunner } from "../../../../src/query-runner/QueryRunner"
+import { In } from "../../../../src/find-options/operator/In"
+import type { FindManyOptions } from "../../../../src/find-options/FindManyOptions"
+import { Post as CompositeKeyPost } from "../../query-builder/relation-id/one-to-many/multiple-pk/entity/Post"
+import { Category as CompositeKeyCategory } from "../../query-builder/relation-id/one-to-many/multiple-pk/entity/Category"
+import { PostCategory } from "../../view-entity/general/entity/PostCategory"
+
+const spyQueries = async <T>(
+    dataSource: DataSource,
+    run: (queryRunner: QueryRunner) => Promise<T>,
+): Promise<{ result: T; queries: string[] }> => {
+    const queryRunner = dataSource.createQueryRunner()
+    const querySpy = sinon.spy(queryRunner, "query")
+    try {
+        const result = await run(queryRunner)
+        return {
+            result,
+            queries: querySpy.getCalls().map((call) => call.args[0]),
+        }
+    } finally {
+        querySpy.restore()
+        await queryRunner.release()
+    }
+}
 
 describe("repository > find options > relations", () => {
     // -------------------------------------------------------------------------
@@ -549,6 +575,234 @@ describe("repository > find options > relations", () => {
                     .should.eventually.be.rejectedWith(
                         EntityPropertyNotFoundError,
                     )
+            }),
+        ))
+
+    describe("github issues > #5694 find one by primary key", () => {
+        it("should load a one-to-many relation in a single query when the where fixes the primary key", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const { result: post, queries } = await spyQueries(
+                        dataSource,
+                        (queryRunner) =>
+                            queryRunner.manager.getRepository(Post).findOne({
+                                where: { id: 1 },
+                                relations: { photos: true },
+                            }),
+                    )
+
+                    expect(queries).to.have.lengthOf(1)
+                    expect(post!.id).to.equal(1)
+                    expect(
+                        post!.photos.map((photo) => photo.filename).sort(),
+                    ).to.eql(["photo1.jpg", "photo2.jpg", "photo3.jpg"])
+                }),
+            ))
+
+        it("should keep the paginated queries when the where does not fix the primary key", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const { result: post, queries } = await spyQueries(
+                        dataSource,
+                        (queryRunner) =>
+                            queryRunner.manager.findOne(Post, {
+                                where: { title: "About Timber" },
+                                relations: { photos: true },
+                            }),
+                    )
+                    const { queries: paginatedQueries } = await spyQueries(
+                        dataSource,
+                        (queryRunner) =>
+                            queryRunner.manager
+                                .createQueryBuilder(Post, "Post")
+                                .setFindOptions({
+                                    where: { title: "About Timber" },
+                                    relations: { photos: true },
+                                    take: 1,
+                                })
+                                .getOne(),
+                    )
+
+                    expect(queries).to.have.lengthOf(2)
+                    expect(queries[0]).to.match(/^SELECT DISTINCT/)
+                    expect(queries).to.eql(paginatedQueries)
+                    expect(post!.photos).to.have.lengthOf(3)
+                }),
+            ))
+
+        it("should keep the paginated queries when the where lists several primary keys", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    for (const where of [
+                        [{ id: 1 }, { id: 2 }],
+                        { id: In([1, 2]) },
+                    ]) {
+                        const { result: post, queries } = await spyQueries(
+                            dataSource,
+                            (queryRunner) =>
+                                queryRunner.manager.findOne(Post, {
+                                    where,
+                                    relations: { photos: true },
+                                }),
+                        )
+
+                        expect(queries).to.have.lengthOf(2)
+                        expect(post!.id).to.equal(1)
+                        expect(post!.photos).to.have.lengthOf(3)
+                    }
+                }),
+            ))
+
+        it("should keep the paginated queries when skip is set and the where fixes the primary key", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const options: FindManyOptions<Post> = {
+                        where: { id: 1 },
+                        relations: { photos: true },
+                        skip: 1,
+                    }
+                    const { result: post, queries } = await spyQueries(
+                        dataSource,
+                        (queryRunner) =>
+                            queryRunner.manager.findOne(Post, options),
+                    )
+                    const { queries: paginatedQueries } = await spyQueries(
+                        dataSource,
+                        (queryRunner) =>
+                            queryRunner.manager
+                                .createQueryBuilder(Post, "Post")
+                                .setFindOptions({ ...options, take: 1 })
+                                .getOne(),
+                    )
+
+                    expect(post).to.equal(null)
+                    expect(queries).to.eql(paginatedQueries)
+                }),
+            ))
+
+        it("should keep limiting the query to one row when the primary key is not enumerable", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    const where = Object.defineProperty({}, "id", {
+                        value: 1,
+                        enumerable: false,
+                    })
+                    const { queries } = await spyQueries(
+                        dataSource,
+                        (queryRunner) =>
+                            queryRunner.manager.findOneBy(Post, where),
+                    )
+                    const { queries: limitedQueries } = await spyQueries(
+                        dataSource,
+                        (queryRunner) =>
+                            queryRunner.manager
+                                .createQueryBuilder(Post, "Post")
+                                .setFindOptions({ where, take: 1 })
+                                .getOne(),
+                    )
+
+                    expect(queries).to.eql(limitedQueries)
+                }),
+            ))
+    })
+})
+
+describe("repository > find options > relations > github issues > #5694 find one by composite primary key", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
+            entities: [
+                CompositeKeyPost,
+                CompositeKeyCategory,
+                __dirname +
+                    "/../../query-builder/relation-id/one-to-many/multiple-pk/entity/Image{.js,.ts}",
+            ],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    const savePostWithCategories = async (dataSource: DataSource) => {
+        const post = new CompositeKeyPost()
+        post.id = 1
+        post.authorId = 1
+        post.title = "About BMW"
+        await dataSource.manager.save(post)
+
+        for (let code = 1; code <= 2; code++) {
+            const category = new CompositeKeyCategory()
+            category.id = 1
+            category.code = code
+            category.name = `category #${code}`
+            category.post = post
+            await dataSource.manager.save(category)
+        }
+    }
+
+    it("should load a one-to-many relation in a single query when the where fixes every primary column", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await savePostWithCategories(dataSource)
+
+                const { result: post, queries } = await spyQueries(
+                    dataSource,
+                    (queryRunner) =>
+                        queryRunner.manager.findOne(CompositeKeyPost, {
+                            where: { id: 1, authorId: 1 },
+                            relations: { categories: true },
+                        }),
+                )
+
+                expect(queries).to.have.lengthOf(1)
+                expect(post!.categories).to.have.lengthOf(2)
+            }),
+        ))
+
+    it("should keep the paginated queries when the where misses a primary column", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await savePostWithCategories(dataSource)
+
+                const { result: post, queries } = await spyQueries(
+                    dataSource,
+                    (queryRunner) =>
+                        queryRunner.manager.findOne(CompositeKeyPost, {
+                            where: { id: 1 },
+                            relations: { categories: true },
+                        }),
+                )
+
+                expect(queries).to.have.lengthOf(2)
+                expect(post!.categories).to.have.lengthOf(2)
+            }),
+        ))
+})
+
+describe("repository > find options > relations > github issues > #5694 find one on an entity without primary columns", () => {
+    let dataSources: DataSource[]
+    before(async () => {
+        dataSources = await createTestingConnections({
+            disabledDrivers: ["spanner"],
+            entities: [
+                __dirname + "/../../view-entity/general/entity/*{.js,.ts}",
+            ],
+        })
+    })
+    beforeEach(() => reloadTestingDatabases(dataSources))
+    after(() => closeTestingConnections(dataSources))
+
+    it("should keep limiting the query to one row", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const { queries } = await spyQueries(
+                    dataSource,
+                    (queryRunner) =>
+                        queryRunner.manager.findOneBy(PostCategory, { id: 1 }),
+                )
+
+                expect(queries).to.have.lengthOf(1)
+                expect(queries[0]).to.match(/LIMIT 1|FETCH NEXT 1 ROWS ONLY/)
             }),
         ))
 })

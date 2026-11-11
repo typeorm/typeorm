@@ -23,8 +23,10 @@ import type { InsertResult } from "../query-builder/result/InsertResult"
 import type { UpdateResult } from "../query-builder/result/UpdateResult"
 import type { DeleteResult } from "../query-builder/result/DeleteResult"
 import type { FindOptionsWhere } from "../find-options/FindOptionsWhere"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
 import type { IsolationLevel } from "../driver/types/IsolationLevel"
 import { ObjectUtils } from "../util/ObjectUtils"
+import { isUint8Array } from "../util/Uint8ArrayUtils"
 import type { UpsertOptions } from "../repository/UpsertOptions"
 import type { UpdateOptions } from "../repository/UpdateOptions"
 import { InstanceChecker } from "../util/InstanceChecker"
@@ -1320,11 +1322,17 @@ export class EntityManager {
             )
         }
 
+        const { skip } = options as FindManyOptions<Entity>
+
         // create query builder and apply find options
         return this.createQueryBuilder<Entity>(entityClass, metadata.name)
             .setFindOptions({
                 ...options,
-                take: 1,
+                take:
+                    !skip &&
+                    this.wherePinsEveryPrimaryColumn(metadata, options.where)
+                        ? undefined
+                        : 1,
             })
             .getOne()
     }
@@ -1346,9 +1354,52 @@ export class EntityManager {
         return this.createQueryBuilder<Entity>(entityClass, metadata.name)
             .setFindOptions({
                 where,
-                take: 1,
+                take: this.wherePinsEveryPrimaryColumn(metadata, where)
+                    ? undefined
+                    : 1,
             })
             .getOne()
+    }
+
+    private wherePinsEveryPrimaryColumn<Entity extends ObjectLiteral>(
+        metadata: EntityMetadata,
+        where: FindOptionsWhere<Entity> | FindOptionsWhere<Entity>[],
+    ): boolean {
+        if (Array.isArray(where) || metadata.primaryColumns.length === 0)
+            return false
+
+        const queriedWhere = this.queriedWhere(where) as ObjectLiteral
+        return metadata.primaryColumns.every((column) => {
+            const value: unknown = column.getEntityValue(queriedWhere)
+            return (
+                typeof value === "string" ||
+                typeof value === "number" ||
+                typeof value === "bigint" ||
+                typeof value === "boolean" ||
+                value instanceof Date
+            )
+        })
+    }
+
+    /**
+     * Copies only what the find options builder reads from a where: its
+     * enumerable keys, at every level.
+     *
+     * @param where
+     */
+    private queriedWhere(where: unknown): unknown {
+        if (
+            !ObjectUtils.isObject(where) ||
+            where instanceof Date ||
+            isUint8Array(where) ||
+            InstanceChecker.isFindOperator(where)
+        )
+            return where
+
+        const copy: ObjectLiteral = {}
+        for (const key in where)
+            copy[key] = this.queriedWhere((where as ObjectLiteral)[key])
+        return copy
     }
 
     /**
