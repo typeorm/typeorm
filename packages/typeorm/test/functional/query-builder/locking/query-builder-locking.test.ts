@@ -86,7 +86,7 @@ describe("query builder > locking", () => {
             dataSources.map(async (dataSource) => {
                 if (
                     DriverUtils.isSQLiteFamily(dataSource.driver) ||
-                    dataSource.driver.options.type === "spanner"
+                    DriverUtils.isSpannerFamily(dataSource.driver)
                 ) {
                     return
                 }
@@ -195,7 +195,7 @@ describe("query builder > locking", () => {
         for (const dataSource of dataSources) {
             if (
                 DriverUtils.isSQLiteFamily(dataSource.driver) ||
-                dataSource.driver.options.type === "spanner"
+                DriverUtils.isSpannerFamily(dataSource.driver)
             ) {
                 return
             }

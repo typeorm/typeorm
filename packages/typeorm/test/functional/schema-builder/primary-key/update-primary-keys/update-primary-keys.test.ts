@@ -25,7 +25,7 @@ describe("schema builder > update primary keys", () => {
                 // CockroachDB and Spanner does not support changing primary key constraint
                 if (
                     dataSource.driver.options.type === "cockroachdb" ||
-                    dataSource.driver.options.type === "spanner"
+                    DriverUtils.isSpannerFamily(dataSource.driver)
                 )
                     return
 
@@ -53,7 +53,7 @@ describe("schema builder > update primary keys", () => {
                 // CockroachDB and Spanner does not support changing primary key constraint
                 if (
                     dataSource.driver.options.type === "cockroachdb" ||
-                    dataSource.driver.options.type === "spanner"
+                    DriverUtils.isSpannerFamily(dataSource.driver)
                 )
                     return
 

@@ -19,4 +19,5 @@ export type DatabaseType =
     | "react-native"
     | "sap"
     | "spanner"
+    | "spanner-postgres"
     | "sqljs"

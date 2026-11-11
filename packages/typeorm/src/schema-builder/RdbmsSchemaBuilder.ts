@@ -16,6 +16,7 @@ import { TableExclusion } from "./table/TableExclusion"
 import { View } from "./view/View"
 import { ViewUtils } from "./util/ViewUtils"
 import { DriverUtils } from "../driver/DriverUtils"
+import type { SpannerPostgresQueryRunner } from "../driver/spanner-postgres/SpannerPostgresQueryRunner"
 import type { PostgresQueryRunner } from "../driver/postgres/PostgresQueryRunner"
 import { TypeORMError } from "../error"
 import type { IndexMetadata } from "../metadata/IndexMetadata"
@@ -81,7 +82,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         // but not in a read-write transaction.
         const isUsingTransactions =
             !(this.dataSource.driver.options.type === "cockroachdb") &&
-            !(this.dataSource.driver.options.type === "spanner") &&
+            !DriverUtils.isSpannerFamily(this.dataSource.driver) &&
             this.dataSource.options.migrationsTransactionMode !== "none"
 
         await this.queryRunner.beforeMigration()
@@ -121,6 +122,10 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                     await this.queryRunner.rollbackTransaction()
                 }
             } catch (rollbackError) {}
+            // the DDL queued by the failed synchronization must not be sent
+            if (this.dataSource.driver.options.type === "spanner-postgres") {
+                ;(this.queryRunner as SpannerPostgresQueryRunner).discardDdl()
+            }
             throw error
         } finally {
             await this.queryRunner.afterMigration()
@@ -392,6 +397,17 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (indexMetadata.isUnique !== tableIndex.isUnique) return true
 
             if (indexMetadata.isSpatial !== tableIndex.isSpatial) return true
+
+            // a `where` already says which rows the index has, so the null
+            // filter is only compared when the entity does not set one; a
+            // unique index is always null filtered by Spanner
+            if (
+                this.dataSource.options.type === "spanner-postgres" &&
+                !indexMetadata.where &&
+                !indexMetadata.isUnique &&
+                indexMetadata.isNullFiltered !== tableIndex.isNullFiltered
+            )
+                return true
 
             if (
                 !!this.dataSource.driver.supportedIndexTypes &&
@@ -917,7 +933,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             if (!(
                 DriverUtils.isMySQLFamily(this.dataSource.driver) ||
                 this.dataSource.driver.options.type === "aurora-mysql" ||
-                this.dataSource.driver.options.type === "spanner"
+                DriverUtils.isSpannerFamily(this.dataSource.driver)
             )) {
                 for (const changedColumn of changedColumns) {
                     await this.dropColumnCompositeUniques(
@@ -1377,7 +1393,7 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
         // Spanner requires at least one primary key in a table.
         // Since we don't have unique column in "typeorm_metadata" table
         // and we should avoid breaking changes, we mark all columns as primary for Spanner driver.
-        const isPrimary = this.dataSource.driver.options.type === "spanner"
+        const isPrimary = DriverUtils.isSpannerFamily(this.dataSource.driver)
         await queryRunner.createTable(
             new Table({
                 database: database,

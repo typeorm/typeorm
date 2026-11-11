@@ -12,6 +12,8 @@ describe("schema builder > idempotency > fulltext recreate", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            // Spanner (PostgreSQL) only supports ordinary indexes
+            disabledDrivers: ["spanner-postgres"],
             entities: [Test],
             schemaCreate: true,
             dropSchema: true,

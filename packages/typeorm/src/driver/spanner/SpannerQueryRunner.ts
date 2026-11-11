@@ -52,6 +52,13 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
      */
     protected sessionTransaction?: any
 
+    /**
+     * Indicates if a write run outside of a user transaction starts its
+     * transaction with an explicit `begin()` round trip, or lets Spanner begin
+     * it together with the statement (inline begin).
+     */
+    protected explicitBegin: boolean = true
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -218,6 +225,64 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     }
 
     /**
+     * Builds the named parameters object sent to Spanner along with the query.
+     *
+     * @param parameters
+     */
+    protected buildQueryParameters(
+        parameters?: any[],
+    ): ObjectLiteral | undefined {
+        return parameters
+            ? parameters.reduce((params, value, index) => {
+                  params["param" + index] = value
+                  return params
+              }, {} as ObjectLiteral)
+            : undefined
+    }
+
+    /**
+     * Builds the request sent to Spanner to run a query.
+     *
+     * @param query
+     * @param parameters
+     */
+    protected buildQueryRequest(
+        query: string,
+        parameters?: any[],
+    ): ObjectLiteral {
+        return {
+            sql: query,
+            params: this.buildQueryParameters(parameters),
+            json: true,
+        }
+    }
+
+    /**
+     * Tells if a query only reads data, so it can run as a single-use read
+     * outside of a transaction instead of in a read-write transaction.
+     *
+     * @param query
+     */
+    protected isReadOnlyQuery(query: string): boolean {
+        return query.startsWith("SELECT")
+    }
+
+    /**
+     * Gets the Spanner object a stream runs its query on.
+     */
+    protected getStreamExecutor(): any {
+        return this.driver.instanceDatabase
+    }
+
+    /**
+     * Converts the values of a query result, in place, before they are
+     * returned to the caller.
+     *
+     * @param _rawResult
+     */
+    protected normalizeQueryResult(_rawResult: any): void {}
+
+    /**
      * Executes a given SQL query.
      *
      * @param query
@@ -254,7 +319,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                       { rowType: { fields: [] }; transaction: null },
                   ]
                 | undefined = undefined
-            const isSelect = query.startsWith("SELECT")
+            const isSelect = this.isReadOnlyQuery(query)
             const executor =
                 isSelect && !this.isTransactionActive
                     ? this.driver.instanceDatabase
@@ -275,20 +340,16 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                         ),
                     })
                 }
-                await this.sessionTransaction.begin()
+                if (this.explicitBegin) {
+                    await this.sessionTransaction.begin()
+                }
             }
 
             try {
-                rawResult = await executor.run({
-                    sql: query,
-                    params: parameters
-                        ? parameters.reduce((params, value, index) => {
-                              params["param" + index] = value
-                              return params
-                          }, {} as ObjectLiteral)
-                        : undefined,
-                    json: true,
-                })
+                rawResult = await executor.run(
+                    this.buildQueryRequest(query, parameters),
+                )
+                this.normalizeQueryResult(rawResult)
                 if (!this.isTransactionActive && !isSelect) {
                     await this.sessionTransaction.commit()
                     await this.resetSessionTransaction()
@@ -428,17 +489,8 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         try {
             this.driver.dataSource.logger.logQuery(query, parameters, this)
-            const request = {
-                sql: query,
-                params: parameters
-                    ? parameters.reduce((params, value, index) => {
-                          params["param" + index] = value
-                          return params
-                      }, {} as ObjectLiteral)
-                    : undefined,
-                json: true,
-            }
-            const stream = this.driver.instanceDatabase.runStream(request)
+            const request = this.buildQueryRequest(query, parameters)
+            const stream = this.getStreamExecutor().runStream(request)
 
             if (onEnd) {
                 stream.on("end", onEnd)
@@ -838,13 +890,7 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         const upQueries: Query[] = []
         const downQueries: Query[] = []
 
-        upQueries.push(
-            new Query(
-                `ALTER TABLE ${this.escapePath(
-                    table,
-                )} ADD ${this.buildCreateColumnSql(column)}`,
-            ),
-        )
+        upQueries.push(...this.createAddColumnQueries(table, column))
         downQueries.push(
             new Query(
                 `ALTER TABLE ${this.escapePath(
@@ -1193,12 +1239,9 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
                 )} DROP COLUMN ${this.driver.escape(column.name)}`,
             ),
         )
+        // down queries run in reverse order, so the add column queries are reversed
         downQueries.push(
-            new Query(
-                `ALTER TABLE ${this.escapePath(
-                    table,
-                )} ADD ${this.buildCreateColumnSql(column)}`,
-            ),
+            ...this.createAddColumnQueries(table, column).reverse(),
         )
 
         if (column.generatedType) {
@@ -2502,6 +2545,25 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
     protected escapePath(target: Table | View | string): string {
         const { tableName } = this.driver.parseTableName(target)
         return `\`${tableName}\``
+    }
+
+    /**
+     * Builds the queries that add the given column to an existing table.
+     *
+     * @param table
+     * @param column
+     */
+    protected createAddColumnQueries(
+        table: Table,
+        column: TableColumn,
+    ): Query[] {
+        return [
+            new Query(
+                `ALTER TABLE ${this.escapePath(
+                    table,
+                )} ADD ${this.buildCreateColumnSql(column)}`,
+            ),
+        ]
     }
 
     /**

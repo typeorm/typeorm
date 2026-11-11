@@ -34,6 +34,7 @@ export class InitCommand implements yargs.CommandModule {
                     "mongodb",
                     "cockroachdb",
                     "spanner",
+                    "spanner-postgres",
                 ],
             })
             .option("express", {
@@ -80,7 +81,10 @@ export class InitCommand implements yargs.CommandModule {
             )
             await CommandUtils.createFile(
                 basePath + "/README.md",
-                InitCommand.getReadmeTemplate({ docker: isDocker }),
+                InitCommand.getReadmeTemplate({
+                    docker: isDocker,
+                    database,
+                }),
                 false,
             )
             await CommandUtils.createFile(
@@ -109,7 +113,7 @@ export class InitCommand implements yargs.CommandModule {
                 )
                 await CommandUtils.createFile(
                     basePath + "/src/controllers/UserController.ts",
-                    InitCommand.getControllerTemplate(projectIsEsm),
+                    InitCommand.getControllerTemplate(projectIsEsm, database),
                 )
             }
 
@@ -251,6 +255,15 @@ export class InitCommand implements yargs.CommandModule {
                 ]
                 break
 
+            case "spanner-postgres":
+                dbSettings = [
+                    'type: "spanner-postgres"',
+                    'projectId: "test"',
+                    'instanceId: "test"',
+                    'databaseId: "test"',
+                ]
+                break
+
             default:
                 throw new Error(`Unknown database "${database}"`)
         }
@@ -343,9 +356,18 @@ export class User {
     ${
         database === "mongodb"
             ? "@ObjectIdColumn()"
-            : "@PrimaryGeneratedColumn()"
+            : database === "spanner-postgres"
+              ? // Spanner has no auto-increment
+                '@PrimaryGeneratedColumn("uuid")'
+              : "@PrimaryGeneratedColumn()"
     }
-    id: ${database === "mongodb" ? "ObjectId" : "number"}
+    id: ${
+        database === "mongodb"
+            ? "ObjectId"
+            : database === "spanner-postgres"
+              ? "string"
+              : "number"
+    }
 
     @Column()
     firstName: string
@@ -397,8 +419,18 @@ export const Routes = [{
      * Gets contents of the user controller file (used when express is enabled).
      *
      * @param isEsm
+     * @param database
      */
-    protected static getControllerTemplate(isEsm: boolean): string {
+    protected static getControllerTemplate(
+        isEsm: boolean,
+        database: string,
+    ): string {
+        // Spanner has no auto-increment: the id is a string
+        const parseId =
+            database === "spanner-postgres"
+                ? "request.params.id"
+                : "parseInt(request.params.id)"
+
         return `import { AppDataSource } from "../data-source${
             isEsm ? ".js" : ""
         }"
@@ -414,7 +446,7 @@ export class UserController {
     }
 
     async one(request: Request, response: Response, next: NextFunction) {
-        const id = parseInt(request.params.id)
+        const id = ${parseId}
 
 
         const user = await this.userRepository.findOne({
@@ -440,7 +472,7 @@ export class UserController {
     }
 
     async remove(request: Request, response: Response, next: NextFunction) {
-        const id = parseInt(request.params.id)
+        const id = ${parseId}
 
         let userToRemove = await this.userRepository.findOneBy({ id })
 
@@ -658,6 +690,7 @@ AppDataSource.initialize().then(async () => {
 
 `
             case "spanner":
+            case "spanner-postgres":
                 return `services:
 
   spanner:
@@ -676,8 +709,12 @@ AppDataSource.initialize().then(async () => {
      *
      * @param options
      * @param options.docker
+     * @param options.database
      */
-    protected static getReadmeTemplate(options: { docker: boolean }): string {
+    protected static getReadmeTemplate(options: {
+        docker: boolean
+        database?: string
+    }): string {
         let template = `# Awesome Project Build with TypeORM
 
 Steps to run this project:
@@ -693,7 +730,20 @@ Steps to run this project:
 `
         }
 
-        template += `3. Run \`npm start\` command
+        let step = 3
+        if (options.docker && options.database === "spanner-postgres") {
+            // the emulator starts without an instance or a database
+            template += `${step++}. Create the PostgreSQL dialect database in the Spanner emulator, and point the Spanner client to it:
+
+   \`\`\`bash
+   export SPANNER_EMULATOR_HOST=localhost:9010
+   curl -X POST localhost:9020/v1/projects/test/instances -d '{"instanceId":"test","instance":{"config":"projects/test/instanceConfigs/emulator-config","displayName":"test","nodeCount":1}}'
+   curl -X POST localhost:9020/v1/projects/test/instances/test/databases -d '{"createStatement":"CREATE DATABASE \\"test\\"","databaseDialect":"POSTGRESQL"}'
+   \`\`\`
+`
+        }
+
+        template += `${step}. Run \`npm start\` command
 `
         return template
     }
@@ -762,6 +812,7 @@ Steps to run this project:
                     ourPackageJson.devDependencies.mongodb
                 break
             case "spanner":
+            case "spanner-postgres":
                 packageJson.dependencies["@google-cloud/spanner"] =
                     ourPackageJson.devDependencies["@google-cloud/spanner"]
                 break

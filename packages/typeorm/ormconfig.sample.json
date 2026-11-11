@@ -122,6 +122,16 @@
   },
   {
     "skip": false,
+    "type": "spanner-postgres",
+    "host": "localhost",
+    "port": 9010,
+    "projectId": "typeorm",
+    "instanceId": "typeorm",
+    "databaseId": "typeorm-pg",
+    "logging": false
+  },
+  {
+    "skip": false,
     "type": "sqljs",
     "logging": false
   }

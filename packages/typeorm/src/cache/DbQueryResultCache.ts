@@ -1,5 +1,6 @@
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { DataSource } from "../data-source/DataSource"
+import { DriverUtils } from "../driver/DriverUtils"
 import { MssqlParameter } from "../driver/sqlserver/MssqlParameter"
 import type { QueryRunner } from "../query-runner/QueryRunner"
 import { Table } from "../schema-builder/table/Table"
@@ -34,7 +35,12 @@ export class DbQueryResultCache implements QueryResultCache {
                 : {}
         const tableName =
             cacheOptions.tableName === "" ? undefined : cacheOptions.tableName
-        const cacheTableName = tableName ?? "query-result-cache"
+        // the name of a Spanner table cannot have a hyphen
+        const cacheTableName =
+            tableName ??
+            (this.dataSource.driver.options.type === "spanner-postgres"
+                ? "query_result_cache"
+                : "query-result-cache")
 
         this.queryResultCacheDatabase = database
         this.queryResultCacheSchema = schema
@@ -85,10 +91,9 @@ export class DbQueryResultCache implements QueryResultCache {
                         type: driver.normalizeType({
                             type: driver.mappedDataTypes.cacheId,
                         }),
-                        generationStrategy:
-                            driver.options.type === "spanner"
-                                ? "uuid"
-                                : "increment",
+                        generationStrategy: DriverUtils.isSpannerFamily(driver)
+                            ? "uuid"
+                            : "increment",
                         isGenerated: true,
                     },
                     {
@@ -290,7 +295,7 @@ export class DbQueryResultCache implements QueryResultCache {
             } else {
                 // Spanner does not support auto-generated columns
                 if (
-                    this.dataSource.driver.options.type === "spanner" &&
+                    DriverUtils.isSpannerFamily(this.dataSource.driver) &&
                     !insertedValues.id
                 ) {
                     insertedValues.id = RandomGenerator.uuidv4()

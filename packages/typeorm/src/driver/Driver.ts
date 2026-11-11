@@ -5,6 +5,7 @@ import type { EntityMetadata } from "../metadata/EntityMetadata"
 import type { IndexMetadata } from "../metadata/IndexMetadata"
 import type { OnDeleteType } from "../metadata/types/OnDeleteType"
 import type { OnUpdateType } from "../metadata/types/OnUpdateType"
+import type { QueryResult } from "../query-runner/QueryResult"
 import type { QueryRunner } from "../query-runner/QueryRunner"
 import type { TableIndexTypes } from "../schema-builder/options/TableIndexTypes"
 import type { SchemaBuilder } from "../schema-builder/SchemaBuilder"
@@ -135,6 +136,13 @@ export interface Driver {
      */
     maxAliasLength?: number
 
+    /**
+     * Max number of parameters allowed by the DBMS in a single statement.
+     * A multi-row INSERT with more parameters is split into several statements,
+     * run in one transaction. Requires {@link mergeQueryResults}.
+     */
+    maxQueryParameters?: number
+
     cteCapabilities: CteCapabilities
 
     /**
@@ -255,6 +263,12 @@ export interface Driver {
      * If replication is not setup then returns master (default) connection's database connection.
      */
     obtainSlaveConnection(): Promise<any>
+
+    /**
+     * Joins the results of the statements a split INSERT was run as, keeping
+     * the order of the returned rows. See {@link maxQueryParameters}.
+     */
+    mergeQueryResults?(results: QueryResult[]): QueryResult
 
     /**
      * Creates generated map of values generated or returned by database after INSERT query.

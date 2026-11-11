@@ -13,6 +13,8 @@ describe("persistence > many-to-one bi-directional relation", function () {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
+            // Spanner (PostgreSQL) only supports ON DELETE NO ACTION and CASCADE
+            disabledDrivers: ["spanner-postgres"],
             entities: [__dirname + "/entity/*{.js,.ts}"],
         })
     })
