@@ -478,13 +478,16 @@ export class RelationLoader {
             delete entity[resolveIndex]
             delete entity[dataIndex]
             entity[promiseIndex] = value
-            // eslint-disable-next-line @typescript-eslint/no-floating-promises
             value.then(
                 // ensure different value is not assigned yet
                 (result) =>
                     entity[promiseIndex] === value
                         ? setData(entity, result)
                         : result,
+                () => {
+                    if (entity[promiseIndex] === value)
+                        delete entity[promiseIndex]
+                },
             )
             return value
         }
