@@ -1,3 +1,19 @@
+## [1.1.3](https://github.com/typeorm/typeorm/compare/1.1.2...1.1.3) (2026-11-12)
+
+### Bug Fixes
+
+- do not load lazy relations when building the entity id map ([#12985](https://github.com/typeorm/typeorm/issues/12985)) ([4bd74eb](https://github.com/typeorm/typeorm/commit/4bd74ebca639669cecadc5bfc66927f11e899376))
+- **mssql:** place table lock hint inside nested join parentheses ([#12765](https://github.com/typeorm/typeorm/issues/12765)) ([5a8a140](https://github.com/typeorm/typeorm/commit/5a8a1400361a4b5cb90e805bea2c665149da3911))
+- **persistence:** honour the utc flag when detecting changed date columns ([#12949](https://github.com/typeorm/typeorm/issues/12949)) ([fe92394](https://github.com/typeorm/typeorm/commit/fe92394287516feeada6e9c308ebe22deca2458e))
+- **query-builder:** guard nulls in orderBy object shorthand ([#12706](https://github.com/typeorm/typeorm/issues/12706)) ([da473df](https://github.com/typeorm/typeorm/commit/da473df40df3933c1846f72144575d673aeef1cd))
+- release database cache runners after failed removals ([#12938](https://github.com/typeorm/typeorm/issues/12938)) ([f372541](https://github.com/typeorm/typeorm/commit/f37254182f5fb6d996f16c2d5a557259e4626359))
+- release SQL Server query locks after subscriber errors ([#12939](https://github.com/typeorm/typeorm/issues/12939)) ([9f5a345](https://github.com/typeorm/typeorm/commit/9f5a345d23b87e4ffdc282b441f6ff15c426c130))
+- use static `require` calls in `PlatformTools.load` for bundler compatibility ([#12729](https://github.com/typeorm/typeorm/issues/12729)) ([5a572a4](https://github.com/typeorm/typeorm/commit/5a572a40bae2f85a1d5f7b87a0aa88bbbaec5ab3))
+
+### Performance Improvements
+
+- use performance.now() for query execution timing ([#12750](https://github.com/typeorm/typeorm/issues/12750)) ([dca49fd](https://github.com/typeorm/typeorm/commit/dca49fd1d7d5fcd7e3389fc62f73de6916e8cdb8))
+
 ## [1.1.2](https://github.com/typeorm/typeorm/compare/1.1.1...1.1.2) (2026-10-07)
 
 ### Bug Fixes
