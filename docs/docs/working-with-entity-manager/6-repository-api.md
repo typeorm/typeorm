@@ -288,12 +288,9 @@ await repository.softDelete([1, 2, 3])
 // Or soft delete by other attribute
 await repository.softDelete({ firstName: "Jake" })
 
-// Bulk soft deletes with different conditions for each operation
+// An array of condition objects is OR'd into one query
 await repository.softDelete([{ firstName: "Jake" }, { age: 25 }, { id: 42 }])
-// executes three separate UPDATE queries (setting deletedAt timestamp):
-// UPDATE entity SET deletedAt = NOW() WHERE firstName = Jake
-// UPDATE entity SET deletedAt = NOW() WHERE age = 25
-// UPDATE entity SET deletedAt = NOW() WHERE id = 42
+// executes one UPDATE setting deletedAt WHERE firstName = Jake OR age = 25 OR id = 42
 ```
 
 - `softRemove` and `recover` - This is alternative to `softDelete` and `restore`.
