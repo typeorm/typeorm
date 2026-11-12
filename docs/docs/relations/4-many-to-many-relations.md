@@ -49,6 +49,7 @@ export class Question {
 `@JoinTable()` is required for `@ManyToMany` relations.
 You must put `@JoinTable` on one (owning) side of relation.
 The `deferrable` relation option applies to both foreign keys on the junction table; see [relation options](./1-relations.md#relation-options).
+To set `onDelete`, `onUpdate` or `deferrable` for one junction table foreign key only, use the `joinColumn` and `inverseJoinColumn` options of `@JoinTable`; see [`@JoinTable` options](./1-relations.md#jointable-options).
 
 This example will produce following tables:
 
