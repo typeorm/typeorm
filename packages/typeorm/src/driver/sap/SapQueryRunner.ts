@@ -3274,8 +3274,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                     (dbForeignKey) => {
                         const foreignKeys = dbForeignKeys.filter(
                             (dbFk) =>
+                                dbFk["TABLE_NAME"] ===
+                                    dbForeignKey["TABLE_NAME"] &&
+                                dbFk["SCHEMA_NAME"] ===
+                                    dbForeignKey["SCHEMA_NAME"] &&
                                 dbFk["CONSTRAINT_NAME"] ===
-                                dbForeignKey["CONSTRAINT_NAME"],
+                                    dbForeignKey["CONSTRAINT_NAME"],
                         )
 
                         // if referenced table located in currently used schema, we don't need to concat schema name to table name.

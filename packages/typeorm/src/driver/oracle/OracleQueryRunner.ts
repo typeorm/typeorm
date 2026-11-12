@@ -2880,8 +2880,10 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
                 table.uniques = tableUniqueConstraints.map((constraint) => {
                     const uniques = dbConstraints.filter(
                         (dbC) =>
+                            dbC["TABLE_NAME"] === constraint["TABLE_NAME"] &&
+                            dbC["OWNER"] === constraint["OWNER"] &&
                             dbC["CONSTRAINT_NAME"] ===
-                            constraint["CONSTRAINT_NAME"],
+                                constraint["CONSTRAINT_NAME"],
                     )
                     return new TableUnique({
                         name: constraint["CONSTRAINT_NAME"],
