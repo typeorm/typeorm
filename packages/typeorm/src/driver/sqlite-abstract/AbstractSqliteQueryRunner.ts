@@ -1955,10 +1955,12 @@ export abstract class AbstractSqliteQueryRunner
                 if (!isUniqueExist)
                     table.uniques.push(
                         new TableUnique({
-                            name: this.dataSource.namingStrategy.uniqueConstraintName(
-                                table,
-                                [column.name],
-                            ),
+                            name:
+                                column.uniqueConstraintName ??
+                                this.dataSource.namingStrategy.uniqueConstraintName(
+                                    table,
+                                    [column.name],
+                                ),
                             columnNames: [column.name],
                         }),
                     )
