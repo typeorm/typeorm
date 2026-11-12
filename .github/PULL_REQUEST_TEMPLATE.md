@@ -6,7 +6,7 @@
 
   If unsure about something.. just do as best as you're able,
   or reach out through our community support channels!
-  https://github.com/typeorm/typeorm/blob/master/docs/support.md
+  https://github.com/typeorm/typeorm/blob/master/docs/docs/help/4-support.md
   https://github.com/typeorm/typeorm/blob/master/CONTRIBUTING.md
 -->
 
@@ -34,7 +34,7 @@
 - [ ] Code is up-to-date with the `master` branch
 - [ ] This pull request links a relevant issue using a closing keyword:
       `Fixes #NNNN`, `Closes #NNNN`, or `Resolves #NNNN`
-- [ ] There are new or updated tests validating the change (`tests/**.test.ts`)
+- [ ] There are new or updated tests validating the change (`packages/typeorm/test/**.test.ts`)
 - [ ] Documentation has been updated to reflect this change (`docs/docs/**.md`)
 
 > 🛡️ **Security fixes:** Do not submit security fixes as public PRs — the diff exposes the vulnerability. Use [GitHub Security Advisories](https://github.com/typeorm/typeorm/security/advisories/new) instead.
