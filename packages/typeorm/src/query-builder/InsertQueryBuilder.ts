@@ -133,6 +133,23 @@ export class InsertQueryBuilder<
                         this.expressionMap.mainAlias!.metadata.getInsertionReturningColumns()
                 }
 
+                if (
+                    this.expressionMap.onIgnore &&
+                    this.dataSource.driver.isReturningSqlSupported("insert")
+                ) {
+                    for (const column of this.getInsertedColumns()) {
+                        if (
+                            !this.expressionMap.extraReturningColumns.includes(
+                                column,
+                            )
+                        ) {
+                            this.expressionMap.extraReturningColumns.push(
+                                column,
+                            )
+                        }
+                    }
+                }
+
                 returningColumns.push(
                     ...this.expressionMap.extraReturningColumns.filter(
                         (c) => !returningColumns.includes(c),

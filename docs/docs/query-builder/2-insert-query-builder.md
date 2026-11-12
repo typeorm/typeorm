@@ -80,6 +80,8 @@ await dataSource
 
 If the values you are trying to insert conflict due to existing data or containing invalid data, the `orIgnore` function can be used to suppress errors and insert only rows that contain valid data.
 
+When inserting multiple entities with `orIgnore()` on drivers that support `RETURNING` or `OUTPUT`, rows skipped by the database leave their corresponding entity's generated properties untouched and produce `undefined` at those positions in `InsertResult.identifiers` and `InsertResult.generatedMaps`.
+
 ```typescript
 await dataSource
     .createQueryBuilder()
