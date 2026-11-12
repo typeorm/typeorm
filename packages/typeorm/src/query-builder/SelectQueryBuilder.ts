@@ -2934,7 +2934,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         columns.push(
             ...this.expressionMap.selects
                 .map((select) => columnsMap.get(select.selection))
-                .filter((col): col is ColumnMetadata => !!col),
+                .filter(
+                    (col, index, cols): col is ColumnMetadata =>
+                        !!col && cols.indexOf(col) === index,
+                ),
         )
 
         // if user used partial selection and did not select some primary columns which are required to be selected
