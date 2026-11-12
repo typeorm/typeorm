@@ -468,6 +468,22 @@ export class OrmUtils {
             return x.equals(y)
         }
 
+        // Fast path for plain objects and arrays, e.g. json and array column values
+        if (typeof x === "object" && typeof y === "object") {
+            const prototype = Object.getPrototypeOf(x)
+            if (
+                (prototype === Object.prototype ||
+                    prototype === Array.prototype) &&
+                Object.getPrototypeOf(y) === prototype
+            ) {
+                if (x.constructor !== y.constructor) return false
+                if (x.prototype !== y.prototype) return false
+                if (leftChain.indexOf(x) > -1 || rightChain.indexOf(y) > -1)
+                    return false
+                return OrmUtils.compareOwnKeys(leftChain, rightChain, x, y)
+            }
+        }
+
         if (isUint8Array(x) && isUint8Array(y)) {
             return areUint8ArraysEqual(x, y)
         }
@@ -558,6 +574,47 @@ export class OrmUtils {
             }
         }
 
+        return true
+    }
+
+    private static compareOwnKeys(
+        leftChain: any[],
+        rightChain: any[],
+        x: any,
+        y: any,
+    ): boolean {
+        const keys = Object.keys(x)
+        if (keys.length !== Object.keys(y).length) return false
+
+        leftChain.push(x)
+        rightChain.push(y)
+
+        for (const key of keys) {
+            if (!Object.prototype.propertyIsEnumerable.call(y, key))
+                return false
+
+            const valueX = x[key]
+            const valueY = y[key]
+            if (typeof valueX !== typeof valueY) return false
+
+            if (typeof valueX === "object" || typeof valueX === "function") {
+                if (
+                    !OrmUtils.compare2Objects(
+                        leftChain,
+                        rightChain,
+                        valueX,
+                        valueY,
+                    )
+                ) {
+                    return false
+                }
+            } else if (valueX !== valueY) {
+                return false
+            }
+        }
+
+        leftChain.pop()
+        rightChain.pop()
         return true
     }
 
