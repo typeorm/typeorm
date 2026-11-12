@@ -47,6 +47,36 @@ Then you may run the command like this:
 npm run typeorm migration:run -- -d path-to-datasource-config
 ```
 
+### Nub loader in ESM projects
+
+Install the pinned Nub loader:
+
+```shell
+npm install --save-dev @nubjs/loader@0.8.3
+```
+
+Add the ordinary TypeORM CLI to the existing scripts. The project must use ESM, such as with `"type": "module"` in `package.json`.
+
+```json
+"scripts": {
+    ...
+    "typeorm": "node --import @nubjs/loader ./node_modules/typeorm/cli.js"
+}
+```
+
+Run migrations with the script:
+
+```shell
+npm run typeorm migration:run -- -d src/data-source.ts
+```
+
+The loader transpiles TypeScript at runtime. Keep a separate `tsc --noEmit` check.
+
+- Legacy TypeORM decorators require `experimentalDecorators` in `tsconfig.json`.
+- TypeORM infers a column type from metadata when the column has no explicit type. Enable `emitDecoratorMetadata` when using that inference.
+- Load `reflect-metadata` before importing decorated entities.
+- Types that require inference can produce `Object` metadata. Set an explicit column type when that metadata is required.
+
 ### How to read the documentation?
 
 To reduce verbosity of the documentation, the following sections are using a globally installed typeorm CLI. Depending on how you installed the CLI, you may replace `typeorm` at the start of the command, by either `npx typeorm` or `npm run typeorm`.
