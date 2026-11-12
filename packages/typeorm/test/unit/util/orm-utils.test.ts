@@ -286,6 +286,132 @@ describe(`OrmUtils`, () => {
         })
     })
 
+    describe("compareIds", () => {
+        it("matches equal single ids of the same primitive type", () => {
+            expect(OrmUtils.compareIds({ id: 1 }, { id: 1 })).to.equal(true)
+            expect(OrmUtils.compareIds({ id: "a" }, { id: "a" })).to.equal(true)
+            expect(OrmUtils.compareIds({ id: 1 }, { id: 2 })).to.equal(false)
+            expect(OrmUtils.compareIds({ id: "a" }, { id: "b" })).to.equal(
+                false,
+            )
+        })
+
+        it("matches a string id against a numeric id when their values are equal", () => {
+            // MySQL and some other drivers return bigint columns as strings, so
+            // the DB-loaded id ("1") and the in-memory id (1) must still compare
+            // as equal — otherwise the relation looks removed and its FK is nulled
+            // (see #11773).
+            expect(OrmUtils.compareIds({ id: "1" }, { id: 1 })).to.equal(true)
+            expect(OrmUtils.compareIds({ id: 1 }, { id: "1" })).to.equal(true)
+            expect(OrmUtils.compareIds({ id: "10" }, { id: 10 })).to.equal(true)
+        })
+
+        it("matches a decimal string id against an equal numeric id", () => {
+            // Decimal/numeric keys are also returned as strings by some
+            // drivers, and drivers preserve the declared scale ("70.000"), so
+            // ids are compared by numeric value rather than string form.
+            expect(OrmUtils.compareIds({ id: "1.5" }, { id: 1.5 })).to.equal(
+                true,
+            )
+            expect(OrmUtils.compareIds({ id: 1.5 }, { id: "1.5" })).to.equal(
+                true,
+            )
+            expect(OrmUtils.compareIds({ id: "70.000" }, { id: 70 })).to.equal(
+                true,
+            )
+            expect(OrmUtils.compareIds({ id: "1.5" }, { id: 2.5 })).to.equal(
+                false,
+            )
+        })
+
+        it("does not treat unequal string/number ids as the same", () => {
+            expect(OrmUtils.compareIds({ id: "1" }, { id: 2 })).to.equal(false)
+            expect(OrmUtils.compareIds({ id: 2 }, { id: "1" })).to.equal(false)
+        })
+
+        it("returns false when either id map is null or undefined", () => {
+            expect(OrmUtils.compareIds(undefined, { id: 1 })).to.equal(false)
+            expect(OrmUtils.compareIds({ id: 1 }, undefined)).to.equal(false)
+            expect(OrmUtils.compareIds(undefined, undefined)).to.equal(false)
+            // Explicit null (distinct from undefined) must be handled too.
+            expect(OrmUtils.compareIds(null, { id: 1 })).to.equal(false)
+            expect(OrmUtils.compareIds({ id: 1 }, null)).to.equal(false)
+            expect(OrmUtils.compareIds(null, null)).to.equal(false)
+        })
+
+        it("does not coerce non-finite numeric ids to match a string", () => {
+            // NaN/Infinity are never valid ids; String(NaN) === "NaN" must not
+            // make them equal to a "NaN"/"Infinity" string via the cross-type path.
+            expect(OrmUtils.compareIds({ id: NaN }, { id: "NaN" })).to.equal(
+                false,
+            )
+            expect(OrmUtils.compareIds({ id: "NaN" }, { id: NaN })).to.equal(
+                false,
+            )
+            expect(
+                OrmUtils.compareIds({ id: Infinity }, { id: "Infinity" }),
+            ).to.equal(false)
+        })
+
+        it("does not coerce an unsafe-integer numeric id to match a bigint string", () => {
+            // Above Number.MAX_SAFE_INTEGER a JS number cannot represent a
+            // bigint exactly: the literal 9007199254740993 is actually stored
+            // as 9007199254740992, so a naive String(number) coercion would
+            // wrongly match the *different* bigint string "9007199254740992".
+            // The safe-integer guard must reject this to avoid a false match.
+            expect(
+                OrmUtils.compareIds(
+                    { id: 9007199254740993 },
+                    { id: "9007199254740992" },
+                ),
+            ).to.equal(false)
+            expect(
+                OrmUtils.compareIds(
+                    { id: "9007199254740992" },
+                    { id: 9007199254740993 },
+                ),
+            ).to.equal(false)
+            // The boundary value itself is still a safe integer and must keep
+            // matching its string form.
+            expect(
+                OrmUtils.compareIds(
+                    { id: Number.MAX_SAFE_INTEGER },
+                    { id: String(Number.MAX_SAFE_INTEGER) },
+                ),
+            ).to.equal(true)
+        })
+
+        it("does not treat permissive numeric string forms as equal", () => {
+            // Number("") === 0, Number("0x10") === 16 and Number("1e2") === 100,
+            // so a non-decimal string id must not coerce to a matching number.
+            expect(OrmUtils.compareIds({ id: "" }, { id: 0 })).to.equal(false)
+            expect(OrmUtils.compareIds({ id: "0x10" }, { id: 16 })).to.equal(
+                false,
+            )
+            expect(OrmUtils.compareIds({ id: "1e2" }, { id: 100 })).to.equal(
+                false,
+            )
+        })
+
+        it("treats a null id as a non-matching identifier", () => {
+            // A null id part is not string/number, so it routes through deep
+            // comparison rather than the single-id fast path.
+            expect(OrmUtils.compareIds({ id: null }, { id: 1 })).to.equal(false)
+            expect(OrmUtils.compareIds({ id: null }, { id: null })).to.equal(
+                true,
+            )
+        })
+
+        it("falls back to deep comparison for composite ids", () => {
+            expect(
+                OrmUtils.compareIds({ a: 1, b: 2 }, { a: 1, b: 2 }),
+            ).to.equal(true)
+            expect(
+                OrmUtils.compareIds({ a: 1, b: 2 }, { a: 1, b: 3 }),
+            ).to.equal(false)
+        })
+    })
+
     describe("normalizeWhereCriteria", () => {
         it("throws on null/undefined by default when no options are provided", () => {
             // unconfigured invalidWhereValuesBehavior defaults to "throw",
