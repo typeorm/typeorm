@@ -739,7 +739,7 @@ export class SqlServerDriver implements Driver {
         }
 
         if (typeof defaultValue === "string") {
-            return `'${defaultValue}'`
+            return `'${String(defaultValue).replaceAll("'", "''")}'`
         }
 
         if (defaultValue === undefined || defaultValue === null) {

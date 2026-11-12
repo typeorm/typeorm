@@ -707,7 +707,7 @@ export abstract class AbstractSqliteDriver implements Driver {
         }
 
         if (typeof defaultValue === "string") {
-            return `'${defaultValue}'`
+            return `'${String(defaultValue).replaceAll("'", "''")}'`
         }
 
         if (
