@@ -21,6 +21,13 @@ import { TransactionAlreadyStartedError, TypeORMError } from "../../error"
 import { MetadataTableType } from "../types/MetadataTableType"
 import { InstanceChecker } from "../../util/InstanceChecker"
 
+const SQLITE_CLOSING_QUOTES: Record<string, string> = {
+    '"': '"',
+    "'": "'",
+    "`": "`",
+    "[": "]",
+}
+
 /**
  * Runs queries on a single sqlite database connection.
  */
@@ -1863,7 +1870,6 @@ export abstract class AbstractSqliteQueryRunner
                         const indexDef = dbIndicesDef.find(
                             (dbIndexDef) => dbIndexDef["name"] === dbIndexName,
                         )
-                        const condition = /WHERE (.*)/.exec(indexDef!["sql"])
                         const dbIndex = dbIndices.find(
                             (dbIndex) => dbIndex["name"] === dbIndexName,
                         )
@@ -1884,12 +1890,17 @@ export abstract class AbstractSqliteQueryRunner
                         const isUnique =
                             dbIndex!["unique"] === "1" ||
                             dbIndex!["unique"] === 1
+                        const isPartial =
+                            dbIndex!["partial"] === "1" ||
+                            dbIndex!["partial"] === 1
                         return new TableIndex(<TableIndexOptions>{
                             table: table,
                             name: dbIndexPath,
                             columnNames: indexColumns,
                             isUnique: isUnique,
-                            where: condition ? condition[1] : undefined,
+                            where: isPartial
+                                ? this.indexCondition(indexDef!["sql"])
+                                : undefined,
                         })
                     })
                 const indices = await Promise.all(indicesPromises)
@@ -2131,6 +2142,87 @@ export abstract class AbstractSqliteQueryRunner
             type: MetadataTableType.VIEW,
             name: viewName,
         })
+    }
+
+    /**
+     * Reads the condition of a partial index from its stored sql.
+     *
+     * @param sql
+     */
+    protected indexCondition(sql: string): string | undefined {
+        let position = 0
+        while (position < sql.length) {
+            const closingQuote = SQLITE_CLOSING_QUOTES[sql[position]]
+            if (closingQuote) {
+                position = this.quotedEnd(sql, position, closingQuote)
+                continue
+            }
+            if (sql[position] !== ")") {
+                const blanksEnd = this.blanksEnd(sql, position)
+                position = blanksEnd === position ? position + 1 : blanksEnd
+                continue
+            }
+            const keywordStart = this.blanksEnd(sql, position + 1)
+            if (/^WHERE\b/i.test(sql.slice(keywordStart, keywordStart + 6)))
+                return sql.slice(keywordStart + 5).trim()
+            position = keywordStart
+        }
+        return undefined
+    }
+
+    /**
+     * Position after the quoted name or string that starts at the given position.
+     *
+     * @param sql
+     * @param start
+     * @param closingQuote
+     */
+    protected quotedEnd(
+        sql: string,
+        start: number,
+        closingQuote: string,
+    ): number {
+        let position = start + 1
+        while (position < sql.length) {
+            if (sql[position] !== closingQuote) {
+                position++
+                continue
+            }
+            if (closingQuote !== "]" && sql[position + 1] === closingQuote) {
+                position += 2
+                continue
+            }
+            return position + 1
+        }
+        return sql.length
+    }
+
+    /**
+     * Position after the whitespace and comments that start at the given position.
+     *
+     * @param sql
+     * @param start
+     */
+    protected blanksEnd(sql: string, start: number): number {
+        let position = start
+        while (position < sql.length) {
+            if (/\s/.test(sql[position])) {
+                position++
+                continue
+            }
+            if (sql.startsWith("/*", position)) {
+                const end = sql.indexOf("*/", position + 2)
+                position = end === -1 ? sql.length : end + 2
+                continue
+            }
+            if (sql.startsWith("--", position)) {
+                const end = sql.indexOf("\n", position + 2)
+                position = end === -1 ? sql.length : end + 1
+                continue
+            }
+            return position
+        }
+        return position
     }
 
     /**
