@@ -136,7 +136,7 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
             fileMustExist = false,
             timeout = 5000,
             verbose = null,
-            nativeBinding = null,
+            nativeBinding,
             prepareDatabase,
         } = this.options
         const databaseConnection = new this.sqlite(database, {
@@ -144,7 +144,8 @@ export class BetterSqlite3Driver extends AbstractSqliteDriver {
             fileMustExist,
             timeout,
             verbose,
-            nativeBinding,
+            // better-sqlite3 v13 platform entrypoints reject this option even when it is null
+            ...(nativeBinding !== undefined && { nativeBinding }),
         })
         // in the options, if encryption key for SQLCipher is setted.
         // Must invoke key pragma before trying to do any other interaction with the database.
