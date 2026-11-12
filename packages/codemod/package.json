@@ -1,6 +1,6 @@
 {
   "name": "@typeorm/codemod",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Codemods for migrating between TypeORM versions",
   "repository": {
     "type": "git",
