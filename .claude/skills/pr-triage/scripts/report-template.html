@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PR triage</title>
+<style>
+:root { --bg: #fff; --fg: #1d1d1f; --muted: #6e6e76; --line: #e6e6ea; --soft: #f5f5f7; --accent: #2563eb; --good: #15803d; --warn: #b45309; --bad: #b91c1c; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #161618; --fg: #ececf0; --muted: #9a9aa4; --line: #2c2c31; --soft: #1f1f23; --accent: #7aa2ff; --good: #4ade80; --warn: #fbbf24; --bad: #f87171; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.wrap { max-width: 860px; margin: 0 auto; padding: 28px 20px 60px; }
+h1 { font-size: 22px; margin: 0 0 2px; }
+.sub { color: var(--muted); font-size: 13px; margin-bottom: 22px; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.presets { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+.presets span { color: var(--muted); font-size: 13px; margin-right: 4px; }
+button { font: inherit; font-size: 13px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); border-radius: 999px; padding: 5px 13px; cursor: pointer; }
+button:hover { background: var(--soft); }
+button.on { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 6px; }
+.tab { border: 0; border-radius: 0; background: none; padding: 8px 12px; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; font-size: 14px; }
+.tab:hover { background: none; color: var(--fg); }
+.tab.on { color: var(--fg); border-bottom-color: var(--fg); background: none; }
+.tab b { font-weight: 600; margin-left: 4px; color: var(--muted); }
+.blurb { color: var(--muted); font-size: 13px; margin: 10px 0 4px; }
+ol { list-style: none; padding: 0; margin: 0; }
+li { display: grid; grid-template-columns: 28px 1fr; gap: 0 10px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.n { color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; padding-top: 1px; }
+.what { font-weight: 600; }
+.what a { color: var(--fg); }
+.what .num { color: var(--muted); font-weight: 400; margin-left: 6px; }
+.why { margin-top: 5px; display: flex; flex-wrap: wrap; gap: 6px; }
+.why span { font-size: 12.5px; padding: 1px 8px; border-radius: 999px; background: var(--soft); white-space: nowrap; }
+.why .good { color: var(--good); }
+.why .warn { color: var(--warn); }
+.why .bad { color: var(--bad); }
+.note { color: var(--muted); font-size: 13px; margin-top: 5px; }
+.more { margin-top: 14px; }
+.empty { color: var(--muted); padding: 20px 0; }
+input[type=search] { font: inherit; font-size: 13px; padding: 5px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg); color: var(--fg); margin-left: auto; width: 200px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 id="title">PR triage</h1>
+  <div class="sub" id="sub"></div>
+  <div class="presets" id="presets"></div>
+  <div class="tabs" id="tabs"></div>
+  <div class="blurb" id="blurb"></div>
+  <ol id="list"></ol>
+  <div class="more" id="more"></div>
+</div>
+
+<script>
+/*__SCORING__*/
+</script>
+<script>
+const DATA = /*__DATA__*/null;
+(() => {
+const D = DATA
+const PRS = D.prs
+const byNum = new Map(PRS.map((p) => [p.number, p]))
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c])
+const clone = (o) => JSON.parse(JSON.stringify(o))
+
+// What matters most? Each preset is a small change to config.json's weights.
+const PRESETS = [
+  { id: "balanced", label: "Balanced", tweak: () => {} },
+  { id: "bugs", label: "Worst bugs first", tweak: (w) => { w.value = { severity: 0.7, demand: 0.15, reach: 0.15 }; w.easeInfluence = 0.2 } },
+  { id: "wanted", label: "Most wanted", tweak: (w) => { w.value = { severity: 0.2, demand: 0.65, reach: 0.15 }; w.easeInfluence = 0.3 } },
+  { id: "easy", label: "Easiest first", tweak: (w) => { w.easeInfluence = 0.85 } },
+]
+
+const TABS = [
+  { id: "review", label: "Review next", blurb: "Not yet approved, nothing blocking. Most important first.", pick: (r) => r.bucket === "needs-review" },
+  { id: "quick", label: "Quick wins", blurb: "Small, tested, CI green, and worth doing. Good for a short review session.", pick: (r) => r.bucket === "quick-win" },
+  { id: "ready", label: "Ready to merge", blurb: "A maintainer approved it and nothing is outstanding.", pick: (r) => r.bucket === "ready-to-merge" },
+  { id: "nudge", label: "Nudge the author", blurb: "Worth having, but stuck on the author: conflicts, failing CI or unanswered review.", pick: (r) => r.bucket === "waiting-on-author" && r.value >= D.config.nudgeMinValue && !r.competing?.length },
+  { id: "close", label: "Close", blurb: "A maintainer said so, a better duplicate exists, or it went stale.", pick: (r) => r.bucket === "close-candidate" || r.bucket === "superseded" },
+]
+
+const state = { preset: localStorage.getItem("pr-triage:preset") || "balanced", tab: "review", q: "", showAll: false }
+let result, leadOf
+
+function rank() {
+  const cfg = clone(D.config)
+  PRESETS.find((p) => p.id === state.preset)?.tweak(cfg.weights)
+  result = rankAll(PRS, D.judgments, cfg)
+  leadOf = new Map()
+  for (const c of result.clusters) for (const m of c.members) if (c.lead && m !== c.lead) leadOf.set(m, c.lead)
+}
+
+// ---------- plain-language reasons ----------
+const DRIVER_NAMES = { postgres: "Postgres", mysql: "MySQL/MariaDB", "sqlite-abstract": "SQLite", sqlite: "SQLite", "better-sqlite3": "SQLite", sqlserver: "SQL Server", oracle: "Oracle", mongodb: "MongoDB", cockroachdb: "CockroachDB", sqljs: "sql.js", "react-native": "React Native", expo: "Expo", capacitor: "Capacitor", cordova: "Cordova", nativescript: "NativeScript", "aurora-postgres": "Aurora Postgres", "aurora-mysql": "Aurora MySQL", sap: "SAP HANA", spanner: "Spanner" }
+function reasons(r) {
+  const p = byNum.get(r.number)
+  const c = r.components
+  const out = []
+  const isFix = r.type === "fix" || r.type === "perf"
+  const sev = c.severity
+  if (r.type === "feat") out.push([sev >= 3 ? "Much-requested feature" : "Feature", sev >= 3 ? "good" : ""])
+  else if (isFix) out.push([sev >= 5 ? "Critical bug" : sev >= 4 ? "Serious bug" : sev >= 3 ? "Bug" : "Minor bug", sev >= 4 ? "bad" : ""])
+  else out.push([{ docs: "Docs", chore: "Chore", test: "Tests", refactor: "Refactor", ci: "CI", build: "Build" }[r.type] || "Change", ""])
+
+  if (p.scope === "core") out.push(["All databases", "good"])
+  else if (p.scope === "drivers") {
+    const names = [...new Set(p.drivers.map((d) => DRIVER_NAMES[d] || d))]
+    out.push([names.length > 3 ? `${names.length} databases` : `${names.join(", ")} only`, ""])
+  } else out.push([{ cli: "CLI", docs: "Docs only", tests: "Tests only", infra: "Tooling" }[p.scope] || p.scope, ""])
+
+  const people = p.reactions.positive + p.issues.reduce((s, i) => s + i.reactions.positive + i.participants, 0) + p.communityCommenters
+  if (people >= 3) out.push([`${people} people want this`, people >= 15 ? "good" : ""])
+
+  if (p.srcLines === 0) {}
+  else if (p.srcLines <= 40) out.push([`Small: ${p.srcLines} lines`, "good"])
+  else if (p.srcLines >= 300) out.push([`Large: ${p.srcLines} lines`, "warn"])
+  else out.push([`${p.srcLines} lines`, ""])
+
+  const a = p.author
+  if (a.isMaintainer) out.push(["By a maintainer", "good"])
+  else if ((a.merged ?? 0) >= 5) out.push([`Regular contributor (${a.merged} merged)`, "good"])
+  else if ((a.merged ?? 0) === 0) out.push([a.openPrs >= 4 ? `First-timer with ${a.openPrs} open PRs` : "First-time contributor", a.openPrs >= 4 ? "warn" : ""])
+
+  if (p.review.approvedBy.length) out.push([`Approved by ${p.review.approvedBy.join(", ")}`, "good"])
+  const needsTests = ["fix", "feat", "perf"].includes(r.type) && ["core", "drivers", "cli"].includes(p.scope)
+  if (needsTests && !p.hasTests) out.push(["No tests", "warn"])
+  for (const w of r.waitingOn) out.push([{ "merge conflicts": "Has conflicts", "CI failing": "CI failing", "changes requested": "Changes requested, no update since", draft: "Draft" }[w] || w, "bad"])
+  if (c.sentiment === "urgent") out.push(["Users say it's urgent", "bad"])
+  if (c.sentiment === "contested") out.push(["Approach is disputed", "warn"])
+  const others = r.competing?.length
+  if (others && !leadOf.has(r.number)) out.push([`Best of ${others + 1} PRs for the same issue`, ""])
+  return out
+}
+function closeReason(r) {
+  if (r.closeReason) return r.closeReason
+  if (r.bucket === "superseded") return `Duplicate: #${leadOf.get(r.number)} fixes the same issue and is the one to review`
+  return `No activity for ${r.staleDays} days and stuck (${r.waitingOn.join(", ")})`
+}
+
+// ---------- render ----------
+function render() {
+  const counts = Object.fromEntries(TABS.map((t) => [t.id, result.ranked.filter(t.pick).length]))
+  document.getElementById("presets").innerHTML = `<span>What matters most?</span>` +
+    PRESETS.map((p) => `<button data-preset="${p.id}" class="${state.preset === p.id ? "on" : ""}">${p.label}</button>`).join("") +
+    `<input type="search" id="q" placeholder="Search" value="${esc(state.q)}">`
+  document.getElementById("tabs").innerHTML = TABS.map((t) =>
+    `<button class="tab ${state.tab === t.id ? "on" : ""}" data-tab="${t.id}">${t.label}<b>${counts[t.id]}</b></button>`).join("")
+  const tab = TABS.find((t) => t.id === state.tab)
+  document.getElementById("blurb").textContent = tab.blurb
+  const q = state.q.toLowerCase()
+  const rows = result.ranked.filter(tab.pick).filter((r) =>
+    !q || `#${r.number} ${r.title} ${r.summary || ""} ${r.author}`.toLowerCase().includes(q))
+  const shown = state.showAll ? rows : rows.slice(0, 15)
+  document.getElementById("list").innerHTML = shown.length ? shown.map((r, i) => {
+    const why = tab.id === "close"
+      ? `<div class="note">${esc(closeReason(r))}</div>`
+      : `<div class="why">${reasons(r).map(([t, cls]) => `<span class="${cls}">${esc(t)}</span>`).join("")}</div>${r.note ? `<div class="note">${esc(r.note)}</div>` : ""}`
+    return `<li><div class="n">${i + 1}</div><div>
+      <div class="what"><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.summary || r.title)}</a><span class="num">#${r.number} · ${esc(r.author)}</span></div>
+      ${why}</div></li>`
+  }).join("") : `<div class="empty">Nothing here.</div>`
+  document.getElementById("more").innerHTML = rows.length > 15
+    ? `<button id="all">${state.showAll ? "Show top 15" : `Show all ${rows.length}`}</button>` : ""
+  const qEl = document.getElementById("q")
+  qEl.oninput = (e) => { state.q = e.target.value; render(); const n = document.getElementById("q"); n.focus(); n.setSelectionRange(n.value.length, n.value.length) }
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("button")
+  if (!b) return
+  if (b.dataset.preset) { state.preset = b.dataset.preset; localStorage.setItem("pr-triage:preset", state.preset); rank() }
+  else if (b.dataset.tab) { state.tab = b.dataset.tab; state.showAll = false }
+  else if (b.id === "all") state.showAll = !state.showAll
+  else return
+  render()
+})
+
+document.getElementById("title").textContent = `PR triage · ${D.repo}`
+document.getElementById("sub").textContent = `${PRS.length} open PRs · data from ${new Date(D.fetchedAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}`
+rank()
+render()
+})()
+</script>
+</body>
+</html>
