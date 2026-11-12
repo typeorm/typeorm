@@ -622,6 +622,7 @@ Now let's say you want to load user "Timber" with all of his photos:
 
 ```typescript
 const user = await dataSource
+    .getRepository(User)
     .createQueryBuilder("user")
     .leftJoinAndSelect("user.photos", "photo")
     .where("user.name = :name", { name: "Timber" })
@@ -651,6 +652,7 @@ For example, let's take all Timber's photos which aren't removed.
 
 ```typescript
 const user = await dataSource
+    .getRepository(User)
     .createQueryBuilder("user")
     .leftJoinAndSelect("user.photos", "photo")
     .where("user.name = :name", { name: "Timber" })
@@ -670,6 +672,7 @@ You can also add conditions to the join expression instead of using "where":
 
 ```typescript
 const user = await dataSource
+    .getRepository(User)
     .createQueryBuilder("user")
     .leftJoinAndSelect("user.photos", "photo", "photo.isRemoved = :isRemoved", {
         isRemoved: false,
@@ -692,6 +695,7 @@ If you want to use `INNER JOIN` instead of `LEFT JOIN` just use `innerJoinAndSel
 
 ```typescript
 const user = await dataSource
+    .getRepository(User)
     .createQueryBuilder("user")
     .innerJoinAndSelect(
         "user.photos",
@@ -722,6 +726,7 @@ To do that, use `leftJoin` or `innerJoin`:
 
 ```typescript
 const user = await dataSource
+    .getRepository(User)
     .createQueryBuilder("user")
     .innerJoin("user.photos", "photo")
     .where("user.name = :name", { name: "Timber" })
@@ -745,6 +750,7 @@ Examples:
 
 ```typescript
 const user = await dataSource
+    .getRepository(User)
     .createQueryBuilder("user")
     .leftJoinAndSelect(Photo, "photo", "photo.userId = user.id")
     .getMany()
@@ -752,6 +758,7 @@ const user = await dataSource
 
 ```typescript
 const user = await dataSource
+    .getRepository(User)
     .createQueryBuilder("user")
     .leftJoinAndSelect("photos", "photo", "photo.userId = user.id")
     .getMany()
@@ -770,6 +777,7 @@ export class User {
 
 ```typescript
 const user = await dataSource
+    .getRepository(User)
     .createQueryBuilder("user")
     .leftJoinAndMapOne(
         "user.profilePhoto",
@@ -792,6 +800,7 @@ To do so, use `getSql`:
 
 ```typescript
 const sql = dataSource
+    .getRepository(User)
     .createQueryBuilder("user")
     .where("user.firstName = :firstName", { firstName: "Timber" })
     .orWhere("user.lastName = :lastName", { lastName: "Saw" })
@@ -802,6 +811,7 @@ For debugging purposes you can inspect the generated SQL using `getSql()` or `ge
 
 ```typescript
 const qb = dataSource
+    .getRepository(User)
     .createQueryBuilder("user")
     .where("user.firstName = :firstName", { firstName: "Timber" })
     .orWhere("user.lastName = :lastName", { lastName: "Saw" })
@@ -812,7 +822,7 @@ console.log(qb.getSql())
 const users = await qb.getMany()
 ```
 
-`getSql()` returns the SQL with parameter placeholders. `getQuery()` returns the same SQL string. To also see the parameter values, use `getQueryAndParameters()` which returns a `[sql, parameters]` tuple.
+`getSql()` returns the SQL with parameter placeholders. `getQuery()` returns the same SQL, but with the named parameters (such as `:firstName`) left in place. To also see the parameter values, use `getQueryAndParameters()` which returns a `[sql, parameters]` tuple.
 
 All executed queries are also automatically logged through the configured logger when you enable query logging in your DataSource options:
 
@@ -1189,8 +1199,8 @@ Using a standard `find` or query, you will not receive the `password` property f
 ```typescript
 const users = await dataSource
     .getRepository(User)
-    .createQueryBuilder()
-    .select("user.id", "id")
+    .createQueryBuilder("user")
+    .select("user.id")
     .addSelect("user.password")
     .getMany()
 ```
@@ -1231,8 +1241,8 @@ Using a standard `find` or query, you will not receive the rows which have a val
 ```typescript
 const users = await dataSource
     .getRepository(User)
-    .createQueryBuilder()
-    .select("user.id", "id")
+    .createQueryBuilder("user")
+    .select("user.id")
     .withDeleted()
     .getMany()
 ```
@@ -1249,14 +1259,14 @@ support [common table expressions](https://en.wikipedia.org/wiki/Hierarchical_an
 const users = await dataSource
     .getRepository(User)
     .createQueryBuilder("user")
-    .select("user.id", "id")
+    .select("user.id")
     .addCommonTableExpression(
         `
       SELECT "userId" FROM "post"
     `,
         "post_users_ids",
     )
-    .where(`user.id IN (SELECT "userId" FROM 'post_users_ids')`)
+    .where(`user.id IN (SELECT "userId" FROM "post_users_ids")`)
     .getMany()
 ```
 
@@ -1266,17 +1276,18 @@ Result values of `InsertQueryBuilder` or `UpdateQueryBuilder` can be used in Pos
 const insertQueryBuilder = dataSource
     .getRepository(User)
     .createQueryBuilder()
-    .insert({
+    .insert()
+    .values({
         name: "John Smith",
     })
     .returning(["id"])
 
-const users = await dataSource
-    .getRepository(User)
-    .createQueryBuilder("user")
+const insertedIds = await dataSource
+    .createQueryBuilder()
+    .select("insert_results.id", "id")
     .addCommonTableExpression(insertQueryBuilder, "insert_results")
-    .where(`user.id IN (SELECT "id" FROM 'insert_results')`)
-    .getMany()
+    .from("insert_results", "insert_results")
+    .getRawMany()
 ```
 
 ## Time Travel Queries
@@ -1288,7 +1299,7 @@ currently supported only in `CockroachDB` database.
 const repository = dataSource.getRepository(Account)
 
 // create a new account
-const account = new Account()
+let account = new Account()
 account.name = "John Smith"
 account.balance = 100
 await repository.save(account)
@@ -1331,7 +1342,7 @@ const sql = await dataSource
 Which results in:
 
 ```sql
-SELECT `user`.`id` as `userId`, `user`.`firstName` as `userFirstName`, `user`.`lastName` as `userLastName` FROM `users` `user` WHERE `user`.`id` = ?
+SELECT `user`.`id` AS `user_id`, `user`.`firstName` AS `user_firstName`, `user`.`lastName` AS `user_lastName` FROM `users` `user` WHERE `user`.`id` = :id
 ```
 
 Or if you want the query and the parameters you can get an array back using `getQueryAndParameters()`
@@ -1348,7 +1359,7 @@ Which results in:
 
 ```typescript
 ;[
-    "SELECT `user`.`id` as `userId`, `user`.`firstName` as `userFirstName`, `user`.`lastName` as `userLastName` FROM `users` `user` WHERE `user`.`id` = ?",
+    "SELECT `user`.`id` AS `user_id`, `user`.`firstName` AS `user_firstName`, `user`.`lastName` AS `user_lastName` FROM `users` `user` WHERE `user`.`id` = ?",
     [1],
 ]
 ```
