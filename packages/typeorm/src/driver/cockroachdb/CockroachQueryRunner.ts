@@ -225,27 +225,11 @@ export class CockroachQueryRunner
             await this.broadcaster.broadcast("AfterTransactionStart")
         } catch (err) {
             if (this.transactionDepth > initialTransactionDepth) {
-                try {
-                    await this.rollbackTransaction()
-                } catch (rollbackErr) {
-                    this.dataSource.logger.log(
-                        "warn",
-                        `Failed to rollback transaction after failed start: ${rollbackErr}`,
-                        this,
-                    )
-                }
+                await this.rollbackTransaction()
             } else if (rootTransactionStarted) {
-                try {
-                    this.storeQueries = false
-                    await this.query("ROLLBACK")
-                    this.queries = []
-                } catch (rollbackErr) {
-                    this.dataSource.logger.log(
-                        "warn",
-                        `Failed to rollback initial transaction after setup failure: ${rollbackErr}`,
-                        this,
-                    )
-                }
+                this.storeQueries = false
+                await this.query("ROLLBACK")
+                this.queries = []
             }
             if (isInitialTransaction && this.transactionDepth === 0) {
                 this.isTransactionActive = false

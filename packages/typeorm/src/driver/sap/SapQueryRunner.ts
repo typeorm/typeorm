@@ -225,15 +225,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             await promisify(connection.exec).call(connection, query)
         } catch (error) {
             if (options.status === "off") {
-                try {
-                    connection.setAutoCommit(true)
-                } catch (restoreErr) {
-                    this.driver.dataSource.logger.log(
-                        "warn",
-                        `Failed to restore autocommit after failed DDL: ${restoreErr}`,
-                        this,
-                    )
-                }
+                connection.setAutoCommit(true)
             }
             throw new QueryFailedError(query, [], error)
         }

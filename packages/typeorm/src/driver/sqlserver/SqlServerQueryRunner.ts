@@ -112,6 +112,7 @@ export class SqlServerQueryRunner
                     if (err) {
                         return fail(err)
                     }
+                    this.transactionDepth += 1
                     ok()
                 }
 
@@ -140,9 +141,9 @@ export class SqlServerQueryRunner
                         await this.query(
                             `SAVE TRANSACTION typeorm_${this.transactionDepth}`,
                         )
+                        this.transactionDepth += 1
                         ok()
                     }
-                    this.transactionDepth += 1
                 } catch (err) {
                     return fail(err)
                 }
@@ -151,19 +152,12 @@ export class SqlServerQueryRunner
             await this.broadcaster.broadcast("AfterTransactionStart")
         } catch (err) {
             if (this.transactionDepth > initialTransactionDepth) {
-                try {
-                    await this.rollbackTransaction()
-                } catch (rollbackErr) {
-                    this.dataSource.logger.log(
-                        "warn",
-                        `Failed to rollback transaction after failed start: ${rollbackErr}`,
-                        this,
-                    )
-                }
+                await this.rollbackTransaction()
             }
-            if (isInitialTransaction && this.transactionDepth === 0) {
+            if (isInitialTransaction) {
                 this.isTransactionActive = false
                 this.databaseConnection = null
+                this.transactionDepth = 0
             }
             throw err
         }

@@ -250,7 +250,9 @@ When set, all transactions started without an explicit isolation level will use 
 
 ## Nested transactions and error handling
 
-TypeORM supports nested transactions through savepoints for relational database drivers. When nesting `transaction()` calls:
+TypeORM supports nested transactions through savepoints for database drivers that support nested transactions (such as PostgreSQL, MySQL, MariaDB, SQLite, CockroachDB, and Oracle). Drivers with only simple transaction support (such as SAP HANA) reject nested transactions when another transaction is already active.
+
+When nesting `transaction()` calls on supported drivers:
 
 ```typescript
 await dataSource.manager.transaction(async (manager) => {

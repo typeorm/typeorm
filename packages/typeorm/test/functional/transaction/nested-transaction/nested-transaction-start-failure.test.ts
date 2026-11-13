@@ -227,7 +227,6 @@ describe("transaction > nested transaction start failure", () => {
                         "Subscriber failure during root startTransaction",
                     )
 
-                    // Next transaction should succeed normally on the connection pool without orphaned transaction state
                     failRootSubscriber = false
                     await dataSource.transaction(async (em) => {
                         const post = new Post()

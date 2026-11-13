@@ -203,25 +203,9 @@ export class PostgresQueryRunner
             await this.broadcaster.broadcast("AfterTransactionStart")
         } catch (err) {
             if (this.transactionDepth > initialTransactionDepth) {
-                try {
-                    await this.rollbackTransaction()
-                } catch (rollbackErr) {
-                    this.dataSource.logger.log(
-                        "warn",
-                        `Failed to rollback transaction after failed start: ${rollbackErr}`,
-                        this,
-                    )
-                }
+                await this.rollbackTransaction()
             } else if (rootTransactionStarted) {
-                try {
-                    await this.query("ROLLBACK")
-                } catch (rollbackErr) {
-                    this.dataSource.logger.log(
-                        "warn",
-                        `Failed to rollback initial transaction after setup failure: ${rollbackErr}`,
-                        this,
-                    )
-                }
+                await this.query("ROLLBACK")
             }
             if (isInitialTransaction && this.transactionDepth === 0) {
                 this.isTransactionActive = false

@@ -144,15 +144,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             await this.broadcaster.broadcast("AfterTransactionStart")
         } catch (err) {
             if (this.transactionDepth > initialTransactionDepth) {
-                try {
-                    await this.rollbackTransaction()
-                } catch (rollbackErr) {
-                    this.dataSource.logger.log(
-                        "warn",
-                        `Failed to rollback transaction after failed start: ${rollbackErr}`,
-                        this,
-                    )
-                }
+                await this.rollbackTransaction()
             }
             if (isInitialTransaction && this.transactionDepth === 0) {
                 this.isTransactionActive = false
