@@ -118,6 +118,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         )
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
+        const wasTransactionActive = this.isTransactionActive
         if (
             this.isTransactionActive &&
             this.driver.transactionSupport === "simple"
@@ -126,21 +127,40 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         await this.broadcaster.broadcast("BeforeTransactionStart")
 
+        let autoCommitAttempted = false
         this.isTransactionActive = true
+        try {
+            /**
+             * Disable AUTOCOMMIT while running transaction.
+             *  Otherwise, COMMIT/ROLLBACK doesn't work in autocommit mode.
+             */
+            autoCommitAttempted = true
+            await this.setAutoCommit({ status: "off" })
 
-        /**
-         * Disable AUTOCOMMIT while running transaction.
-         *  Otherwise, COMMIT/ROLLBACK doesn't work in autocommit mode.
-         */
-        await this.setAutoCommit({ status: "off" })
+            if (isolationLevel) {
+                await this.query(
+                    `SET TRANSACTION ISOLATION LEVEL ${isolationLevel || ""}`,
+                )
+            }
 
-        if (isolationLevel) {
-            await this.query(
-                `SET TRANSACTION ISOLATION LEVEL ${isolationLevel || ""}`,
-            )
+            await this.broadcaster.broadcast("AfterTransactionStart")
+        } catch (err) {
+            if (autoCommitAttempted) {
+                try {
+                    await this.rollbackTransaction()
+                } catch (rollbackErr) {
+                    this.dataSource.logger.log(
+                        "warn",
+                        `Failed to rollback transaction after failed start: ${rollbackErr}`,
+                        this,
+                    )
+                }
+            }
+            if (!wasTransactionActive) {
+                this.isTransactionActive = false
+            }
+            throw err
         }
-
-        await this.broadcaster.broadcast("AfterTransactionStart")
     }
 
     /**
@@ -170,13 +190,25 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         if (!this.isTransactionActive) throw new TransactionNotStartedError()
 
-        await this.broadcaster.broadcast("BeforeTransactionRollback")
+        let beforeRollbackError: Error | undefined
+        try {
+            await this.broadcaster.broadcast("BeforeTransactionRollback")
+        } catch (broadcastErr) {
+            beforeRollbackError =
+                broadcastErr instanceof Error
+                    ? broadcastErr
+                    : new Error(String(broadcastErr))
+        }
 
         await this.query("ROLLBACK")
         this.isTransactionActive = false
 
         await this.setAutoCommit({ status: "on" })
         await this.broadcaster.broadcast("AfterTransactionRollback")
+
+        if (beforeRollbackError) {
+            throw beforeRollbackError
+        }
     }
 
     /**
@@ -195,6 +227,9 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         try {
             await promisify(connection.exec).call(connection, query)
         } catch (error) {
+            if (options.status === "off") {
+                connection.setAutoCommit(true)
+            }
             throw new QueryFailedError(query, [], error)
         }
     }

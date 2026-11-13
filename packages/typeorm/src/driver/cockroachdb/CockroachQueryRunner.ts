@@ -198,31 +198,63 @@ export class CockroachQueryRunner
             isolationLevel,
         )
 
+        const initialTransactionDepth = this.transactionDepth
+        const isInitialTransaction = this.transactionDepth === 0
         this.isTransactionActive = true
         this.transactionRetries = 0
+        let rootTransactionStarted = false
         try {
             await this.broadcaster.broadcast("BeforeTransactionStart")
+
+            if (this.transactionDepth === 0) {
+                await this.query("START TRANSACTION")
+                rootTransactionStarted = true
+                await this.query("SAVEPOINT cockroach_restart")
+                if (isolationLevel) {
+                    await this.query(
+                        "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
+                    )
+                }
+            } else {
+                await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
+            }
+
+            this.transactionDepth += 1
+            this.storeQueries = true
+
+            await this.broadcaster.broadcast("AfterTransactionStart")
         } catch (err) {
-            this.isTransactionActive = false
+            if (this.transactionDepth > initialTransactionDepth) {
+                try {
+                    await this.rollbackTransaction()
+                } catch (rollbackErr) {
+                    this.dataSource.logger.log(
+                        "warn",
+                        `Failed to rollback transaction after failed start: ${rollbackErr}`,
+                        this,
+                    )
+                }
+            } else if (rootTransactionStarted) {
+                this.storeQueries = false
+                try {
+                    await this.query("ROLLBACK")
+                } catch (rollbackErr) {
+                    this.dataSource.logger.log(
+                        "warn",
+                        `Failed to rollback transaction after failed start: ${rollbackErr}`,
+                        this,
+                    )
+                }
+                this.queries = []
+            }
+            if (isInitialTransaction && this.transactionDepth === 0) {
+                this.isTransactionActive = false
+                this.storeQueries = false
+                this.queries = []
+                this.transactionRetries = 0
+            }
             throw err
         }
-
-        if (this.transactionDepth === 0) {
-            await this.query("START TRANSACTION")
-            await this.query("SAVEPOINT cockroach_restart")
-            if (isolationLevel) {
-                await this.query(
-                    "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
-                )
-            }
-        } else {
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
-        }
-
-        this.transactionDepth += 1
-        this.storeQueries = true
-
-        await this.broadcaster.broadcast("AfterTransactionStart")
     }
 
     /**
@@ -259,7 +291,15 @@ export class CockroachQueryRunner
     async rollbackTransaction(): Promise<void> {
         if (!this.isTransactionActive) throw new TransactionNotStartedError()
 
-        await this.broadcaster.broadcast("BeforeTransactionRollback")
+        let beforeRollbackError: Error | undefined
+        try {
+            await this.broadcaster.broadcast("BeforeTransactionRollback")
+        } catch (broadcastErr) {
+            beforeRollbackError =
+                broadcastErr instanceof Error
+                    ? broadcastErr
+                    : new Error(String(broadcastErr))
+        }
 
         if (this.transactionDepth > 1) {
             await this.query(
@@ -275,6 +315,10 @@ export class CockroachQueryRunner
         this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
+
+        if (beforeRollbackError) {
+            throw beforeRollbackError
+        }
     }
 
     /**

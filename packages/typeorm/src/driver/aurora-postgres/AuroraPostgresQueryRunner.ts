@@ -104,41 +104,51 @@ export class AuroraPostgresQueryRunner
             isolationLevel,
         )
 
+        const initialTransactionDepth = this.transactionDepth
+        const isInitialTransaction = this.transactionDepth === 0
         this.isTransactionActive = true
         try {
             await this.broadcaster.broadcast("BeforeTransactionStart")
-        } catch (err) {
-            this.isTransactionActive = false
-            throw err
-        }
 
-        if (this.transactionDepth === 0) {
-            try {
+            if (this.transactionDepth === 0) {
                 await this.client.startTransaction()
-            } catch (err) {
-                this.isTransactionActive = false
-                throw err
-            }
-            if (isolationLevel) {
-                try {
-                    await this.query(
-                        `SET TRANSACTION ISOLATION LEVEL ${isolationLevel}`,
-                    )
-                } catch (err) {
+                if (isolationLevel) {
                     try {
-                        await this.client.rollbackTransaction()
-                    } finally {
-                        this.isTransactionActive = false
+                        await this.query(
+                            `SET TRANSACTION ISOLATION LEVEL ${isolationLevel}`,
+                        )
+                    } catch (err) {
+                        try {
+                            await this.client.rollbackTransaction()
+                        } finally {
+                            this.isTransactionActive = false
+                        }
+                        throw err
                     }
-                    throw err
+                }
+            } else {
+                await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
+            }
+            this.transactionDepth += 1
+
+            await this.broadcaster.broadcast("AfterTransactionStart")
+        } catch (err) {
+            if (this.transactionDepth > initialTransactionDepth) {
+                try {
+                    await this.rollbackTransaction()
+                } catch (rollbackErr) {
+                    this.dataSource.logger.log(
+                        "warn",
+                        `Failed to rollback transaction after failed start: ${rollbackErr}`,
+                        this,
+                    )
                 }
             }
-        } else {
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
+            if (isInitialTransaction && this.transactionDepth === 0) {
+                this.isTransactionActive = false
+            }
+            throw err
         }
-        this.transactionDepth += 1
-
-        await this.broadcaster.broadcast("AfterTransactionStart")
     }
 
     /**
@@ -170,7 +180,15 @@ export class AuroraPostgresQueryRunner
     async rollbackTransaction(): Promise<void> {
         if (!this.isTransactionActive) throw new TransactionNotStartedError()
 
-        await this.broadcaster.broadcast("BeforeTransactionRollback")
+        let beforeRollbackError: Error | undefined
+        try {
+            await this.broadcaster.broadcast("BeforeTransactionRollback")
+        } catch (broadcastErr) {
+            beforeRollbackError =
+                broadcastErr instanceof Error
+                    ? broadcastErr
+                    : new Error(String(broadcastErr))
+        }
 
         if (this.transactionDepth > 1) {
             await this.query(
@@ -183,6 +201,10 @@ export class AuroraPostgresQueryRunner
         this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
+
+        if (beforeRollbackError) {
+            throw beforeRollbackError
+        }
     }
 
     /**
