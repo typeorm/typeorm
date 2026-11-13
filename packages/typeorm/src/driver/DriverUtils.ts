@@ -157,6 +157,40 @@ export class DriverUtils {
         return newAlias
     }
 
+    /**
+     * Parses a one-dimensional Postgres array literal such as `{a,"b,c",NULL}`.
+     * Quoted elements may contain commas and backslash escapes, and an unquoted
+     * `NULL` is a null element.
+     *
+     * @param value the array literal returned by the database
+     * @returns the elements, with null for NULL elements
+     */
+    static parsePostgresArray(value: string): (string | null)[] {
+        const result: (string | null)[] = []
+        const end = value.length - 1
+        let i = 1
+        while (i < end) {
+            if (value[i] === '"') {
+                let element = ""
+                i++
+                while (i < end && value[i] !== '"') {
+                    if (value[i] === "\\") i++
+                    element += value[i++]
+                }
+                result.push(element)
+                i++
+            } else {
+                let next = value.indexOf(",", i)
+                if (next === -1 || next > end) next = end
+                const element = value.slice(i, next)
+                result.push(element === "NULL" ? null : element)
+                i = next
+            }
+            i++
+        }
+        return result
+    }
+
     // -------------------------------------------------------------------------
     // Private Static Methods
     // -------------------------------------------------------------------------
