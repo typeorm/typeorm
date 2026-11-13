@@ -1,11 +1,13 @@
 import "../../../utils/test-setup"
 import { expect } from "chai"
+import sinon from "sinon"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import type { DataSource } from "../../../../src/data-source/DataSource"
+import type { OracleDriver } from "../../../../src/driver/oracle/OracleDriver"
 import { User } from "./entity/User"
 import { LimitOnUpdateNotSupportedError } from "../../../../src/error/LimitOnUpdateNotSupportedError"
 import { Not, IsNull } from "../../../../src"
@@ -13,6 +15,9 @@ import { MissingDeleteDateColumnError } from "../../../../src/error/MissingDelet
 import { UserWithoutDeleteDate } from "./entity/UserWithoutDeleteDate"
 import { Photo } from "./entity/Photo"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
+import { Document } from "./entity/Document"
+import { Invoice } from "./entity/Invoice"
+import { TypeORMError } from "../../../../src/error/TypeORMError"
 
 describe("query builder > soft-delete", () => {
     let dataSources: DataSource[]
@@ -318,6 +323,304 @@ describe("query builder > soft-delete", () => {
                     null,
                 )
                 expect(usersWithSoftDelete[1].picture.deletedAt).to.equal(null)
+            }),
+        ))
+    // https://github.com/typeorm/typeorm/issues/13004
+    it("should not touch already soft-deleted rows when the WHERE is OR-chained", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const repository = dataSource.getRepository(Document)
+                const deleted = await repository.save({ title: "deleted" })
+                const live = await repository.save({ title: "live" })
+                await repository.softDelete(deleted.id)
+                const deletedBefore = await repository.findOneOrFail({
+                    where: { id: deleted.id },
+                    withDeleted: true,
+                })
+                const queryBuilder = dataSource
+                    .createQueryBuilder()
+                    .softDelete()
+                    .from(Document)
+                    .where("id = :deletedId", { deletedId: deleted.id })
+                    .orWhere("id = :liveId", { liveId: live.id })
+
+                // generating the query must not accumulate conditions
+                const query = queryBuilder.getQuery()
+                expect(query.match(/IS NULL/g)).to.have.length(1)
+                expect(queryBuilder.getQuery()).to.equal(query)
+
+                await queryBuilder.execute()
+
+                const [deletedAfter, liveAfter] = await Promise.all([
+                    repository.findOneOrFail({
+                        where: { id: deleted.id },
+                        withDeleted: true,
+                    }),
+                    repository.findOneOrFail({
+                        where: { id: live.id },
+                        withDeleted: true,
+                    }),
+                ])
+                expect(deletedAfter.version).to.equal(deletedBefore.version)
+                expect(deletedAfter.deletedAt!.getTime()).to.equal(
+                    deletedBefore.deletedAt!.getTime(),
+                )
+                expect(liveAfter.version).to.equal(live.version + 1)
+                expect(liveAfter.deletedAt).to.be.instanceof(Date)
+
+                await dataSource
+                    .createQueryBuilder()
+                    .restore()
+                    .from(Document)
+                    .where("title = :title", { title: "none" })
+                    .orWhere("title = :live", { live: "live" })
+                    .execute()
+
+                const [deletedRestored, liveRestored] = await Promise.all([
+                    repository.findOneOrFail({
+                        where: { id: deleted.id },
+                        withDeleted: true,
+                    }),
+                    repository.findOneOrFail({ where: { id: live.id } }),
+                ])
+                expect(deletedRestored.deletedAt).to.be.instanceof(Date)
+                expect(deletedRestored.version).to.equal(deletedBefore.version)
+                expect(liveRestored.deletedAt).to.equal(null)
+                expect(liveRestored.version).to.equal(live.version + 2)
+            }),
+        ))
+
+    // https://github.com/typeorm/typeorm/issues/13004
+    it("should not query again for filtered integer-valued keys", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (
+                    !["postgres", "cockroachdb", "mssql", "oracle"].includes(
+                        dataSource.options.type,
+                    )
+                )
+                    return
+                const repository = dataSource.getRepository(Document)
+                const [skipped, live] = await repository.save([
+                    { title: "skipped" },
+                    { title: "live" },
+                ])
+                await repository.softDelete(skipped.id)
+                const queryRunner = dataSource.createQueryRunner()
+                await queryRunner.connect()
+                const query = sinon.spy(queryRunner, "query")
+                try {
+                    await dataSource
+                        .createQueryBuilder()
+                        .softDelete()
+                        .from(Document)
+                        .whereEntity([skipped, live])
+                        .setQueryRunner(queryRunner)
+                        .execute()
+                    expect(query.callCount).to.equal(1)
+                    expect(live.version).to.equal(2)
+                    expect(live.deletedAt).to.be.instanceof(Date)
+                    expect(skipped.version).to.equal(1)
+                    expect(skipped.deletedAt).to.equal(null)
+                } finally {
+                    query.restore()
+                    await queryRunner.release()
+                }
+            }),
+        ))
+
+    // https://github.com/typeorm/typeorm/issues/13004
+    it("should merge each returned row into the entity it belongs to", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // Spanner rejects the RETURNING clause that whereEntity() adds
+                if (dataSource.driver.options.type === "spanner") return
+
+                const repository = dataSource.getRepository(Document)
+                const deleted = await repository.save({ title: "deleted" })
+                const first = await repository.save({ title: "first" })
+                const second = await repository.save({ title: "second" })
+                await repository.softDelete(deleted.id)
+                // give the live rows different versions so a row merged into the wrong entity is visible
+                await repository.update(second.id, { title: "second-updated" })
+                const [deletedDocument, firstDocument, secondDocument] =
+                    await Promise.all(
+                        [deleted, first, second].map((document) =>
+                            repository.findOneOrFail({
+                                where: { id: document.id },
+                                withDeleted: true,
+                            }),
+                        ),
+                    )
+                const versionsBefore = [
+                    deletedDocument.version,
+                    firstDocument.version,
+                    secondDocument.version,
+                ]
+
+                // not in table order: databases return the updated rows in their own order
+                await dataSource
+                    .createQueryBuilder()
+                    .softDelete()
+                    .from(Document)
+                    .whereEntity([
+                        secondDocument,
+                        deletedDocument,
+                        firstDocument,
+                    ])
+                    .execute()
+
+                const rows = await repository.find({
+                    withDeleted: true,
+                    order: { id: "ASC" },
+                })
+                expect(rows.map((row) => row.version)).to.eql([
+                    versionsBefore[0],
+                    versionsBefore[1] + 1,
+                    versionsBefore[2] + 1,
+                ])
+                expect(deletedDocument.id).to.equal(deleted.id)
+                expect(deletedDocument.version).to.equal(versionsBefore[0])
+                for (const [document, row] of [
+                    [firstDocument, rows[1]],
+                    [secondDocument, rows[2]],
+                ]) {
+                    expect(document.id).to.equal(row.id)
+                    expect(document.version).to.equal(row.version)
+                    expect(document.deletedAt).to.be.instanceof(Date)
+                }
+            }),
+        ))
+
+    // https://github.com/typeorm/typeorm/issues/13004
+    it("should merge returned values into an entity with a transformed primary key", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // Spanner rejects the RETURNING clause that whereEntity() adds
+                if (dataSource.driver.options.type === "spanner") return
+
+                const repository = dataSource.getRepository(Invoice)
+                const { id } = await repository.save({ total: 10 })
+                const invoice = await repository.findOneOrFail({
+                    where: { id },
+                })
+                expect(invoice.id).to.be.a("string")
+
+                await dataSource
+                    .createQueryBuilder()
+                    .softDelete()
+                    .from(Invoice)
+                    .whereEntity(invoice)
+                    .execute()
+
+                const row = await repository.findOneOrFail({
+                    where: { id },
+                    withDeleted: true,
+                })
+                expect(invoice.id).to.equal(row.id)
+                expect(invoice.version).to.equal(row.version)
+                expect(invoice.deletedAt).to.be.instanceof(Date)
+            }),
+        ))
+
+    // https://github.com/typeorm/typeorm/issues/13004
+    it("should preserve explicitly returned primary keys and column order", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (!dataSource.driver.isReturningSqlSupported("update")) return
+                if (dataSource.options.type === "spanner") return
+
+                const repository = dataSource.getRepository(Document)
+                const document = await repository.save({ title: "returned" })
+                const originalId = document.id
+                for (const operation of ["soft-delete", "restore"] as const) {
+                    const builder = dataSource.createQueryBuilder()
+                    const result = await (
+                        operation === "soft-delete"
+                            ? builder.softDelete()
+                            : builder.restore()
+                    )
+                        .from(Document)
+                        .whereEntity(document)
+                        .returning(["version", "id"])
+                        .execute()
+                    expect(result.generatedMaps).to.have.length(1)
+                    expect(result.generatedMaps[0].id).to.equal(originalId)
+                    expect(result.generatedMaps[0].version).to.equal(
+                        document.version,
+                    )
+                    expect(document.id).to.equal(originalId)
+                    expect(document.deletedAt === null).to.equal(
+                        operation === "restore",
+                    )
+                }
+            }),
+        ))
+
+    // https://github.com/typeorm/typeorm/issues/13004
+    it("should not interpret custom Oracle returning binds as automatic columns", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (dataSource.options.type !== "oracle") return
+                const repository = dataSource.getRepository(Document)
+                const document = await repository.save({ title: "custom" })
+                const originalId = document.id
+                const oracle = (dataSource.driver as OracleDriver).oracle
+                const result = await dataSource
+                    .createQueryBuilder()
+                    .softDelete()
+                    .from(Document)
+                    .whereEntity(document)
+                    .returning('"version" INTO :version')
+                    .setParameter("version", {
+                        type: oracle.NUMBER,
+                        dir: oracle.BIND_OUT,
+                    })
+                    .execute()
+                expect(result.raw).to.deep.equal([[2]])
+                expect(document.id).to.equal(originalId)
+                const stored = await repository.findOneOrFail({
+                    where: { id: originalId },
+                    withDeleted: true,
+                })
+                expect(stored.deletedAt).to.be.instanceOf(Date)
+            }),
+        ))
+
+    // https://github.com/typeorm/typeorm/issues/13004
+    it("should reject empty criteria for soft-delete and restore like other write operations", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const repository = dataSource.getRepository(Document)
+                const [deleted, live] = await repository.save([
+                    { title: "deleted" },
+                    { title: "live" },
+                ])
+                await repository.softDelete(deleted.id)
+
+                for (const build of [
+                    () => dataSource.createQueryBuilder().softDelete(),
+                    () => dataSource.createQueryBuilder().restore(),
+                ]) {
+                    await expect(
+                        build().from(Document).where({}).execute(),
+                    ).to.be.rejectedWith(TypeORMError, /Empty criteria/)
+                    await expect(
+                        build().from(Document).where([]).execute(),
+                    ).to.be.rejectedWith(TypeORMError, /Empty criteria/)
+                }
+
+                const rows = await repository.find({
+                    withDeleted: true,
+                    order: { id: "ASC" },
+                })
+                expect(rows.map((row) => row.deletedAt instanceof Date)).to.eql(
+                    [true, false],
+                )
+                expect(rows.map((row) => row.version)).to.eql([
+                    deleted.version + 1,
+                    live.version,
+                ])
             }),
         ))
 })

@@ -14,7 +14,7 @@ import type { QueryBuilderCteOptions } from "./QueryBuilderCte"
 import { RelationIdAttribute } from "./relation-id/RelationIdAttribute"
 import type { SelectQuery } from "./SelectQuery"
 import type { SelectQueryBuilderOption } from "./SelectQueryBuilderOption"
-import type { WhereClause } from "./WhereClause"
+import type { WhereClause, WhereClauseCondition } from "./WhereClause"
 
 /**
  * Contains all properties of the QueryBuilder that needs to be build a final query.
@@ -294,6 +294,9 @@ export class QueryExpressionMap {
      */
     whereEntities: ObjectLiteral[] = []
 
+    /** Original identity predicates, retained even if the caller replaces WHERE. */
+    whereEntityConditions: WhereClauseCondition[] = []
+
     /**
      * Indicates if entity must be updated after insertion / updation.
      * This may produce extra query or use RETURNING / OUTPUT statement (depend on database).
@@ -530,6 +533,7 @@ export class QueryExpressionMap {
             ? this.insertFromSelect.clone()
             : undefined
         map.whereEntities = this.whereEntities
+        map.whereEntityConditions = [...this.whereEntityConditions]
         map.updateEntity = this.updateEntity
         map.callListeners = this.callListeners
         map.useTransaction = this.useTransaction

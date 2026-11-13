@@ -914,6 +914,24 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                 conditionsArray.push(condition)
             }
 
+            // soft-delete and restore guard, appended as its own AND group so it can neither
+            // bind tighter than OR-chained conditions nor make an empty WHERE look non-empty
+            if (
+                (this.expressionMap.queryType === "soft-delete" ||
+                    this.expressionMap.queryType === "restore") &&
+                metadata.deleteDateColumn
+            ) {
+                const column = this.escape(
+                    metadata.deleteDateColumn.databaseName,
+                )
+                const condition = `${column} IS ${
+                    this.expressionMap.queryType === "soft-delete"
+                        ? "NULL"
+                        : "NOT NULL"
+                }`
+                conditionsArray.push(condition)
+            }
+
             if (metadata.discriminatorColumn && metadata.parentEntityMetadata) {
                 const column = this.expressionMap.aliasNamePrefixingEnabled
                     ? this.expressionMap.mainAlias!.name +

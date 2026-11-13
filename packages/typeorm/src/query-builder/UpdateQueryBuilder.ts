@@ -479,7 +479,10 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
             )
 
         this.expressionMap.wheres = []
-        const entities: Entity[] = Array.isArray(entity) ? entity : [entity]
+        const entities: Entity[] = Array.isArray(entity)
+            ? [...entity]
+            : [entity]
+        this.expressionMap.whereEntityConditions = []
         entities.forEach((entity) => {
             const entityIdMap =
                 this.expressionMap.mainAlias!.metadata.getEntityIdMap(entity)
@@ -489,6 +492,10 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                 )
 
             this.orWhereInIds(entityIdMap)
+            this.expressionMap.whereEntityConditions.push(
+                this.expressionMap.wheres[this.expressionMap.wheres.length - 1]
+                    .condition,
+            )
         })
 
         this.expressionMap.whereEntities = entities
