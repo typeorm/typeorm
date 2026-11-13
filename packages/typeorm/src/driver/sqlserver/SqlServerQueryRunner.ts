@@ -157,6 +157,8 @@ export class SqlServerQueryRunner
 
         await this.broadcaster.broadcast("BeforeTransactionCommit")
 
+        this.checkTransactionCommit()
+
         if (this.transactionDepth === 1) {
             return new Promise<void>((ok, fail) => {
                 this.databaseConnection.commit(async (err: any) => {

@@ -155,6 +155,8 @@ export class OracleQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         await this.broadcaster.broadcast("BeforeTransactionCommit")
 
+        this.checkTransactionCommit()
+
         if (this.transactionDepth === 1) {
             await this.query("COMMIT")
             this.isTransactionActive = false

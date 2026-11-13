@@ -9,8 +9,10 @@ import {
 import { EventSubscriber } from "../../../../src/decorator/listeners/EventSubscriber"
 import type { EntitySubscriberInterface } from "../../../../src/subscriber/EntitySubscriberInterface"
 import type { TransactionRollbackEvent } from "../../../../src/subscriber/event/TransactionRollbackEvent"
+import type { TransactionCommitEvent } from "../../../../src/subscriber/event/TransactionCommitEvent"
 import { TypeORMError } from "../../../../src/error/TypeORMError"
 import type { QueryRunner } from "../../../../src/query-runner/QueryRunner"
+import { BaseQueryRunner } from "../../../../src/query-runner/BaseQueryRunner"
 import { Post } from "./entity/Post"
 
 describe("transaction > nested-transaction > savepoint rollback (#12977)", () => {
@@ -18,12 +20,31 @@ describe("transaction > nested-transaction > savepoint rollback (#12977)", () =>
     let shouldThrowOnRollback = false
     let shouldCommitInSubscriber = false
     let shouldStartInSubscriber = false
+    let shouldContaminateOnBeforeCommit = false
 
-    const getDepth = (runner: QueryRunner): number =>
-        (runner as unknown as { transactionDepth: number }).transactionDepth
+    const getDepth = (runner: QueryRunner): number => {
+        if (runner instanceof BaseQueryRunner) {
+            return runner.getTransactionDepth()
+        }
+        throw new Error("Expected runner to be an instance of BaseQueryRunner")
+    }
 
     @EventSubscriber()
     class TestSubscriber implements EntitySubscriberInterface {
+        async beforeTransactionCommit(event: TransactionCommitEvent) {
+            if (shouldContaminateOnBeforeCommit && event.queryRunner) {
+                await event.queryRunner.startTransaction()
+                try {
+                    shouldThrowOnRollback = true
+                    await event.queryRunner.rollbackTransaction()
+                } catch {
+                    // Contaminates transaction with failed rollback
+                } finally {
+                    shouldThrowOnRollback = false
+                }
+            }
+        }
+
         async beforeTransactionRollback(event: TransactionRollbackEvent) {
             if (shouldCommitInSubscriber && event.queryRunner) {
                 // Nested subscriber commits before the savepoint rollback statement
@@ -366,6 +387,46 @@ describe("transaction > nested-transaction > savepoint rollback (#12977)", () =>
                     expect(posts).to.have.length(0)
                 } finally {
                     shouldStartInSubscriber = false
+                    await queryRunner.release()
+                }
+            }),
+        ))
+
+    it("should prevent commit if BeforeTransactionCommit subscriber contaminates transaction with failed savepoint rollback", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                try {
+                    await queryRunner.connect()
+                    await queryRunner.startTransaction()
+
+                    const post = new Post()
+                    post.title = "Doomed Post"
+                    await queryRunner.manager.save(post)
+
+                    shouldContaminateOnBeforeCommit = true
+                    let commitError: Error | undefined
+                    try {
+                        await queryRunner.commitTransaction()
+                    } catch (err) {
+                        commitError = err as Error
+                    } finally {
+                        shouldContaminateOnBeforeCommit = false
+                    }
+
+                    expect(commitError).to.be.instanceOf(TypeORMError)
+                    expect(commitError?.message).to.include(
+                        "nested rollback failed at depth 2",
+                    )
+
+                    // Must be safely rolled back
+                    await queryRunner.rollbackTransaction()
+
+                    const found = await dataSource.manager.findOne(Post, {
+                        where: { title: "Doomed Post" },
+                    })
+                    expect(found).to.be.null
+                } finally {
                     await queryRunner.release()
                 }
             }),

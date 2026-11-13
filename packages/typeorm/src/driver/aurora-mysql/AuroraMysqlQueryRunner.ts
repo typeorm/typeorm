@@ -133,6 +133,8 @@ export class AuroraMysqlQueryRunner
 
         await this.broadcaster.broadcast("BeforeTransactionCommit")
 
+        this.checkTransactionCommit()
+
         if (this.transactionDepth > 1) {
             await this.query(
                 `RELEASE SAVEPOINT typeorm_${this.transactionDepth - 1}`,

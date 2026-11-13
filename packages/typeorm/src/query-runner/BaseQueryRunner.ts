@@ -117,6 +117,29 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
     protected failedRollbackDepth?: number
 
     /**
+     * Returns the current transaction nesting depth.
+     *
+     * @returns Current transaction depth (0 = inactive, 1 = root, >1 = nested savepoint).
+     */
+    getTransactionDepth(): number {
+        return this.transactionDepth
+    }
+
+    /**
+     * Creates an error explaining why the transaction cannot be committed due to a nested rollback failure.
+     *
+     * @param depth Depth at which the rollback failed.
+     * @returns Instantiated TypeORMError detailing the failure depth.
+     */
+    protected createFailedRollbackError(depth: number): TypeORMError {
+        return new TypeORMError(
+            `Cannot commit transaction because a nested rollback failed at depth ${
+                depth + 1
+            }.`,
+        )
+    }
+
+    /**
      * Asserts that the transaction is active and can be committed.
      * Throws an error if a nested rollback failed within or above this transaction's scope.
      */
@@ -127,11 +150,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
             this.failedRollbackDepth !== undefined &&
             this.transactionDepth <= this.failedRollbackDepth
         ) {
-            throw new TypeORMError(
-                `Cannot commit transaction because a nested rollback failed at depth ${
-                    this.failedRollbackDepth + 1
-                }.`,
-            )
+            throw this.createFailedRollbackError(this.failedRollbackDepth)
         }
     }
 
@@ -186,26 +205,34 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
         try {
             if (this.isTransactionActive) {
                 if (this.failedRollbackDepth !== undefined) {
-                    const error = new TypeORMError(
-                        `Cannot commit transaction because a nested rollback failed at depth ${
-                            this.failedRollbackDepth + 1
-                        }.`,
+                    const error = this.createFailedRollbackError(
+                        this.failedRollbackDepth,
                     )
                     this.transactionDepth = 1
-                    await this.rollbackTransaction()
+                    try {
+                        await this.rollbackTransaction()
+                    } catch (rollbackError) {
+                        this.dataSource?.logger?.log(
+                            "warn",
+                            `Error during cleanup rollback on disposal: ${rollbackError}`,
+                        )
+                    }
                     throw error
                 }
                 this.transactionDepth = 1 // ignore all savepoints and commit directly
                 await this.commitTransaction()
             }
         } catch (err) {
-            try {
-                if (this.isTransactionActive) {
-                    this.transactionDepth = 1
+            if (this.isTransactionActive) {
+                this.transactionDepth = 1
+                try {
                     await this.rollbackTransaction()
+                } catch (rollbackError) {
+                    this.dataSource?.logger?.log(
+                        "warn",
+                        `Error during transaction rollback on disposal: ${rollbackError}`,
+                    )
                 }
-            } catch {
-                // ignore secondary cleanup error
             }
             throw err
         } finally {
