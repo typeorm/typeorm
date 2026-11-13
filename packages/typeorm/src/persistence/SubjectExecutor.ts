@@ -16,6 +16,7 @@ import { OrmUtils } from "../util/OrmUtils"
 import type { UpdateResult } from "../query-builder/result/UpdateResult"
 import { ObjectUtils } from "../util/ObjectUtils"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { reselectedColumns } from "../query-builder/ReturningResultsEntityUpdator"
 
 /**
  * Executes all database operations (inserts, updated, deletes) that must be executed
@@ -492,7 +493,11 @@ export class SubjectExecutor {
 
             subjects.forEach((subject) => {
                 if (subject.generatedMap) {
+                    const alreadyHydrated = reselectedColumns.get(
+                        subject.generatedMap,
+                    )
                     subject.metadata.columns.forEach((column) => {
+                        if (alreadyHydrated?.has(column)) return
                         const value = column.getEntityValue(
                             subject.generatedMap!,
                         )
