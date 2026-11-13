@@ -2,20 +2,24 @@ import { expect } from "chai"
 import "reflect-metadata"
 
 import type { DataSource } from "../../../../src/data-source/DataSource"
+import { IsNull } from "../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import { Category } from "./entity/Category"
+import { NullableTag } from "./entity/NullableTag"
 import { Post } from "./entity/Post"
+import { Tag } from "./entity/Tag"
+import { Widget } from "./entity/Widget"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
 
 describe("query builder > insert > on conflict", () => {
     let dataSources: DataSource[]
     before(async () => {
         dataSources = await createTestingConnections({
-            entities: [Category, Post],
+            entities: [Category, NullableTag, Post, Tag, Widget],
             enabledDrivers: ["cockroachdb", "postgres", "better-sqlite3"], // since on conflict statement is only supported in postgres and sqlite >= 3.24.0
         })
     })
@@ -329,6 +333,213 @@ describe("query builder > insert > on conflict", () => {
                     .getSql()
 
                 expect(sql).to.throw(Error)
+            }),
+        ))
+
+    // https://github.com/typeorm/typeorm/issues/12994
+    // with ON CONFLICT DO NOTHING a skipped row returns no RETURNING row, so
+    // generated values must be matched back to entities by key, not by position
+    it("orIgnore gives each inserted entity its own row and leaves the skipped one alone", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const repository = dataSource.getRepository(Tag)
+
+                // "a" already exists, so it is skipped on the insert below
+                await repository.insert({ name: "a" })
+                const existingA = await repository.findOneByOrFail({
+                    name: "a",
+                })
+
+                const tags = [
+                    repository.create({ name: "a" }),
+                    repository.create({ name: "b" }),
+                ]
+                await repository
+                    .createQueryBuilder()
+                    .insert()
+                    .values(tags)
+                    .orIgnore()
+                    .execute()
+
+                const [tagA, tagB] = tags
+                const dbB = await repository.findOneByOrFail({ name: "b" })
+
+                // the inserted entity gets its own generated id
+                expect(tagB.id).to.be.a("string")
+                expect(tagB.id).to.equal(dbB.id)
+
+                // the skipped entity never receives the inserted row's id,
+                // nor is it silently turned into the pre-existing row
+                expect(tagA.id).to.not.equal(tagB.id)
+                expect(tagA.id).to.not.equal(existingA.id)
+
+                // the pre-existing row is untouched, nothing new created for "a"
+                expect(await repository.countBy({ name: "a" })).to.equal(1)
+                expect(
+                    (await repository.findOneByOrFail({ name: "a" })).id,
+                ).to.equal(existingA.id)
+            }),
+        ))
+
+    it("orIgnore maps rows correctly when the skipped entity is not the first one", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const repository = dataSource.getRepository(Tag)
+
+                await repository.insert({ name: "q" })
+
+                const tags = [
+                    repository.create({ name: "p" }),
+                    repository.create({ name: "q" }), // skipped (middle)
+                    repository.create({ name: "r" }),
+                ]
+                await repository
+                    .createQueryBuilder()
+                    .insert()
+                    .values(tags)
+                    .orIgnore()
+                    .execute()
+
+                const [tagP, tagQ, tagR] = tags
+                const dbP = await repository.findOneByOrFail({ name: "p" })
+                const dbR = await repository.findOneByOrFail({ name: "r" })
+
+                expect(tagP.id).to.equal(dbP.id)
+                expect(tagR.id).to.equal(dbR.id)
+
+                // the skipped middle entity did not steal an inserted row's id
+                expect(tagQ.id).to.not.equal(tagP.id)
+                expect(tagQ.id).to.not.equal(tagR.id)
+
+                // all three attempted entities stay distinct
+                expect(new Set([tagP.id, tagQ.id, tagR.id]).size).to.equal(3)
+            }),
+        ))
+
+    it("orIgnore keeps positional mapping when no row is skipped", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const repository = dataSource.getRepository(Tag)
+
+                const tags = [
+                    repository.create({ name: "x" }),
+                    repository.create({ name: "y" }),
+                ]
+                await repository
+                    .createQueryBuilder()
+                    .insert()
+                    .values(tags)
+                    .orIgnore()
+                    .execute()
+
+                const [tagX, tagY] = tags
+                const dbX = await repository.findOneByOrFail({ name: "x" })
+                const dbY = await repository.findOneByOrFail({ name: "y" })
+
+                expect(tagX.id).to.equal(dbX.id)
+                expect(tagY.id).to.equal(dbY.id)
+                expect(tagX.id).to.not.equal(tagY.id)
+            }),
+        ))
+
+    // https://github.com/typeorm/typeorm/issues/12994
+    // identity matching must compare hydrated (domain) values, not raw
+    // RETURNING values: a transformed column (or a boolean stored as 0/1)
+    // never equals the entity's domain value without being hydrated first,
+    // which previously broke the match on an otherwise correctly matching row
+    it("orIgnore matches returned rows by key even when an identifying column has a transformer", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const repository = dataSource.getRepository(Widget)
+
+                // "dup" already exists, so it is skipped on the insert below
+                await repository.insert({ name: "dup", code: "DUP" })
+                const existingDup = await repository.findOneByOrFail({
+                    name: "dup",
+                })
+
+                const widgets = [
+                    repository.create({ name: "dup", code: "DUP" }),
+                    repository.create({ name: "new", code: "NEW" }),
+                ]
+                await repository
+                    .createQueryBuilder()
+                    .insert()
+                    .values(widgets)
+                    .orIgnore()
+                    .execute()
+
+                const [widgetDup, widgetNew] = widgets
+                const dbNew = await repository.findOneByOrFail({
+                    name: "new",
+                })
+
+                // the inserted entity gets its own generated id, correctly
+                // matched by key even though "code" round-trips through a
+                // transformer (domain "NEW" vs raw returned "new")
+                expect(widgetNew.id).to.be.a("string")
+                expect(widgetNew.id).to.equal(dbNew.id)
+
+                // the skipped entity never receives the inserted row's id,
+                // nor is it silently turned into the pre-existing row
+                expect(widgetDup.id).to.not.equal(widgetNew.id)
+                expect(widgetDup.id).to.not.equal(existingDup.id)
+
+                // the pre-existing row is untouched, nothing new created
+                expect(await repository.countBy({ name: "dup" })).to.equal(1)
+                expect(
+                    (await repository.findOneByOrFail({ name: "dup" })).code,
+                ).to.equal("DUP")
+            }),
+        ))
+
+    // https://github.com/typeorm/typeorm/issues/12994
+    // identity matching must not treat a real NULL as equal to the literal
+    // string "null": String(null) === String("null"), so a skipped entity
+    // keyed on "null" must not consume the row of an inserted entity keyed
+    // on an actual NULL
+    it("orIgnore does not match a skipped 'null' string key against an inserted NULL key", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const repository = dataSource.getRepository(NullableTag)
+
+                // the literal string "null" already exists, so it is skipped
+                // on the insert below
+                await repository.insert({ name: "null" })
+                const existingNull = await repository.findOneByOrFail({
+                    name: "null",
+                })
+
+                const tags = [
+                    repository.create({ name: "null" }), // skipped (string)
+                    repository.create({ name: null }), // inserted (real NULL)
+                ]
+                await repository
+                    .createQueryBuilder()
+                    .insert()
+                    .values(tags)
+                    .orIgnore()
+                    .execute()
+
+                const [tagString, tagNull] = tags
+                const dbNull = await repository.findOneByOrFail({
+                    name: IsNull(),
+                })
+
+                // the entity keyed on a real NULL gets its own generated id
+                expect(tagNull.id).to.be.a("string")
+                expect(tagNull.id).to.equal(dbNull.id)
+
+                // the skipped "null" string entity never receives the inserted
+                // row's id, nor is it turned into the pre-existing row
+                expect(tagString.id).to.not.equal(tagNull.id)
+                expect(tagString.id).to.not.equal(existingNull.id)
+
+                // the pre-existing "null" row is untouched
+                expect(await repository.countBy({ name: "null" })).to.equal(1)
+                expect(
+                    (await repository.findOneByOrFail({ name: "null" })).id,
+                ).to.equal(existingNull.id)
             }),
         ))
 })
