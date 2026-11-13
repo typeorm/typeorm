@@ -394,18 +394,21 @@ export class RelationIdLoader {
             }
         }
 
+        // Ids held by the parent row are hydrated by RawSqlResultsToEntityTransformer
+        const relationIdAttributes = this.relationIdAttributes.filter(
+            (relationIdAttr) => !relationIdAttr.isReadFromParentRow,
+        )
+
         // Avoid concurrent queries on the same pg client; see #12238.
         // CockroachDB uses the pg package over a single connection too.
         const driverType = this.dataSource.options.type
         if (driverType === "postgres" || driverType === "cockroachdb") {
             const results: RelationIdLoadResult[] = []
-            for (const relationIdAttr of this.relationIdAttributes) {
+            for (const relationIdAttr of relationIdAttributes) {
                 results.push(await loadRelationIdAttribute(relationIdAttr))
             }
             return results
         }
-        return Promise.all(
-            this.relationIdAttributes.map(loadRelationIdAttribute),
-        )
+        return Promise.all(relationIdAttributes.map(loadRelationIdAttribute))
     }
 }

@@ -139,4 +139,44 @@ export class RelationIdAttribute {
     get mapToPropertyPropertyPath(): string {
         return this.mapToProperty.slice(this.mapToProperty.indexOf(".") + 1)
     }
+
+    /**
+     * Whether the relation id is read straight from the parent's raw row
+     * instead of being loaded by the relation id loader.
+     *
+     * @returns true for a single owning foreign key column with no special mapping
+     */
+    get isReadFromParentRow(): boolean {
+        if (this.queryBuilderFactory || this.disableMixedMap) return false
+
+        const relation = this.relation
+        if (
+            !(relation.isManyToOne || relation.isOneToOneOwner) ||
+            relation.joinColumns.length !== 1
+        )
+            return false
+
+        const joinColumn = relation.joinColumns[0]
+        if (
+            joinColumn.isPrimary ||
+            joinColumn.referencedColumn!.referencedColumn
+        )
+            return false
+
+        const parentAlias = this.parentAlias
+        const selections = this.queryExpressionMap.selects.map(
+            (select) => select.selection,
+        )
+        const primaryColumns = relation.entityMetadata.primaryColumns
+        return (
+            primaryColumns.length > 0 &&
+            primaryColumns.every(
+                (column) =>
+                    selections.includes(parentAlias) ||
+                    selections.includes(
+                        `${parentAlias}.${column.propertyPath}`,
+                    ),
+            )
+        )
+    }
 }
