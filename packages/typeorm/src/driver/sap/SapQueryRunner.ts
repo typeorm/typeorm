@@ -149,15 +149,6 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 try {
                     await this.rollbackTransaction()
                 } catch (rollbackErr) {
-                    try {
-                        await this.setAutoCommit({ status: "on" })
-                    } catch (restoreErr) {
-                        this.dataSource.logger.log(
-                            "warn",
-                            `Failed to restore autocommit after failed start: ${restoreErr}`,
-                            this,
-                        )
-                    }
                     this.dataSource.logger.log(
                         "warn",
                         `Failed to rollback transaction after failed start: ${rollbackErr}`,
@@ -199,13 +190,25 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         if (!this.isTransactionActive) throw new TransactionNotStartedError()
 
-        await this.broadcaster.broadcast("BeforeTransactionRollback")
+        let beforeRollbackError: Error | undefined
+        try {
+            await this.broadcaster.broadcast("BeforeTransactionRollback")
+        } catch (broadcastErr) {
+            beforeRollbackError =
+                broadcastErr instanceof Error
+                    ? broadcastErr
+                    : new Error(String(broadcastErr))
+        }
 
         await this.query("ROLLBACK")
         this.isTransactionActive = false
 
         await this.setAutoCommit({ status: "on" })
         await this.broadcaster.broadcast("AfterTransactionRollback")
+
+        if (beforeRollbackError) {
+            throw beforeRollbackError
+        }
     }
 
     /**

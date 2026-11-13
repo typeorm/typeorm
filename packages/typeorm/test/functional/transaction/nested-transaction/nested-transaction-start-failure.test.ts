@@ -456,4 +456,41 @@ describe("transaction > nested transaction start failure", () => {
                 }
             }),
         ))
+
+    it("should settle and reject startTransaction with original error even if beforeTransactionRollback throws", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const failingSubscriber: EntitySubscriberInterface = {
+                    afterTransactionStart() {
+                        throw new Error("After start failure")
+                    },
+                    beforeTransactionRollback() {
+                        throw new Error("Before rollback failure")
+                    },
+                }
+
+                dataSource.subscribers.push(failingSubscriber)
+
+                const queryRunner = dataSource.createQueryRunner()
+                try {
+                    let thrownError: Error | null = null
+                    try {
+                        await queryRunner.startTransaction()
+                    } catch (err) {
+                        if (err instanceof Error) {
+                            thrownError = err
+                        }
+                    }
+
+                    expect(thrownError).to.not.be.null
+                    expect(thrownError!.message).to.equal("After start failure")
+                    expect(queryRunner.isTransactionActive).to.be.false
+                } finally {
+                    await queryRunner.release()
+                    const idx =
+                        dataSource.subscribers.indexOf(failingSubscriber)
+                    if (idx !== -1) dataSource.subscribers.splice(idx, 1)
+                }
+            }),
+        ))
 })
