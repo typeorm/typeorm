@@ -9,6 +9,7 @@ import { NoConnectionOptionError } from "../error/NoConnectionOptionError"
 import { InitializedRelationError } from "../error/InitializedRelationError"
 import { TypeORMError } from "../error"
 import { DriverUtils } from "../driver/DriverUtils"
+import { mysqlTimestampPrecision } from "../util/MysqlTimestampPrecision"
 
 /// todo: add check if there are multiple tables with the same name
 /// todo: add checks when generated column / table names are too long for the specific driver
@@ -123,8 +124,9 @@ export class EntityMetadataValidator {
             entityMetadata.columns
                 .filter((column) => !column.isVirtualProperty)
                 .forEach((column) => {
+                    const physicalColumn = column.resolveDriverColumn(driver)
                     const normalizedColumn = driver.normalizeType(
-                        column,
+                        physicalColumn,
                     ) as ColumnType
                     if (!driver.supportedDataTypes.includes(normalizedColumn))
                         throw new DataTypeNotSupportedError(
@@ -133,20 +135,93 @@ export class EntityMetadataValidator {
                             driver.options.type,
                         )
                     if (
-                        column.length &&
+                        physicalColumn.length &&
                         !driver.withLengthColumnTypes.includes(normalizedColumn)
                     )
                         throw new TypeORMError(
                             `Column ${column.propertyName} of Entity ${entityMetadata.name} does not support length property.`,
                         )
                     if (
-                        column.type === "enum" &&
-                        !column.enum &&
-                        !column.enumName
+                        normalizedColumn === "enum" &&
+                        !physicalColumn.enum &&
+                        !physicalColumn.enumName
                     )
                         throw new TypeORMError(
                             `Column "${column.propertyName}" of Entity "${entityMetadata.name}" is defined as enum, but missing "enum" or "enumName" properties.`,
                         )
+                    if (
+                        (driver.options.type === "mysql" ||
+                            driver.options.type === "aurora-mysql") &&
+                        physicalColumn !== column &&
+                        (normalizedColumn === "datetime" ||
+                            normalizedColumn === "timestamp")
+                    ) {
+                        const updatePrecision = mysqlTimestampPrecision(
+                            physicalColumn.onUpdate,
+                        )
+                        const precision = physicalColumn.precision ?? 0
+                        if (
+                            updatePrecision !== undefined &&
+                            updatePrecision !== precision
+                        )
+                            throw new TypeORMError(
+                                `Column "${column.propertyName}" has an incompatible dialectTypes override for "${driver.options.type}": ON UPDATE CURRENT_TIMESTAMP precision must match the physical column precision (${precision}).`,
+                            )
+                    }
+                    if (
+                        (driver.options.type === "postgres" ||
+                            driver.options.type === "aurora-postgres") &&
+                        physicalColumn !== column &&
+                        physicalColumn.isGenerated &&
+                        ["increment", "identity"].includes(
+                            physicalColumn.generationStrategy ?? "",
+                        ) &&
+                        (physicalColumn.isArray ||
+                            (normalizedColumn !== "smallint" &&
+                                normalizedColumn !== "integer" &&
+                                normalizedColumn !== "bigint"))
+                    )
+                        throw new TypeORMError(
+                            `Column "${column.propertyName}" has an incompatible dialectTypes override for "${driver.options.type}": ${physicalColumn.generationStrategy} generation requires a non-array integer type.`,
+                        )
+                    if (
+                        driver.options.type === "mssql" &&
+                        physicalColumn !== column
+                    ) {
+                        if (
+                            normalizedColumn === "decimal" ||
+                            normalizedColumn === "numeric"
+                        ) {
+                            const defaults =
+                                driver.dataTypeDefaults[normalizedColumn]
+                            const precision =
+                                physicalColumn.precision ?? defaults.precision!
+                            const scale =
+                                physicalColumn.scale ?? defaults.scale!
+                            if (
+                                !Number.isInteger(precision) ||
+                                precision < 1 ||
+                                precision > 38 ||
+                                !Number.isInteger(scale) ||
+                                scale < 0 ||
+                                scale > precision
+                            )
+                                throw new TypeORMError(
+                                    `Column "${column.propertyName}" has invalid dialectTypes parameters for "mssql": decimal precision must be 1-38 and scale must be 0-precision.`,
+                                )
+                        }
+                        if (normalizedColumn === "vector") {
+                            const dimensions = Number(physicalColumn.length)
+                            if (
+                                !Number.isInteger(dimensions) ||
+                                dimensions < 1 ||
+                                dimensions > 1998
+                            )
+                                throw new TypeORMError(
+                                    `Column "${column.propertyName}" has invalid dialectTypes parameters for "mssql": vector requires 1-1998 dimensions.`,
+                                )
+                        }
+                    }
                 })
         }
 

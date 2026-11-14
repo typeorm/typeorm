@@ -1,4 +1,5 @@
 import type { ColumnType } from "../driver/types/ColumnTypes"
+import type { DatabaseType } from "../driver/types/DatabaseType"
 import type { ValueTransformer } from "../decorator/options/ValueTransformer"
 import type { SpatialColumnOptions } from "../decorator/options/SpatialColumnOptions"
 import type { EntitySchemaColumnForeignKeyOptions } from "./EntitySchemaColumnForeignKeyOptions"
@@ -157,6 +158,15 @@ export interface EntitySchemaColumnOptions extends SpatialColumnOptions {
      * Exact name of enum
      */
     enumName?: string
+
+    /**
+     * Column type per database, keyed by the driver type ("mysql", "postgres",
+     * "better-sqlite3", ...). The override replaces `type` when the matching
+     * driver syncs or migrates the schema. It must name a type supported by
+     * that driver; aliases are normalized for schema comparison. Every other
+     * driver keeps using `type`, or the default inferred type.
+     */
+    dialectTypes?: Partial<Record<DatabaseType, string>>
 
     /**
      * Generated column expression.

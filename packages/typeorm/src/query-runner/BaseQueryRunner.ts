@@ -675,9 +675,9 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
         // if table have metadata, we check if length is specified in column metadata
         if (this.dataSource.hasMetadata(table.name)) {
             const metadata = this.dataSource.getMetadata(table.name)
-            const columnMetadata = metadata.findColumnWithDatabaseName(
-                column.name,
-            )
+            const columnMetadata = metadata
+                .findColumnWithDatabaseName(column.name)
+                ?.resolveDriverColumn(this.dataSource.driver)
 
             if (columnMetadata) {
                 const columnMetadataLength =
@@ -712,9 +712,9 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
         // if table have metadata, we check if length is specified in column metadata
         if (this.dataSource.hasMetadata(table.name)) {
             const metadata = this.dataSource.getMetadata(table.name)
-            const columnMetadata = metadata.findColumnWithDatabaseName(
-                column.name,
-            )
+            const columnMetadata = metadata
+                .findColumnWithDatabaseName(column.name)
+                ?.resolveDriverColumn(this.dataSource.driver)
             if (
                 columnMetadata?.precision !== null &&
                 columnMetadata?.precision !== undefined
@@ -751,9 +751,9 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
         // if table have metadata, we check if length is specified in column metadata
         if (this.dataSource.hasMetadata(table.name)) {
             const metadata = this.dataSource.getMetadata(table.name)
-            const columnMetadata = metadata.findColumnWithDatabaseName(
-                column.name,
-            )
+            const columnMetadata = metadata
+                .findColumnWithDatabaseName(column.name)
+                ?.resolveDriverColumn(this.dataSource.driver)
             if (
                 columnMetadata?.scale !== null &&
                 columnMetadata?.scale !== undefined
