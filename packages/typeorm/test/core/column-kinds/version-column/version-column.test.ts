@@ -138,20 +138,16 @@ describe("column kinds > version column", () => {
                         .supportedUpsertTypes) {
                         const humanRepo = connection.getRepository("Human")
 
-                        // save a new human
                         const human = humanRepo.create({
                             name: `John Doe - ${upsertType}`,
                             email: `john-${upsertType}@email.com`,
                         })
                         await humanRepo.save(human)
 
-                        // update human once again
                         human.name = `John Doe - ${upsertType} - Updated Name`
 
                         let conflictPaths: string[] = ["email"]
 
-                        // CockroachDB's UPSERT requires primary key as conflict path
-                        // and "email" should be unique
                         if (upsertType === "primary-key") {
                             conflictPaths = ["id"]
                             human.email = `john-different@email.com`
@@ -161,13 +157,23 @@ describe("column kinds > version column", () => {
                             conflictPaths: conflictPaths,
                         })
 
-                        // check if version was updated
                         const loadedHuman = await humanRepo.findOneByOrFail({
                             id: human.id,
                         })
                         expect(loadedHuman.name).to.be.eql(human.name)
                         expect(loadedHuman.email).to.be.eql(human.email)
                         expect(loadedHuman.version).to.be.eql(2)
+
+                        await humanRepo.upsert(human, {
+                            upsertType: upsertType,
+                            conflictPaths: conflictPaths,
+                        })
+
+                        const loadedHumanAgain =
+                            await humanRepo.findOneByOrFail({
+                                id: human.id,
+                            })
+                        expect(loadedHumanAgain.version).to.be.eql(3)
                     }
                 }),
         ))

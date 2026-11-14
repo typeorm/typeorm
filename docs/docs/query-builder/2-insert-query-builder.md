@@ -54,6 +54,8 @@ await dataSource
     .execute()
 ```
 
+When an entity has a `@VersionColumn`, an upsert that matches an existing row increments the stored version automatically. The increment is based on the existing row rather than the incoming value, so reusing a stale entity is safe. This behavior is supported for repository and entity-manager upserts as well as query-builder upserts; CockroachDB versioned primary-key upserts use `ON CONFLICT DO UPDATE` instead of the database's shorthand `UPSERT` syntax.
+
 ## Update values ON CONFLICT with condition (Postgres, Oracle, MSSQL, SAP HANA)
 
 ```typescript
