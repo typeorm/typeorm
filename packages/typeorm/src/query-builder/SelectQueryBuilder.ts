@@ -4354,18 +4354,19 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         let condition: string = ""
         if (Array.isArray(where)) {
             if (where.length) {
-                condition = where
-                    .map((whereItem) => {
-                        return this.buildWhere(
-                            whereItem,
-                            metadata,
-                            alias,
-                            embedPrefix,
-                        )
-                    })
-                    .filter((condition) => !!condition)
-                    .map((condition) => "(" + condition + ")")
-                    .join(" OR ")
+                const conditions = where.map((whereItem) => {
+                    return this.buildWhere(
+                        whereItem,
+                        metadata,
+                        alias,
+                        embedPrefix,
+                    )
+                })
+                if (conditions.every((condition) => !!condition)) {
+                    condition = conditions
+                        .map((condition) => "(" + condition + ")")
+                        .join(" OR ")
+                }
             }
         } else {
             const andConditions: string[] = []

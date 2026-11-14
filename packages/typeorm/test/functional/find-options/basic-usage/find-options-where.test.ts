@@ -340,6 +340,29 @@ describe("find options > where", () => {
             }),
         ))
 
+    it("where or with an empty condition", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await prepareData(dataSource.manager)
+
+                const posts = await dataSource
+                    .createQueryBuilder(Post, "post")
+                    .setFindOptions({
+                        where: [{ id: 1 }, {}],
+                        order: {
+                            id: "asc",
+                        },
+                    })
+                    .getMany()
+                posts.map((post) => post.id).should.be.eql([1, 2, 3, 4])
+
+                const count = await dataSource.getRepository(Post).count({
+                    where: [{ id: 1 }, {}],
+                })
+                count.should.be.equal(4)
+            }),
+        ))
+
     it("where column in embed", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
