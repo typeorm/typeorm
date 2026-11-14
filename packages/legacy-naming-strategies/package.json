@@ -1,6 +1,6 @@
 {
   "name": "@typeorm/legacy-naming-strategies",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Legacy naming strategies for TypeORM",
   "homepage": "https://typeorm.io",
   "bugs": {
