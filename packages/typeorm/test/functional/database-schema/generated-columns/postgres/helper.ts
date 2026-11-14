@@ -183,7 +183,10 @@ export const changeType = async (
     const renameQuery = upQueries.find((query) =>
         query.query.includes(`RENAME COLUMN "${columnName}"`),
     )
-    if (newGeneratedType === undefined) {
+    if (
+        column.generatedType === "STORED" &&
+        (newGeneratedType === "VIRTUAL" || newGeneratedType === undefined)
+    ) {
         renameQuery!.should.be.exist
     } else {
         dropQuery!.should.be.exist
