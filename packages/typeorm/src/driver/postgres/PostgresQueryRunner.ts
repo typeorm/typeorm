@@ -1345,6 +1345,7 @@ export class PostgresQueryRunner
             throw new TypeORMError(
                 `Column "${oldTableColumnOrName}" was not found in the "${table.name}" table.`,
             )
+        const oldColumnName = oldColumn.name
 
         if (
             oldColumn.type !== newColumn.type ||
@@ -2456,20 +2457,45 @@ export class PostgresQueryRunner
                             schema,
                             table: tableName,
                             type: MetadataTableType.GENERATED_COLUMN,
-                            name: oldColumn.name,
+                            name: oldColumnName,
                         }),
                     )
+                    if (newColumn.generatedType && newColumn.asExpression) {
+                        upQueries.push(
+                            this.insertTypeormMetadataSql({
+                                database: this.driver.database,
+                                schema,
+                                table: tableName,
+                                type: MetadataTableType.GENERATED_COLUMN,
+                                name: newColumn.name,
+                                value: newColumn.asExpression,
+                            }),
+                        )
+                    }
 
-                    downQueries.push(
-                        this.insertTypeormMetadataSql({
-                            database: this.driver.database,
-                            schema,
-                            table: tableName,
-                            type: MetadataTableType.GENERATED_COLUMN,
-                            name: oldColumn.name,
-                            value: oldColumn.asExpression,
-                        }),
-                    )
+                    if (newColumn.generatedType) {
+                        downQueries.push(
+                            this.deleteTypeormMetadataSql({
+                                database: this.driver.database,
+                                schema,
+                                table: tableName,
+                                type: MetadataTableType.GENERATED_COLUMN,
+                                name: newColumn.name,
+                            }),
+                        )
+                    }
+                    if (oldColumn.generatedType && oldColumn.asExpression) {
+                        downQueries.push(
+                            this.insertTypeormMetadataSql({
+                                database: this.driver.database,
+                                schema,
+                                table: tableName,
+                                type: MetadataTableType.GENERATED_COLUMN,
+                                name: oldColumnName,
+                                value: oldColumn.asExpression,
+                            }),
+                        )
+                    }
                     downQueries.push(
                         new Query(
                             `ALTER TABLE ${this.escapePath(
@@ -2487,22 +2513,43 @@ export class PostgresQueryRunner
                             )} DROP COLUMN "${newColumn.name}"`,
                         ),
                     )
+                    clonedTable.removeColumn(
+                        clonedTable.findColumnByName(oldColumnName)!,
+                    )
+                    clonedTable.addColumn(newColumn.clone())
                 }
             }
-            if (oldColumn.asExpression !== newColumn.asExpression) {
+            if (
+                oldColumn.generatedType === newColumn.generatedType &&
+                oldColumn.asExpression !== newColumn.asExpression
+            ) {
+                const tableNameWithSchema = (
+                    await this.getTableNameWithSchema(table.name)
+                ).split(".")
+                const tableName = tableNameWithSchema[1]
+                const schema = tableNameWithSchema[0]
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${newColumn.name}" SET EXPRESSION AS (${newColumn.asExpression})`,
                     ),
                 )
                 upQueries.push(
-                    this.updateTypeormMetadataSql({
+                    this.deleteTypeormMetadataSql({
                         type: MetadataTableType.GENERATED_COLUMN,
-                        valueToSet: { value: newColumn.asExpression },
                         database: this.driver.database,
-                        schema: table.schema,
-                        table: table.name,
+                        schema,
+                        table: tableName,
+                        name: oldColumnName,
+                    }),
+                )
+                upQueries.push(
+                    this.insertTypeormMetadataSql({
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        database: this.driver.database,
+                        schema,
+                        table: tableName,
                         name: newColumn.name,
+                        value: newColumn.asExpression,
                     }),
                 )
 
@@ -2512,13 +2559,22 @@ export class PostgresQueryRunner
                     ),
                 )
                 downQueries.push(
-                    this.updateTypeormMetadataSql({
-                        type: MetadataTableType.GENERATED_COLUMN,
-                        valueToSet: { value: oldColumn.asExpression },
+                    this.deleteTypeormMetadataSql({
                         database: this.driver.database,
-                        schema: table.schema,
-                        table: table.name,
-                        name: oldColumn.name,
+                        schema,
+                        table: tableName,
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        name: newColumn.name,
+                    }),
+                )
+                downQueries.push(
+                    this.insertTypeormMetadataSql({
+                        type: MetadataTableType.GENERATED_COLUMN,
+                        database: this.driver.database,
+                        schema,
+                        table: tableName,
+                        name: oldColumnName,
+                        value: oldColumn.asExpression,
                     }),
                 )
             }
@@ -3725,9 +3781,15 @@ export class PostgresQueryRunner
                 return `("table_schema" = '${table_schema}' AND "table_name" = '${table_name}')`
             })
             .join(" OR ")
+        const generatedTypeExpression = VersionUtils.isGreaterOrEqual(
+            this.driver.version,
+            "12.0",
+        )
+            ? `col_attr.attgenerated`
+            : `NULL`
         const columnsSql =
             `SELECT columns.*, pg_catalog.col_description((quote_ident(table_catalog) || '.' || quote_ident(table_schema) || '.' || quote_ident(table_name))::regclass::oid, ordinal_position) AS description, ` +
-            `('"' || "udt_schema" || '"."' || "udt_name" || '"')::"regtype"::text AS "regtype", pg_catalog.format_type("col_attr"."atttypid", "col_attr"."atttypmod") AS "format_type", col_attr.attgenerated AS generated_type ` +
+            `('"' || "udt_schema" || '"."' || "udt_name" || '"')::"regtype"::text AS "regtype", pg_catalog.format_type("col_attr"."atttypid", "col_attr"."atttypmod") AS "format_type", ${generatedTypeExpression} AS generated_type ` +
             `FROM "information_schema"."columns" ` +
             `LEFT JOIN "pg_catalog"."pg_attribute" AS "col_attr" ON "col_attr"."attname" = "columns"."column_name" ` +
             `AND "col_attr"."attrelid" = ( ` +
@@ -5358,7 +5420,11 @@ export class PostgresQueryRunner
             }
             return true
         } else if (oldColumn.asExpression !== newColumn.asExpression) {
-            if (isBelowVersion17 || oldColumn.generatedType === "VIRTUAL") {
+            if (
+                isBelowVersion17 ||
+                oldColumn.generatedType === "VIRTUAL" ||
+                !newColumn.asExpression
+            ) {
                 return true
             } else {
                 return false

@@ -176,11 +176,18 @@ export const changeType = async (
     changedColumnFromDb.should.be.exist
     expect(changedColumnFromDb!.generatedType).to.equal(newGeneratedType)
 
-    const dropQuery = queryRunner
-        .getMemorySql()
-        .upQueries.find((query) => query.query.includes("ALTER TABLE"))
-    dropQuery!.should.be.exist
-    dropQuery!.query.should.be.contains(`DROP COLUMN "${columnName}"`)
+    const upQueries = queryRunner.getMemorySql().upQueries
+    const dropQuery = upQueries.find((query) =>
+        query.query.includes(`DROP COLUMN "${columnName}"`),
+    )
+    const renameQuery = upQueries.find((query) =>
+        query.query.includes(`RENAME COLUMN "${columnName}"`),
+    )
+    if (newGeneratedType === undefined) {
+        renameQuery!.should.be.exist
+    } else {
+        dropQuery!.should.be.exist
+    }
     const addQuery = queryRunner
         .getMemorySql()
         .downQueries.find((query) => query.query.includes("ALTER TABLE"))
