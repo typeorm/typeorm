@@ -15,7 +15,7 @@ export class Profile {
     @Column()
     bio: string
 
-    @OneToOne(() => Author, { eager: true })
+    @OneToOne(() => Author, (author) => author.profile, { eager: true })
     @JoinColumn()
     author: Author
 }

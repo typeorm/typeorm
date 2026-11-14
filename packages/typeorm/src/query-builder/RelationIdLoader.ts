@@ -7,6 +7,11 @@ import { DriverUtils } from "../driver/DriverUtils"
 import { TypeORMError } from "../error/TypeORMError"
 import type { QueryRunner } from "../query-runner/QueryRunner"
 
+interface KeyIndex {
+    children: Map<unknown, KeyIndex>
+    positions: number[]
+}
+
 /**
  * Loads relation ids for the given entities.
  */
@@ -276,25 +281,27 @@ export class RelationIdLoader {
         ].every((keys) => keys.every((key) => key.every(isPrimitive)))
         if (!allKeysArePrimitive) return undefined
 
-        const indexPositions = (keys: unknown[][]) => {
-            const index = new Map<unknown, any>()
+        const indexPositions = (keys: unknown[][]): KeyIndex => {
+            const index: KeyIndex = { children: new Map(), positions: [] }
             keys.forEach((key, position) => {
-                let level = index
-                for (const value of key.slice(0, -1)) {
-                    if (!level.has(value)) level.set(value, new Map())
-                    level = level.get(value)
+                let node = index
+                for (const value of key) {
+                    let child = node.children.get(value)
+                    if (!child) {
+                        child = { children: new Map(), positions: [] }
+                        node.children.set(value, child)
+                    }
+                    node = child
                 }
-                const lastValue = key[key.length - 1]
-                if (!level.has(lastValue)) level.set(lastValue, [])
-                level.get(lastValue).push(position)
+                node.positions.push(position)
             })
             return index
         }
-        const positionsOf = (
-            index: Map<unknown, any>,
-            key: unknown[],
-        ): number[] =>
-            key.reduce<any>((level, value) => level?.get(value), index) ?? []
+        const positionsOf = (index: KeyIndex, key: unknown[]): number[] => {
+            let node: KeyIndex | undefined = index
+            for (const value of key) node = node?.children.get(value)
+            return node?.positions ?? []
+        }
 
         const relationIdPositionsByEntityKey = indexPositions(
             entityKeysOfRelationIds,
@@ -307,7 +314,6 @@ export class RelationIdLoader {
                 related: isMany ? [] : undefined,
             }
 
-            // sorted to keep related entities in load order, as the pairwise comparison does
             const relatedPositions = positionsOf(
                 relationIdPositionsByEntityKey,
                 entityKeys[entityPosition],
