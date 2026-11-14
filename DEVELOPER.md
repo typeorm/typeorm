@@ -21,7 +21,7 @@ following products on your development machine:
 For convenience, you can also use the [Docker](https://www.docker.com/) images provided in [docker-compose.yml](https://github.com/typeorm/typeorm/blob/master/docker-compose.yml) to run databases locally:
 
 ```shell
-docker compose up postgres-17
+docker compose up postgres-18
 ```
 
 ## Getting the Sources
