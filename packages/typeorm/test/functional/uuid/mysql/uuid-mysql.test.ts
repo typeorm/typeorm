@@ -50,6 +50,20 @@ describe("uuid-mysql", () => {
                     "fd357b8f-8838-42f6-b7a2-ae027444e895",
                 )
 
+                await postRepository.upsert(
+                    {
+                        id: 2,
+                        uuid: "35b44650-b2cd-44ec-aa54-137fbdf1c373",
+                    },
+                    ["id"],
+                )
+                const loadedPost3 = await postRepository.findOneByOrFail({
+                    id: 2,
+                })
+                expect(loadedPost3.uuid).to.equal(
+                    "35b44650-b2cd-44ec-aa54-137fbdf1c373",
+                )
+
                 const question = new Question()
                 question.uuid2 = "fd357b8f-8838-42f6-b7a2-ae027444e895"
                 const savedQuestion = await questionRepository.save(question)

@@ -583,7 +583,9 @@ export class InsertQueryBuilder<
                                     this.expressionMap.mainAlias!.hasMetadata &&
                                     column ===
                                         this.expressionMap.mainAlias!.metadata
-                                            .versionColumn?.databaseName
+                                            .versionColumn?.databaseName &&
+                                    this.expressionMap.mainAlias!.metadata
+                                        .versionColumn?.isUpdate !== false
                                 ) {
                                     exp = `${this.escape(
                                         column,
@@ -636,6 +638,7 @@ export class InsertQueryBuilder<
                                     .versionColumn
                             if (
                                 versionColumn &&
+                                versionColumn.isUpdate !== false &&
                                 !overwrite?.includes(versionColumn.databaseName)
                             ) {
                                 const versionExpression =
@@ -743,7 +746,9 @@ export class InsertQueryBuilder<
                                     this.expressionMap.mainAlias!.hasMetadata &&
                                     column ===
                                         this.expressionMap.mainAlias!.metadata
-                                            .versionColumn?.databaseName
+                                            .versionColumn?.databaseName &&
+                                    this.expressionMap.mainAlias!.metadata
+                                        .versionColumn?.isUpdate !== false
                                 ) {
                                     exp = `${this.escape(
                                         column,
@@ -756,6 +761,8 @@ export class InsertQueryBuilder<
                             this.expressionMap.mainAlias!.hasMetadata &&
                             this.expressionMap.mainAlias!.metadata
                                 .versionColumn &&
+                            this.expressionMap.mainAlias!.metadata.versionColumn
+                                .isUpdate !== false &&
                             !overwrite.includes(
                                 this.expressionMap.mainAlias!.metadata
                                     .versionColumn.databaseName,
@@ -1254,7 +1261,10 @@ export class InsertQueryBuilder<
                     )
                     .map((column) => {
                         let exp: string = `${tableAlias}.${this.escape(column)} = ${mergeSourceAlias}.${this.escape(column)}`
-                        if (versionColumn?.databaseName === column) {
+                        if (
+                            versionColumn?.databaseName === column &&
+                            versionColumn.isUpdate !== false
+                        ) {
                             exp = `${tableAlias}.${this.escape(
                                 column,
                             )} = ${tableAlias}.${this.escape(column)} + 1`
@@ -1266,6 +1276,7 @@ export class InsertQueryBuilder<
 
             if (
                 versionColumn &&
+                versionColumn.isUpdate !== false &&
                 Array.isArray(overwrite) &&
                 overwrite.length > 0 &&
                 !overwrite.includes(versionColumn.databaseName) &&
@@ -1278,6 +1289,7 @@ export class InsertQueryBuilder<
                 )} + 1`
             } else if (
                 versionColumn &&
+                versionColumn.isUpdate !== false &&
                 Array.isArray(overwrite) &&
                 overwrite.length > 0 &&
                 !overwrite.includes(versionColumn.databaseName)
@@ -1354,6 +1366,14 @@ export class InsertQueryBuilder<
         }
         if (this.dataSource.driver.options.type === "mssql") {
             query += `;`
+            if (
+                this.expressionMap.mainAlias!.hasMetadata &&
+                this.expressionMap.mainAlias!.metadata.columns.some((column) =>
+                    this.isOverridingAutoIncrementBehavior(column),
+                )
+            ) {
+                query = `SET IDENTITY_INSERT ${tableName} ON; ${query} SET IDENTITY_INSERT ${tableName} OFF`
+            }
         }
         return query
     }
@@ -1410,7 +1430,9 @@ export class InsertQueryBuilder<
                 expression += selectQb.getQuery()
             }
 
-            expression += `) ${mergeSourceAlias}`
+            expression += `) ${
+                this.dataSource.driver.options.type === "sap" ? "AS " : ""
+            }${mergeSourceAlias}`
             // MSSQL requires column list after the alias
             if (this.dataSource.driver.options.type === "mssql") {
                 expression += ` (${columns
@@ -1668,6 +1690,11 @@ export class InsertQueryBuilder<
             //     const rightColumnName = this.dataSource.driver.escape(column.entityMetadata.nestedSetRightColumn!.databaseName);
             //     const subQuery = `(SELECT c.max + 2 FROM (SELECT MAX(${rightColumnName}) as max from ${tableName}) c)`;
             //     expression += subQuery;
+        } else if (
+            column.isVersion &&
+            this.expressionMap.onUpdate?.upsertType === "primary-key"
+        ) {
+            expression += this.createParameter(value + 1)
         } else if (column.isDiscriminator) {
             expression += this.createParameter(
                 this.expressionMap.mainAlias!.metadata.discriminatorValue,
@@ -1806,7 +1833,8 @@ export class InsertQueryBuilder<
             (column) =>
                 !(
                     column.isGenerated &&
-                    column.generationStrategy === "increment"
+                    column.generationStrategy === "increment" &&
+                    !this.isOverridingAutoIncrementBehavior(column)
                 ),
         )
     }

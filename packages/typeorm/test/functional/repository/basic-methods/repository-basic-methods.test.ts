@@ -534,6 +534,37 @@ describe("repository > basic methods", () => {
                     ).category.id.should.equal(category.id)
                 }),
             ))
+        it("should report secondary unique conflicts on MySQL upserts", () =>
+            Promise.all(
+                dataSources.map(async (dataSource) => {
+                    if (dataSource.options.type !== "mysql") return
+
+                    const repository = dataSource.getRepository(
+                        TwoUniqueColumnsEntity,
+                    )
+                    await repository.save([
+                        {
+                            externalId: "external-a",
+                            email: "email-a",
+                            name: "A",
+                        },
+                        {
+                            externalId: "external-b",
+                            email: "email-b",
+                            name: "B",
+                        },
+                    ])
+
+                    await repository.upsert(
+                        {
+                            externalId: "external-a",
+                            email: "email-b",
+                            name: "Updated",
+                        },
+                        ["externalId"],
+                    ).should.be.rejected
+                }),
+            ))
         it("should bulk upsert", () =>
             Promise.all(
                 dataSources.map(async (dataSource) => {

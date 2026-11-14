@@ -6,6 +6,7 @@ import {
 } from "../../../utils/test-utils"
 import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
+import { IdentityPost } from "./entity/IdentityPost"
 import { expect } from "chai"
 import { MoreThan } from "../../../../src"
 
@@ -133,6 +134,53 @@ describe("query builder > insert > merge into", () => {
             }),
         ))
 
+    it("should preserve explicit SQL Server identities in MERGE upserts", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (dataSource.options.type !== "mssql") return
+
+                await dataSource
+                    .createQueryBuilder()
+                    .insert()
+                    .into(IdentityPost)
+                    .values({ id: 42, title: "Explicit identity" })
+                    .orUpdate([], ["id"])
+                    .execute()
+
+                const loaded = await dataSource.manager.findOneByOrFail(
+                    IdentityPost,
+                    { id: 42 },
+                )
+                expect(loaded.title).to.equal("Explicit identity")
+            }),
+        ))
+
+    it("should match SQL Server MERGE orIgnore by explicit identity", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (dataSource.options.type !== "mssql") return
+
+                await dataSource
+                    .createQueryBuilder()
+                    .insert()
+                    .into(IdentityPost)
+                    .values({ id: 42, title: "Original" })
+                    .execute()
+
+                await dataSource
+                    .createQueryBuilder()
+                    .insert()
+                    .into(IdentityPost)
+                    .values({ id: 42, title: "Changed" })
+                    .orIgnore()
+                    .execute()
+
+                const rows = await dataSource.manager.find(IdentityPost)
+                expect(rows).to.have.length(1)
+                expect(rows[0].title).to.equal("Original")
+            }),
+        ))
+
     it("should perform insertion using overwrite condition and skipping update on no change", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
@@ -164,7 +212,7 @@ describe("query builder > insert > merge into", () => {
                     )
                 } else if (dataSource.options.type === "sap") {
                     expect(sql).to.equal(
-                        `MERGE INTO post post USING (SELECT ? AS id, ? AS title, ? AS published, ? AS date FROM SYS.DUMMY) mergeIntoSource ON (post.date = mergeIntoSource.date) ` +
+                        `MERGE INTO post post USING (SELECT ? AS id, ? AS title, ? AS published, ? AS date FROM SYS.DUMMY) AS mergeIntoSource ON (post.date = mergeIntoSource.date) ` +
                             `WHEN MATCHED AND post.date > ? AND post.title != mergeIntoSource.title THEN UPDATE SET post.title = mergeIntoSource.title ` +
                             `WHEN NOT MATCHED THEN INSERT(id, title, published, date) VALUES (mergeIntoSource.id, mergeIntoSource.title, mergeIntoSource.published, mergeIntoSource.date)`,
                     )
