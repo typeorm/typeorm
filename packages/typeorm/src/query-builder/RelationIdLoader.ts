@@ -7,11 +7,6 @@ import { DriverUtils } from "../driver/DriverUtils"
 import { TypeORMError } from "../error/TypeORMError"
 import type { QueryRunner } from "../query-runner/QueryRunner"
 
-interface KeyIndex {
-    children: Map<unknown, KeyIndex>
-    positions: number[]
-}
-
 /**
  * Loads relation ids for the given entities.
  */
@@ -230,9 +225,10 @@ export class RelationIdLoader {
 
     /**
      * Groups the related entities by parent through key lookups, in linear time.
-     * Returns undefined when a key value is not a primitive (a binary value, an
-     * object with `equals`, NaN): only `ColumnMetadata.compareEntityValue` knows
-     * how to compare those, so the caller falls back to comparing every pair.
+     * Keys are compared through their JSON text, which matches exactly when `===`
+     * does for strings, finite numbers, booleans and null. Returns undefined when
+     * a key holds any other value, so the caller compares every pair with
+     * `compareEntityValue`.
      *
      * @param entities
      * @param relatedEntities
@@ -268,74 +264,60 @@ export class RelationIdLoader {
             relatedIdAliases.map((alias) => relationId[alias]),
         )
 
-        const isPrimitive = (value: unknown) =>
+        const isPlainKeyValue = (value: unknown) =>
             value === null ||
-            (typeof value !== "object" &&
-                typeof value !== "function" &&
-                !Number.isNaN(value))
-        const allKeysArePrimitive = [
+            typeof value === "string" ||
+            typeof value === "boolean" ||
+            (typeof value === "number" && Number.isFinite(value))
+        const allKeysArePlain = [
             entityKeys,
             relatedKeys,
             entityKeysOfRelationIds,
             relatedKeysOfRelationIds,
-        ].every((keys) => keys.every((key) => key.every(isPrimitive)))
-        if (!allKeysArePrimitive) return undefined
+        ].every((keys) => keys.every((key) => key.every(isPlainKeyValue)))
+        if (!allKeysArePlain) return undefined
 
-        const indexPositions = (keys: unknown[][]): KeyIndex => {
-            const index: KeyIndex = { children: new Map(), positions: [] }
-            keys.forEach((key, position) => {
-                let node = index
-                for (const value of key) {
-                    let child = node.children.get(value)
-                    if (!child) {
-                        child = { children: new Map(), positions: [] }
-                        node.children.set(value, child)
-                    }
-                    node = child
+        const groupPositionsByKey = (keys: unknown[][]) => {
+            const map = new Map<string, number[]>()
+            for (let position = 0; position < keys.length; position++) {
+                const id = JSON.stringify(keys[position])
+                const positions = map.get(id)
+                if (!positions) {
+                    map.set(id, [position])
+                } else {
+                    positions.push(position)
                 }
-                node.positions.push(position)
-            })
-            return index
+            }
+            return map
         }
-        const positionsOf = (index: KeyIndex, key: unknown[]): number[] => {
-            let node: KeyIndex | undefined = index
-            for (const value of key) node = node?.children.get(value)
-            return node?.positions ?? []
-        }
-
-        const relationIdPositionsByEntityKey = indexPositions(
+        const relationIdPositionsByEntityKey = groupPositionsByKey(
             entityKeysOfRelationIds,
         )
-        const relatedPositionsByKey = indexPositions(relatedKeys)
+        const relatedPositionsByKey = groupPositionsByKey(relatedKeys)
 
         return entities.map((entity, entityPosition) => {
-            const group: { entity: E1; related?: E2 | E2[] } = {
-                entity: entity,
-                related: isMany ? [] : undefined,
-            }
-
-            const relatedPositions = positionsOf(
-                relationIdPositionsByEntityKey,
-                entityKeys[entityPosition],
-            )
-                .flatMap((relationIdPosition) =>
-                    positionsOf(
-                        relatedPositionsByKey,
-                        relatedKeysOfRelationIds[relationIdPosition],
-                    ),
+            const relationIdPositions =
+                relationIdPositionsByEntityKey.get(
+                    JSON.stringify(entityKeys[entityPosition]),
+                ) ?? []
+            const relatedPositions: number[] = []
+            for (const relationIdPosition of relationIdPositions) {
+                const relatedKey = JSON.stringify(
+                    relatedKeysOfRelationIds[relationIdPosition],
                 )
-                .sort((a, b) => a - b)
-
-            for (const relatedPosition of relatedPositions) {
-                if (isMany) {
-                    ;(group.related as E2[]).push(
-                        relatedEntities[relatedPosition],
-                    )
-                } else {
-                    group.related = relatedEntities[relatedPosition]
-                }
+                const matchingRelatedPositions =
+                    relatedPositionsByKey.get(relatedKey) ?? []
+                relatedPositions.push(...matchingRelatedPositions)
             }
-            return group
+            relatedPositions.sort((a, b) => a - b)
+
+            const related = relatedPositions.map(
+                (relatedPosition) => relatedEntities[relatedPosition],
+            )
+            return {
+                entity: entity,
+                related: isMany ? related : related[related.length - 1],
+            }
         })
     }
 
