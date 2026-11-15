@@ -649,6 +649,10 @@ export class InsertQueryBuilder<
                                     .mainAlias!.metadata.columns.filter(
                                         (column) =>
                                             column.isVersion &&
+                                            column.isUpdate !== false &&
+                                            !conflict?.includes(
+                                                column.databaseName,
+                                            ) &&
                                             !overwrite?.includes(
                                                 column.databaseName,
                                             ) &&
@@ -734,6 +738,7 @@ export class InsertQueryBuilder<
                                     .mainAlias!.metadata.columns.filter(
                                         (column) =>
                                             column.isVersion &&
+                                            column.isUpdate !== false &&
                                             !overwrite.includes(
                                                 column.databaseName,
                                             ),
@@ -764,6 +769,7 @@ export class InsertQueryBuilder<
                                     .mainAlias!.metadata.columns.filter(
                                         (column) =>
                                             column.isVersion &&
+                                            column.isUpdate !== false &&
                                             !columns.includes(
                                                 column.databaseName,
                                             ),
@@ -1248,7 +1254,9 @@ export class InsertQueryBuilder<
                             .mainAlias!.metadata.columns.filter(
                                 (column) =>
                                     column.isVersion &&
-                                    !overwrite.includes(column.databaseName),
+                                    column.isUpdate !== false &&
+                                    !overwrite.includes(column.databaseName) &&
+                                    !conflict?.includes(column.databaseName),
                             )
                             .map(
                                 (column) =>

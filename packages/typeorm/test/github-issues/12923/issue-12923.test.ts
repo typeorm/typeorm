@@ -8,13 +8,14 @@ import {
 } from "../../utils/test-utils"
 import { User } from "./entity/User"
 import { UserCustomVersion } from "./entity/UserCustomVersion"
+import { UserNonUpdatableVersion } from "./entity/UserNonUpdatableVersion"
 
 describe("github issues > #12923 @VersionColumn is not auto-incremented during Repository.upsert() in PostgreSQL", () => {
     let dataSources: DataSource[]
 
     before(async () => {
         dataSources = await createTestingConnections({
-            entities: [User, UserCustomVersion],
+            entities: [User, UserCustomVersion, UserNonUpdatableVersion],
             enabledDrivers: [
                 "postgres",
                 "aurora-postgres",
@@ -119,12 +120,33 @@ describe("github issues > #12923 @VersionColumn is not auto-incremented during R
         })
     })
 
+    it("should not increment version column when update is false", () => {
+        dataSources.forEach((dataSource) => {
+            const repository = dataSource.getRepository(UserNonUpdatableVersion)
+
+            const query = repository
+                .createQueryBuilder()
+                .insert()
+                .values({
+                    externalId: "user_99",
+                    firstName: "Alice",
+                })
+                .orUpdate(["first_name"], ["external_id"])
+
+            const sql = query.getSql()
+
+            if (dataSource.driver.options.type === "postgres") {
+                expect(sql).to.include('"first_name" = EXCLUDED."first_name"')
+                expect(sql).to.not.include('"version" = "version" + 1')
+            }
+        })
+    })
+
     it("should auto-increment version column when upsert updates an existing record", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const repository = dataSource.getRepository(User)
 
-                // 1. Initial insert
                 await repository.upsert(
                     {
                         externalId: "user_99",
@@ -141,7 +163,6 @@ describe("github issues > #12923 @VersionColumn is not auto-incremented during R
                 expect(record!.firstName).to.equal("Alice")
                 expect(record!.version).to.equal(1)
 
-                // 2. Upsert update (conflict on externalId)
                 await repository.upsert(
                     {
                         externalId: "user_99",
@@ -158,7 +179,6 @@ describe("github issues > #12923 @VersionColumn is not auto-incremented during R
                 expect(record!.firstName).to.equal("Bob")
                 expect(record!.version).to.equal(2)
 
-                // 3. Subsequent upsert update
                 await repository.upsert(
                     {
                         externalId: "user_99",

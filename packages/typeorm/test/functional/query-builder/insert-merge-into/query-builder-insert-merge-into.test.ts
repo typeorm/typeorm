@@ -245,7 +245,36 @@ describe("query builder > insert > merge into", () => {
 
             expect(sql).to.include("MERGE INTO")
             expect(sql).to.include("WHEN MATCHED")
-            expect(sql).to.include("version = version + 1")
+            expect(sql).to.include(
+                "VersionedPost.version = VersionedPost.version + 1",
+            )
+        })
+    })
+
+    it("should not increment version column when version is in conflict target", () => {
+        dataSources.forEach((dataSource) => {
+            const post = new VersionedPost()
+            post.id = "post#1"
+            post.title = "About post"
+
+            const sql = dataSource.manager
+                .createQueryBuilder()
+                .insert()
+                .into(VersionedPost)
+                .values(post)
+                .orUpdate(["title"], ["id", "version"])
+                .setParameter("title", post.title)
+                .disableEscaping()
+                .getSql()
+
+            expect(sql).to.include("MERGE INTO")
+            expect(sql).to.include("WHEN MATCHED")
+            expect(sql).to.include(
+                "VersionedPost.title = mergeIntoSource.title",
+            )
+            expect(sql).to.not.include(
+                "VersionedPost.version = VersionedPost.version + 1",
+            )
         })
     })
 })
