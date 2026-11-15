@@ -162,6 +162,9 @@ jobs:
         if: needs.detect-changes.outputs.sonar == 'true'
         with:
           projectBaseDir: packages/codemod
+          # Fail the job on the quality gate only for pull requests, where the
+          # gate judges the PR's own changes. On master the scan still reports.
+          args: -Dsonar.qualitygate.wait=${{ github.event_name == 'pull_request' }}
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
@@ -183,6 +186,9 @@ jobs:
         if: needs.detect-changes.outputs.sonar == 'true'
         with:
           projectBaseDir: packages/legacy-naming-strategies
+          # Fail the job on the quality gate only for pull requests, where the
+          # gate judges the PR's own changes. On master the scan still reports.
+          args: -Dsonar.qualitygate.wait=${{ github.event_name == 'pull_request' }}
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
@@ -203,6 +209,9 @@ jobs:
         if: needs.detect-changes.outputs.sonar == 'true'
         with:
           projectBaseDir: packages/typeorm
+          # Fail the job on the quality gate only for pull requests, where the
+          # gate judges the PR's own changes. On master the scan still reports.
+          args: -Dsonar.qualitygate.wait=${{ github.event_name == 'pull_request' }}
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
