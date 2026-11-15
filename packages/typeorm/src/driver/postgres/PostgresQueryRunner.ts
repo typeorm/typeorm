@@ -3789,7 +3789,6 @@ export class PostgresQueryRunner
         const dbIndices: ObjectLiteral[] = await this.query(indicesSql)
         const dbForeignKeys: ObjectLiteral[] = await this.query(foreignKeysSql)
 
-        // Group the catalog rows once, so loading stays linear in the schema size.
         const tableKey = (row: ObjectLiteral) =>
             JSON.stringify([row["table_schema"], row["table_name"]])
         const columnKey = (row: ObjectLiteral) =>
