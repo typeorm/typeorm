@@ -307,7 +307,9 @@ export class RelationIdLoader {
                 )
                 const matchingRelatedPositions =
                     relatedPositionsByKey.get(relatedKey) ?? []
-                relatedPositions.push(...matchingRelatedPositions)
+                for (const relatedPosition of matchingRelatedPositions) {
+                    relatedPositions.push(relatedPosition)
+                }
             }
             relatedPositions.sort((a, b) => a - b)
 
