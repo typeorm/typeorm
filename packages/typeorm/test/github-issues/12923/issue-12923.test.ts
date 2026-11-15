@@ -98,6 +98,106 @@ describe("github issues > #12923 @VersionColumn is not auto-incremented during R
         })
     })
 
+    it("should not increment version or emit DO UPDATE if no non-conflict columns are provided in overwrite", () => {
+        dataSources.forEach((dataSource) => {
+            const repository = dataSource.getRepository(User)
+
+            const query = repository
+                .createQueryBuilder()
+                .insert()
+                .values({
+                    externalId: "user_99",
+                })
+                .orUpdate(["external_id"], ["external_id"])
+
+            const sql = query.getSql()
+
+            if (dataSource.driver.options.type === "postgres") {
+                expect(sql).to.include("DO NOTHING")
+                expect(sql).to.not.include('"version" = "version" + 1')
+            }
+        })
+    })
+
+    it("should not emit WHEN MATCHED UPDATE clause in merge statement when no non-conflict columns are in overwrite", () => {
+        dataSources.forEach((dataSource) => {
+            const repository = dataSource.getRepository(User)
+            const query = repository.createQueryBuilder().insert().values({
+                externalId: "user_99",
+            })
+
+            const driver = dataSource.driver as unknown as {
+                supportedUpsertTypes: string[]
+                options: { type: string }
+                parametrizeValue?: (column: unknown, value: unknown) => unknown
+            }
+            const originalSupportedUpsertTypes = driver.supportedUpsertTypes
+            const originalDriverType = driver.options.type
+            const originalParametrizeValue = driver.parametrizeValue
+            try {
+                driver.supportedUpsertTypes = ["merge-into"]
+                driver.options.type = "mssql"
+                driver.parametrizeValue = (
+                    _col: unknown,
+                    val: unknown,
+                ): unknown => val
+
+                query.orUpdate(["external_id"], ["external_id"])
+                const sql = query.getSql()
+
+                expect(sql).to.include("MERGE INTO")
+                expect(sql).to.not.include("WHEN MATCHED")
+                expect(sql).to.not.include(
+                    '"User"."version" = "User"."version" + 1',
+                )
+            } finally {
+                driver.supportedUpsertTypes = originalSupportedUpsertTypes
+                driver.options.type = originalDriverType
+                driver.parametrizeValue = originalParametrizeValue
+            }
+        })
+    })
+
+    it("should include version increment in WHEN MATCHED UPDATE clause in merge statement when non-conflict columns exist", () => {
+        dataSources.forEach((dataSource) => {
+            const repository = dataSource.getRepository(User)
+            const query = repository.createQueryBuilder().insert().values({
+                externalId: "user_99",
+                firstName: "Alice",
+            })
+
+            const driver = dataSource.driver as unknown as {
+                supportedUpsertTypes: string[]
+                options: { type: string }
+                parametrizeValue?: (column: unknown, value: unknown) => unknown
+            }
+            const originalSupportedUpsertTypes = driver.supportedUpsertTypes
+            const originalDriverType = driver.options.type
+            const originalParametrizeValue = driver.parametrizeValue
+            try {
+                driver.supportedUpsertTypes = ["merge-into"]
+                driver.options.type = "mssql"
+                driver.parametrizeValue = (
+                    _col: unknown,
+                    val: unknown,
+                ): unknown => val
+
+                query.orUpdate(["first_name"], ["external_id"])
+                const sql = query.getSql()
+
+                expect(sql).to.include("MERGE INTO")
+                expect(sql).to.include("WHEN MATCHED")
+                expect(sql).to.include(
+                    '"User"."version" = "User"."version" + 1',
+                )
+            } finally {
+                driver.supportedUpsertTypes = originalSupportedUpsertTypes
+                driver.options.type = originalDriverType
+                driver.parametrizeValue = originalParametrizeValue
+            }
+        })
+    })
+
     it("should auto-increment version column when upsert updates an existing record", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {

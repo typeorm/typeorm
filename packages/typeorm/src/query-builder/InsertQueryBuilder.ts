@@ -613,7 +613,10 @@ export class InsertQueryBuilder<
                     } else {
                         query += ` ${conflictTarget} DO UPDATE SET `
 
-                        if (this.expressionMap.mainAlias!.hasMetadata) {
+                        if (
+                            updatePart.length > 0 &&
+                            this.expressionMap.mainAlias!.hasMetadata
+                        ) {
                             updatePart.push(
                                 ...this.expressionMap
                                     .mainAlias!.metadata.columns.filter(
@@ -722,7 +725,10 @@ export class InsertQueryBuilder<
                                     column,
                                 )} = VALUES(${this.escape(column)})`,
                         )
-                        if (this.expressionMap.mainAlias!.hasMetadata) {
+                        if (
+                            updatePart.length > 0 &&
+                            this.expressionMap.mainAlias!.hasMetadata
+                        ) {
                             updatePart.push(
                                 ...this.expressionMap
                                     .mainAlias!.metadata.columns.filter(
@@ -749,7 +755,10 @@ export class InsertQueryBuilder<
                         const updatePart = columns.map(
                             (column) => `${this.escape(column)} = :${column}`,
                         )
-                        if (this.expressionMap.mainAlias!.hasMetadata) {
+                        if (
+                            updatePart.length > 0 &&
+                            this.expressionMap.mainAlias!.hasMetadata
+                        ) {
                             updatePart.push(
                                 ...this.expressionMap
                                     .mainAlias!.metadata.columns.filter(
@@ -1230,7 +1239,10 @@ export class InsertQueryBuilder<
                                 column,
                             )} = ${mergeSourceAlias}.${this.escape(column)}`,
                     )
-                if (this.expressionMap.mainAlias!.hasMetadata) {
+                if (
+                    updateColumns.length > 0 &&
+                    this.expressionMap.mainAlias!.hasMetadata
+                ) {
                     updateColumns.push(
                         ...this.expressionMap
                             .mainAlias!.metadata.columns.filter(
