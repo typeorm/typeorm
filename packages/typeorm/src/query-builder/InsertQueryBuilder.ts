@@ -642,6 +642,28 @@ export class InsertQueryBuilder<
                                                 column.databaseName,
                                             )} = DEFAULT`,
                                     ),
+                                ...this.expressionMap
+                                    .mainAlias!.metadata.columns.filter(
+                                        (column) =>
+                                            column.isVersion &&
+                                            !overwrite?.includes(
+                                                column.databaseName,
+                                            ) &&
+                                            !(
+                                                Array.isArray(columns) &&
+                                                columns.includes(
+                                                    column.databaseName,
+                                                )
+                                            ),
+                                    )
+                                    .map(
+                                        (column) =>
+                                            `${this.escape(
+                                                column.databaseName,
+                                            )} = ${this.escape(
+                                                column.databaseName,
+                                            )} + 1`,
+                                    ),
                             )
                         }
 
@@ -694,23 +716,60 @@ export class InsertQueryBuilder<
                         )
                     } else if (Array.isArray(overwrite)) {
                         query += " ON DUPLICATE KEY UPDATE "
-                        query += overwrite
-                            .map(
-                                (column) =>
-                                    `${this.escape(
-                                        column,
-                                    )} = VALUES(${this.escape(column)})`,
+                        const updatePart = overwrite.map(
+                            (column) =>
+                                `${this.escape(
+                                    column,
+                                )} = VALUES(${this.escape(column)})`,
+                        )
+                        if (this.expressionMap.mainAlias!.hasMetadata) {
+                            updatePart.push(
+                                ...this.expressionMap
+                                    .mainAlias!.metadata.columns.filter(
+                                        (column) =>
+                                            column.isVersion &&
+                                            !overwrite.includes(
+                                                column.databaseName,
+                                            ),
+                                    )
+                                    .map(
+                                        (column) =>
+                                            `${this.escape(
+                                                column.databaseName,
+                                            )} = ${this.escape(
+                                                column.databaseName,
+                                            )} + 1`,
+                                    ),
                             )
-                            .join(", ")
+                        }
+                        query += updatePart.join(", ")
                         query += " "
                     } else if (Array.isArray(columns)) {
                         query += " ON DUPLICATE KEY UPDATE "
-                        query += columns
-                            .map(
-                                (column) =>
-                                    `${this.escape(column)} = :${column}`,
+                        const updatePart = columns.map(
+                            (column) => `${this.escape(column)} = :${column}`,
+                        )
+                        if (this.expressionMap.mainAlias!.hasMetadata) {
+                            updatePart.push(
+                                ...this.expressionMap
+                                    .mainAlias!.metadata.columns.filter(
+                                        (column) =>
+                                            column.isVersion &&
+                                            !columns.includes(
+                                                column.databaseName,
+                                            ),
+                                    )
+                                    .map(
+                                        (column) =>
+                                            `${this.escape(
+                                                column.databaseName,
+                                            )} = ${this.escape(
+                                                column.databaseName,
+                                            )} + 1`,
+                                    ),
                             )
-                            .join(", ")
+                        }
+                        query += updatePart.join(", ")
                         query += " "
                     }
                 }
@@ -1163,7 +1222,7 @@ export class InsertQueryBuilder<
             let updateExpression = ""
 
             if (Array.isArray(overwrite)) {
-                updateExpression += (overwrite || columns)
+                const updateColumns = (overwrite || columns)
                     ?.filter((column) => !conflict?.includes(column))
                     .map(
                         (column) =>
@@ -1171,7 +1230,25 @@ export class InsertQueryBuilder<
                                 column,
                             )} = ${mergeSourceAlias}.${this.escape(column)}`,
                     )
-                    .join(", ")
+                if (this.expressionMap.mainAlias!.hasMetadata) {
+                    updateColumns.push(
+                        ...this.expressionMap
+                            .mainAlias!.metadata.columns.filter(
+                                (column) =>
+                                    column.isVersion &&
+                                    !overwrite.includes(column.databaseName),
+                            )
+                            .map(
+                                (column) =>
+                                    `${tableAlias}.${this.escape(
+                                        column.databaseName,
+                                    )} = ${tableAlias}.${this.escape(
+                                        column.databaseName,
+                                    )} + 1`,
+                            ),
+                    )
+                }
+                updateExpression += updateColumns.join(", ")
             }
 
             if (Array.isArray(overwrite) && skipUpdateIfNoValuesChanged) {
