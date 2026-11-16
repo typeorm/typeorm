@@ -2,7 +2,7 @@
 
 TypeORM is an [ORM](https://en.wikipedia.org/wiki/Object-relational_mapping)
 that can run in Node.js, Browser, Cordova, Ionic, React Native, NativeScript, Expo, and Electron platforms
-and can be used with TypeScript and JavaScript (ES2021).
+and can be used with TypeScript and JavaScript (ES2023).
 
 Its goal is to always support the latest JavaScript features and provide additional features
 that help you to develop any kind of application that uses databases - from
