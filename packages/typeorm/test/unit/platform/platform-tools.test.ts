@@ -16,12 +16,12 @@ const INSTALLED_CLIENT_LIBRARIES = [
     "pg",
     "redis",
     "sql.js",
-    "typeorm-aurora-data-api-driver",
 ]
 
 const NOT_INSTALLED_CLIENT_LIBRARIES = [
     "expo-sqlite",
     "react-native-sqlite-storage",
+    "typeorm-aurora-data-api-driver",
 ]
 
 describe("PlatformTools > load", () => {
