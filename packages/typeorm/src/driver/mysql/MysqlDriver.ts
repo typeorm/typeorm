@@ -836,7 +836,7 @@ export class MysqlDriver implements Driver {
                 typeof defaultValue === "string") &&
             defaultValue !== undefined
         ) {
-            return `'${defaultValue}'`
+            return `'${String(defaultValue).replaceAll("'", "''")}'`
         }
 
         if (columnMetadata.type === "set" && defaultValue !== undefined) {

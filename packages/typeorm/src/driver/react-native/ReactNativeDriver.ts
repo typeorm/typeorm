@@ -700,7 +700,7 @@ export class ReactNativeDriver implements Driver {
         }
 
         if (typeof defaultValue === "string") {
-            return `'${defaultValue}'`
+            return `'${String(defaultValue).replaceAll("'", "''")}'`
         }
 
         if (defaultValue === null || defaultValue === undefined) {

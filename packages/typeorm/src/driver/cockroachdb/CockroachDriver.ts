@@ -791,7 +791,7 @@ export class CockroachDriver implements Driver {
                     return `${expr}::${enumName}[]`
                 }
             } else {
-                return `'${defaultValue}'`
+                return `'${String(defaultValue).replaceAll("'", "''")}'`
             }
         } else if (typeof defaultValue === "number") {
             return `(${defaultValue})`
@@ -805,7 +805,7 @@ export class CockroachDriver implements Driver {
             const arrayCast = columnMetadata.isArray
                 ? `::${columnMetadata.type}[]`
                 : ""
-            return `'${defaultValue}'${arrayCast}`
+            return `'${defaultValue.replaceAll("'", "''")}'${arrayCast}`
         }
 
         if (ObjectUtils.isObject(defaultValue) && defaultValue !== null) {

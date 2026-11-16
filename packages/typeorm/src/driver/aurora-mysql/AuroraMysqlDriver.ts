@@ -740,7 +740,7 @@ export class AuroraMysqlDriver implements Driver {
                 columnMetadata.type === "simple-enum") &&
             defaultValue !== undefined
         ) {
-            return `'${defaultValue}'`
+            return `'${String(defaultValue).replaceAll("'", "''")}'`
         }
 
         if (columnMetadata.type === "set" && defaultValue !== undefined) {
@@ -756,7 +756,7 @@ export class AuroraMysqlDriver implements Driver {
         }
 
         if (typeof defaultValue === "string") {
-            return `'${defaultValue}'`
+            return `'${String(defaultValue).replaceAll("'", "''")}'`
         }
 
         if (defaultValue === undefined) {
