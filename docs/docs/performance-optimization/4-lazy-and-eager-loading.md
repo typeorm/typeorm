@@ -17,7 +17,7 @@ export class User {
 When you need to retrieve the data, simply call
 
 ```typescript
-const user = await userRepository.findOne(userId)
+const user = await userRepository.findOneBy({ id: userId })
 const posts = await user.posts
 ```
 
