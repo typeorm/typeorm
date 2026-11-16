@@ -135,7 +135,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [20, 24]
+        node-version: [20, 26]
     uses: ./.github/workflows/tests-linux.yml
     with:
       node-version: ${{matrix.node-version}}
@@ -145,7 +145,7 @@ jobs:
     needs: [detect-changes, build]
     uses: ./.github/workflows/tests-windows.yml
     with:
-      node-version: 22
+      node-version: 26
 
   tests-codemod:
     if: contains(needs.detect-changes.outputs.changes, 'codemod')
