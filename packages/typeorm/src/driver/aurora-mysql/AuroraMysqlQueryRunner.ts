@@ -116,16 +116,8 @@ export class AuroraMysqlQueryRunner
 
             await this.broadcaster.broadcast("AfterTransactionStart")
         } catch (err) {
-            if (this.transactionDepth > initialTransactionDepth) {
-                try {
-                    await this.rollbackTransaction()
-                } catch (rollbackErr) {
-                    this.dataSource.logger.log(
-                        "warn",
-                        `Failed to rollback transaction after failed start: ${rollbackErr}`,
-                        this,
-                    )
-                }
+            while (this.transactionDepth > initialTransactionDepth) {
+                await this.rollbackTransaction()
             }
             if (isInitialTransaction && this.transactionDepth === 0) {
                 this.isTransactionActive = false
@@ -163,15 +155,7 @@ export class AuroraMysqlQueryRunner
     async rollbackTransaction(): Promise<void> {
         if (!this.isTransactionActive) throw new TransactionNotStartedError()
 
-        let beforeRollbackError: Error | undefined
-        try {
-            await this.broadcaster.broadcast("BeforeTransactionRollback")
-        } catch (broadcastErr) {
-            beforeRollbackError =
-                broadcastErr instanceof Error
-                    ? broadcastErr
-                    : new Error(String(broadcastErr))
-        }
+        await this.broadcaster.broadcast("BeforeTransactionRollback")
 
         if (this.transactionDepth > 1) {
             await this.query(
@@ -184,10 +168,6 @@ export class AuroraMysqlQueryRunner
         this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
-
-        if (beforeRollbackError) {
-            throw beforeRollbackError
-        }
     }
 
     /**

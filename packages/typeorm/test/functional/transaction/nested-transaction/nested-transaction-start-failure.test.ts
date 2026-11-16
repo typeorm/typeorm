@@ -449,15 +449,20 @@ describe("transaction > nested transaction start failure", () => {
                     expect(thrownError).to.not.be.null
                     expect(queryRunner.isTransactionActive).to.be.false
                 } finally {
-                    await queryRunner.release()
                     const idx =
                         dataSource.subscribers.indexOf(failingSubscriber)
                     if (idx !== -1) dataSource.subscribers.splice(idx, 1)
+                    if (queryRunner.isTransactionActive) {
+                        try {
+                            await queryRunner.rollbackTransaction()
+                        } catch {}
+                    }
+                    await queryRunner.release()
                 }
             }),
         ))
 
-    it("should settle and reject startTransaction with original error even if beforeTransactionRollback throws", () =>
+    it("should reject startTransaction when afterTransactionStart throws and compensating rollback beforeTransactionRollback throws", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
                 const failingSubscriber: EntitySubscriberInterface = {
@@ -483,13 +488,77 @@ describe("transaction > nested transaction start failure", () => {
                     }
 
                     expect(thrownError).to.not.be.null
-                    expect(thrownError!.message).to.equal("After start failure")
-                    expect(queryRunner.isTransactionActive).to.be.false
+                    expect(thrownError!.message).to.equal(
+                        "Before rollback failure",
+                    )
                 } finally {
-                    await queryRunner.release()
                     const idx =
                         dataSource.subscribers.indexOf(failingSubscriber)
                     if (idx !== -1) dataSource.subscribers.splice(idx, 1)
+                    if (queryRunner.isTransactionActive) {
+                        try {
+                            await queryRunner.rollbackTransaction()
+                        } catch {}
+                    }
+                    await queryRunner.release()
+                }
+            }),
+        ))
+
+    it("should roll back reentrant nested transaction and restore runner state when after-start subscriber starts nested transaction before another subscriber rejects", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (dataSource.driver.transactionSupport !== "nested") return
+
+                let nestedStartPromise: Promise<void> | null = null
+                const nestedSubscriber: EntitySubscriberInterface = {
+                    async afterTransactionStart(event) {
+                        if (!nestedStartPromise && event.queryRunner) {
+                            nestedStartPromise =
+                                event.queryRunner.startTransaction()
+                            await nestedStartPromise
+                        }
+                    },
+                }
+
+                let callCount = 0
+                const failingSubscriber: EntitySubscriberInterface = {
+                    async afterTransactionStart() {
+                        callCount++
+                        if (callCount === 1) {
+                            if (nestedStartPromise) {
+                                await nestedStartPromise
+                            }
+                            throw new Error("Outer start failure")
+                        }
+                    },
+                }
+
+                dataSource.subscribers.push(nestedSubscriber, failingSubscriber)
+
+                const queryRunner = dataSource.createQueryRunner()
+                try {
+                    let thrownError: Error | null = null
+                    try {
+                        await queryRunner.startTransaction()
+                    } catch (err) {
+                        if (err instanceof Error) {
+                            thrownError = err
+                        }
+                    }
+
+                    expect(thrownError).to.not.be.null
+                    expect(thrownError!.message).to.equal("Outer start failure")
+                    expect(queryRunner.isTransactionActive).to.be.false
+                    expect((queryRunner as any).transactionDepth).to.equal(0)
+                } finally {
+                    await queryRunner.release()
+                    const idx1 =
+                        dataSource.subscribers.indexOf(nestedSubscriber)
+                    if (idx1 !== -1) dataSource.subscribers.splice(idx1, 1)
+                    const idx2 =
+                        dataSource.subscribers.indexOf(failingSubscriber)
+                    if (idx2 !== -1) dataSource.subscribers.splice(idx2, 1)
                 }
             }),
         ))
