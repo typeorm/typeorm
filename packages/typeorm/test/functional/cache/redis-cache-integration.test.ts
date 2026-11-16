@@ -16,7 +16,7 @@ describe("RedisQueryResultCache Integration", function () {
             return this.skip()
         }
 
-        container = await new GenericContainer("redis:8.6.1-alpine")
+        container = await new GenericContainer("redis:8.10.3-alpine")
             .withExposedPorts(6379)
             .start()
     })
