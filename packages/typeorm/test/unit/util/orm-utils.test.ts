@@ -268,6 +268,57 @@ describe(`OrmUtils`, () => {
             ).to.equal(false)
         })
 
+        it("should compare plain objects and arrays", () => {
+            const value = {
+                id: 1,
+                tags: ["a", "b"],
+                meta: { createdAt: new Date(0), nested: { values: [1, 2] } },
+            }
+
+            expect(
+                OrmUtils.deepCompare(value, structuredClone(value)),
+            ).to.equal(true)
+            expect(
+                OrmUtils.deepCompare(value, {
+                    ...value,
+                    meta: { ...value.meta, nested: { values: [1, 3] } },
+                }),
+            ).to.equal(false)
+            expect(OrmUtils.deepCompare([1, 2], [1, 2, 3])).to.equal(false)
+            expect(OrmUtils.deepCompare({ a: 1 }, { a: 1, b: 2 })).to.equal(
+                false,
+            )
+            expect(
+                OrmUtils.deepCompare({ a: 1, b: 2 }, { a: 1, c: 2 }),
+            ).to.equal(false)
+            expect(OrmUtils.deepCompare({ a: undefined }, {})).to.equal(false)
+            expect(OrmUtils.deepCompare({ a: 1 }, { a: "1" })).to.equal(false)
+            expect(OrmUtils.deepCompare({ a: null }, { a: {} })).to.equal(false)
+            expect(OrmUtils.deepCompare({ a: [] }, { a: {} })).to.equal(false)
+            expect(
+                OrmUtils.deepCompare(
+                    { data: Buffer.from([1, 2]) },
+                    { data: Buffer.from([1, 2]) },
+                ),
+            ).to.equal(true)
+        })
+
+        it("should not match an enumerable key with a non-enumerable one", () => {
+            const y: Record<string, number> = { b: 2 }
+            Object.defineProperty(y, "a", { value: 1, enumerable: false })
+
+            expect(OrmUtils.deepCompare({ a: 1 }, y)).to.equal(false)
+        })
+
+        it("should not treat cyclic plain objects as equal", () => {
+            const x: any = { a: 1 }
+            x.self = x
+            const y: any = { a: 1 }
+            y.self = y
+
+            expect(OrmUtils.deepCompare(x, y)).to.equal(false)
+        })
+
         it("should compare cross-realm Uint8Array values by content", () => {
             const crossRealmArray = runInNewContext("new Uint8Array([1, 2, 3])")
 
