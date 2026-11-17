@@ -122,27 +122,35 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             isolationLevel,
         )
 
+        const initialTransactionDepth = this.transactionDepth
+        const isInitialTransaction = this.transactionDepth === 0
         this.isTransactionActive = true
 
         try {
             await this.broadcaster.broadcast("BeforeTransactionStart")
+
+            if (this.transactionDepth === 0) {
+                if (isolationLevel) {
+                    await this.query(
+                        "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
+                    )
+                }
+                await this.query("START TRANSACTION")
+            } else {
+                await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
+            }
+            this.transactionDepth += 1
+
+            await this.broadcaster.broadcast("AfterTransactionStart")
         } catch (err) {
-            this.isTransactionActive = false
+            while (this.transactionDepth > initialTransactionDepth) {
+                await this.rollbackTransaction()
+            }
+            if (isInitialTransaction && this.transactionDepth === 0) {
+                this.isTransactionActive = false
+            }
             throw err
         }
-        if (this.transactionDepth === 0) {
-            if (isolationLevel) {
-                await this.query(
-                    "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
-                )
-            }
-            await this.query("START TRANSACTION")
-        } else {
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
-        }
-        this.transactionDepth += 1
-
-        await this.broadcaster.broadcast("AfterTransactionStart")
     }
 
     /**

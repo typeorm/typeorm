@@ -180,27 +180,40 @@ export class PostgresQueryRunner
             isolationLevel,
         )
 
+        const initialTransactionDepth = this.transactionDepth
+        const isInitialTransaction = this.transactionDepth === 0
         this.isTransactionActive = true
+        let rootTransactionStarted = false
         try {
             await this.broadcaster.broadcast("BeforeTransactionStart")
+
+            if (this.transactionDepth === 0) {
+                await this.query("START TRANSACTION")
+                rootTransactionStarted = true
+                if (isolationLevel) {
+                    await this.query(
+                        "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
+                    )
+                }
+            } else {
+                await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
+            }
+            this.transactionDepth += 1
+            rootTransactionStarted = false
+
+            await this.broadcaster.broadcast("AfterTransactionStart")
         } catch (err) {
-            this.isTransactionActive = false
+            while (this.transactionDepth > initialTransactionDepth) {
+                await this.rollbackTransaction()
+            }
+            if (rootTransactionStarted && this.transactionDepth === 0) {
+                await this.query("ROLLBACK")
+            }
+            if (isInitialTransaction && this.transactionDepth === 0) {
+                this.isTransactionActive = false
+            }
             throw err
         }
-
-        if (this.transactionDepth === 0) {
-            await this.query("START TRANSACTION")
-            if (isolationLevel) {
-                await this.query(
-                    "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
-                )
-            }
-        } else {
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
-        }
-        this.transactionDepth += 1
-
-        await this.broadcaster.broadcast("AfterTransactionStart")
     }
 
     /**

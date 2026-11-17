@@ -198,31 +198,49 @@ export class CockroachQueryRunner
             isolationLevel,
         )
 
+        const initialTransactionDepth = this.transactionDepth
+        const isInitialTransaction = this.transactionDepth === 0
         this.isTransactionActive = true
         this.transactionRetries = 0
+        let rootTransactionStarted = false
         try {
             await this.broadcaster.broadcast("BeforeTransactionStart")
+
+            if (this.transactionDepth === 0) {
+                await this.query("START TRANSACTION")
+                rootTransactionStarted = true
+                await this.query("SAVEPOINT cockroach_restart")
+                if (isolationLevel) {
+                    await this.query(
+                        "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
+                    )
+                }
+            } else {
+                await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
+            }
+
+            this.transactionDepth += 1
+            rootTransactionStarted = false
+            this.storeQueries = true
+
+            await this.broadcaster.broadcast("AfterTransactionStart")
         } catch (err) {
-            this.isTransactionActive = false
+            while (this.transactionDepth > initialTransactionDepth) {
+                await this.rollbackTransaction()
+            }
+            if (rootTransactionStarted && this.transactionDepth === 0) {
+                this.storeQueries = false
+                await this.query("ROLLBACK")
+                this.queries = []
+            }
+            if (isInitialTransaction && this.transactionDepth === 0) {
+                this.isTransactionActive = false
+                this.storeQueries = false
+                this.queries = []
+                this.transactionRetries = 0
+            }
             throw err
         }
-
-        if (this.transactionDepth === 0) {
-            await this.query("START TRANSACTION")
-            await this.query("SAVEPOINT cockroach_restart")
-            if (isolationLevel) {
-                await this.query(
-                    "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
-                )
-            }
-        } else {
-            await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
-        }
-
-        this.transactionDepth += 1
-        this.storeQueries = true
-
-        await this.broadcaster.broadcast("AfterTransactionStart")
     }
 
     /**

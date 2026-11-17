@@ -101,49 +101,65 @@ export class SqlServerQueryRunner
         )
         if (this.isReleased) throw new QueryRunnerAlreadyReleasedError()
 
+        const initialTransactionDepth = this.transactionDepth
+        const isInitialTransaction = this.transactionDepth === 0
         this.isTransactionActive = true
         try {
             await this.broadcaster.broadcast("BeforeTransactionStart")
-        } catch (err) {
-            this.isTransactionActive = false
-            throw err
-        }
-        await new Promise<void>(async (ok, fail) => {
-            const transactionCallback = (err: any) => {
-                if (err) {
-                    this.isTransactionActive = false
+
+            await new Promise<void>(async (ok, fail) => {
+                const transactionCallback = (err: unknown) => {
+                    if (err) {
+                        return fail(err)
+                    }
+                    this.transactionDepth += 1
+                    ok()
+                }
+
+                try {
+                    if (this.transactionDepth === 0) {
+                        const pool = await (this.mode === "slave"
+                            ? this.driver.obtainSlaveConnection()
+                            : this.driver.obtainMasterConnection())
+                        this.databaseConnection = pool.transaction()
+                        this.dataSource.logger.logQuery("BEGIN TRANSACTION")
+                        if (isolationLevel) {
+                            this.databaseConnection.begin(
+                                this.driver.convertIsolationLevel(
+                                    isolationLevel,
+                                ),
+                                transactionCallback,
+                            )
+                            this.dataSource.logger.logQuery(
+                                "SET TRANSACTION ISOLATION LEVEL " +
+                                    isolationLevel,
+                            )
+                        } else {
+                            this.databaseConnection.begin(transactionCallback)
+                        }
+                    } else {
+                        await this.query(
+                            `SAVE TRANSACTION typeorm_${this.transactionDepth}`,
+                        )
+                        this.transactionDepth += 1
+                        ok()
+                    }
+                } catch (err) {
                     return fail(err)
                 }
-                ok()
-            }
+            })
 
-            if (this.transactionDepth === 0) {
-                const pool = await (this.mode === "slave"
-                    ? this.driver.obtainSlaveConnection()
-                    : this.driver.obtainMasterConnection())
-                this.databaseConnection = pool.transaction()
-                this.dataSource.logger.logQuery("BEGIN TRANSACTION")
-                if (isolationLevel) {
-                    this.databaseConnection.begin(
-                        this.driver.convertIsolationLevel(isolationLevel),
-                        transactionCallback,
-                    )
-                    this.dataSource.logger.logQuery(
-                        "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
-                    )
-                } else {
-                    this.databaseConnection.begin(transactionCallback)
-                }
-            } else {
-                await this.query(
-                    `SAVE TRANSACTION typeorm_${this.transactionDepth}`,
-                )
-                ok()
+            await this.broadcaster.broadcast("AfterTransactionStart")
+        } catch (err) {
+            while (this.transactionDepth > initialTransactionDepth) {
+                await this.rollbackTransaction()
             }
-            this.transactionDepth += 1
-        })
-
-        await this.broadcaster.broadcast("AfterTransactionStart")
+            if (isInitialTransaction && this.transactionDepth === 0) {
+                this.isTransactionActive = false
+                this.databaseConnection = null
+            }
+            throw err
+        }
     }
 
     /**
@@ -159,16 +175,21 @@ export class SqlServerQueryRunner
 
         if (this.transactionDepth === 1) {
             return new Promise<void>((ok, fail) => {
-                this.databaseConnection.commit(async (err: any) => {
+                this.databaseConnection.commit(async (err: unknown) => {
                     if (err) return fail(err)
                     this.isTransactionActive = false
                     this.databaseConnection = null
-
-                    await this.broadcaster.broadcast("AfterTransactionCommit")
-
-                    ok()
                     this.dataSource.logger.logQuery("COMMIT")
                     this.transactionDepth -= 1
+
+                    try {
+                        await this.broadcaster.broadcast(
+                            "AfterTransactionCommit",
+                        )
+                        ok()
+                    } catch (broadcastErr) {
+                        fail(broadcastErr)
+                    }
                 })
             })
         }
@@ -191,18 +212,24 @@ export class SqlServerQueryRunner
                 `ROLLBACK TRANSACTION typeorm_${this.transactionDepth - 1}`,
             )
             this.transactionDepth -= 1
+            await this.broadcaster.broadcast("AfterTransactionRollback")
         } else {
-            return new Promise<void>((ok, fail) => {
-                this.databaseConnection.rollback(async (err: any) => {
+            await new Promise<void>((ok, fail) => {
+                this.databaseConnection.rollback(async (err: unknown) => {
                     if (err) return fail(err)
                     this.isTransactionActive = false
                     this.databaseConnection = null
-
-                    await this.broadcaster.broadcast("AfterTransactionRollback")
-
-                    ok()
                     this.dataSource.logger.logQuery("ROLLBACK")
                     this.transactionDepth -= 1
+
+                    try {
+                        await this.broadcaster.broadcast(
+                            "AfterTransactionRollback",
+                        )
+                        ok()
+                    } catch (broadcastErr) {
+                        fail(broadcastErr)
+                    }
                 })
             })
         }
