@@ -18,16 +18,10 @@ export class Post {
     lastName: string
 
     @Column({
-        asExpression: `' ' || COALESCE("firstName", '') || ' ' || COALESCE("lastName", '')`,
-        generatedType: "STORED",
-    })
-    storedFullName: string
-
-    @Column({
         asExpression: `"firstName" || "lastName"`,
         generatedType: "STORED",
     })
-    name: string
+    storedFullName: string
 
     @Column({
         generatedType: "STORED",
@@ -36,5 +30,5 @@ export class Post {
         length: 255,
         nullable: true,
     })
-    nameHash: string
+    storedNameHash: string
 }

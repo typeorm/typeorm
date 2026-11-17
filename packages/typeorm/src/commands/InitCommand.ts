@@ -607,7 +607,7 @@ AppDataSource.initialize().then(async () => {
                 return `services:
 
   postgres:
-    image: "postgres:17.2"
+    image: "postgres:18.6"
     ports:
       - "5432:5432"
     environment:

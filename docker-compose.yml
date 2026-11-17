@@ -59,11 +59,11 @@ services:
       POSTGRES_DB: "typeorm"
 
   # postgres
-  postgres-17:
+  postgres-18:
     # postgis is postgres + PostGIS (only). If you need additional extensions,
     # it's probably time to create a purpose-built image.
-    image: "ghcr.io/typeorm/docker:postgres-17.9-postgis-3.6.2-pgvector-0.8.2"
-    container_name: "typeorm-postgres-17"
+    image: "ghcr.io/typeorm/docker:postgres-18.6-postgis-3.6.4-pgvector-0.8.6"
+    container_name: "typeorm-postgres-18"
     ports:
       - "5432:5432"
     environment:
