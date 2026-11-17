@@ -124,6 +124,8 @@ export class Post {
 
 You can define a method with any name in the entity and mark it with `@BeforeSoftRemove`
 and TypeORM will call it before an entity is soft removed using repository/manager `softRemove`.
+Changes to the entity's columns made in this listener are saved as part of the soft remove
+(special and `update: false` columns excluded).
 Example:
 
 ```typescript
@@ -156,6 +158,8 @@ export class Post {
 
 You can define a method with any name in the entity and mark it with `@BeforeRecover`
 and TypeORM will call it before an entity is recovered using repository/manager `recover`.
+Changes to the entity's columns made in this listener are saved as part of the recovery
+(special and `update: false` columns excluded).
 Example:
 
 ```typescript
