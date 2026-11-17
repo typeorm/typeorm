@@ -58,6 +58,27 @@ export class OrmUtils {
         )
     }
 
+    /**
+     * Groups items by key in linear time, keeping their order within each group.
+     *
+     * @param array the items to group
+     * @param keyOf returns the key of an item
+     * @returns the items of each key
+     */
+    public static groupInMap<T, K>(
+        array: T[],
+        keyOf: (item: T) => K,
+    ): Map<K, T[]> {
+        const groups = new Map<K, T[]>()
+        for (const item of array) {
+            const key = keyOf(item)
+            const group = groups.get(key)
+            if (group) group.push(item)
+            else groups.set(key, [item])
+        }
+        return groups
+    }
+
     public static uniq<T>(array: T[], criteria?: (item: T) => unknown): T[]
     public static uniq<T, K extends keyof T>(array: T[], property: K): T[]
     public static uniq<T, K extends keyof T>(
