@@ -147,6 +147,33 @@ describe("persistence > persistence options > listeners", () => {
             }),
         ))
 
+    it("soft-remove and recover with listener changes should raise the version once each", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const post = new PostWithDeleteDateColumn()
+                post.title = "Bakhrom"
+                post.description = "Hello"
+                await dataSource.manager.save(post)
+                const versionAfterSave = post.version
+
+                await dataSource.manager.softRemove(post)
+                const softRemovedPost = await dataSource.manager.findOneOrFail(
+                    PostWithDeleteDateColumn,
+                    { where: { id: post.id }, withDeleted: true },
+                )
+                softRemovedPost.title.should.be.equal("Bakhrom!")
+                softRemovedPost.version.should.be.equal(versionAfterSave + 1)
+
+                await dataSource.manager.recover(post)
+                const recoveredPost = await dataSource.manager.findOneByOrFail(
+                    PostWithDeleteDateColumn,
+                    { id: post.id },
+                )
+                recoveredPost.title.should.be.equal("Bakhrom!?")
+                recoveredPost.version.should.be.equal(versionAfterSave + 2)
+            }),
+        ))
+
     it("soft-remove should not persist changes made outside of listeners", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {

@@ -743,21 +743,25 @@ export class SubjectExecutor {
     }
 
     /**
-     * Updates the columns and relations that "before soft remove" or "before recover" listeners
-     * changed on a subject. Special and non-updatable columns are skipped, and tree parents are
-     * skipped because tree tables are not maintained here.
+     * Soft-removes or recovers a subject together with the columns and relations that "before soft
+     * remove" or "before recover" listeners changed, in one UPDATE statement. This way the version
+     * and update date change once, and the listener changes are never saved without the soft-removal
+     * or recovery. Special and non-updatable columns are skipped, and tree parents are skipped
+     * because tree tables are not maintained here.
      *
      * @param subject Subject that is going to be soft-removed or recovered.
      * @param isRecover Whether the subject is going to be recovered.
+     * @returns The update result, or undefined when listeners changed nothing and the regular
+     * soft-delete or restore query has to be used.
      */
     private async updateListenerChanges(
         subject: Subject,
         isRecover: boolean,
-    ): Promise<void> {
+    ): Promise<UpdateResult | undefined> {
         const changeMapsBeforeListeners =
             this.changeMapsBeforeListeners.get(subject)
         const deleteDateColumn = subject.metadata.deleteDateColumn
-        if (!changeMapsBeforeListeners || !deleteDateColumn) return
+        if (!changeMapsBeforeListeners || !deleteDateColumn) return undefined
 
         subject.changeMaps = subject.changeMaps.filter(
             ({ column, relation, value }) => {
@@ -795,16 +799,23 @@ export class SubjectExecutor {
             },
         )
         const updateMap = subject.createValueSetAndPopChangeMap()
-        if (Object.keys(updateMap).length === 0) return
+        if (Object.keys(updateMap).length === 0) return undefined
+
+        // the delete date is set in the same statement
+        // (the query builder adds the version and update date once)
+        deleteDateColumn.setEntityValue(
+            updateMap,
+            isRecover ? null : () => "CURRENT_TIMESTAMP",
+        )
 
         const updateQueryBuilder = this.queryRunner.manager
             .createQueryBuilder()
             .update(subject.metadata.target)
             .set(updateMap)
             .whereEntity(subject.identifier!)
-            .updateEntity(false)
+            .updateEntity(this.options?.reload !== false)
             .callListeners(false)
-        await updateQueryBuilder
+        return updateQueryBuilder
             .andWhere(
                 `${updateQueryBuilder.escape(deleteDateColumn.databaseName)} IS ${
                     isRecover ? "NOT NULL" : "NULL"
@@ -860,27 +871,34 @@ export class SubjectExecutor {
                     partialEntity,
                 )
             } else {
-                await this.updateListenerChanges(subject, false)
+                const listenerUpdateResult = await this.updateListenerChanges(
+                    subject,
+                    false,
+                )
 
-                // here we execute our soft-deletion query
-                // we need to enable entity soft-deletion because we update a subject identifier
-                // which is not same object as our entity that's why we don't need to worry about our entity to get dirty
-                // also, we disable listeners because we call them on our own in persistence layer
-                const softDeleteQueryBuilder = this.queryRunner.manager
-                    .createQueryBuilder()
-                    .softDelete()
-                    .from(subject.metadata.target)
-                    .updateEntity(this.options?.reload !== false)
-                    .callListeners(false)
-
-                if (subject.entity) {
-                    softDeleteQueryBuilder.whereEntity(subject.identifier)
+                if (listenerUpdateResult) {
+                    updateResult = listenerUpdateResult
                 } else {
-                    // in this case identifier is just conditions object to update by
-                    softDeleteQueryBuilder.where(subject.identifier)
-                }
+                    // here we execute our soft-deletion query
+                    // we need to enable entity soft-deletion because we update a subject identifier
+                    // which is not same object as our entity that's why we don't need to worry about our entity to get dirty
+                    // also, we disable listeners because we call them on our own in persistence layer
+                    const softDeleteQueryBuilder = this.queryRunner.manager
+                        .createQueryBuilder()
+                        .softDelete()
+                        .from(subject.metadata.target)
+                        .updateEntity(this.options?.reload !== false)
+                        .callListeners(false)
 
-                updateResult = await softDeleteQueryBuilder.execute()
+                    if (subject.entity) {
+                        softDeleteQueryBuilder.whereEntity(subject.identifier)
+                    } else {
+                        // in this case identifier is just conditions object to update by
+                        softDeleteQueryBuilder.where(subject.identifier)
+                    }
+
+                    updateResult = await softDeleteQueryBuilder.execute()
+                }
             }
 
             subject.generatedMap = updateResult.generatedMaps[0]
@@ -973,27 +991,34 @@ export class SubjectExecutor {
                     partialEntity,
                 )
             } else {
-                await this.updateListenerChanges(subject, true)
+                const listenerUpdateResult = await this.updateListenerChanges(
+                    subject,
+                    true,
+                )
 
-                // here we execute our restory query
-                // we need to enable entity restory because we update a subject identifier
-                // which is not same object as our entity that's why we don't need to worry about our entity to get dirty
-                // also, we disable listeners because we call them on our own in persistence layer
-                const softDeleteQueryBuilder = this.queryRunner.manager
-                    .createQueryBuilder()
-                    .restore()
-                    .from(subject.metadata.target)
-                    .updateEntity(this.options?.reload !== false)
-                    .callListeners(false)
-
-                if (subject.entity) {
-                    softDeleteQueryBuilder.whereEntity(subject.identifier)
+                if (listenerUpdateResult) {
+                    updateResult = listenerUpdateResult
                 } else {
-                    // in this case identifier is just conditions object to update by
-                    softDeleteQueryBuilder.where(subject.identifier)
-                }
+                    // here we execute our restory query
+                    // we need to enable entity restory because we update a subject identifier
+                    // which is not same object as our entity that's why we don't need to worry about our entity to get dirty
+                    // also, we disable listeners because we call them on our own in persistence layer
+                    const softDeleteQueryBuilder = this.queryRunner.manager
+                        .createQueryBuilder()
+                        .restore()
+                        .from(subject.metadata.target)
+                        .updateEntity(this.options?.reload !== false)
+                        .callListeners(false)
 
-                updateResult = await softDeleteQueryBuilder.execute()
+                    if (subject.entity) {
+                        softDeleteQueryBuilder.whereEntity(subject.identifier)
+                    } else {
+                        // in this case identifier is just conditions object to update by
+                        softDeleteQueryBuilder.where(subject.identifier)
+                    }
+
+                    updateResult = await softDeleteQueryBuilder.execute()
+                }
             }
 
             subject.generatedMap = updateResult.generatedMaps[0]
