@@ -1031,6 +1031,8 @@ export class OracleDriver implements Driver {
             case "nvarchar2":
             case "varchar2":
                 return this.oracle.DB_TYPE_VARCHAR
+            case "raw":
+                return this.oracle.DB_TYPE_RAW
             case "blob":
                 return this.oracle.DB_TYPE_BLOB
             case "simple-json":
