@@ -6,6 +6,13 @@ import type { UpdateResult } from "./result/UpdateResult"
 import type { InsertResult } from "./result/InsertResult"
 import { TypeORMError } from "../error"
 
+// Values selected back from the database are already hydrated by the query builder.
+// Keep this metadata private so SubjectExecutor can avoid hydrating them twice.
+export const reselectedColumns = new WeakMap<
+    ObjectLiteral,
+    Set<ColumnMetadata>
+>()
+
 /**
  * Updates entity with returning results in the entity insert and update operations.
  */
@@ -272,6 +279,11 @@ export class ReturningResultsEntityUpdator {
                     metadata.target as any,
                     entity,
                     returningResult[entityIndex],
+                )
+
+                reselectedColumns.set(
+                    generatedMaps[entityIndex],
+                    new Set(insertionColumns),
                 )
             })
         }
