@@ -199,6 +199,7 @@ export class PostgresQueryRunner
                 await this.query(`SAVEPOINT typeorm_${this.transactionDepth}`)
             }
             this.transactionDepth += 1
+            rootTransactionStarted = false
 
             await this.broadcaster.broadcast("AfterTransactionStart")
         } catch (err) {

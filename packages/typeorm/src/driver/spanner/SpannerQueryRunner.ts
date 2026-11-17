@@ -134,7 +134,12 @@ export class SpannerQueryRunner extends BaseQueryRunner implements QueryRunner {
         }
         this.dataSource.logger.logQuery("START TRANSACTION")
 
-        await this.broadcaster.broadcast("AfterTransactionStart")
+        try {
+            await this.broadcaster.broadcast("AfterTransactionStart")
+        } catch (err) {
+            await this.rollbackTransaction()
+            throw err
+        }
     }
 
     /**

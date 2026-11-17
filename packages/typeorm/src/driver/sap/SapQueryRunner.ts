@@ -127,14 +127,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
         await this.broadcaster.broadcast("BeforeTransactionStart")
 
-        let autoCommitAttempted = false
         this.isTransactionActive = true
         try {
             /**
              * Disable AUTOCOMMIT while running transaction.
              *  Otherwise, COMMIT/ROLLBACK doesn't work in autocommit mode.
              */
-            autoCommitAttempted = true
             await this.setAutoCommit({ status: "off" })
 
             if (isolationLevel) {
@@ -145,9 +143,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
 
             await this.broadcaster.broadcast("AfterTransactionStart")
         } catch (err) {
-            if (autoCommitAttempted) {
-                await this.rollbackTransaction()
-            }
+            await this.rollbackTransaction()
             if (!wasTransactionActive) {
                 this.isTransactionActive = false
             }

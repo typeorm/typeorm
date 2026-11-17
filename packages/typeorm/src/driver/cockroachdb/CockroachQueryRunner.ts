@@ -220,6 +220,7 @@ export class CockroachQueryRunner
             }
 
             this.transactionDepth += 1
+            rootTransactionStarted = false
             this.storeQueries = true
 
             await this.broadcaster.broadcast("AfterTransactionStart")

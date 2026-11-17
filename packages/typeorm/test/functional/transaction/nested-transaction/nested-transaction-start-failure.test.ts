@@ -196,6 +196,8 @@ describe("transaction > nested transaction start failure", () => {
     it("should not call rollbackTransaction and should reset isTransactionActive when root startTransaction fails", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
+                if (dataSource.driver.transactionSupport === "none") return
+
                 let failRootSubscriber = true
                 const subscriber: EntitySubscriberInterface = {
                     beforeTransactionStart() {
@@ -251,6 +253,8 @@ describe("transaction > nested transaction start failure", () => {
     it("should clean up connection state when root afterTransactionStart subscriber throws", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
+                if (dataSource.driver.transactionSupport === "none") return
+
                 let failRootAfterSubscriber = true
                 const subscriber: EntitySubscriberInterface = {
                     afterTransactionStart() {
@@ -304,6 +308,8 @@ describe("transaction > nested transaction start failure", () => {
     it("should allow another transaction on the same query runner after root afterTransactionStart subscriber failure", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
+                if (dataSource.driver.transactionSupport === "none") return
+
                 let failSubscriber = true
                 const subscriber: EntitySubscriberInterface = {
                     afterTransactionStart() {
@@ -362,6 +368,8 @@ describe("transaction > nested transaction start failure", () => {
     it("should notify rollback subscribers when afterTransactionStart throws and level is rolled back", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
+                if (dataSource.driver.transactionSupport === "none") return
+
                 const events: string[] = []
 
                 const observerSubscriber: EntitySubscriberInterface = {
@@ -424,6 +432,8 @@ describe("transaction > nested transaction start failure", () => {
     it("should settle and reject startTransaction even if both afterTransactionStart and afterTransactionRollback throw", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
+                if (dataSource.driver.transactionSupport === "none") return
+
                 const failingSubscriber: EntitySubscriberInterface = {
                     afterTransactionStart() {
                         throw new Error("After start failure")
@@ -453,9 +463,7 @@ describe("transaction > nested transaction start failure", () => {
                         dataSource.subscribers.indexOf(failingSubscriber)
                     if (idx !== -1) dataSource.subscribers.splice(idx, 1)
                     if (queryRunner.isTransactionActive) {
-                        try {
-                            await queryRunner.rollbackTransaction()
-                        } catch {}
+                        await queryRunner.rollbackTransaction()
                     }
                     await queryRunner.release()
                 }
@@ -465,6 +473,8 @@ describe("transaction > nested transaction start failure", () => {
     it("should reject startTransaction when afterTransactionStart throws and compensating rollback beforeTransactionRollback throws", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
+                if (dataSource.driver.transactionSupport === "none") return
+
                 const failingSubscriber: EntitySubscriberInterface = {
                     afterTransactionStart() {
                         throw new Error("After start failure")
@@ -496,9 +506,7 @@ describe("transaction > nested transaction start failure", () => {
                         dataSource.subscribers.indexOf(failingSubscriber)
                     if (idx !== -1) dataSource.subscribers.splice(idx, 1)
                     if (queryRunner.isTransactionActive) {
-                        try {
-                            await queryRunner.rollbackTransaction()
-                        } catch {}
+                        await queryRunner.rollbackTransaction()
                     }
                     await queryRunner.release()
                 }
@@ -550,15 +558,23 @@ describe("transaction > nested transaction start failure", () => {
                     expect(thrownError).to.not.be.null
                     expect(thrownError!.message).to.equal("Outer start failure")
                     expect(queryRunner.isTransactionActive).to.be.false
-                    expect((queryRunner as any).transactionDepth).to.equal(0)
+
+                    // Verify runner can start and commit a clean transaction
+                    await queryRunner.startTransaction()
+                    expect(queryRunner.isTransactionActive).to.be.true
+                    await queryRunner.commitTransaction()
+                    expect(queryRunner.isTransactionActive).to.be.false
                 } finally {
-                    await queryRunner.release()
                     const idx1 =
                         dataSource.subscribers.indexOf(nestedSubscriber)
                     if (idx1 !== -1) dataSource.subscribers.splice(idx1, 1)
                     const idx2 =
                         dataSource.subscribers.indexOf(failingSubscriber)
                     if (idx2 !== -1) dataSource.subscribers.splice(idx2, 1)
+                    if (queryRunner.isTransactionActive) {
+                        await queryRunner.rollbackTransaction()
+                    }
+                    await queryRunner.release()
                 }
             }),
         ))
