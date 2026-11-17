@@ -1,14 +1,20 @@
-# Every package lives under `packages/`, including `typeorm` itself. The
-# repository root is the workspace root and is not a published package.
-#
-# `packages/legacy-naming-strategies` and `playground` depend on `typeorm` with
-# `workspace:*`. The `typeorm` manifest sets `publishConfig.directory` to
-# `build/package`, so pnpm links them to the build output rather than to the
-# source tree. Nothing resolves `typeorm` until `pnpm run package` has been run
-# at least once.
-#
-# `docs` is excluded: it is a Docusaurus site with a large, unrelated dependency
-# tree, and it is built by its own workflow.
 packages:
+    - "docs"
     - "packages/*"
     - "playground"
+allowBuilds:
+    "@sap/hana-client": false
+    better-sqlite3: true
+    core-js: false
+    cpu-features: false
+    libpq: false
+    oracledb: false
+    protobufjs: false
+    ssh2: false
+autoInstallPeers: false
+engineStrict: true
+minimumReleaseAge: 4320 # 3 days
+nodeVersion: 22.23.5
+overrides:
+    tedious: "20.0.5" # last version with `Promise.withResolvers` polyfill for Node 20 support
+strictPeerDependencies: false
