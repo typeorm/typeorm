@@ -157,6 +157,23 @@ export class DriverUtils {
         return newAlias
     }
 
+    /**
+     * Reads the values of a MySQL enum or set column type such as
+     * `enum('a,b','it''s')`. Values may contain commas and doubled quotes.
+     *
+     * @param columnType the COLUMN_TYPE from information_schema
+     * @returns the enum values
+     */
+    static parseMysqlEnumValues(columnType: string): string[] {
+        const list = columnType.slice(
+            columnType.indexOf("(") + 1,
+            columnType.lastIndexOf(")"),
+        )
+        return Array.from(list.matchAll(/'((?:[^']|'')*)'/g), (match) =>
+            match[1].replaceAll("''", "'"),
+        )
+    }
+
     // -------------------------------------------------------------------------
     // Private Static Methods
     // -------------------------------------------------------------------------

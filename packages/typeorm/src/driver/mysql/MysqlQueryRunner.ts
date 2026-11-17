@@ -26,6 +26,7 @@ import { Query } from "../Query"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { IsolationLevel } from "../types/IsolationLevel"
 import { validateIsolationLevel } from "../validate-isolation-level"
+import { DriverUtils } from "../DriverUtils"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { ReplicationMode } from "../types/ReplicationMode"
 import type { MysqlDriver } from "./MysqlDriver"
@@ -3104,18 +3105,10 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                                 tableColumn.type === "simple-enum" ||
                                 tableColumn.type === "set"
                             ) {
-                                const colType = dbColumn["COLUMN_TYPE"]
-                                const items = colType
-                                    .slice(
-                                        colType.indexOf("(") + 1,
-                                        colType.lastIndexOf(")"),
+                                tableColumn.enum =
+                                    DriverUtils.parseMysqlEnumValues(
+                                        dbColumn["COLUMN_TYPE"],
                                     )
-                                    .split(",")
-                                tableColumn.enum = (items as string[]).map(
-                                    (item) => {
-                                        return item.slice(1, -1)
-                                    },
-                                )
                                 tableColumn.length = ""
                             }
 

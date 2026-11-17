@@ -4,7 +4,6 @@ import type { DataSource } from "../../../../../../src"
 import {
     closeTestingConnections,
     createTestingConnections,
-    reloadTestingDatabases,
 } from "../../../../../utils/test-utils"
 import { Example } from "./entity/Example"
 
@@ -15,17 +14,15 @@ describe("schema builder > column type > enum > enum apostrophe escape", () => {
         dataSources = await createTestingConnections({
             enabledDrivers: ["mysql"],
             entities: [Example],
-            schemaCreate: true,
+            schemaCreate: false,
             dropSchema: true,
         })
     })
-    beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
     it("should properly escape all apostrophes", () =>
         Promise.all(
             dataSources.map(async (connection) => {
-                await connection.driver.createSchemaBuilder().build()
                 const sqlInMemory = await connection.driver
                     .createSchemaBuilder()
                     .log()
@@ -35,6 +32,18 @@ describe("schema builder > column type > enum > enum apostrophe escape", () => {
                         query.includes("Men''s and Women''s Clothing"),
                     ),
                 ).to.be.true
+            }),
+        ))
+
+    it("should not generate queries after the schema is built", () =>
+        Promise.all(
+            dataSources.map(async (connection) => {
+                await connection.driver.createSchemaBuilder().build()
+                const sqlInMemory = await connection.driver
+                    .createSchemaBuilder()
+                    .log()
+                expect(sqlInMemory.upQueries).to.have.length(0)
+                expect(sqlInMemory.downQueries).to.have.length(0)
             }),
         ))
 })
