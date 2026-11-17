@@ -7,6 +7,7 @@ import {
 } from "../../../../../../src"
 import { Author } from "./Author"
 import { Comment } from "./Comment"
+import { Translation } from "./Translation"
 
 @Entity()
 export class Book {
@@ -19,9 +20,12 @@ export class Book {
     @Column()
     text: string
 
-    @ManyToMany(() => Author)
+    @ManyToMany(() => Author, (author) => author.books)
     author?: Author[]
 
     @OneToMany(() => Comment, (comment) => comment.book, { eager: true })
     comments?: Comment[]
+
+    @OneToMany(() => Translation, (translation) => translation.book)
+    translations?: Translation[]
 }

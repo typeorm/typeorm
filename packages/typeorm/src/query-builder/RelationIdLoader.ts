@@ -149,6 +149,37 @@ export class RelationIdLoader {
         } else {
         }
 
+        const entityIdAliases = inverseColumns.map((column) =>
+            DriverUtils.buildAlias(
+                this.dataSource.driver,
+                undefined,
+                column.entityMetadata.name + "_" + column.propertyAliasName,
+            ),
+        )
+        const relatedIdAliases = columns.map((column) =>
+            DriverUtils.buildAlias(
+                this.dataSource.driver,
+                undefined,
+                column.entityMetadata.name +
+                    "_" +
+                    relation.propertyPath.replace(".", "_") +
+                    "_" +
+                    column.propertyPath.replace(".", "_"),
+            ),
+        )
+
+        const groupsByKey = this.groupByKey(
+            entities,
+            relatedEntities,
+            relationIds,
+            columns,
+            inverseColumns,
+            entityIdAliases,
+            relatedIdAliases,
+            isMany,
+        )
+        if (groupsByKey) return groupsByKey
+
         return entities.map((entity) => {
             const group: { entity: E1; related?: E2 | E2[] } = {
                 entity: entity,
@@ -156,18 +187,10 @@ export class RelationIdLoader {
             }
 
             const entityRelationIds = relationIds.filter((relationId) => {
-                return inverseColumns.every((column) => {
+                return inverseColumns.every((column, index) => {
                     return column.compareEntityValue(
                         entity,
-                        relationId[
-                            DriverUtils.buildAlias(
-                                this.dataSource.driver,
-                                undefined,
-                                column.entityMetadata.name +
-                                    "_" +
-                                    column.propertyAliasName,
-                            )
-                        ],
+                        relationId[entityIdAliases[index]],
                     )
                 })
             })
@@ -175,25 +198,14 @@ export class RelationIdLoader {
 
             relatedEntities.forEach((relatedEntity) => {
                 entityRelationIds.forEach((relationId) => {
-                    const relatedEntityMatched = columns.every((column) => {
-                        return column.compareEntityValue(
-                            relatedEntity,
-                            relationId[
-                                DriverUtils.buildAlias(
-                                    this.dataSource.driver,
-                                    undefined,
-                                    column.entityMetadata.name +
-                                        "_" +
-                                        relation.propertyPath.replace(
-                                            ".",
-                                            "_",
-                                        ) +
-                                        "_" +
-                                        column.propertyPath.replace(".", "_"),
-                                )
-                            ],
-                        )
-                    })
+                    const relatedEntityMatched = columns.every(
+                        (column, index) => {
+                            return column.compareEntityValue(
+                                relatedEntity,
+                                relationId[relatedIdAliases[index]],
+                            )
+                        },
+                    )
                     if (relatedEntityMatched) {
                         if (isMany) {
                             ;(group.related as E2[]).push(relatedEntity)
@@ -210,6 +222,106 @@ export class RelationIdLoader {
     // -------------------------------------------------------------------------
     // Protected Methods
     // -------------------------------------------------------------------------
+
+    /**
+     * Groups the related entities by parent through key lookups, in linear time.
+     * Keys are compared through their JSON text, which matches exactly when `===`
+     * does for strings, finite numbers, booleans and null. Returns undefined when
+     * a key holds any other value, so the caller compares every pair with
+     * `compareEntityValue`.
+     *
+     * @param entities
+     * @param relatedEntities
+     * @param relationIds
+     * @param columns
+     * @param inverseColumns
+     * @param entityIdAliases
+     * @param relatedIdAliases
+     * @param isMany
+     */
+    private groupByKey<E1 extends ObjectLiteral, E2 extends ObjectLiteral>(
+        entities: E1[],
+        relatedEntities: E2[],
+        relationIds: ObjectLiteral[],
+        columns: ColumnMetadata[],
+        inverseColumns: ColumnMetadata[],
+        entityIdAliases: string[],
+        relatedIdAliases: string[],
+        isMany: boolean,
+    ): { entity: E1; related?: E2 | E2[] }[] | undefined {
+        if (!columns.length || !inverseColumns.length) return undefined
+
+        const entityKeys = entities.map((entity) =>
+            inverseColumns.map((column) => column.getEntityValue(entity)),
+        )
+        const relatedKeys = relatedEntities.map((relatedEntity) =>
+            columns.map((column) => column.getEntityValue(relatedEntity)),
+        )
+        const entityKeysOfRelationIds = relationIds.map((relationId) =>
+            entityIdAliases.map((alias) => relationId[alias]),
+        )
+        const relatedKeysOfRelationIds = relationIds.map((relationId) =>
+            relatedIdAliases.map((alias) => relationId[alias]),
+        )
+
+        const isPlainKeyValue = (value: unknown) =>
+            value === null ||
+            typeof value === "string" ||
+            typeof value === "boolean" ||
+            (typeof value === "number" && Number.isFinite(value))
+        const allKeysArePlain = [
+            entityKeys,
+            relatedKeys,
+            entityKeysOfRelationIds,
+            relatedKeysOfRelationIds,
+        ].every((keys) => keys.every((key) => key.every(isPlainKeyValue)))
+        if (!allKeysArePlain) return undefined
+
+        const groupPositionsByKey = (keys: unknown[][]) => {
+            const map = new Map<string, number[]>()
+            for (let position = 0; position < keys.length; position++) {
+                const id = JSON.stringify(keys[position])
+                const positions = map.get(id)
+                if (!positions) {
+                    map.set(id, [position])
+                } else {
+                    positions.push(position)
+                }
+            }
+            return map
+        }
+        const relationIdPositionsByEntityKey = groupPositionsByKey(
+            entityKeysOfRelationIds,
+        )
+        const relatedPositionsByKey = groupPositionsByKey(relatedKeys)
+
+        return entities.map((entity, entityPosition) => {
+            const relationIdPositions =
+                relationIdPositionsByEntityKey.get(
+                    JSON.stringify(entityKeys[entityPosition]),
+                ) ?? []
+            const relatedPositions: number[] = []
+            for (const relationIdPosition of relationIdPositions) {
+                const relatedKey = JSON.stringify(
+                    relatedKeysOfRelationIds[relationIdPosition],
+                )
+                const matchingRelatedPositions =
+                    relatedPositionsByKey.get(relatedKey) ?? []
+                for (const relatedPosition of matchingRelatedPositions) {
+                    relatedPositions.push(relatedPosition)
+                }
+            }
+            relatedPositions.sort((a, b) => a - b)
+
+            const related = relatedPositions.map(
+                (relatedPosition) => relatedEntities[relatedPosition],
+            )
+            return {
+                entity: entity,
+                related: isMany ? related : related[related.length - 1],
+            }
+        })
+    }
 
     /**
      * Loads relation ids for the many-to-many relation.
