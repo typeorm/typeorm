@@ -54,6 +54,12 @@ export interface QueryRunner extends AsyncDisposable {
     readonly isTransactionActive: boolean
 
     /**
+     * Current depth of nested transactions.
+     * 0 indicates no active transaction, 1 is top-level transaction, >1 indicates nested transactions with savepoints.
+     */
+    readonly transactionDepth: number
+
+    /**
      * Stores temporarily user data.
      * Useful for sharing data with subscribers.
      */
