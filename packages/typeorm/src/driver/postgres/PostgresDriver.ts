@@ -964,20 +964,12 @@ export class PostgresDriver implements Driver {
                 if (value === "{}") return []
 
                 // manually convert enum array to array of values (pg does not support, see https://github.com/brianc/node-pg-types/issues/56)
-                value = (value as string)
-                    .slice(1, -1)
-                    .split(",")
-                    .map((val) => {
-                        // replace double quotes from the beginning and from the end
-                        if (val.startsWith(`"`) && val.endsWith(`"`))
-                            val = val.slice(1, -1)
-                        // replace escaped backslash and double quotes
-                        return val.replaceAll(/\\(\\|")/g, "$1")
-                    })
+                value = DriverUtils.parsePostgresArray(value as string)
 
                 // convert to number if that exists in possible enum options
-                value = value.map((val: string) => {
-                    return !isNaN(+val) &&
+                value = value.map((val: string | null) => {
+                    return val !== null &&
+                        !isNaN(+val) &&
                         columnMetadata.enum!.indexOf(parseInt(val)) >= 0
                         ? parseInt(val)
                         : val
