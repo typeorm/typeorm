@@ -115,6 +115,11 @@ export class TableColumn {
     primaryKeyConstraintName?: string
 
     /**
+     * Name of the unique constraint (or unique index) for unique column.
+     */
+    uniqueConstraintName?: string
+
+    /**
      * Generated column expression.
      */
     asExpression?: string
@@ -166,6 +171,7 @@ export class TableColumn {
             this.enum = options.enum
             this.enumName = options.enumName
             this.primaryKeyConstraintName = options.primaryKeyConstraintName
+            this.uniqueConstraintName = options.uniqueConstraintName
             this.asExpression = options.asExpression
             this.generatedType = options.generatedType
             this.spatialFeatureType = options.spatialFeatureType
@@ -193,6 +199,7 @@ export class TableColumn {
             enum: this.enum,
             enumName: this.enumName,
             primaryKeyConstraintName: this.primaryKeyConstraintName,
+            uniqueConstraintName: this.uniqueConstraintName,
             asExpression: this.asExpression,
             generatedType: this.generatedType,
             default: this.default,

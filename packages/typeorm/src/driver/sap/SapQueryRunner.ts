@@ -1263,9 +1263,11 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             downQueries.push(this.dropIndexSql(table, columnIndex))
         } else if (column.isUnique) {
             const uniqueIndex = new TableIndex({
-                name: this.dataSource.namingStrategy.indexName(table, [
-                    column.name,
-                ]),
+                name:
+                    column.uniqueConstraintName ??
+                    this.dataSource.namingStrategy.indexName(table, [
+                        column.name,
+                    ]),
                 columnNames: [column.name],
                 isUnique: true,
             })
@@ -1736,9 +1738,11 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             if (newColumn.isUnique !== oldColumn.isUnique) {
                 if (newColumn.isUnique === true) {
                     const uniqueIndex = new TableIndex({
-                        name: this.dataSource.namingStrategy.indexName(table, [
-                            newColumn.name,
-                        ]),
+                        name:
+                            newColumn.uniqueConstraintName ??
+                            this.dataSource.namingStrategy.indexName(table, [
+                                newColumn.name,
+                            ]),
                         columnNames: [newColumn.name],
                         isUnique: true,
                     })
@@ -3384,10 +3388,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
                 if (!isUniqueIndexExist && !isUniqueConstraintExist)
                     table.indices.push(
                         new TableIndex({
-                            name: this.dataSource.namingStrategy.uniqueConstraintName(
-                                table,
-                                [column.name],
-                            ),
+                            name:
+                                column.uniqueConstraintName ??
+                                this.dataSource.namingStrategy.uniqueConstraintName(
+                                    table,
+                                    [column.name],
+                                ),
                             columnNames: [column.name],
                             isUnique: true,
                         }),
