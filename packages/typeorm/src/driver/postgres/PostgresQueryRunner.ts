@@ -3581,6 +3581,7 @@ export class PostgresQueryRunner
 
         const indicesSql =
             `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
+            `array_position("ix"."indkey"::int2[], "a"."attnum") AS "key_position", ` +
             `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition", ` +
             `"types"."typname" AS "type_name", "am"."amname" AS "index_type" ` +
             `FROM "pg_class" "t" ` +
@@ -3641,7 +3642,13 @@ export class PostgresQueryRunner
                 return new TableIndex(<TableIndexOptions>{
                     view: view,
                     name: constraint["constraint_name"],
-                    columnNames: indices.map((i) => i["column_name"]),
+                    columnNames: [...indices]
+                        .sort(
+                            (left, right) =>
+                                Number(left["key_position"]) -
+                                Number(right["key_position"]),
+                        )
+                        .map((i) => i["column_name"]),
                     isUnique: constraint["is_unique"] === "TRUE",
                     where: constraint["condition"],
                     isSpatial: constraint["index_type"] === "gist",
@@ -3740,6 +3747,7 @@ export class PostgresQueryRunner
 
         const indicesSql =
             `SELECT "ns"."nspname" AS "table_schema", "t"."relname" AS "table_name", "i"."relname" AS "constraint_name", "a"."attname" AS "column_name", ` +
+            `array_position("ix"."indkey"::int2[], "a"."attnum") AS "key_position", ` +
             `CASE "ix"."indisunique" WHEN 't' THEN 'TRUE' ELSE'FALSE' END AS "is_unique", pg_get_expr("ix"."indpred", "ix"."indrelid") AS "condition", ` +
             `"types"."typname" AS "type_name", "am"."amname" AS "index_type" ` +
             `FROM "pg_class" "t" ` +
@@ -4395,7 +4403,13 @@ export class PostgresQueryRunner
                     return new TableIndex(<TableIndexOptions>{
                         table: table,
                         name: constraint["constraint_name"],
-                        columnNames: indices.map((i) => i["column_name"]),
+                        columnNames: [...indices]
+                            .sort(
+                                (left, right) =>
+                                    Number(left["key_position"]) -
+                                    Number(right["key_position"]),
+                            )
+                            .map((i) => i["column_name"]),
                         isUnique: constraint["is_unique"] === "TRUE",
                         where: constraint["condition"],
                         isSpatial: constraint["index_type"] === "gist",

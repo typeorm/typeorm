@@ -3321,7 +3321,7 @@ export class SqlServerQueryRunner
 
                 return (
                     `SELECT '${TABLE_CATALOG}' AS "TABLE_CATALOG", "s"."name" AS "TABLE_SCHEMA", "t"."name" AS "TABLE_NAME", ` +
-                    `"ind"."name" AS "INDEX_NAME", "col"."name" AS "COLUMN_NAME", "ind"."is_unique" AS "IS_UNIQUE", "ind"."filter_definition" as "CONDITION" ` +
+                    `"ind"."name" AS "INDEX_NAME", "col"."name" AS "COLUMN_NAME", "ic"."key_ordinal" AS "KEY_ORDINAL", "ind"."is_unique" AS "IS_UNIQUE", "ind"."filter_definition" as "CONDITION" ` +
                     `FROM "${TABLE_CATALOG}"."sys"."indexes" "ind" ` +
                     `INNER JOIN "${TABLE_CATALOG}"."sys"."index_columns" "ic" ON "ic"."object_id" = "ind"."object_id" AND "ic"."index_id" = "ind"."index_id" ` +
                     `INNER JOIN "${TABLE_CATALOG}"."sys"."columns" "col" ON "col"."object_id" = "ic"."object_id" AND "col"."column_id" = "ic"."column_id" ` +
@@ -3825,10 +3825,17 @@ export class SqlServerQueryRunner
                             index["INDEX_NAME"] === constraint["INDEX_NAME"]
                         )
                     })
+                    const keyOrdinal = (index: ObjectLiteral): number =>
+                        Number(index["KEY_ORDINAL"]) || Number.MAX_SAFE_INTEGER
                     return new TableIndex(<TableIndexOptions>{
                         table: table,
                         name: constraint["INDEX_NAME"],
-                        columnNames: indices.map((i) => i["COLUMN_NAME"]),
+                        columnNames: [...indices]
+                            .sort(
+                                (left, right) =>
+                                    keyOrdinal(left) - keyOrdinal(right),
+                            )
+                            .map((i) => i["COLUMN_NAME"]),
                         isUnique: constraint["IS_UNIQUE"],
                         where: constraint["CONDITION"],
                     })
