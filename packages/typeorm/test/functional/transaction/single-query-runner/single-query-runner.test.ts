@@ -5,6 +5,7 @@ import {
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import type { DataSource } from "../../../../src/data-source/DataSource"
+import { DriverUtils } from "../../../../src/driver/DriverUtils"
 import { Post } from "./entity/Post"
 import { expect } from "chai"
 
@@ -99,6 +100,48 @@ describe("transaction > single query runner", () => {
                 })
                 expect(loadedPost6).to.be.eql({ id: 1, title: "Hello World" })
                 await entityManager.queryRunner!.release()
+            }),
+        ))
+
+    // https://github.com/typeorm/typeorm/issues/12959
+    it("should end the transaction when sqlite has already rolled it back", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (!DriverUtils.isSQLiteFamily(dataSource.driver)) return
+
+                await dataSource.query(
+                    `CREATE TRIGGER "post_rollback" BEFORE INSERT ON "post" WHEN NEW."title" = 'rollback' BEGIN SELECT RAISE(ROLLBACK, 'rolled back by trigger'); END`,
+                )
+                await expect(
+                    dataSource.manager.save(new Post(undefined, "rollback")),
+                ).to.be.rejectedWith("rolled back by trigger")
+
+                const queryRunner = dataSource.createQueryRunner()
+                expect(queryRunner.isTransactionActive).to.be.false
+
+                await expect(
+                    dataSource.transaction(async (manager) => {
+                        await manager.save(new Post(undefined, "Hello World"))
+                        throw new Error("failed transaction")
+                    }),
+                ).to.be.rejectedWith("failed transaction")
+                await dataSource.manager.save(
+                    new Post(undefined, "Hello World"),
+                )
+                expect(queryRunner.isTransactionActive).to.be.false
+
+                await expect(
+                    dataSource.transaction((manager) =>
+                        manager.transaction((nested) =>
+                            nested.save(new Post(undefined, "rollback")),
+                        ),
+                    ),
+                ).to.be.rejectedWith("rolled back by trigger")
+                expect(queryRunner.isTransactionActive).to.be.false
+
+                // BEGIN fails while SQLite still has a transaction open
+                await dataSource.query("BEGIN TRANSACTION")
+                await dataSource.query("COMMIT")
             }),
         ))
 })

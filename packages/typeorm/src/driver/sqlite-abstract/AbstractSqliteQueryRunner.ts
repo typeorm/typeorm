@@ -149,15 +149,23 @@ export abstract class AbstractSqliteQueryRunner
 
         await this.broadcaster.broadcast("BeforeTransactionRollback")
 
+        // SQLite may have rolled back already (RAISE(ROLLBACK), SQLITE_FULL)
         if (this.transactionDepth > 1) {
-            await this.query(
-                `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
-            )
+            try {
+                await this.query(
+                    `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
+                )
+            } finally {
+                this.transactionDepth -= 1
+            }
         } else {
-            await this.query("ROLLBACK")
-            this.isTransactionActive = false
+            try {
+                await this.query("ROLLBACK")
+            } finally {
+                this.isTransactionActive = false
+                this.transactionDepth = 0
+            }
         }
-        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
