@@ -5,6 +5,7 @@ import {
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
 import type { DataSource } from "../../../../src/data-source/DataSource"
+import { QueryFailedError } from "../../../../src/error/QueryFailedError"
 import { Post } from "./entity/Post"
 import { Category } from "./entity/Category"
 import { expect } from "chai"
@@ -120,6 +121,33 @@ describe("transaction > transaction with entity manager", () => {
                     name: "Category #1",
                 })
                 expect(category).to.be.null
+            }),
+        ))
+
+    // see https://github.com/typeorm/typeorm/issues/12992
+    it("should throw if postgres rolls back the transaction on commit", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (dataSource.driver.options.type !== "postgres") return
+
+                await expect(
+                    dataSource.manager.transaction(async (entityManager) => {
+                        const post = new Post()
+                        post.title = "Post #1"
+                        await entityManager.save(post)
+
+                        try {
+                            await entityManager.query("SELECT 1 / 0")
+                        } catch {
+                            /* skip error */
+                        }
+                    }),
+                ).to.be.rejectedWith(QueryFailedError)
+
+                const post = await dataSource.manager.findOneBy(Post, {
+                    title: "Post #1",
+                })
+                expect(post).to.be.null
             }),
         ))
 })
