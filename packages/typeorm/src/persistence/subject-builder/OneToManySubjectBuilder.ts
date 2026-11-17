@@ -217,9 +217,11 @@ export class OneToManySubjectBuilder {
                         // FK is not nullable — cannot set to null, so delete
                         // the orphaned entity to keep DB consistent
                         removedRelatedEntitySubject.mustBeRemoved = true
+                        removedRelatedEntitySubject.mustBeRemovedBeforeInsert = true
                     }
                 } else if (orphanedRowAction === "delete") {
                     removedRelatedEntitySubject.mustBeRemoved = true
+                    removedRelatedEntitySubject.mustBeRemovedBeforeInsert = true
                 } else if (orphanedRowAction === "soft-delete") {
                     removedRelatedEntitySubject.canBeSoftRemoved = true
                 }
