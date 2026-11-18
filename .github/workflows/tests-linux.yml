@@ -31,7 +31,7 @@ jobs:
           name: better-sqlite3-node-${{ inputs.node-version }}-linux
 
   cockroachdb:
-    if: ${{ inputs.node-version >= 24 }}
+    if: ${{ inputs.node-version >= 26 }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
