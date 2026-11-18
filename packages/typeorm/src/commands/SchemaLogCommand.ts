@@ -34,7 +34,7 @@ export class SchemaLogCommand implements yargs.CommandModule {
                 synchronize: false,
                 migrationsRun: false,
                 dropSchema: false,
-                logging: false,
+                logging: ["info"],
             })
             await dataSource.initialize()
 
@@ -43,14 +43,20 @@ export class SchemaLogCommand implements yargs.CommandModule {
                 .log()
 
             if (sqlInMemory.upQueries.length === 0) {
-                console.log(
-                    ansi.yellow`Your schema is up to date - there are no queries to be executed by schema synchronization.`,
+                const upToDateMessage =
+                    "Your schema is up to date - there are no queries to be executed by schema synchronization."
+                CommandUtils.log(
+                    dataSource,
+                    upToDateMessage,
+                    ansi.yellow(upToDateMessage),
                 )
             } else {
                 const lineSeparator = "".padStart(
                     63 + String(sqlInMemory.upQueries.length).length,
                     "-",
                 )
+                // The SQL list is this command's result, so it always goes to
+                // stdout. A logger that filters "info" must not hide it.
                 console.log(ansi.yellow(lineSeparator))
                 console.log(
                     ansi.yellow
