@@ -230,8 +230,15 @@ export class SqljsDriver extends AbstractSqliteDriver {
      *
      * @param metadata
      * @param insertResult
+     * @param entityIndex
+     * @param entityNum
      */
-    createGeneratedMap(metadata: EntityMetadata, insertResult: any) {
+    createGeneratedMap(
+        metadata: EntityMetadata,
+        insertResult: any,
+        entityIndex: number = 0,
+        entityNum: number = 1,
+    ) {
         const generatedMap = metadata.generatedColumns.reduce(
             (map, generatedColumn) => {
                 // seems to be the only way to get the inserted id, see https://github.com/kripken/sql.js/issues/77
@@ -243,10 +250,12 @@ export class SqljsDriver extends AbstractSqliteDriver {
                     try {
                         const result = this.databaseConnection.exec(query)
                         this.dataSource.logger.logQuery(query)
+                        // last_insert_rowid() is the id of the last row of a multi-row INSERT
+                        const lastId = result[0].values[0][0]
                         return OrmUtils.mergeDeep(
                             map,
                             generatedColumn.createValueMap(
-                                result[0].values[0][0],
+                                lastId - entityNum + entityIndex + 1,
                             ),
                         )
                     } catch (e) {
