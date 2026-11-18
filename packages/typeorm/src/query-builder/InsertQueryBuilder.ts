@@ -923,6 +923,18 @@ export class InsertQueryBuilder<
 
             return expression
         } else {
+            // entity has no insertable columns, so only defaults can be inserted
+            if (
+                this.expressionMap.mainAlias!.hasMetadata &&
+                !this.expressionMap.insertColumns.length
+            ) {
+                if (valueSets.length > 1)
+                    throw new TypeORMError(
+                        `Cannot insert multiple rows into "${this.getMainTableName()}" because it has no insertable columns.`,
+                    )
+                return ""
+            }
+
             // for tables without metadata
             // get values needs to be inserted
             let expression = ""
