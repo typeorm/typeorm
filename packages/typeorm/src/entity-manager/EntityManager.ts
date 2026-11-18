@@ -387,7 +387,7 @@ export class EntityManager {
     ): Promise<Entity | undefined> {
         const metadata = this.dataSource.getMetadata(entityClass)
         const plainObjectToDatabaseEntityTransformer =
-            new PlainObjectToDatabaseEntityTransformer(this.dataSource.manager)
+            new PlainObjectToDatabaseEntityTransformer(this)
         const transformedEntity =
             await plainObjectToDatabaseEntityTransformer.transform(
                 entityLike,

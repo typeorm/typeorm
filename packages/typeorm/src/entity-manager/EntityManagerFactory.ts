@@ -17,7 +17,7 @@ export class EntityManagerFactory {
      */
     create(dataSource: dataSource, queryRunner?: QueryRunner): EntityManager {
         if (dataSource.driver.options.type === "mongodb")
-            return new MongoEntityManager(dataSource)
+            return new MongoEntityManager(dataSource, queryRunner)
 
         if (dataSource.driver.options.type === "sqljs")
             return new SqljsEntityManager(dataSource, queryRunner)

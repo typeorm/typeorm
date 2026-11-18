@@ -24,7 +24,7 @@ export class MigrationRunCommand implements yargs.CommandModule {
                 alias: "t",
                 default: "default",
                 describe:
-                    "Indicates if transaction should be used or not for migration run. Enabled by default.",
+                    "Migration transaction mode (defaults to the DataSource mode, or none for MongoDB).",
             })
             .option("fake", {
                 alias: "f",
@@ -52,9 +52,8 @@ export class MigrationRunCommand implements yargs.CommandModule {
             await dataSource.initialize()
 
             const options = {
-                transaction:
-                    dataSource.options.migrationsTransactionMode ??
-                    ("all" as "all" | "none" | "each"),
+                transaction: dataSource.options.migrationsTransactionMode as
+                    "all" | "none" | "each" | undefined,
                 fake: !!args.f,
             }
 
