@@ -16,6 +16,7 @@ import type { QueryDeepPartialEntity } from "./QueryPartialEntity"
 import type { EntityMetadata } from "../metadata/EntityMetadata"
 import type { ColumnMetadata } from "../metadata/ColumnMetadata"
 import { FindOperator } from "../find-options/FindOperator"
+import { DriverUtils } from "../driver/DriverUtils"
 import { Equal } from "../find-options/operator/Equal"
 import { In } from "../find-options/operator/In"
 import { TypeORMError } from "../error"
@@ -921,7 +922,11 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                       metadata.discriminatorColumn.databaseName
                     : metadata.discriminatorColumn.databaseName
 
-                const condition = `${column} IN (:...discriminatorColumnValues)`
+                const condition = DriverUtils.isPostgresFamily(
+                    this.dataSource.driver,
+                )
+                    ? `${column} = ANY(:discriminatorColumnValues)`
+                    : `${column} IN (:...discriminatorColumnValues)`
                 conditionsArray.push(condition)
             }
         }
