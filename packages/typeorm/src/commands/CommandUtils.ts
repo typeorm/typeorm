@@ -3,6 +3,7 @@ import path from "path"
 import { TypeORMError } from "../error"
 import type { DataSource } from "../data-source"
 import { InstanceChecker } from "../util/InstanceChecker"
+import { ObjectUtils } from "../util/ObjectUtils"
 import { importOrRequireFile } from "../util/ImportUtils"
 
 /**
@@ -127,5 +128,30 @@ export class CommandUtils {
         return timestampOptionArgument
             ? new Date(Number(timestampOptionArgument)).getTime()
             : Date.now()
+    }
+
+    /**
+     * Writes a command's output message.
+     *
+     * When the DataSource is configured with a custom `Logger` instance, the
+     * plain message is passed to that logger, so CLI output ends up wherever
+     * the application sends its logs. Otherwise the message is printed to the
+     * console as before, using the formatted (colored) version if given.
+     *
+     * @param dataSource DataSource the command is running against
+     * @param message plain text message, without any color codes
+     * @param formattedMessage optional colored version for console output
+     */
+    static log(
+        dataSource: DataSource | undefined,
+        message: string,
+        formattedMessage?: string,
+    ): void {
+        if (dataSource && ObjectUtils.isObject(dataSource.options.logger)) {
+            dataSource.logger.log("info", message)
+            return
+        }
+
+        console.log(formattedMessage ?? message)
     }
 }

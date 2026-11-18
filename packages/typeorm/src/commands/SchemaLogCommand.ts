@@ -43,22 +43,37 @@ export class SchemaLogCommand implements yargs.CommandModule {
                 .log()
 
             if (sqlInMemory.upQueries.length === 0) {
-                console.log(
-                    ansi.yellow`Your schema is up to date - there are no queries to be executed by schema synchronization.`,
+                const upToDateMessage =
+                    "Your schema is up to date - there are no queries to be executed by schema synchronization."
+                CommandUtils.log(
+                    dataSource,
+                    upToDateMessage,
+                    ansi.yellow(upToDateMessage),
                 )
             } else {
                 const lineSeparator = "".padStart(
                     63 + String(sqlInMemory.upQueries.length).length,
                     "-",
                 )
-                console.log(ansi.yellow(lineSeparator))
-                console.log(
+                const queryCount = sqlInMemory.upQueries.length.toString()
+                CommandUtils.log(
+                    dataSource,
+                    lineSeparator,
+                    ansi.yellow(lineSeparator),
+                )
+                CommandUtils.log(
+                    dataSource,
+                    `-- Schema synchronization will execute following sql queries (${queryCount}):`,
                     ansi.yellow
                         .bold`-- Schema synchronization will execute following sql queries (${ansi.white(
-                        sqlInMemory.upQueries.length.toString(),
+                        queryCount,
                     )}):`,
                 )
-                console.log(ansi.yellow(lineSeparator))
+                CommandUtils.log(
+                    dataSource,
+                    lineSeparator,
+                    ansi.yellow(lineSeparator),
+                )
 
                 sqlInMemory.upQueries.forEach((upQuery) => {
                     let sqlString = upQuery.query
@@ -66,7 +81,11 @@ export class SchemaLogCommand implements yargs.CommandModule {
                     sqlString = sqlString.endsWith(";")
                         ? sqlString
                         : sqlString + ";"
-                    console.log(PlatformTools.highlightSql(sqlString))
+                    CommandUtils.log(
+                        dataSource,
+                        sqlString,
+                        PlatformTools.highlightSql(sqlString),
+                    )
                 })
             }
             await dataSource.destroy()
