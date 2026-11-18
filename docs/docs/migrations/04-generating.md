@@ -115,3 +115,19 @@ export class PostRefactoringTIMESTAMP {
 See, you don't need to write the queries on your own.
 
 The rule of thumb for generating migrations is that you generate them after **each** change you made to your models. To apply multi-line formatting to your generated migration queries, use the `p` (alias for `--pretty`) flag.
+
+### Pending Migrations Warning
+
+Before generating a new migration, TypeORM checks if there are any unexecuted migrations pending in your project. If unapplied migrations are detected, a warning will be displayed:
+
+```
+Warning: There are 1 pending migration(s) (AddUserTable1610975184784) that have not been executed. Generating a migration against the current database state may produce duplicate or conflicting schema statements. Consider running 'typeorm migration:run' first, or pass '--skipPendingCheck'.
+```
+
+Generating a migration against a database that has pending migrations can cause the schema builder to generate duplicate statements (e.g., attempting to recreate tables or columns already defined in pending migrations). It is strongly recommended to run `typeorm migration:run` before generating new migrations.
+
+If you intentionally want to generate a migration without applying pending ones and bypass this warning, pass the `--skipPendingCheck` flag:
+
+```shell
+typeorm migration:generate -d <path/to/datasource> <path/to/migrations>/<migration-name> --skipPendingCheck
+```
