@@ -5,7 +5,6 @@ import process from "process"
 import type yargs from "yargs"
 import type { DataSource } from "../data-source"
 import { PlatformTools } from "../platform/PlatformTools"
-import { camelCase } from "../util/StringUtils"
 import { CommandUtils } from "./CommandUtils"
 
 /**
@@ -244,7 +243,10 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
         upSqls: string[],
         downSqls: string[],
     ): string {
-        const migrationName = `${camelCase(name, true)}${timestamp}`
+        const migrationName = CommandUtils.getMigrationClassName(
+            name,
+            timestamp,
+        )
 
         return `import { MigrationInterface, QueryRunner } from "typeorm";
 
@@ -281,7 +283,10 @@ ${downSqls.join(`
         downSqls: string[],
         esm: boolean,
     ): string {
-        const migrationName = `${camelCase(name, true)}${timestamp}`
+        const migrationName = CommandUtils.getMigrationClassName(
+            name,
+            timestamp,
+        )
 
         const exportMethod = esm ? "export" : "module.exports ="
 
