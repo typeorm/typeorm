@@ -7,6 +7,7 @@ import {
 } from "../../../src"
 import type { QueryResultCache } from "../../../src/cache/QueryResultCache"
 import { DataSource } from "../../../src/data-source/DataSource"
+import type { MysqlDataSourceOptions } from "../../../src/driver/mysql/MysqlDataSourceOptions"
 import type { PostgresDataSourceOptions } from "../../../src/driver/postgres/PostgresDataSourceOptions"
 import { EntityManager } from "../../../src/entity-manager/EntityManager"
 import { CannotGetEntityManagerNotConnectedError } from "../../../src/error/CannotGetEntityManagerNotConnectedError"
@@ -32,6 +33,85 @@ import { SiteLocation } from "./entity/SiteLocation"
 import { Site } from "./entity/Site"
 
 describe("DataSource", () => {
+    // regression tests for github issue #9060
+    describe("setOptions", () => {
+        it("should update the options a driver with its own copy connects with", () => {
+            const dataSource = new DataSource({
+                type: "mysql",
+                host: "first.example",
+                database: "first",
+            })
+
+            dataSource.setOptions({
+                host: "second.example",
+                database: "second",
+            })
+
+            const options = dataSource.driver.options as MysqlDataSourceOptions
+            expect(options.host).to.equal("second.example")
+            expect(options.database).to.equal("second")
+            expect(dataSource.driver.database).to.equal("second")
+        })
+
+        it("should update the schema of the driver", () => {
+            const dataSource = new DataSource({
+                type: "postgres",
+                schema: "first",
+            })
+
+            dataSource.setOptions({ schema: "second" })
+
+            expect(dataSource.driver.schema).to.equal("second")
+        })
+
+        it("should update the database of the driver from a url", () => {
+            const dataSource = new DataSource({
+                type: "postgres",
+                database: "first",
+            })
+
+            dataSource.setOptions({
+                url: "postgres://user:pass@second.example/second",
+            })
+
+            expect(dataSource.driver.database).to.equal("second")
+        })
+
+        it("should update the replication state of the driver", () => {
+            const dataSource = new DataSource({
+                type: "postgres",
+                database: "first",
+            })
+
+            dataSource.setOptions({
+                replication: {
+                    master: { database: "second" },
+                    slaves: [{ database: "second" }],
+                },
+            })
+
+            expect(dataSource.driver.isReplicated).to.be.true
+            expect(dataSource.driver.database).to.equal("second")
+        })
+
+        it("should turn the logging off", () => {
+            const dataSource = new DataSource({
+                type: "postgres",
+                logging: true,
+            })
+            const consoleLog = sinon.stub(console, "log")
+
+            try {
+                dataSource.setOptions({ logging: false })
+                dataSource.logger.logQuery("SELECT 1")
+
+                expect(consoleLog).not.to.have.been.called
+            } finally {
+                consoleLog.restore()
+            }
+        })
+    })
+
     // regression test for github issue #12705
     describe("when cache initialization fails", () => {
         it("should disconnect the database driver", async () => {
