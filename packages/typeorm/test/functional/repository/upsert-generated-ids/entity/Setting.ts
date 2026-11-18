@@ -4,7 +4,7 @@ import {
     Entity,
     Index,
     PrimaryGeneratedColumn,
-} from "../../../../src"
+} from "../../../../../src"
 
 @Entity()
 @Index(["key1", "key2"], { unique: true })
