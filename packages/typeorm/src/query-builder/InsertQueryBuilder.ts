@@ -133,6 +133,33 @@ export class InsertQueryBuilder<
                         this.expressionMap.mainAlias!.metadata.getInsertionReturningColumns()
                 }
 
+                // When a conflict clause may skip rows (orIgnore / orUpdate),
+                // RETURNING yields fewer rows than entities, so the generated
+                // values can no longer be mapped to entities by position. Also
+                // return the columns that identify the conflicting row (primary
+                // and unique columns) so the updator can match each returned
+                // row back to the entity that produced it.
+                if (
+                    (this.expressionMap.onIgnore ||
+                        this.expressionMap.onUpdate) &&
+                    this.dataSource.driver.supportedUpsertTypes.includes(
+                        "on-conflict-do-update",
+                    ) &&
+                    this.dataSource.driver.isReturningSqlSupported("insert")
+                ) {
+                    this.expressionMap.extraReturningColumns = [
+                        ...this.expressionMap.extraReturningColumns,
+                        ...this.expressionMap
+                            .mainAlias!.metadata.getUpsertConflictIdentificationColumns()
+                            .filter(
+                                (c) =>
+                                    !this.expressionMap.extraReturningColumns.includes(
+                                        c,
+                                    ),
+                            ),
+                    ]
+                }
+
                 returningColumns.push(
                     ...this.expressionMap.extraReturningColumns.filter(
                         (c) => !returningColumns.includes(c),
