@@ -33,7 +33,7 @@ export class CacheClearCommand implements yargs.CommandModule {
                 synchronize: false,
                 migrationsRun: false,
                 dropSchema: false,
-                logging: ["schema"],
+                logging: ["schema", "info"],
             })
             await dataSource.initialize()
 

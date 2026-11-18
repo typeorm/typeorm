@@ -34,7 +34,7 @@ export class SchemaSyncCommand implements yargs.CommandModule {
                 synchronize: false,
                 migrationsRun: false,
                 dropSchema: false,
-                logging: ["query", "schema"],
+                logging: ["query", "schema", "info"],
             })
             await dataSource.initialize()
             await dataSource.synchronize()

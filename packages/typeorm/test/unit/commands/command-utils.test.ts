@@ -3,6 +3,7 @@ import sinon from "sinon"
 import { CommandUtils } from "../../../src/commands/CommandUtils"
 import type { DataSource } from "../../../src/data-source/DataSource"
 import type { Logger } from "../../../src/logger/Logger"
+import { SimpleConsoleLogger } from "../../../src/logger/SimpleConsoleLogger"
 
 /**
  * Builds the minimal part of a DataSource that CommandUtils.log reads,
@@ -51,14 +52,14 @@ describe("CommandUtils.log", () => {
         expect(log.called).to.equal(false)
     })
 
-    it("prints to the console when a built-in logger is configured", () => {
+    it("sends the plain message to a configured built-in logger", () => {
         const log = sinon.spy()
-        const dataSource = fakeDataSource("advanced-console", { log })
+        const dataSource = fakeDataSource("file", { log })
 
         CommandUtils.log(dataSource, "plain", "formatted")
 
-        expect(consoleLog.calledOnceWithExactly("formatted")).to.equal(true)
-        expect(log.called).to.equal(false)
+        expect(log.calledOnceWithExactly("info", "plain")).to.equal(true)
+        expect(consoleLog.called).to.equal(false)
     })
 
     it("sends the plain message to a custom logger instance", () => {
@@ -70,5 +71,26 @@ describe("CommandUtils.log", () => {
 
         expect(log.calledOnceWithExactly("info", "plain")).to.equal(true)
         expect(consoleLog.called).to.equal(false)
+    })
+
+    it("lets a built-in logger with the commands' logging override write it", () => {
+        const written: unknown[] = []
+        // Same override the schema and cache commands apply before logging.
+        const logger = new SimpleConsoleLogger(["query", "schema", "info"])
+        const dataSource = fakeDataSource("simple-console", logger)
+        consoleLog.callsFake((...args: unknown[]) => written.push(args))
+        const consoleInfo = sinon
+            .stub(console, "info")
+            .callsFake((...args: unknown[]) => written.push(args))
+
+        try {
+            CommandUtils.log(dataSource, "Cache was successfully cleared")
+        } finally {
+            consoleInfo.restore()
+        }
+
+        expect(JSON.stringify(written)).to.contain(
+            "Cache was successfully cleared",
+        )
     })
 })

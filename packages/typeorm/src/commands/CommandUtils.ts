@@ -3,7 +3,6 @@ import path from "path"
 import { TypeORMError } from "../error"
 import type { DataSource } from "../data-source"
 import { InstanceChecker } from "../util/InstanceChecker"
-import { ObjectUtils } from "../util/ObjectUtils"
 import { importOrRequireFile } from "../util/ImportUtils"
 
 /**
@@ -131,12 +130,17 @@ export class CommandUtils {
     }
 
     /**
-     * Writes a command's output message.
+     * Writes a command's status message.
      *
-     * When the DataSource is configured with a custom `Logger` instance, the
-     * plain message is passed to that logger, so CLI output ends up wherever
-     * the application sends its logs. Otherwise the message is printed to the
-     * console as before, using the formatted (colored) version if given.
+     * When the DataSource has a logger configured (a built-in logger name or a
+     * custom `Logger` instance), the plain message is sent to it at the "info"
+     * level, so CLI output ends up wherever the application sends its logs.
+     * Commands that call this include "info" in their logging override so
+     * built-in loggers do not filter it out. A custom logger applies its own
+     * level settings, as it does for any other "info" message.
+     *
+     * When no logger is configured, the message is printed to the console as
+     * before, using the formatted (colored) version if given.
      *
      * @param dataSource DataSource the command is running against
      * @param message plain text message, without any color codes
@@ -147,7 +151,7 @@ export class CommandUtils {
         message: string,
         formattedMessage?: string,
     ): void {
-        if (dataSource && ObjectUtils.isObject(dataSource.options.logger)) {
+        if (dataSource?.options.logger) {
             dataSource.logger.log("info", message)
             return
         }

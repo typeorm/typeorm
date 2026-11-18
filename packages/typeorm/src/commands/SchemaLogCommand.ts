@@ -34,7 +34,7 @@ export class SchemaLogCommand implements yargs.CommandModule {
                 synchronize: false,
                 migrationsRun: false,
                 dropSchema: false,
-                logging: false,
+                logging: ["info"],
             })
             await dataSource.initialize()
 
@@ -55,25 +55,16 @@ export class SchemaLogCommand implements yargs.CommandModule {
                     63 + String(sqlInMemory.upQueries.length).length,
                     "-",
                 )
-                const queryCount = sqlInMemory.upQueries.length.toString()
-                CommandUtils.log(
-                    dataSource,
-                    lineSeparator,
-                    ansi.yellow(lineSeparator),
-                )
-                CommandUtils.log(
-                    dataSource,
-                    `-- Schema synchronization will execute following sql queries (${queryCount}):`,
+                // The SQL list is this command's result, so it always goes to
+                // stdout. A logger that filters "info" must not hide it.
+                console.log(ansi.yellow(lineSeparator))
+                console.log(
                     ansi.yellow
                         .bold`-- Schema synchronization will execute following sql queries (${ansi.white(
-                        queryCount,
+                        sqlInMemory.upQueries.length.toString(),
                     )}):`,
                 )
-                CommandUtils.log(
-                    dataSource,
-                    lineSeparator,
-                    ansi.yellow(lineSeparator),
-                )
+                console.log(ansi.yellow(lineSeparator))
 
                 sqlInMemory.upQueries.forEach((upQuery) => {
                     let sqlString = upQuery.query
@@ -81,11 +72,7 @@ export class SchemaLogCommand implements yargs.CommandModule {
                     sqlString = sqlString.endsWith(";")
                         ? sqlString
                         : sqlString + ";"
-                    CommandUtils.log(
-                        dataSource,
-                        sqlString,
-                        PlatformTools.highlightSql(sqlString),
-                    )
+                    console.log(PlatformTools.highlightSql(sqlString))
                 })
             }
             await dataSource.destroy()
