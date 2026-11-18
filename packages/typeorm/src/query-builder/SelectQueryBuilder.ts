@@ -2359,9 +2359,44 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             { trees: [], mappedTrees: {} },
         )
 
-        const joinStatements = joinAttributeTrees.trees.map((joinTree) => {
-            return this.createJoinTreeRecursively(joinTree)
-        })
+        const joinOrder = new Map(
+            this.expressionMap.joinAttributes.map((join, index) => [
+                join,
+                index,
+            ]),
+        )
+        // Only keep children inside a parent when outer/inner join semantics
+        // require parentheses. Otherwise render them in their original call
+        // order, rather than the relation tree's depth-first order (#12973).
+        const orderJoinTrees = (
+            trees: JoinAttributeTree[],
+        ): JoinAttributeTree[] => {
+            const ordered: JoinAttributeTree[] = []
+            for (const tree of trees) {
+                const children = orderJoinTrees(tree.children)
+                const needsNesting =
+                    tree.joinAttribute.direction === "LEFT" &&
+                    tree.children.some(
+                        (child) => child.joinAttribute.direction === "INNER",
+                    )
+                ordered.push({
+                    joinAttribute: tree.joinAttribute,
+                    children: needsNesting ? children : [],
+                })
+                if (!needsNesting) ordered.push(...children)
+            }
+            return ordered.sort(
+                (a, b) =>
+                    joinOrder.get(a.joinAttribute)! -
+                    joinOrder.get(b.joinAttribute)!,
+            )
+        }
+
+        const joinStatements = orderJoinTrees(joinAttributeTrees.trees).map(
+            (joinTree) => {
+                return this.createJoinTreeRecursively(joinTree)
+            },
+        )
 
         return joinStatements.join(" ")
     }
