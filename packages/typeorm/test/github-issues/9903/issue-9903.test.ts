@@ -48,7 +48,9 @@ describe("github issues > #9903 json data type", () => {
                     })
 
                     expect(savedUser).to.not.be.null
-                    expect(savedUser.jsonData).to.equal(expectedJsonString)
+                    expect(savedUser.jsonData).to.deep.equal(
+                        JSON.parse(expectedJsonString),
+                    )
 
                     // trying to save bad json
                     // here when executing the save the value is passed to JSON.stringify(),
