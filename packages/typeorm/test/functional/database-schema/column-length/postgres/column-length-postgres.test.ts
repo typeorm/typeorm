@@ -16,6 +16,154 @@ describe("database schema > column length > postgres", () => {
             enabledDrivers: ["postgres"],
         })
     })
+
+    it("length-only change should use ALTER COLUMN TYPE without dropping", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                const table = await queryRunner.getTable("post")
+                const varcharColumn = table!.findColumnByName("varchar")!
+
+                const resizedColumn = varcharColumn.clone()
+                resizedColumn.length =
+                    varcharColumn.length === "100" ? "101" : "100"
+
+                queryRunner.enableSqlMemory()
+                try {
+                    await queryRunner.changeColumn(
+                        table!,
+                        varcharColumn,
+                        resizedColumn,
+                    )
+                    const memorySql = queryRunner.getMemorySql()
+                    const upSql = memorySql.upQueries
+                        .map((q) => q.query)
+                        .join(";\n")
+                    const downSql = memorySql.downQueries
+                        .map((q) => q.query)
+                        .join(";\n")
+
+                    expect(upSql).to.contain("ALTER COLUMN")
+                    expect(upSql).to.contain("TYPE")
+                    expect(upSql).to.not.contain("DROP COLUMN")
+                    expect(downSql).to.contain("ALTER COLUMN")
+                    expect(downSql).to.contain("TYPE")
+                } finally {
+                    queryRunner.disableSqlMemory()
+                    await queryRunner.release()
+                }
+            }),
+        ))
+
+    it("default-only change should not drop and recreate the column", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                const table = await queryRunner.getTable("post")
+                const varcharColumn = table!.findColumnByName("varchar")!
+
+                const defaultChangedColumn = varcharColumn.clone()
+                defaultChangedColumn.default = "'regression-default'"
+
+                queryRunner.enableSqlMemory()
+                try {
+                    await queryRunner.changeColumn(
+                        table!,
+                        varcharColumn,
+                        defaultChangedColumn,
+                    )
+                    const memorySql = queryRunner.getMemorySql()
+                    const upSql = memorySql.upQueries
+                        .map((q) => q.query)
+                        .join(";\n")
+
+                    expect(upSql).to.not.contain("DROP COLUMN")
+                    expect(upSql).to.contain("SET DEFAULT")
+                } finally {
+                    queryRunner.disableSqlMemory()
+                    await queryRunner.release()
+                }
+            }),
+        ))
+
+    it("combined length and collation change should not strip the length", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                const table = await queryRunner.getTable("post")
+                const varcharColumn = table!.findColumnByName("varchar")!
+
+                const changedColumn = varcharColumn.clone()
+                changedColumn.length = "100"
+                changedColumn.collation = "C"
+
+                queryRunner.enableSqlMemory()
+                try {
+                    await queryRunner.changeColumn(
+                        table!,
+                        varcharColumn,
+                        changedColumn,
+                    )
+                    const memorySql = queryRunner.getMemorySql()
+                    const upSql = memorySql.upQueries
+                        .map((q) => q.query)
+                        .join(";\n")
+
+                    expect(upSql).to.not.match(/TYPE character varying COLLATE/)
+                    expect(upSql).to.contain("character varying(100)")
+                } finally {
+                    queryRunner.disableSqlMemory()
+                    await queryRunner.release()
+                }
+            }),
+        ))
+
+    it("resize with rename applies the type change before the rename and reverts in reverse order", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const queryRunner = dataSource.createQueryRunner()
+                const table = await queryRunner.getTable("post")
+                const varcharColumn = table!.findColumnByName("varchar")!
+
+                const renamedColumn = varcharColumn.clone()
+                renamedColumn.name = "renamed_varchar"
+                renamedColumn.length = "100"
+
+                queryRunner.enableSqlMemory()
+                try {
+                    await queryRunner.changeColumn(
+                        table!,
+                        varcharColumn,
+                        renamedColumn,
+                    )
+
+                    const memorySql = queryRunner.getMemorySql()
+                    const upSql = memorySql.upQueries
+                        .map((q) => q.query)
+                        .join(";\n")
+                    const upAlter = upSql.indexOf("ALTER COLUMN")
+                    const upRename = upSql.indexOf("RENAME COLUMN")
+                    expect(upAlter).to.be.greaterThan(-1)
+                    expect(upRename).to.be.greaterThan(-1)
+                    expect(upAlter).to.be.lessThan(upRename)
+
+                    const downExecutionOrder = [...memorySql.downQueries]
+                        .reverse()
+                        .map((q) => q.query)
+                        .join(";\n")
+                    const downRename =
+                        downExecutionOrder.indexOf("RENAME COLUMN")
+                    const downAlter = downExecutionOrder.indexOf("ALTER COLUMN")
+                    expect(downRename).to.be.greaterThan(-1)
+                    expect(downAlter).to.be.greaterThan(-1)
+                    expect(downRename).to.be.lessThan(downAlter)
+                } finally {
+                    queryRunner.disableSqlMemory()
+                    await queryRunner.release()
+                }
+            }),
+        ))
+
     beforeEach(() => reloadTestingDatabases(dataSources))
     after(() => closeTestingConnections(dataSources))
 
