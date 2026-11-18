@@ -1596,9 +1596,66 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
     /**
      * Disables the global condition of "non-deleted" for the entity with delete date columns.
+     * This removes the "deletedAt IS NULL" filter from the main entity AND all joins.
+     *
+     * This is the original behavior — always global, regardless of call position.
+     * For per-join control, use `.withDeletedJoin()` instead.
      */
     withDeleted(): this {
         this.expressionMap.withDeleted = true
+        return this
+    }
+
+    /**
+     * Alias for `withDeleted()`. Disables the soft-delete condition globally
+     * for the main entity **and** all joins in this query.
+     *
+     * Use this for explicit intent when your query has multiple joins.
+     *
+     * @example
+     * qb.leftJoinAndSelect("user.conversations", "conversation")
+     *   .leftJoinAndSelect("conversation.messages", "message")
+     *   .withGlobalDeleted()
+     *
+     */
+    withGlobalDeleted(): this {
+        this.expressionMap.withDeleted = true
+        return this
+    }
+
+    /**
+     * Disables the soft-delete condition ("deletedAt IS NULL") only on
+     * the **most recently added join**. Other joins and the main entity
+     * keep their soft-delete filter.
+     *
+     * Must be called **after** a join method (leftJoin, leftJoinAndSelect,
+     * innerJoin, innerJoinAndSelect). Throws if no joins exist.
+     *
+     * @example
+     * // Only "conversation" includes soft-deleted rows
+     * qb.leftJoinAndSelect("user.conversations", "conversation")
+     *   .withDeletedJoin()
+     *   .leftJoinAndSelect("conversation.messages", "message")
+     *   .getMany()
+     *
+     * // Both joins include soft-deleted rows
+     * qb.leftJoinAndSelect("user.conversations", "conversation")
+     *   .withDeletedJoin()
+     *   .leftJoinAndSelect("conversation.messages", "message")
+     *   .withDeletedJoin()
+     *   .getMany()
+     *
+     */
+    withDeletedJoin(): this {
+        const joinAttributes = this.expressionMap.joinAttributes
+        if (joinAttributes.length === 0) {
+            throw new TypeORMError(
+                `".withDeletedJoin()" must be called after a join method ` +
+                    `(e.g. .leftJoinAndSelect(...).withDeletedJoin()). ` +
+                    `For global soft-delete control use ".withDeleted()" instead.`,
+            )
+        }
+        joinAttributes[joinAttributes.length - 1].withDeleted = true
         return this
     }
 
@@ -2127,15 +2184,10 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
 
         const joinAttributeMetadata = joinAttribute.metadata
         if (joinAttributeMetadata) {
-            if (
-                joinAttributeMetadata.deleteDateColumn &&
-                !this.expressionMap.withDeleted
-            ) {
-                const conditionDeleteColumn = `${aliasName}.${joinAttributeMetadata.deleteDateColumn.propertyName} IS NULL`
-                joinAttribute.condition = joinAttribute.condition
-                    ? ` ${joinAttribute.condition} AND ${conditionDeleteColumn}`
-                    : `${conditionDeleteColumn}`
-            }
+            // Note: soft-delete condition is now applied at query-build time
+            // in createJoinTreeRecursively(), not here at join-creation time.
+            // This allows withDeleted() to work regardless of call order.
+
             // todo: find and set metadata right there?
             joinAttribute.alias = this.expressionMap.createAlias({
                 type: "join",
@@ -2373,6 +2425,21 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         const relation = joinAttr.relation
         const destinationTableName = joinAttr.tablePath
         const destinationTableAlias = joinAttr.alias.name
+
+        // Apply soft-delete condition at query-build time (not at join-creation time).
+        // Skip if: the global withDeleted flag is set, or this specific join has withDeleted.
+        const joinMetadata = joinAttr.metadata
+        if (
+            joinMetadata?.deleteDateColumn &&
+            !this.expressionMap.withDeleted &&
+            !joinAttr.withDeleted
+        ) {
+            const softDeleteCondition = `${destinationTableAlias}.${joinMetadata.deleteDateColumn.propertyName} IS NULL`
+            joinAttr.condition = joinAttr.condition
+                ? `(${joinAttr.condition}) AND ${softDeleteCondition}`
+                : softDeleteCondition
+        }
+
         let appendedCondition = joinAttr.condition
             ? " AND (" + joinAttr.condition + ")"
             : ""
@@ -3014,7 +3081,8 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         ) {
             selectionPath = (
                 this.dataSource.driver as
-                    AbstractSqliteDriver | ReactNativeDriver
+                    | AbstractSqliteDriver
+                    | ReactNativeDriver
             ).wrapWithJsonFunction(selectionPath, column, false)
         }
 
