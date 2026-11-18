@@ -165,6 +165,9 @@ importers:
       ioredis:
         specifier: ^5.0.4
         version: 5.11.1
+      lru-cache:
+        specifier: ^11.2.7
+        version: 11.5.2
       pg-native:
         specifier: ^3.0.0
         version: 3.9.0
