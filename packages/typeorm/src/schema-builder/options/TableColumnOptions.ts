@@ -78,6 +78,11 @@ export interface TableColumnOptions {
     collation?: string
 
     /**
+     * Schema of an inspected PostgreSQL column's collation.
+     */
+    collationSchema?: string
+
+    /**
      * The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
      * number of digits that are stored for the values.
      */
