@@ -107,7 +107,7 @@ export class SpannerDriver implements Driver {
     /**
      * Represent transaction support by this driver
      */
-    transactionSupport = "none" as const
+    transactionSupport: "simple" | "nested" | "none" = "none"
 
     /**
      * Gets list of supported column data types by a driver.
@@ -283,7 +283,10 @@ export class SpannerDriver implements Driver {
                 }
 
                 if (parameterIndexMap.has(key)) {
-                    return this.parametersPrefix + parameterIndexMap.get(key)
+                    return this.createParameter(
+                        key,
+                        parameterIndexMap.get(key)!,
+                    )
                 }
 
                 const value: any = parameters[key]

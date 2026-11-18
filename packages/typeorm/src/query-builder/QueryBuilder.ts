@@ -25,6 +25,7 @@ import type { NotBrackets } from "./NotBrackets"
 import { EntityPropertyNotFoundError } from "../error/EntityPropertyNotFoundError"
 import type { ReturningType } from "../driver/types/ReturningType"
 import type { OracleDriver } from "../driver/oracle/OracleDriver"
+import type { SpannerPostgresDriver } from "../driver/spanner-postgres/SpannerPostgresDriver"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { escapeRegExp } from "../util/escapeRegExp"
 
@@ -1532,10 +1533,20 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                         ? `${alias.name}.${column.propertyPath}`
                         : column.propertyPath
 
-                    const parameterValue = column.getEntityValue(
+                    let parameterValue = column.getEntityValue(
                         containedWhere,
                         true,
                     )
+
+                    // Spanner does not infer the type of the column
+                    if (
+                        this.dataSource.driver.options.type ===
+                        "spanner-postgres"
+                    ) {
+                        parameterValue = (
+                            this.dataSource.driver as SpannerPostgresDriver
+                        ).parametrizeValues(column, parameterValue)
+                    }
 
                     yield [aliasPath, parameterValue]
                 }

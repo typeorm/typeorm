@@ -32,16 +32,19 @@ describe("relations > many-to-many > junction foreign keys default to CASCADE (#
             const foreignKeys = junctionMetadata!.foreignKeys
             expect(foreignKeys).to.have.length(2)
 
-            // Spanner does not support UPDATE/DELETE CASCADE and Oracle does
-            // not support UPDATE CASCADE, so the junction builder falls back
-            // to NO ACTION for those drivers. Everywhere else, both the
+            // Spanner does not support UPDATE/DELETE CASCADE (and the
+            // PostgreSQL dialect only DELETE CASCADE) and Oracle does not
+            // support UPDATE CASCADE, so the junction builder falls back to
+            // NO ACTION for those drivers. Everywhere else, both the
             // owning-side and inverse-side FKs must default to CASCADE when
             // no explicit onDelete/onUpdate is specified.
             const type = dataSource.driver.options.type
             const expectedOnDelete =
                 type === "spanner" ? "NO ACTION" : "CASCADE"
             const expectedOnUpdate =
-                type === "spanner" || type === "oracle"
+                type === "spanner" ||
+                type === "spanner-postgres" ||
+                type === "oracle"
                     ? "NO ACTION"
                     : "CASCADE"
 

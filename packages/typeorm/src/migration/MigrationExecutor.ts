@@ -5,6 +5,7 @@ import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { QueryRunner } from "../query-runner/QueryRunner"
 import { MssqlParameter } from "../driver/sqlserver/MssqlParameter"
 import type { MongoQueryRunner } from "../driver/mongodb/MongoQueryRunner"
+import type { SpannerPostgresQueryRunner } from "../driver/spanner-postgres/SpannerPostgresQueryRunner"
 import { ForbiddenTransactionModeOverrideError, TypeORMError } from "../error"
 import { InstanceChecker } from "../util/InstanceChecker"
 
@@ -383,6 +384,10 @@ export class MigrationExecutor {
                     await queryRunner.rollbackTransaction()
                 } catch (rollbackError) {}
             }
+            // the DDL queued by the failed migration must not be sent
+            if (this.dataSource.driver.options.type === "spanner-postgres") {
+                ;(queryRunner as SpannerPostgresQueryRunner).discardDdl()
+            }
 
             throw err
         } finally {
@@ -484,6 +489,10 @@ export class MigrationExecutor {
                     await queryRunner.rollbackTransaction()
                 } catch (rollbackError) {}
             }
+            // the DDL queued by the failed migration must not be sent
+            if (this.dataSource.driver.options.type === "spanner-postgres") {
+                ;(queryRunner as SpannerPostgresQueryRunner).discardDdl()
+            }
 
             throw err
         } finally {
@@ -565,10 +574,16 @@ export class MigrationExecutor {
                 .sort({ _id: -1 })
                 .toArray()
         } else {
+            // Spanner generates the id with a bit-reversed identity column: the ids
+            // do not grow with time, so the migrations are sorted by their timestamp
+            const sortColumn =
+                this.dataSource.driver.options.type === "spanner-postgres"
+                    ? "timestamp"
+                    : "id"
             const migrationsRaw: ObjectLiteral[] = await this.dataSource.manager
                 .createQueryBuilder(queryRunner)
                 .select()
-                .orderBy(this.dataSource.driver.escape("id"), "DESC")
+                .orderBy(this.dataSource.driver.escape(sortColumn), "DESC")
                 .from(this.migrationsTable, this.migrationsTableName)
                 .getRawMany()
             return migrationsRaw.map((migrationRaw) => {

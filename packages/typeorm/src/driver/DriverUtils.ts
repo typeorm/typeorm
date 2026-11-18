@@ -47,6 +47,15 @@ export class DriverUtils {
     }
 
     /**
+     * Returns true if given driver is Spanner-based driver.
+     *
+     * @param driver
+     */
+    static isSpannerFamily(driver: Driver): boolean {
+        return ["spanner", "spanner-postgres"].includes(driver.options.type)
+    }
+
+    /**
      * Normalizes and builds a new driver options.
      * Extracts settings from connection url and sets to a new options object.
      *

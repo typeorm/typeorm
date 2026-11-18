@@ -5,11 +5,14 @@ import { DriverUtils } from "../driver/DriverUtils"
 import type { MysqlDriver } from "../driver/mysql/MysqlDriver"
 import type { ReactNativeDriver } from "../driver/react-native/ReactNativeDriver"
 import type { AbstractSqliteDriver } from "../driver/sqlite-abstract/AbstractSqliteDriver"
+import type { SpannerPostgresDriver } from "../driver/spanner-postgres/SpannerPostgresDriver"
 import type { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
 import { TypeORMError } from "../error"
 import { InsertValuesMissingError } from "../error/InsertValuesMissingError"
 import { ReturningStatementNotSupportedError } from "../error/ReturningStatementNotSupportedError"
 import type { ColumnMetadata } from "../metadata/ColumnMetadata"
+import type { QueryResult } from "../query-runner/QueryResult"
+import type { QueryRunner } from "../query-runner/QueryRunner"
 import { BroadcasterResult } from "../subscriber/BroadcasterResult"
 import { InstanceChecker } from "../util/InstanceChecker"
 import { ObjectUtils } from "../util/ObjectUtils"
@@ -95,6 +98,16 @@ export class InsertQueryBuilder<
                 await broadcastResult.wait()
             }
 
+            // an insert with more parameters than the database accepts in a
+            // single statement is split, after the listeners as they can add
+            // values, and the statements run in one transaction
+            const valueSetChunks =
+                this.splitValueSetsByParameterLimit(valueSets)
+            if (valueSetChunks && queryRunner.isTransactionActive === false) {
+                await queryRunner.startTransaction()
+                transactionStartedByUs = true
+            }
+
             let declareSql: string | null = null
             let selectOutputSql: string | null = null
 
@@ -155,15 +168,23 @@ export class InsertQueryBuilder<
             // console.timeEnd(".prepare returning statement");
 
             // execute query
-            // console.time(".getting query and parameters");
-            const [insertSql, parameters] = this.getQueryAndParameters()
-            // console.timeEnd(".getting query and parameters");
+            let queryResult: QueryResult
+            if (valueSetChunks) {
+                queryResult = await this.executeInChunks(
+                    queryRunner,
+                    valueSetChunks,
+                )
+            } else {
+                // console.time(".getting query and parameters");
+                const [insertSql, parameters] = this.getQueryAndParameters()
+                // console.timeEnd(".getting query and parameters");
 
-            // console.time(".query execution by database");
-            const statements = [declareSql, insertSql, selectOutputSql]
-            const sql = statements.filter((s) => s != null).join(";\n\n")
+                // console.time(".query execution by database");
+                const statements = [declareSql, insertSql, selectOutputSql]
+                const sql = statements.filter((s) => s != null).join(";\n\n")
 
-            const queryResult = await queryRunner.query(sql, parameters, true)
+                queryResult = await queryRunner.query(sql, parameters, true)
+            }
 
             const insertResult = InsertResult.from(queryResult)
 
@@ -427,6 +448,90 @@ export class InsertQueryBuilder<
     // -------------------------------------------------------------------------
 
     /**
+     * Splits the rows to insert in groups that fit the maximum number of query
+     * parameters of a statement, if the driver has one. Returns undefined if a
+     * single statement is enough.
+     *
+     * @param valueSets
+     */
+    protected splitValueSetsByParameterLimit(
+        valueSets: ObjectLiteral[],
+    ): ObjectLiteral[][] | undefined {
+        const { maxQueryParameters } = this.dataSource.driver
+        if (!maxQueryParameters || this.expressionMap.insertFromSelect)
+            return undefined
+
+        const columns = this.getInsertedColumns()
+        const countParameters = (valueSet: ObjectLiteral): number =>
+            (columns.length > 0
+                ? columns.filter(
+                      (column) =>
+                          column.isDiscriminator ||
+                          !["undefined", "function"].includes(
+                              typeof column.getEntityValue(valueSet),
+                          ),
+                  )
+                : Object.keys(valueSet).filter(
+                      (key) =>
+                          !["undefined", "function"].includes(
+                              typeof valueSet[key],
+                          ),
+                  )
+            ).length
+
+        const chunks: ObjectLiteral[][] = [[]]
+        let chunkParameters = 0
+        for (const valueSet of valueSets) {
+            const parameters = countParameters(valueSet)
+            if (
+                chunkParameters + parameters > maxQueryParameters &&
+                chunks[chunks.length - 1].length > 0
+            ) {
+                chunks.push([])
+                chunkParameters = 0
+            }
+            chunks[chunks.length - 1].push(valueSet)
+            chunkParameters += parameters
+        }
+
+        return chunks.length > 1 ? chunks : undefined
+    }
+
+    /**
+     * Executes an INSERT as one statement per group of rows, and joins the
+     * results keeping the order of the rows.
+     *
+     * @param queryRunner
+     * @param valueSetChunks
+     */
+    protected async executeInChunks(
+        queryRunner: QueryRunner,
+        valueSetChunks: ObjectLiteral[][],
+    ): Promise<QueryResult> {
+        // all the statements insert the same columns
+        const insertColumns = this.getInsertedColumns().map(
+            (column) => column.propertyPath,
+        )
+
+        const results: QueryResult[] = []
+        for (const valueSetChunk of valueSetChunks) {
+            const builder = this.clone().values(
+                valueSetChunk as QueryDeepPartialEntity<Entity>[],
+            )
+            if (insertColumns.length > 0) {
+                builder.expressionMap.insertColumns = insertColumns
+            }
+            builder.expressionMap.extraReturningColumns =
+                this.expressionMap.extraReturningColumns
+
+            const [sql, parameters] = builder.getQueryAndParameters()
+            results.push(await queryRunner.query(sql, parameters, true))
+        }
+
+        return this.dataSource.driver.mergeQueryResults!(results)
+    }
+
+    /**
      * Creates INSERT express used to perform insert query.
      */
     protected createInsertExpression() {
@@ -527,7 +632,13 @@ export class InsertQueryBuilder<
                     "on-conflict-do-update",
                 )
             ) {
-                if (this.expressionMap.onIgnore) {
+                if (
+                    this.dataSource.driver.options.type ===
+                        "spanner-postgres" &&
+                    (this.expressionMap.onIgnore || this.expressionMap.onUpdate)
+                ) {
+                    query += this.createSpannerOnConflictExpression()
+                } else if (this.expressionMap.onIgnore) {
                     query += " ON CONFLICT DO NOTHING "
                 } else if (this.expressionMap.onUpdate) {
                     const {
@@ -730,6 +841,7 @@ export class InsertQueryBuilder<
             returningExpression &&
             (DriverUtils.isPostgresFamily(this.dataSource.driver) ||
                 this.dataSource.driver.options.type === "cockroachdb" ||
+                this.dataSource.driver.options.type === "spanner-postgres" ||
                 DriverUtils.isMySQLFamily(this.dataSource.driver) ||
                 (this.dataSource.driver.options.type === "oracle" &&
                     !this.expressionMap.insertFromSelect))
@@ -773,7 +885,7 @@ export class InsertQueryBuilder<
     protected getInsertedColumns(): ColumnMetadata[] {
         if (!this.expressionMap.mainAlias!.hasMetadata) return []
 
-        return this.expressionMap.mainAlias!.metadata.columns.filter(
+        const columns = this.expressionMap.mainAlias!.metadata.columns.filter(
             (column) => {
                 // if user specified list of columns he wants to insert to, then we filter only them
                 if (this.expressionMap.insertColumns.length)
@@ -805,7 +917,7 @@ export class InsertQueryBuilder<
                 if (
                     column.isGenerated &&
                     column.generationStrategy === "increment" &&
-                    !(this.dataSource.driver.options.type === "spanner") &&
+                    !DriverUtils.isSpannerFamily(this.dataSource.driver) &&
                     !(this.dataSource.driver.options.type === "oracle") &&
                     !DriverUtils.isSQLiteFamily(this.dataSource.driver) &&
                     !DriverUtils.isMySQLFamily(this.dataSource.driver) &&
@@ -820,6 +932,154 @@ export class InsertQueryBuilder<
                 return true
             },
         )
+
+        if (
+            this.dataSource.driver.options.type === "spanner-postgres" &&
+            this.expressionMap.onUpdate &&
+            !this.expressionMap.insertColumns.length
+        ) {
+            return columns.filter(
+                (column) => !this.isSpannerUpsertColumnOmitted(column),
+            )
+        }
+
+        return columns
+    }
+
+    /**
+     * Tells if a column is left out of the INSERT of a Spanner upsert.
+     *
+     * Spanner requires `DO UPDATE SET` to list every inserted column, so the
+     * columns without a value in any row, that the upsert does not overwrite,
+     * are not inserted: they get their default value, as they would with the
+     * `DEFAULT` keyword, and keep their value when the row already exists.
+     *
+     * @param column
+     */
+    protected isSpannerUpsertColumnOmitted(column: ColumnMetadata): boolean {
+        const { overwrite, conflict } = this.expressionMap.onUpdate!
+
+        return (
+            !column.isUpdateDate &&
+            !column.isVersion &&
+            !column.isDiscriminator &&
+            !(overwrite ?? []).includes(column.databaseName) &&
+            !(Array.isArray(conflict) ? conflict : []).includes(
+                column.databaseName,
+            ) &&
+            !column.isPrimary &&
+            this.getValueSets().every(
+                (valueSet) => column.getEntityValue(valueSet) === undefined,
+            )
+        )
+    }
+
+    /**
+     * Creates the ON CONFLICT clause for Spanner PostgreSQL dialect.
+     *
+     * Spanner only accepts the primary key columns as conflict target (also for
+     * `DO NOTHING`), requires `DO UPDATE SET` to list every inserted column as
+     * `excluded.<column>`, and has no `WHERE` in `DO UPDATE`.
+     *
+     * @see https://cloud.google.com/spanner/docs/reference/postgresql/dml-syntax#insert-statement
+     */
+    protected createSpannerOnConflictExpression(): string {
+        const { onIgnore, onUpdate, mainAlias } = this.expressionMap
+        const metadata = mainAlias!.hasMetadata
+            ? mainAlias!.metadata
+            : undefined
+        const primaryKey = metadata?.primaryColumns.map(
+            (column) => column.databaseName,
+        )
+
+        if (typeof onUpdate?.conflict === "string") {
+            throw new TypeORMError(
+                `Spanner does not support ON CONFLICT ON CONSTRAINT, the conflict target must be the primary key columns`,
+            )
+        }
+
+        if (!primaryKey && !Array.isArray(onUpdate?.conflict)) {
+            throw new TypeORMError(
+                `Spanner requires the primary key columns as conflict target, which are only known for an entity: set it with orUpdate() or use an entity`,
+            )
+        }
+
+        const conflict: string[] =
+            primaryKey ?? (onUpdate!.conflict as string[])
+        if (
+            primaryKey &&
+            Array.isArray(onUpdate?.conflict) &&
+            (onUpdate.conflict.length !== primaryKey.length ||
+                !primaryKey.every((column) =>
+                    (onUpdate.conflict as string[]).includes(column),
+                ))
+        ) {
+            throw new TypeORMError(
+                `Spanner only accepts the primary key columns (${primaryKey.join(", ")}) as conflict target, got: ${(onUpdate.conflict as string[]).join(", ")}`,
+            )
+        }
+        const conflictTarget = `ON CONFLICT ( ${conflict
+            .map((column) => this.escape(column))
+            .join(", ")} )`
+
+        const overwrite = onUpdate?.overwrite
+        if (onIgnore || !Array.isArray(overwrite) || overwrite.length === 0) {
+            return ` ${conflictTarget} DO NOTHING `
+        }
+
+        if (
+            onUpdate!.skipUpdateIfNoValuesChanged ||
+            onUpdate!.indexPredicate ||
+            onUpdate!.overwriteCondition?.length
+        ) {
+            throw new TypeORMError(
+                `Spanner does not support a WHERE clause in ON CONFLICT DO UPDATE`,
+            )
+        }
+
+        let inserted: string[] = [...conflict, ...overwrite]
+        if (metadata) {
+            // TypeORM sets these columns in every insert, so the update writes
+            // them too, as excluded.<column>
+            const managed = metadata.columns
+                .filter(
+                    (column) =>
+                        column.isUpdateDate ||
+                        column.isVersion ||
+                        column.isDiscriminator,
+                )
+                .map((column) => column.databaseName)
+            inserted = this.getInsertedColumns().map(
+                (column) => column.databaseName,
+            )
+            const kept = inserted.filter(
+                (column) =>
+                    !overwrite.includes(column) &&
+                    !conflict.includes(column) &&
+                    !managed.includes(column),
+            )
+            if (kept.length > 0) {
+                throw new TypeORMError(
+                    `Spanner requires ON CONFLICT DO UPDATE SET to list every inserted column, but the columns ${kept.join(", ")} are inserted and not overwritten. ` +
+                        `Add them to the overwritten columns or leave them out of the inserted values.`,
+                )
+            }
+            const missing = overwrite.filter(
+                (column) => !inserted.includes(column),
+            )
+            if (missing.length > 0) {
+                throw new TypeORMError(
+                    `Spanner requires ON CONFLICT DO UPDATE SET to list the inserted columns only, but the columns ${missing.join(", ")} are overwritten and not inserted.`,
+                )
+            }
+        }
+
+        return ` ${conflictTarget} DO UPDATE SET ${[...new Set(inserted)]
+            .map(
+                (column) =>
+                    `${this.escape(column)} = EXCLUDED.${this.escape(column)}`,
+            )
+            .join(", ")}`
     }
 
     /**
@@ -960,6 +1220,13 @@ export class InsertQueryBuilder<
                         this.dataSource.driver.options.type === "spanner"
                     ) {
                         // just any other regular value
+                    } else if (
+                        value === null &&
+                        this.dataSource.driver.options.type ===
+                            "spanner-postgres"
+                    ) {
+                        // a null query parameter has no type to infer in the PostgreSQL dialect
+                        expression += "NULL"
                     } else {
                         expression += this.createParameter(value)
                     }
@@ -1609,7 +1876,7 @@ export class InsertQueryBuilder<
             }
         } else if (
             value === null &&
-            (this.dataSource.driver.options.type === "spanner" ||
+            (DriverUtils.isSpannerFamily(this.dataSource.driver) ||
                 this.dataSource.driver.options.type === "oracle")
         ) {
             expression += "NULL"
@@ -1671,6 +1938,12 @@ export class InsertQueryBuilder<
                 expression = (
                     this.dataSource.driver as AbstractSqliteDriver
                 ).wrapWithJsonFunction(paramName, column, true)
+            } else if (
+                this.dataSource.driver.options.type === "spanner-postgres"
+            ) {
+                expression += (
+                    this.dataSource.driver as SpannerPostgresDriver
+                ).castParameter(paramName, column)
             } else {
                 expression += paramName
             }

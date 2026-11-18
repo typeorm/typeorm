@@ -121,6 +121,7 @@ describe("metadata-builder > closure-junction-entity-metadata > schema handling"
         mssql: true,
         postgres: true,
         spanner: true,
+        "spanner-postgres": true,
         oracle: false,
         sap: false,
     } satisfies Record<SchemaCapableOptions["type"], boolean>)

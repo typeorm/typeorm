@@ -211,6 +211,7 @@ export class JunctionEntityMetadataBuilder {
         // create junction table foreign keys
         // Note: UPDATE CASCADE clause is not supported in Oracle.
         // Note: UPDATE/DELETE CASCADE clauses are not supported in Spanner.
+        // Spanner with PostgreSQL dialect supports ON DELETE CASCADE, but no ON UPDATE actions.
         entityMetadata.foreignKeys = relation.createForeignKeyConstraints
             ? [
                   new ForeignKeyMetadata({
@@ -225,7 +226,7 @@ export class JunctionEntityMetadataBuilder {
                               : (relation.onDelete ?? "CASCADE"),
                       onUpdate:
                           this.dataSource.driver.options.type === "oracle" ||
-                          this.dataSource.driver.options.type === "spanner"
+                          DriverUtils.isSpannerFamily(this.dataSource.driver)
                               ? "NO ACTION"
                               : (relation.onUpdate ?? "CASCADE"),
                       deferrable: relation.deferrable,
@@ -243,7 +244,7 @@ export class JunctionEntityMetadataBuilder {
                                 "CASCADE"),
                       onUpdate:
                           this.dataSource.driver.options.type === "oracle" ||
-                          this.dataSource.driver.options.type === "spanner"
+                          DriverUtils.isSpannerFamily(this.dataSource.driver)
                               ? "NO ACTION"
                               : (relation.inverseRelation?.onUpdate ??
                                 "CASCADE"),

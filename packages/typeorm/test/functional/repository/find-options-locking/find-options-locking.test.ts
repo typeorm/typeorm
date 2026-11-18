@@ -83,7 +83,7 @@ describe("repository > find options > locking", () => {
             dataSources.map(async (dataSource) => {
                 if (
                     DriverUtils.isSQLiteFamily(dataSource.driver) ||
-                    dataSource.driver.options.type === "spanner"
+                    DriverUtils.isSpannerFamily(dataSource.driver)
                 ) {
                     return
                 }
@@ -119,7 +119,7 @@ describe("repository > find options > locking", () => {
                 if (
                     DriverUtils.isSQLiteFamily(dataSource.driver) ||
                     dataSource.driver.options.type === "cockroachdb" ||
-                    dataSource.driver.options.type === "spanner"
+                    DriverUtils.isSpannerFamily(dataSource.driver)
                 ) {
                     return
                 }

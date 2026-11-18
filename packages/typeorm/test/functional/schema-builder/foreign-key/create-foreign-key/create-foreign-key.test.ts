@@ -13,6 +13,7 @@ describe("schema builder > create foreign key", () => {
     before(async () => {
         dataSources = await createTestingConnections({
             disabledDrivers: ["spanner"],
+            spannerPostgres: true,
             entities: [__dirname + "/entity/*{.js,.ts}"],
             schemaCreate: true,
             dropSchema: true,

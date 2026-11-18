@@ -5,6 +5,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
+import { DriverUtils } from "../../../../src/driver/DriverUtils"
 import { filterByCteCapabilities } from "./helpers"
 
 describe("query builder > cte > recursive", () => {
@@ -26,7 +27,7 @@ describe("query builder > cte > recursive", () => {
                 .map(async (dataSource) => {
                     if (
                         dataSource.options.type === "sap" ||
-                        dataSource.options.type === "spanner"
+                        DriverUtils.isSpannerFamily(dataSource.driver)
                     ) {
                         // CTE cannot reference itself in SAP HANA / Spanner
                         return
@@ -79,7 +80,7 @@ describe("query builder > cte > recursive", () => {
                 .map(async (dataSource) => {
                     if (
                         dataSource.options.type === "sap" ||
-                        dataSource.options.type === "spanner"
+                        DriverUtils.isSpannerFamily(dataSource.driver)
                     ) {
                         // CTE cannot reference itself in SAP HANA / Spanner
                         return

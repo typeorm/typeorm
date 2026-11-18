@@ -189,7 +189,7 @@ npx typeorm init --name MyProject --database postgres
 ```
 
 Where `name` is the name of your project and `database` is the database you'll use.
-Database can be one of the following values: `mysql`, `mariadb`, `postgres`, `cockroachdb`, `sqlite`, `mssql`, `sap`, `spanner`, `oracle`, `mongodb`,
+Database can be one of the following values: `mysql`, `mariadb`, `postgres`, `cockroachdb`, `sqlite`, `mssql`, `sap`, `spanner`, `spanner-postgres`, `oracle`, `mongodb`,
 `cordova`, `react-native`, `expo`, `nativescript`.
 
 This command will generate a new project in the `MyProject` directory with the following files:
@@ -487,7 +487,7 @@ try {
 
 We are using Postgres in this example, but you can use any other supported database.
 To use another database, change the `type` in the options to the database type you are using:
-`mysql`, `mariadb`, `postgres`, `cockroachdb`, `sqlite`, `mssql`, `oracle`, `sap`, `spanner`, `cordova`, `nativescript`, `react-native`,
+`mysql`, `mariadb`, `postgres`, `cockroachdb`, `sqlite`, `mssql`, `oracle`, `sap`, `spanner`, `spanner-postgres`, `cordova`, `nativescript`, `react-native`,
 `expo`, or `mongodb`.
 Also make sure to use your own host, port, username, password, and database settings.
 
