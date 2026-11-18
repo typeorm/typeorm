@@ -202,6 +202,43 @@ describe("query builder > insert > on conflict", () => {
                     })
             }),
         ))
+    it("should do nothing on conflict when there is nothing to overwrite, even with a condition", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const post1 = new Post()
+                post1.id = "post#1"
+                post1.title = "About post"
+                post1.date = new Date("06 Aug 2020 00:12:00 GMT")
+
+                await dataSource
+                    .createQueryBuilder()
+                    .insert()
+                    .into(Post)
+                    .values(post1)
+                    .execute()
+
+                const post2 = new Post()
+                post2.id = "post#2"
+                post2.title = "Again post"
+                post2.date = new Date("06 Aug 2020 00:12:00 GMT")
+
+                await dataSource
+                    .createQueryBuilder()
+                    .insert()
+                    .into(Post)
+                    .values(post2)
+                    .orUpdate([], ["date"], {
+                        overwriteCondition: {
+                            where: { title: post1.title },
+                        },
+                    })
+                    .execute()
+
+                await dataSource.manager
+                    .find(Post)
+                    .should.eventually.be.eql([post1])
+            }),
+        ))
     // https://github.com/typeorm/typeorm/issues/11549
     it("should build orUpdate query when inserting into a raw table without entity metadata", () =>
         Promise.all(
