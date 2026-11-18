@@ -1483,6 +1483,12 @@ export class PostgresDriver implements Driver {
             )
             if (!tableColumn) return false // we don't need new columns, we only need exist and changed
 
+            // loaded columns carry no enumName when the type uses the auto-generated name
+            const { tableName } = this.parseTableName(
+                columnMetadata.entityMetadata,
+            )
+            const defaultEnumName = `${tableName}_${columnMetadata.databaseName.toLowerCase()}_enum`
+
             const isColumnChanged =
                 tableColumn.name !== columnMetadata.databaseName ||
                 tableColumn.type !== this.normalizeType(columnMetadata) ||
@@ -1499,7 +1505,8 @@ export class PostgresDriver implements Driver {
                 tableColumn.isNullable !== columnMetadata.isNullable ||
                 tableColumn.isUnique !==
                     this.normalizeIsUnique(columnMetadata) ||
-                tableColumn.enumName !== columnMetadata.enumName ||
+                (tableColumn.enumName ?? defaultEnumName) !==
+                    (columnMetadata.enumName ?? defaultEnumName) ||
                 !!(
                     tableColumn.enum &&
                     columnMetadata.enum &&
