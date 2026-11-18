@@ -41,6 +41,7 @@ jobs:
 
       - run: jq 'map(select(.type == "sqljs"))' ormconfig.sample.json > ormconfig.json
       - run: pnpm exec c8 pnpm run test:ci
+      - run: pnpm run test:vitest
 
       - uses: ./.github/actions/upload-coverage
         with:

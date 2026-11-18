@@ -11,11 +11,13 @@ import { ObjectUtils } from "./ObjectUtils"
  * @param logger
  * @param directories
  * @param formats
+ * @param fileLoader
  */
 export async function importClassesFromDirectories(
     logger: Logger,
     directories: string[],
     formats = [".js", ".mjs", ".cjs", ".ts", ".mts", ".cts"],
+    fileLoader?: (filePath: string) => Promise<unknown>,
 ): Promise<Function[]> {
     const logLevel = "info"
     const classesNotFoundMessage =
@@ -63,6 +65,9 @@ export async function importClassesFromDirectories(
             )
         })
         .map(async (file) => {
+            if (fileLoader) {
+                return fileLoader(PlatformTools.pathResolve(file))
+            }
             const [importOrRequireResult] = await importOrRequireFile(
                 PlatformTools.pathResolve(file),
             )

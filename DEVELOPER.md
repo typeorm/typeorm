@@ -80,6 +80,20 @@ output rather than to the source tree. Until you have run `pnpm run package`
 (see [Building](#building)), that link points at a directory that does not
 exist yet, and those packages fail with `Cannot find module 'typeorm'`.
 
+## Vitest file-loader regression tests
+
+After installing dependencies, run the tests against the compiled CommonJS
+library:
+
+```shell
+pnpm run compile
+pnpm --filter typeorm run test:vitest
+```
+
+These tests use SWC to transform decorated TypeScript fixtures and SQL.js to
+exercise file-path loading, migrations, repositories, and subscribers without
+an external database server.
+
 ## ORM config
 
 To create an initial `ormconfig.json` file, run the following command:
