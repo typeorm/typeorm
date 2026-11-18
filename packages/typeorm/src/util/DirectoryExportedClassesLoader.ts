@@ -1,9 +1,9 @@
-import { globSync } from "tinyglobby"
 import type { Logger } from "../logger/Logger"
 import { PlatformTools } from "../platform/PlatformTools"
 import { importOrRequireFile } from "./ImportUtils"
 import { InstanceChecker } from "./InstanceChecker"
 import { ObjectUtils } from "./ObjectUtils"
+import { glob } from "node:fs/promises"
 
 /**
  * Loads all exported classes from the given directory.
@@ -42,9 +42,12 @@ export async function importClassesFromDirectories(
         return allLoaded
     }
 
-    const allFiles = directories.reduce((allDirs, dir) => {
-        return allDirs.concat(globSync(PlatformTools.pathNormalize(dir)))
-    }, [] as string[])
+    const allFiles = []
+    for (const dir of directories) {
+        for await (const file of glob(PlatformTools.pathNormalize(dir))) {
+            allFiles.push(file)
+        }
+    }
 
     if (directories.length > 0 && allFiles.length === 0) {
         logger.log(logLevel, `${classesNotFoundMessage} "${directories}"`)
