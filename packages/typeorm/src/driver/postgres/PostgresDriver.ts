@@ -763,7 +763,7 @@ export class PostgresDriver implements Driver {
         if (value === null || value === undefined) return value
 
         if (columnMetadata.type === Boolean) {
-            return value === true ? 1 : 0
+            return value === true
         } else if (columnMetadata.type === "date") {
             return DateUtils.mixedDateToDateString(value, {
                 utc: columnMetadata.utc,

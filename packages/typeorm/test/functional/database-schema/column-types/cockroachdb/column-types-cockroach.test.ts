@@ -158,6 +158,7 @@ describe("database schema > column types > cockroachdb", () => {
                 post.timestamptz.setMilliseconds(0)
                 post.boolean = true
                 post.bool = false
+                post.inferredBoolean = true
                 post.inet = "192.168.100.128"
                 post.point = point
                 post.linestring = linestring
@@ -238,6 +239,7 @@ describe("database schema > column types > cockroachdb", () => {
                     .should.be.equal(post.timestamptz.valueOf())
                 loadedPost.boolean.should.be.equal(post.boolean)
                 loadedPost.bool.should.be.equal(post.bool)
+                loadedPost.inferredBoolean.should.be.equal(post.inferredBoolean)
                 loadedPost.inet.should.be.equal(post.inet)
                 loadedPost.point.should.deep.include(post.point)
                 loadedPost.linestring.should.deep.include(post.linestring)
@@ -355,6 +357,9 @@ describe("database schema > column types > cockroachdb", () => {
                     .type.should.be.equal("timestamptz")
                 table!.findColumnByName("boolean")!.type.should.be.equal("bool")
                 table!.findColumnByName("bool")!.type.should.be.equal("bool")
+                table!
+                    .findColumnByName("inferredBoolean")!
+                    .type.should.be.equal("bool")
                 table!.findColumnByName("inet")!.type.should.be.equal("inet")
                 table!
                     .findColumnByName("point")!
