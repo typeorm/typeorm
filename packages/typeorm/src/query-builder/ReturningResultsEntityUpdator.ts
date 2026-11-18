@@ -157,6 +157,23 @@ export class ReturningResultsEntityUpdator {
             return needToCheckGenerated === true
         })
 
+        // An insert with a conflict clause (orIgnore/orUpdate) can skip rows.
+        // For drivers that cannot RETURN the inserted rows, generated values
+        // are computed positionally from the last inserted id (e.g. the SQLite
+        // drivers derive each entity's increment id from `last_insert_rowid`),
+        // an assumption that breaks as soon as one row is skipped: skipped
+        // entities receive ids of other rows, or of no row at all. When the
+        // affected-rows count proves rows were skipped, no returned value can
+        // be attributed to its entity with confidence, so nothing is written
+        // back and entities the statement skipped are left untouched.
+        const mayHaveSkippedRows =
+            (this.expressionMap.onIgnore || this.expressionMap.onUpdate) &&
+            !this.queryRunner.dataSource.driver.isReturningSqlSupported(
+                "insert",
+            ) &&
+            typeof insertResult.affected === "number" &&
+            insertResult.affected !== entities.length
+
         const generatedMaps = entities.map((entity, entityIndex) => {
             if (
                 Array.isArray(insertResult.raw) &&
@@ -189,15 +206,19 @@ export class ReturningResultsEntityUpdator {
                 ? insertResult.raw[entityIndex]
                 : insertResult.raw
 
-            const generatedMap =
-                this.queryRunner.dataSource.driver.createGeneratedMap(
-                    metadata,
-                    result,
-                    entityIndex,
-                    entities.length,
-                ) ?? {}
+            const generatedMap = mayHaveSkippedRows
+                ? {}
+                : (this.queryRunner.dataSource.driver.createGeneratedMap(
+                      metadata,
+                      result,
+                      entityIndex,
+                      entities.length,
+                  ) ?? {})
 
-            if (entityIndex in this.expressionMap.locallyGenerated) {
+            if (
+                !mayHaveSkippedRows &&
+                entityIndex in this.expressionMap.locallyGenerated
+            ) {
                 this.queryRunner.manager.merge(
                     metadata.target as any,
                     generatedMap,
@@ -205,11 +226,13 @@ export class ReturningResultsEntityUpdator {
                 )
             }
 
-            this.queryRunner.manager.merge(
-                metadata.target as any,
-                entity,
-                generatedMap,
-            )
+            if (!mayHaveSkippedRows) {
+                this.queryRunner.manager.merge(
+                    metadata.target as any,
+                    entity,
+                    generatedMap,
+                )
+            }
 
             return generatedMap
         })
@@ -218,6 +241,7 @@ export class ReturningResultsEntityUpdator {
         // for other drivers we have to re-select this data from the database
         if (
             insertionColumns.length > 0 &&
+            !mayHaveSkippedRows &&
             !this.queryRunner.dataSource.driver.isReturningSqlSupported(
                 "insert",
             )
