@@ -92,7 +92,7 @@ export class PostgresQueryRunner
         if (this.mode === "slave" && this.driver.isReplicated) {
             this.databaseConnectionPromise = this.driver
                 .obtainSlaveConnection()
-                .then(([connection, release]: any[]) => {
+                .then((connection) => {
                     this.driver.connectedQueryRunners.push(this)
                     this.databaseConnection = connection
 
@@ -103,7 +103,7 @@ export class PostgresQueryRunner
                             "error",
                             onErrorCallback,
                         )
-                        release(err)
+                        connection.release(err)
                     }
                     this.databaseConnection.on("error", onErrorCallback)
 
@@ -113,7 +113,7 @@ export class PostgresQueryRunner
             // master
             this.databaseConnectionPromise = this.driver
                 .obtainMasterConnection()
-                .then(([connection, release]: any[]) => {
+                .then((connection) => {
                     this.driver.connectedQueryRunners.push(this)
                     this.databaseConnection = connection
 
@@ -124,7 +124,7 @@ export class PostgresQueryRunner
                             "error",
                             onErrorCallback,
                         )
-                        release(err)
+                        connection.release(err)
                     }
                     this.databaseConnection.on("error", onErrorCallback)
 
