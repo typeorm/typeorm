@@ -132,6 +132,30 @@ describe("query builder > entity updation", () => {
             }),
         ))
 
+    // Regression for #13076.
+    it("should refresh the original entities when the whereEntity input array is cleared", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const [first, second] = await dataSource.manager.save(Post, [
+                    { title: "first" },
+                    { title: "second" },
+                ])
+                const posts = [first]
+                posts[2] = second // Leave an empty slot between the two posts.
+                const update = dataSource
+                    .createQueryBuilder()
+                    .update(Post)
+                    .set({ title: "after" })
+                    .whereEntity(posts)
+
+                posts.length = 0
+                await update.execute()
+
+                expect(first.version).to.equal(2)
+                expect(second.version).to.equal(2)
+            }),
+        ))
+
     it("should not update special entity properties after entity updation if updateEntity is set to false", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {

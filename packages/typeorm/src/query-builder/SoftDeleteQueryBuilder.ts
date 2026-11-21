@@ -8,6 +8,7 @@ import type { Brackets } from "./Brackets"
 import { UpdateResult } from "./result/UpdateResult"
 import { ReturningStatementNotSupportedError } from "../error/ReturningStatementNotSupportedError"
 import { ReturningResultsEntityUpdator } from "./ReturningResultsEntityUpdator"
+import type { ReturningIdentity } from "./ReturningResultsEntityUpdator"
 import type { OrderByCondition } from "../find-options/OrderByCondition"
 import { LimitOnUpdateNotSupportedError } from "../error/LimitOnUpdateNotSupportedError"
 import { MissingDeleteDateColumnError } from "../error/MissingDeleteDateColumnError"
@@ -92,30 +93,33 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
                     queryRunner,
                     this.expressionMap,
                 )
-            if (
+            const mainAlias = this.expressionMap.mainAlias!
+            const entitiesToUpdate =
                 this.expressionMap.updateEntity === true &&
-                this.expressionMap.mainAlias!.hasMetadata &&
-                this.expressionMap.whereEntities.length > 0
-            ) {
+                mainAlias.hasMetadata
+                    ? this.expressionMap.whereEntities
+                    : undefined
+            let identity: ReturningIdentity | undefined
+            if (entitiesToUpdate?.length) {
                 this.expressionMap.extraReturningColumns =
                     returningResultsEntityUpdator.getSoftDeletionReturningColumns()
+                identity = returningResultsEntityUpdator.getReturningIdentity()
             }
 
             // execute update query
-            const [sql, parameters] = this.getQueryAndParameters()
+            const [sql, parameters] =
+                this.getQueryAndParametersWithIdentity(identity)
 
             const queryResult = await queryRunner.query(sql, parameters, true)
             const updateResult = UpdateResult.from(queryResult)
 
             // if we are updating entities and entity updation is enabled we must update some of entity columns (like version, update date, etc.)
-            if (
-                this.expressionMap.updateEntity === true &&
-                this.expressionMap.mainAlias!.hasMetadata &&
-                this.expressionMap.whereEntities.length > 0
-            ) {
+            if (entitiesToUpdate?.length) {
                 await returningResultsEntityUpdator.update(
                     updateResult,
-                    this.expressionMap.whereEntities,
+                    entitiesToUpdate,
+                    identity,
+                    mainAlias.metadata,
                 )
             }
 
@@ -446,19 +450,43 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
             )
 
         this.expressionMap.wheres = []
-        const entities: Entity[] = Array.isArray(entity) ? entity : [entity]
+        const entities = Array.isArray(entity) ? entity : [entity]
+        const whereEntities: Entity[] = []
+        const { metadata } = this.expressionMap.mainAlias!
+        const [column] = metadata.primaryColumns
+        let ids: number[] | undefined =
+            (this.dataSource.options.type === "postgres" ||
+                this.dataSource.options.type === "cockroachdb") &&
+            metadata.primaryColumns.length === 1 &&
+            !column.transformer &&
+            !column.embeddedMetadata &&
+            !column.relationMetadata &&
+            !column.isArray &&
+            ["integer", "smallint", "int4", "int2"].includes(
+                this.dataSource.driver.normalizeType(column),
+            )
+                ? []
+                : undefined
         entities.forEach((entity) => {
-            const entityIdMap =
-                this.expressionMap.mainAlias!.metadata.getEntityIdMap(entity)
+            const entityIdMap = metadata.getEntityIdMap(entity)
             if (!entityIdMap)
                 throw new TypeORMError(
                     `Provided entity does not have ids set, cannot perform operation.`,
                 )
 
             this.orWhereInIds(entityIdMap)
+            whereEntities.push(entity)
+            if (ids) {
+                const value = entityIdMap[column.propertyName]
+                if (Number.isSafeInteger(value)) ids.push(value)
+                else ids = undefined
+            }
         })
 
-        this.expressionMap.whereEntities = entities
+        this.expressionMap.whereEntities = whereEntities
+        this.expressionMap.whereEntityIdentity = ids
+            ? { column, ids }
+            : undefined
         return this
     }
 
@@ -612,5 +640,18 @@ export class SoftDeleteQueryBuilder<Entity extends ObjectLiteral>
         }
 
         return ""
+    }
+
+    private getQueryAndParametersWithIdentity(identity?: ReturningIdentity) {
+        if (!identity?.implicit) return this.getQueryAndParameters()
+
+        // The matching column belongs only to this execution's RETURNING clause.
+        const columns = this.expressionMap.extraReturningColumns
+        columns.push(identity.column)
+        try {
+            return this.getQueryAndParameters()
+        } finally {
+            columns.pop()
+        }
     }
 }
