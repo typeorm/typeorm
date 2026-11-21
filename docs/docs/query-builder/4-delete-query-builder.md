@@ -35,6 +35,15 @@ await myDataSource
     .execute()
 ```
 
+On PostgreSQL and CockroachDB, `softDelete()` and `restore()` can refresh the
+objects passed to `whereEntity()` by their original IDs. This applies with
+automatic or column-list `RETURNING` and a single untransformed primary key
+represented as a JavaScript number. Supported column types are PostgreSQL
+`smallint` and `integer`, and CockroachDB `int2` (also called `smallint`) and
+`int4`. CockroachDB's default `INT` is a 64-bit `int8` and falls outside this
+scope. If an input row is missing, its object keeps its previous values. Request
+the ID explicitly to include it in the returned columns.
+
 ## `Restore-Soft-Delete`
 
 Alternatively, You can recover the soft deleted rows by using the `restore()` method:

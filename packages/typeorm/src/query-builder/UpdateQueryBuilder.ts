@@ -494,6 +494,7 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
         })
 
         this.expressionMap.whereEntities = whereEntities
+        this.expressionMap.whereEntityIdentity = undefined
         return this
     }
 
