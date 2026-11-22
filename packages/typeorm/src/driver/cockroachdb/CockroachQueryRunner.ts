@@ -1427,11 +1427,11 @@ export class CockroachQueryRunner
         if (
             newColumn.isArray !== oldColumn.isArray ||
             oldColumn.generatedType !== newColumn.generatedType ||
-            oldColumn.asExpression !== newColumn.asExpression
+            oldColumn.asExpression !== newColumn.asExpression ||
+            oldColumn.generatedType === "STORED"
         ) {
-            // Changing array-ness or a generated column expression cannot be
-            // done with a plain ALTER COLUMN, so to avoid data conversion
-            // issues we just recreate the column
+            // Array-ness and stored generated columns cannot be altered in
+            // place, so recreate the column instead of data conversion issues.
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
@@ -1718,35 +1718,31 @@ export class CockroachQueryRunner
                 // when both columns are enums the type change is handled by
                 // the enum-specific logic below
                 if (!(isOldColumnEnum && isNewColumnEnum)) {
+                    // enum type names need the array suffix appended explicitly
+                    const arraySuffix = newColumn.isArray ? "[]" : ""
                     const newColumnType = isNewColumnEnum
-                        ? this.buildEnumName(table, newColumn)
+                        ? `${this.buildEnumName(table, newColumn)}${arraySuffix}`
                         : this.driver.createFullType(newColumn)
                     const oldColumnType = isOldColumnEnum
-                        ? this.buildEnumName(table, oldColumn)
+                        ? `${this.buildEnumName(table, oldColumn)}${arraySuffix}`
                         : this.driver.createFullType(oldColumn)
 
                     const isTypeChanged =
                         oldColumn.type !== newColumn.type ||
                         oldColumn.length !== newColumn.length
 
-                    // when a non-enum column becomes an enum column, the enum
-                    // type must be created before the column type is altered
                     if (isNewColumnEnum && !isOldColumnEnum) {
                         const hasEnum = await this.hasEnumType(table, newColumn)
                         if (!hasEnum) {
                             upQueries.push(
                                 this.createEnumTypeSql(table, newColumn),
                             )
-                            // the enum type can only be dropped after the
-                            // column type was reverted in the down migration
                             createdEnumType = true
                         }
                     }
 
-                    // resolve the effective default expression of a column,
-                    // taking generated columns (sequence / uuid / rowid
-                    // defaults, which are not stored in TableColumn.default)
-                    // into account
+                    // resolve the effective default, including generated
+                    // sequence/uuid/rowid defaults not in TableColumn.default
                     const resolveDefault = (
                         column: TableColumn,
                     ): string | undefined => {
@@ -1764,11 +1760,20 @@ export class CockroachQueryRunner
                         return undefined
                     }
                     const oldDefault = resolveDefault(oldColumn)
-                    const newDefault = resolveDefault(newColumn)
+                    // enabling increment generation together with a type change:
+                    // the sequence does not exist yet, the generation block below
+                    // creates it and sets the default
+                    const newSequencePending =
+                        newColumn.isGenerated === true &&
+                        newColumn.generationStrategy === "increment" &&
+                        !(
+                            oldColumn.isGenerated === true &&
+                            oldColumn.generationStrategy === "increment"
+                        )
+                    const newDefault = newSequencePending
+                        ? undefined
+                        : resolveDefault(newColumn)
 
-                    // changing the type of a column that has a default value
-                    // requires the default to be dropped first, otherwise the
-                    // default cannot be cast to the new type
                     if (isTypeChanged && oldDefault !== undefined) {
                         // mark default as changed to prevent double update
                         defaultValueChanged = true
@@ -1783,11 +1788,7 @@ export class CockroachQueryRunner
                         )
                     }
 
-                    // when the type itself changes we cast through text, because
-                    // a direct cast between any two arbitrary types is not
-                    // guaranteed to exist (e.g. integer -> uuid); for same-type
-                    // changes (length, precision, scale) a direct cast always
-                    // exists and is cheaper
+                    // cross-type casts go through text; same-type changes cast directly
                     const buildUsingExpression = (targetType: string) =>
                         oldColumn.type !== newColumn.type ||
                         isOldColumnEnum ||
@@ -1806,6 +1807,18 @@ export class CockroachQueryRunner
                             )}`,
                         ),
                     )
+                    // enum -> non-enum: the old enum type is now unused, drop it
+                    if (isOldColumnEnum && !isNewColumnEnum) {
+                        const hasOldEnum = await this.hasEnumType(
+                            table,
+                            oldColumn,
+                        )
+                        if (hasOldEnum) {
+                            upQueries.push(
+                                this.dropEnumTypeSql(table, oldColumn),
+                            )
+                        }
+                    }
                     if (isTypeChanged && newDefault !== undefined) {
                         upQueries.push(
                             new Query(
@@ -1846,6 +1859,19 @@ export class CockroachQueryRunner
                             )}`,
                         ),
                     )
+                    // recreate the old enum type before reverting to it (down
+                    // queries execute in reverse push order)
+                    if (isOldColumnEnum && !isNewColumnEnum) {
+                        const hasOldEnum = await this.hasEnumType(
+                            table,
+                            oldColumn,
+                        )
+                        if (hasOldEnum) {
+                            downQueries.push(
+                                this.createEnumTypeSql(table, oldColumn),
+                            )
+                        }
+                    }
                     if (isTypeChanged && newDefault !== undefined) {
                         // the new default must be dropped before reverting the
                         // type in the down migration

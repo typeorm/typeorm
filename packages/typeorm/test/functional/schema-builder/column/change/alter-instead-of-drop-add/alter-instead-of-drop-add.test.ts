@@ -8,6 +8,7 @@ import {
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../../../utils/test-utils"
+import { GeneratedPost } from "./entity/GeneratedPost"
 import { Post } from "./entity/Post"
 
 // github issue #3357: migration generation must ALTER columns instead of
@@ -285,5 +286,54 @@ describe("schema builder > change column > alter instead of drop+add (issue #335
                     nameColumn.isNullable = false
                 }
             }),
+        ))
+
+    it("should recreate a stored generated column when its type changes instead of ALTER COLUMN TYPE (PostgreSQL rejects altering generated columns)", () =>
+        Promise.all(
+            dataSources
+                .filter((dataSource) =>
+                    ["postgres", "cockroachdb"].includes(
+                        dataSource.driver.options.type,
+                    ),
+                )
+                .map(async (dataSource) => {
+                    const column = dataSource
+                        .getMetadata(GeneratedPost)
+                        .findColumnWithPropertyName("fullName")!
+                    try {
+                        column.type = "text"
+                        column.length = undefined as any
+
+                        const sqlInMemory = await dataSource.driver
+                            .createSchemaBuilder()
+                            .log()
+                        const allUpQueries = sqlInMemory.upQueries.map(
+                            (q) => q.query,
+                        )
+
+                        expect(
+                            dropColumnQueries(sqlInMemory, "fullName"),
+                            `expected the stored generated column to be recreated (DROP COLUMN), got: ${JSON.stringify(allUpQueries)}`,
+                        ).to.have.length(1)
+                        expect(
+                            addColumnQueries(sqlInMemory, "fullName"),
+                            `expected the stored generated column to be re-added, got: ${JSON.stringify(allUpQueries)}`,
+                        ).to.have.length(1)
+                        const inPlaceTypeAlters = allUpQueries.filter(
+                            (q) =>
+                                new RegExp(
+                                    `ALTER COLUMN [\\\`"']fullName[\\\`"'] TYPE`,
+                                    "i",
+                                ).test(q),
+                        )
+                        expect(
+                            inPlaceTypeAlters,
+                            `a stored generated column must not be altered in place, got: ${JSON.stringify(allUpQueries)}`,
+                        ).to.have.length(0)
+                    } finally {
+                        column.type = "varchar"
+                        column.length = "20"
+                    }
+                }),
         ))
 })
