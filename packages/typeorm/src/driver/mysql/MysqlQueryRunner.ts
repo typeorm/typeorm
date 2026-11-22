@@ -1166,8 +1166,6 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         if (
             (newColumn.isGenerated !== oldColumn.isGenerated &&
                 newColumn.generationStrategy !== "uuid") ||
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             (oldColumn.generatedType &&
                 newColumn.generatedType &&
                 oldColumn.generatedType !== newColumn.generatedType) ||
@@ -1175,6 +1173,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 newColumn.generatedType === "VIRTUAL") ||
             (oldColumn.generatedType === "VIRTUAL" && !newColumn.generatedType)
         ) {
+            // Generated columns cannot be altered in place, so we recreate them
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
@@ -1371,7 +1370,13 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                 oldColumn.name = newColumn.name
             }
 
-            if (this.isColumnChanged(oldColumn, newColumn, true, true)) {
+            if (
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length ||
+                this.isColumnChanged(oldColumn, newColumn, true, true)
+            ) {
+                // MySQL applies CHANGE COLUMN in place, so changing the type or
+                // the length of a column does not drop its data
                 upQueries.push(
                     new Query(
                         `ALTER TABLE ${this.escapePath(table)} CHANGE \`${

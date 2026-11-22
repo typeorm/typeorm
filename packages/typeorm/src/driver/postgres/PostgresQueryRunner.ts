@@ -1348,15 +1348,12 @@ export class PostgresQueryRunner
             )
 
         if (
-            oldColumn.type !== newColumn.type ||
-            oldColumn.length !== newColumn.length ||
             newColumn.isArray !== oldColumn.isArray ||
-            (!oldColumn.generatedType &&
-                newColumn.generatedType === "STORED") ||
-            (oldColumn.asExpression !== newColumn.asExpression &&
-                newColumn.generatedType === "STORED")
+            oldColumn.generatedType === "STORED" ||
+            newColumn.generatedType === "STORED"
         ) {
-            // To avoid data conversion, we just recreate column
+            // Array-ness and stored generated columns cannot be altered in
+            // place, so recreate the column instead of data conversion issues.
             await this.dropColumn(table, oldColumn)
             await this.addColumn(table, newColumn)
 
@@ -1664,24 +1661,187 @@ export class PostgresQueryRunner
                 oldColumn.name = newColumn.name
             }
 
+            const isOldColumnEnum =
+                oldColumn.type === "enum" || oldColumn.type === "simple-enum"
+            const isNewColumnEnum =
+                newColumn.type === "enum" || newColumn.type === "simple-enum"
+            let createdEnumType = false
+
             if (
+                oldColumn.type !== newColumn.type ||
+                oldColumn.length !== newColumn.length ||
                 newColumn.precision !== oldColumn.precision ||
                 newColumn.scale !== oldColumn.scale
             ) {
-                upQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
-                        }" TYPE ${this.driver.createFullType(newColumn)}`,
-                    ),
-                )
-                downQueries.push(
-                    new Query(
-                        `ALTER TABLE ${this.escapePath(table)} ALTER COLUMN "${
-                            newColumn.name
-                        }" TYPE ${this.driver.createFullType(oldColumn)}`,
-                    ),
-                )
+                // when both columns are enums the type change is handled by
+                // the enum-specific logic below
+                if (!(isOldColumnEnum && isNewColumnEnum)) {
+                    // enum type names need the array suffix appended explicitly
+                    const arraySuffix = newColumn.isArray ? "[]" : ""
+                    const newColumnType = isNewColumnEnum
+                        ? `${this.buildEnumName(table, newColumn)}${arraySuffix}`
+                        : this.driver.createFullType(newColumn)
+                    const oldColumnType = isOldColumnEnum
+                        ? `${this.buildEnumName(table, oldColumn)}${arraySuffix}`
+                        : this.driver.createFullType(oldColumn)
+
+                    const isTypeChanged =
+                        oldColumn.type !== newColumn.type ||
+                        oldColumn.length !== newColumn.length
+
+                    if (isNewColumnEnum && !isOldColumnEnum) {
+                        const hasEnum = await this.hasEnumType(table, newColumn)
+                        if (!hasEnum) {
+                            upQueries.push(
+                                this.createEnumTypeSql(table, newColumn),
+                            )
+                            createdEnumType = true
+                        }
+                    }
+
+                    // resolve the effective default, including generated
+                    // sequence/uuid defaults not stored in TableColumn.default
+                    const resolveDefault = (
+                        column: TableColumn,
+                    ): string | undefined => {
+                        if (column.default != null) return `${column.default}`
+                        if (column.isGenerated) {
+                            if (column.generationStrategy === "uuid")
+                                return this.driver.uuidGenerator
+                            if (column.generationStrategy === "increment")
+                                return `nextval('${this.escapePath(
+                                    this.buildSequencePath(table, column),
+                                )}')`
+                        }
+                        return undefined
+                    }
+                    const oldDefault = resolveDefault(oldColumn)
+                    // when enabling increment generation together with a type
+                    // change, the sequence does not exist yet: the generation
+                    // block below creates it and sets the default
+                    const newSequencePending =
+                        newColumn.isGenerated === true &&
+                        newColumn.generationStrategy === "increment" &&
+                        !(
+                            oldColumn.isGenerated === true &&
+                            oldColumn.generationStrategy === "increment"
+                        )
+                    const newDefault = newSequencePending
+                        ? undefined
+                        : resolveDefault(newColumn)
+
+                    if (isTypeChanged && oldDefault !== undefined) {
+                        // mark default as changed to prevent double update
+                        defaultValueChanged = true
+                        upQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} ALTER COLUMN "${
+                                    newColumn.name
+                                }" DROP DEFAULT`,
+                            ),
+                        )
+                    }
+
+                    // cross-type casts go through text; same-type changes cast directly
+                    const buildUsingExpression = (targetType: string) =>
+                        oldColumn.type !== newColumn.type ||
+                        isOldColumnEnum ||
+                        isNewColumnEnum
+                            ? `"${newColumn.name}"::text::${targetType}`
+                            : `"${newColumn.name}"::${targetType}`
+
+                    upQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ALTER COLUMN "${
+                                newColumn.name
+                            }" TYPE ${newColumnType} USING ${buildUsingExpression(
+                                newColumnType,
+                            )}`,
+                        ),
+                    )
+                    // enum -> non-enum: the old enum type is now unused, drop it
+                    if (isOldColumnEnum && !isNewColumnEnum) {
+                        const hasOldEnum = await this.hasEnumType(
+                            table,
+                            oldColumn,
+                        )
+                        if (hasOldEnum) {
+                            upQueries.push(
+                                this.dropEnumTypeSql(table, oldColumn),
+                            )
+                        }
+                    }
+                    if (isTypeChanged && newDefault !== undefined) {
+                        upQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} ALTER COLUMN "${
+                                    newColumn.name
+                                }" SET DEFAULT ${newDefault}`,
+                            ),
+                        )
+                    }
+
+                    // down queries are stored in reverse execution order:
+                    // drop the created enum type last, after the column was
+                    // altered back to the old type
+                    if (createdEnumType) {
+                        downQueries.push(this.dropEnumTypeSql(table, newColumn))
+                    }
+                    if (isTypeChanged && oldDefault !== undefined) {
+                        downQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} ALTER COLUMN "${
+                                    newColumn.name
+                                }" SET DEFAULT ${oldDefault}`,
+                            ),
+                        )
+                    }
+                    downQueries.push(
+                        new Query(
+                            `ALTER TABLE ${this.escapePath(
+                                table,
+                            )} ALTER COLUMN "${
+                                newColumn.name
+                            }" TYPE ${oldColumnType} USING ${buildUsingExpression(
+                                oldColumnType,
+                            )}`,
+                        ),
+                    )
+                    // recreate the old enum type before reverting to it (down
+                    // queries execute in reverse push order)
+                    if (isOldColumnEnum && !isNewColumnEnum) {
+                        const hasOldEnum = await this.hasEnumType(
+                            table,
+                            oldColumn,
+                        )
+                        if (hasOldEnum) {
+                            downQueries.push(
+                                this.createEnumTypeSql(table, oldColumn),
+                            )
+                        }
+                    }
+                    if (isTypeChanged && newDefault !== undefined) {
+                        // the new default must be dropped before reverting the
+                        // type in the down migration
+                        downQueries.push(
+                            new Query(
+                                `ALTER TABLE ${this.escapePath(
+                                    table,
+                                )} ALTER COLUMN "${
+                                    newColumn.name
+                                }" DROP DEFAULT`,
+                            ),
+                        )
+                    }
+                }
             }
 
             if (
