@@ -108,40 +108,38 @@ export class SqlServerQueryRunner
             this.isTransactionActive = false
             throw err
         }
-        await new Promise<void>(async (ok, fail) => {
-            const transactionCallback = (err: any) => {
-                if (err) {
-                    this.isTransactionActive = false
-                    return fail(err)
-                }
-                ok()
-            }
-
+        try {
             if (this.transactionDepth === 0) {
                 const pool = await (this.mode === "slave"
                     ? this.driver.obtainSlaveConnection()
                     : this.driver.obtainMasterConnection())
                 this.databaseConnection = pool.transaction()
                 this.dataSource.logger.logQuery("BEGIN TRANSACTION")
-                if (isolationLevel) {
-                    this.databaseConnection.begin(
-                        this.driver.convertIsolationLevel(isolationLevel),
-                        transactionCallback,
-                    )
-                    this.dataSource.logger.logQuery(
-                        "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
-                    )
-                } else {
-                    this.databaseConnection.begin(transactionCallback)
-                }
+                await new Promise<void>((ok, fail) => {
+                    const transactionCallback = (err: unknown) =>
+                        err ? fail(err) : ok()
+                    if (isolationLevel) {
+                        this.databaseConnection.begin(
+                            this.driver.convertIsolationLevel(isolationLevel),
+                            transactionCallback,
+                        )
+                        this.dataSource.logger.logQuery(
+                            "SET TRANSACTION ISOLATION LEVEL " + isolationLevel,
+                        )
+                    } else {
+                        this.databaseConnection.begin(transactionCallback)
+                    }
+                })
             } else {
                 await this.query(
                     `SAVE TRANSACTION typeorm_${this.transactionDepth}`,
                 )
-                ok()
             }
-            this.transactionDepth += 1
-        })
+        } catch (err) {
+            if (this.transactionDepth === 0) this.isTransactionActive = false
+            throw err
+        }
+        this.transactionDepth += 1
 
         await this.broadcaster.broadcast("AfterTransactionStart")
     }
