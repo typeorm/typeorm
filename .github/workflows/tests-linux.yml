@@ -78,7 +78,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       mongodb:
-        image: mongo:8.2.5
+        image: mongo:9.0.8
         ports:
           - "27017:27017"
     steps:
@@ -133,7 +133,7 @@ jobs:
           MYSQL_PASSWORD: password
           MYSQL_DATABASE: typeorm
       mariadb:
-        image: mariadb:10.11.16
+        image: mariadb:10.11.19
         ports:
           - "3307:3306"
         env:
@@ -164,7 +164,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       mysql:
-        image: mysql:9.5.0
+        image: mysql:26.10.0
         ports:
           - "3306:3306"
         env:
@@ -173,7 +173,7 @@ jobs:
           MYSQL_PASSWORD: password
           MYSQL_DATABASE: typeorm
       mariadb:
-        image: mariadb:12.2.2
+        image: mariadb:13.0.2
         ports:
           - "3307:3306"
         env:
@@ -309,6 +309,7 @@ jobs:
       - uses: ./.github/actions/upload-coverage
         with:
           name: spanner-node-${{ inputs.node-version }}-linux
+
   sqljs:
     runs-on: ubuntu-latest
     steps:
