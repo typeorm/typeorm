@@ -7,3 +7,4 @@ allowBuilds:
     oracledb: false
     protobufjs: false
     sqlite3: true
+minimumReleaseAge: 4320 # 3 days
