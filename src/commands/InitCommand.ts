@@ -684,9 +684,9 @@ Steps to run this project:
 
         if (!packageJson.devDependencies) packageJson.devDependencies = {}
         packageJson.devDependencies = {
-            "@types/node": ourPackageJson.devDependencies["@types/node"],
-            "ts-node": ourPackageJson.devDependencies["ts-node"],
-            typescript: ourPackageJson.devDependencies.typescript,
+            "@types/node": `^${process.versions.node.split(".")[0]}`,
+            "ts-node": "^10.9.2",
+            typescript: "^5.9.3",
             ...packageJson.devDependencies,
         }
 

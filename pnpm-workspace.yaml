@@ -1,0 +1,10 @@
+allowBuilds:
+    "@sap/hana-client": false
+    better-sqlite3: true
+    es5-ext: false
+    fsevents: false
+    libpq: false
+    oracledb: false
+    protobufjs: false
+    sqlite3: true
+minimumReleaseAge: 4320 # 3 days

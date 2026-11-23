@@ -198,13 +198,19 @@ export class Gulpfile {
     }
 
     /**
-     * Change the "private" state of the packaged package.json file to public.
+     * Copies package.json into the package, making it public and dropping
+     * fields that only apply to developing typeorm itself.
      */
     @Task()
-    packagePreparePackageFile() {
-        return gulp.src("./package.json")
-            .pipe(replace("\"private\": true,", "\"private\": false,"))
-            .pipe(gulp.dest("./build/package"));
+    async packagePreparePackageFile() {
+        const pkg = JSON.parse(await fs.readFile("./package.json", "utf8"));
+        if (pkg.private) pkg.private = false;
+        // npm >= 11 refuses to pack a package whose devEngines names another
+        // package manager, and consumers have no use for these fields.
+        delete pkg.devEngines;
+        delete pkg.packageManager;
+        await fs.mkdir("./build/package", { recursive: true });
+        await fs.writeFile("./build/package/package.json", JSON.stringify(pkg, null, 2) + "\n");
     }
 
     /**
