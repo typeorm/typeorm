@@ -46,13 +46,8 @@
     "@docusaurus/types": "3.10.1",
     "typescript": "~5.9.3"
   },
-  "packageManager": "pnpm@10.34.4",
+  "packageManager": "pnpm@12.22.0",
   "engines": {
     "node": ">=20.0"
-  },
-  "pnpm": {
-    "ignoredBuiltDependencies": [
-      "core-js"
-    ]
   }
 }
