@@ -1030,13 +1030,12 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
             // Only rename constraint if it has the default (auto-generated) name
             if (foreignKey.name === defaultFkName) {
                 // replace constraint name
-                foreignKey.name =
-                    this.dataSource.namingStrategy.foreignKeyName(
-                        newTable,
-                        foreignKey.columnNames,
-                        this.getTablePath(foreignKey),
-                        foreignKey.referencedColumnNames,
-                    )
+                foreignKey.name = this.dataSource.namingStrategy.foreignKeyName(
+                    newTable,
+                    foreignKey.columnNames,
+                    this.getTablePath(foreignKey),
+                    foreignKey.referencedColumnNames,
+                )
             }
 
             // create new FK's
@@ -3691,10 +3690,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const primaryKeyName =
             constraintName ??
             table.primaryColumns[0].primaryKeyConstraintName ??
-            this.dataSource.namingStrategy.primaryKeyName(
-                table,
-                columnNames,
-            )
+            this.dataSource.namingStrategy.primaryKeyName(table, columnNames)
         const columnNamesString = columnNames
             .map((columnName) => `"${columnName}"`)
             .join(", ")
@@ -3714,10 +3710,7 @@ export class SapQueryRunner extends BaseQueryRunner implements QueryRunner {
         const columnNames = table.primaryColumns.map((column) => column.name)
         const primaryKeyName =
             table.primaryColumns[0].primaryKeyConstraintName ??
-            this.dataSource.namingStrategy.primaryKeyName(
-                table,
-                columnNames,
-            )
+            this.dataSource.namingStrategy.primaryKeyName(table, columnNames)
         return new Query(
             `ALTER TABLE ${this.escapePath(
                 table,
