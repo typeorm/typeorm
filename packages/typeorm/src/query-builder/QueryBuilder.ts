@@ -1705,14 +1705,14 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             }
             return {
                 operator: "notEqual",
-                parameters: [queryExpression, this.createParameter(parameterValue.value)],
+                parameters: [
+                    queryExpression,
+                    this.createParameter(parameterValue.value),
+                ],
             }
         }
 
-        if (
-            parameterValue.type === "and" ||
-            parameterValue.type === "or"
-        ) {
+        if (parameterValue.type === "and" || parameterValue.type === "or") {
             const values: any[] = parameterValue.value ?? []
             const subConditions = values
                 .map((operator) => {
@@ -1758,7 +1758,10 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
         return {
             operator: parameterValue.type,
-            parameters: [queryExpression, this.createParameter(parameterValue.value)],
+            parameters: [
+                queryExpression,
+                this.createParameter(parameterValue.value),
+            ],
         }
     }
 
@@ -1812,9 +1815,11 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
             const conditions: WhereClauseCondition = []
 
             // Filter the conditions and set up the parameter values
-            for (const [aliasPath, parameterValue, column] of this.getPredicates(
-                where,
-            )) {
+            for (const [
+                aliasPath,
+                parameterValue,
+                column,
+            ] of this.getPredicates(where)) {
                 // For virtual columns, build the SQL condition directly to avoid
                 // incorrect escaping of the query expression.
                 if (column?.isVirtualProperty) {
