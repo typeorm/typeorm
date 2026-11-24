@@ -4232,6 +4232,8 @@ export class PostgresQueryRunner
                                     tableColumn.generatedType = "VIRTUAL"
                                 } else {
                                     tableColumn.generatedType = "STORED"
+                                }
+
                                 // We cannot relay on information_schema.columns.generation_expression, because it is formatted different.
                                 const asExpressionQuery =
                                     this.selectTypeormMetadataSql({
