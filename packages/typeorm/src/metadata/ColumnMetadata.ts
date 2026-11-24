@@ -769,7 +769,9 @@ export class ColumnMetadata {
                 if (this.relationMetadata && this.referencedColumn) {
                     const relatedEntity =
                         this.relationMetadata.getEntityValue(entity)
-                    if (
+                    if (InstanceChecker.isFindOperator(relatedEntity)) {
+                        value = relatedEntity
+                    } else if (
                         relatedEntity &&
                         ObjectUtils.isObject(relatedEntity) &&
                         !InstanceChecker.isFindOperator(relatedEntity) &&
@@ -809,7 +811,9 @@ export class ColumnMetadata {
             if (this.relationMetadata && this.referencedColumn) {
                 const relatedEntity =
                     this.relationMetadata.getEntityValue(entity)
-                if (
+                if (InstanceChecker.isFindOperator(relatedEntity)) {
+                    value = relatedEntity
+                } else if (
                     relatedEntity &&
                     ObjectUtils.isObject(relatedEntity) &&
                     !InstanceChecker.isFindOperator(relatedEntity) &&
