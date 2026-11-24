@@ -297,12 +297,12 @@ Set the connection timezone to align with your application:
 ```typescript
 const dataSource = new DataSource({
     // ...
-    timezone: "Z",       // use UTC (equivalent to "+00:00")
+    timezone: "Z", // use UTC (equivalent to "+00:00")
     // or
-    timezone: "+00:00",  // UTC offset
+    timezone: "+00:00", // UTC offset
     // or
-    timezone: "local",   // use the server's local timezone
-});
+    timezone: "local", // use the server's local timezone
+})
 ```
 
 ### Align Node.js and database timezones
@@ -323,7 +323,7 @@ node dist/main.js
 Or set it programmatically before creating the DataSource:
 
 ```typescript
-process.env.TZ = "UTC";
+process.env.TZ = "UTC"
 ```
 
 ### Per-database timezone settings
@@ -348,7 +348,7 @@ Or via TypeORM DataSource:
 const dataSource = new DataSource({
     // ...
     timezone: "+00:00",
-});
+})
 ```
 
 **SQL Server:**
