@@ -214,6 +214,13 @@ jobs:
       - run: pnpm run package
         if: steps.publishable.outputs.should_publish == 'true'
 
+      # Unlike npm, pnpm does not record the commit in the published manifest,
+      # and the nightly skip check above compares against that `gitHead`.
+      - name: Record the commit in the published manifest
+        if: steps.publishable.outputs.should_publish == 'true'
+        run: pnpm pkg set gitHead="$(git rev-parse HEAD)"
+        working-directory: ${{ steps.publishable.outputs.pkg_dir }}/build/package
+
       - name: Publish typeorm
         if: steps.publishable.outputs.should_publish == 'true'
         run: pnpm publish --provenance --access public --no-git-checks --tag "${{ steps.publishable.outputs.tag }}"
