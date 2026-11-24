@@ -3701,7 +3701,21 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     )
                 }
 
+                // the join strategy filters joined relations by `where`, so
+                // the query strategy has to apply the same conditions
+                const relationWhere =
+                    this.findOptions.where &&
+                    !Array.isArray(this.findOptions.where)
+                        ? OrmUtils.deepValue(
+                              this.findOptions.where,
+                              relation.propertyPath,
+                          )
+                        : undefined
+
                 queryBuilder.setFindOptions({
+                    where: InstanceChecker.isFindOperator(relationWhere)
+                        ? undefined
+                        : relationWhere,
                     select: this.findOptions.select
                         ? OrmUtils.deepValue(
                               this.findOptions.select,

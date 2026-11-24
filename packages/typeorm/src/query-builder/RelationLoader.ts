@@ -150,7 +150,7 @@ export class RelationLoader {
         )
 
         if (columns.length === 1) {
-            qb.where(
+            qb.andWhere(
                 `${joinAliasName}.${columns[0].propertyPath} IN (:...${
                     joinAliasName + "_" + columns[0].propertyName
                 })`,
@@ -188,7 +188,7 @@ export class RelationLoader {
                 })
                 .map((condition) => "(" + condition + ")")
                 .join(" OR ")
-            qb.where(condition)
+            qb.andWhere(`(${condition})`)
         }
 
         this.applyEagerRelations(qb, loadEagerRelations)
@@ -233,7 +233,7 @@ export class RelationLoader {
         const aliasName = qb.expressionMap.mainAlias!.name
 
         if (columns.length === 1) {
-            qb.where(
+            qb.andWhere(
                 `${aliasName}.${columns[0].propertyPath} IN (:...${
                     aliasName + "_" + columns[0].propertyName
                 })`,
@@ -274,7 +274,7 @@ export class RelationLoader {
                 })
                 .map((condition) => "(" + condition + ")")
                 .join(" OR ")
-            qb.where(condition)
+            qb.andWhere(`(${condition})`)
         }
 
         this.applyEagerRelations(qb, loadEagerRelations)

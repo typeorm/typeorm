@@ -85,6 +85,8 @@ const dataSource = new DataSource({
 })
 ```
 
+Both strategies apply `where` conditions on a loaded relation to that relation, so they return the same results. With the `"query"` strategy, conditions inside a `where` array (OR) are applied only to the root entity.
+
 You can also control whether eager relations are loaded at all using `loadEagerRelations`:
 
 ```typescript
