@@ -2,15 +2,14 @@
 #
 # | Trigger        | Target    | Branch | Version                    | Tag                |
 # |----------------|-----------|--------|----------------------------|--------------------|
-# | GitHub Release |           | v0.3   | 0.3.29                     | latest/legacy (*)  |
+# | GitHub Release |           | v0     | 0.3.29                     | latest/legacy (*)  |
 # | GitHub Release |           | master | 1.0.0                      | latest (*)         |
 # | GitHub Release |           | master | 1.0.0-pre                  | next               |
 # | GitHub Release |           | master | 1.0.0-rc.1                 | next               |
-# | Schedule       |           | v0.3   | 0.3.29-nightly.20260309    | nightly            |
 # | Schedule       |           | master | 1.0.0-nightly.20260309     | dev                |
 # | Manual         | release   | master | (same as GitHub Release)   | (auto)             |
 # | Manual         | master    | master | 1.0.0-nightly.20260309     | dev                |
-# | Manual         | v0.3      | v0.3   | 0.3.29-nightly.20260309    | nightly            |
+# | Manual         | v0        | v0     | 0.3.29-nightly.20260309    | nightly            |
 #
 # (*) Tag detection for releases: prerelease suffix → "next", stable → "latest" only if
 #  the version is greater than the current "latest" (prevents older branches from
@@ -60,7 +59,7 @@ jobs:
               echo 'matrix=[{"target":"release"}]' >> $GITHUB_OUTPUT
               ;;
             schedule)
-              echo 'matrix=[{"ref":"master","tag":"dev","node":"24"},{"ref":"v0","tag":"nightly","node":"20"}]' >> $GITHUB_OUTPUT
+              echo 'matrix=[{"ref":"master","tag":"dev","node":"26"}]' >> $GITHUB_OUTPUT
               ;;
             workflow_dispatch)
               TARGET="${{ inputs.target }}"
@@ -69,10 +68,13 @@ jobs:
               else
                 if [ "$TARGET" == "master" ]; then
                   TAG="dev"
-                  NODE="24"
-                else
+                  NODE="26"
+                elif [ "$TARGET" == "v0" ]; then
                   TAG="nightly"
                   NODE="20"
+                else
+                  echo "Unknown target: $TARGET"
+                  exit 1
                 fi
                 echo "matrix=[{\"ref\":\"$TARGET\",\"tag\":\"$TAG\",\"node\":\"$NODE\"}]" >> $GITHUB_OUTPUT
               fi
@@ -97,7 +99,14 @@ jobs:
         with:
           ref: ${{ matrix.ref || github.ref }}
 
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      # pnpm handles Trusted Publishing (OIDC) and provenance natively, so
+      # neither npm nor an .npmrc with a registry token is needed. The install
+      # runs separately, only once we know there is something to publish. The
+      # store is not cached: publishing should not depend on a restored cache.
+      - uses: pnpm/setup@731dfb6463bbd11c11fd0ee11fe00ed0e36d48a1 # v3.2.0
+        with:
+          runtime: node@${{ matrix.node || '26' }}
+          install: false
 
       - name: Check if there are new commits since last publish (nightly) or if it's a release
         id: publishable
@@ -146,18 +155,6 @@ jobs:
               echo "should_publish=true" >> $GITHUB_OUTPUT
             fi
           fi
-
-      # registry-url is deliberately omitted: with Trusted Publishing, the npm
-      # CLI handles OIDC auth automatically. Setting registry-url would create
-      # an .npmrc with an empty auth token placeholder that blocks the OIDC flow.
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        if: steps.publishable.outputs.should_publish == 'true'
-        with:
-          node-version: ${{ matrix.node || '24' }}
-          cache: "pnpm"
-
-      - run: npm install -g npm@latest
-        if: steps.publishable.outputs.should_publish == 'true'
 
       - run: pnpm install --frozen-lockfile
         if: steps.publishable.outputs.should_publish == 'true'
@@ -216,6 +213,13 @@ jobs:
 
       - run: pnpm run package
         if: steps.publishable.outputs.should_publish == 'true'
+
+      # Unlike npm, pnpm does not record the commit in the published manifest,
+      # and the nightly skip check above compares against that `gitHead`.
+      - name: Record the commit in the published manifest
+        if: steps.publishable.outputs.should_publish == 'true'
+        run: pnpm pkg set gitHead="$(git rev-parse HEAD)"
+        working-directory: ${{ steps.publishable.outputs.pkg_dir }}/build/package
 
       - name: Publish typeorm
         if: steps.publishable.outputs.should_publish == 'true'

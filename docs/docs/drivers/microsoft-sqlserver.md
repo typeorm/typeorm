@@ -10,7 +10,7 @@ npm install mssql
 
 See [Data Source Options](../data-source/2-data-source-options.md) for the common data source options.
 
-Based on [tedious](https://tediousjs.github.io/node-mssql/) MSSQL implementation. See [SqlServerConnectionOptions.ts](https://github.com/typeorm/typeorm/tree/master/src/driver/sqlserver/SqlServerConnectionOptions.ts) for details on exposed attributes.
+Based on [tedious](https://tediousjs.github.io/node-mssql/) MSSQL implementation. See [SqlServerDataSourceOptions.ts](https://github.com/typeorm/typeorm/blob/master/packages/typeorm/src/driver/sqlserver/SqlServerDataSourceOptions.ts) for details on exposed attributes.
 
 - `url` - Connection url where the connection is performed. Please note that other data source options will override parameters set from url.
 
