@@ -73,4 +73,30 @@ describe("relations > load-strategy > where on a loaded relation", () => {
                 expect(queried).to.eql(joined)
             }),
         ))
+
+    it("keeps conditions of a supplied query builder within the loaded relation", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await setup(dataSource)
+                const holiday = await dataSource
+                    .getRepository(Album)
+                    .findOneByOrFail({ name: "holiday" })
+                const relation = dataSource
+                    .getMetadata(Album)
+                    .findRelationWithPropertyPath("photos")!
+                const queryBuilder = dataSource
+                    .createQueryBuilder(Photo, "photo")
+                    .where("photo.name = :desk", { desk: "desk" })
+                    .orWhere("photo.name = :beach", { beach: "beach" })
+
+                const photos: Photo[] = await dataSource.relationLoader.load(
+                    relation,
+                    holiday,
+                    undefined,
+                    queryBuilder,
+                )
+
+                expect(photos.map((photo) => photo.name)).to.eql(["beach"])
+            }),
+        ))
 })

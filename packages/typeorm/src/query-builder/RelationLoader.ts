@@ -149,6 +149,8 @@ export class RelationLoader {
             conditions,
         )
 
+        this.groupWheres(qb)
+
         if (columns.length === 1) {
             qb.andWhere(
                 `${joinAliasName}.${columns[0].propertyPath} IN (:...${
@@ -231,6 +233,8 @@ export class RelationLoader {
                 )
 
         const aliasName = qb.expressionMap.mainAlias!.name
+
+        this.groupWheres(qb)
 
         if (columns.length === 1) {
             qb.andWhere(
@@ -421,6 +425,20 @@ export class RelationLoader {
         this.applyEagerRelations(qb, loadEagerRelations)
 
         return qb.getMany()
+    }
+
+    /**
+     * Groups conditions already on the given query builder into one clause, so
+     * a filter added after them with `andWhere` applies to all of them.
+     *
+     * @param qb
+     */
+    private groupWheres(qb: SelectQueryBuilder<any>): void {
+        if (qb.expressionMap.wheres.length > 1) {
+            qb.expressionMap.wheres = [
+                { type: "and", condition: qb.expressionMap.wheres },
+            ]
+        }
     }
 
     /**
