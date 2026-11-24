@@ -42,15 +42,11 @@
     "prettier-plugin-toml": "^4.1.0",
     "standard-changelog": "^8.1.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "typescript-eslint": "^8.73.0"
   },
   "packageManager": "pnpm@12.22.0",
   "devEngines": {
-    "runtime": {
-      "name": "node",
-      "version": ">=22"
-    },
     "packageManager": {
       "name": "pnpm",
       "version": "^12.22.0",
