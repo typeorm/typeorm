@@ -73,7 +73,10 @@ describe("github issues > #12877 take/skip should return correct entity count wi
                     .getManyAndCount()
 
                 // getManyAndCount() should return the correct page size and total count
-                expect(posts_result.length).eq(10, "take(10) should return 10 posts")
+                expect(posts_result.length).eq(
+                    10,
+                    "take(10) should return 10 posts",
+                )
                 expect(count).eq(10, "count should be 10")
 
                 // Verify the ordering is correct: newest post first
@@ -97,9 +100,21 @@ describe("github issues > #12877 take/skip should return correct entity count wi
 
                 // Posts 1 and 2 have comments (newest = id 1)
                 const comments = [
-                    { id: 1, createdAt: new Date(baseTime.getTime()), postId: 1 },
-                    { id: 2, createdAt: new Date(baseTime.getTime() + 1000), postId: 1 },
-                    { id: 3, createdAt: new Date(baseTime.getTime()), postId: 2 },
+                    {
+                        id: 1,
+                        createdAt: new Date(baseTime.getTime()),
+                        postId: 1,
+                    },
+                    {
+                        id: 2,
+                        createdAt: new Date(baseTime.getTime() + 1000),
+                        postId: 1,
+                    },
+                    {
+                        id: 3,
+                        createdAt: new Date(baseTime.getTime()),
+                        postId: 2,
+                    },
                 ]
                 await commentRepo.save(comments)
 
@@ -113,10 +128,16 @@ describe("github issues > #12877 take/skip should return correct entity count wi
                     .take(5)
                     .getManyAndCount()
 
-                expect(posts_result.length).eq(5, "skip(5) take(5) should return 5 posts")
+                expect(posts_result.length).eq(
+                    5,
+                    "skip(5) take(5) should return 5 posts",
+                )
                 expect(count).eq(15, "total count should be 15")
                 // Verify ordering: should be posts 6-10 (newest first overall is 1, then 2... so skip 5 gives 6)
-                expect(posts_result[0].id).eq(10, "First post after skip should be id 10")
+                expect(posts_result[0].id).eq(
+                    10,
+                    "First post after skip should be id 10",
+                )
             }),
         ))
 })
