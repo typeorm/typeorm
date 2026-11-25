@@ -20,6 +20,37 @@ export class ReturningResultsEntityUpdator {
     ) {}
 
     // -------------------------------------------------------------------------
+    // Protected Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Builds a key identifying the entity with the given id map.
+     * Values are converted to their persisted form and stringified so that ids the driver
+     * hydrates with another type (e.g. a date returned as a string or a bigint returned as a string)
+     * still match the inserted ones.
+     *
+     * @param entityId id map of the entity
+     * @returns key identifying the entity
+     */
+    protected getEntityIdKey(entityId: ObjectLiteral): string {
+        const driver = this.queryRunner.dataSource.driver
+
+        return JSON.stringify(
+            this.expressionMap.mainAlias!.metadata.primaryColumns.map(
+                (column) => {
+                    const value = driver.preparePersistentValue(
+                        column.getEntityValue(entityId),
+                        column,
+                    )
+                    return typeof value === "object" && value !== null
+                        ? JSON.stringify(value)
+                        : String(value)
+                },
+            ),
+        )
+    }
+
+    // -------------------------------------------------------------------------
     // Public Methods
     // -------------------------------------------------------------------------
 
@@ -261,17 +292,38 @@ export class ReturningResultsEntityUpdator {
                 .setOption("create-pojo") // use POJO because created object can contain default values, e.g. property = null and those properties might be overridden by merge process
                 .getMany()
 
+            // the select has no ORDER BY, so the database may return the rows in any order
+            // (e.g. sorted by primary key) - match them to the entities by their ids instead of their position
+            const returningResultsById = new Map<string, ObjectLiteral>()
+
+            for (const returningEntity of returningResult) {
+                const returningEntityId =
+                    metadata.getEntityIdMap(returningEntity)
+                if (!returningEntityId) continue
+
+                returningResultsById.set(
+                    this.getEntityIdKey(returningEntityId),
+                    returningEntity,
+                )
+            }
+
             entities.forEach((entity, entityIndex) => {
+                const returningEntity = returningResultsById.get(
+                    this.getEntityIdKey(entityIds[entityIndex]),
+                )
+
+                if (!returningEntity) return
+
                 this.queryRunner.manager.merge(
                     metadata.target as any,
                     generatedMaps[entityIndex],
-                    returningResult[entityIndex],
+                    returningEntity,
                 )
 
                 this.queryRunner.manager.merge(
                     metadata.target as any,
                     entity,
-                    returningResult[entityIndex],
+                    returningEntity,
                 )
             })
         }
