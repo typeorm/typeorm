@@ -745,7 +745,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      */
     protected replacePropertyNamesForTheWholeQuery(statement: string) {
         if (statement.length > MAX_REPLACED_STATEMENT_LENGTH) {
-            return this.replacePropertyNames(statement)
+            return this.replacePropertyNamesUncached(statement)
         }
 
         let statements = replacedStatements.get(this.dataSource)
@@ -770,7 +770,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
 
         let replaced = statements.get(key)
         if (replaced === undefined) {
-            replaced = this.replacePropertyNames(statement)
+            replaced = this.replacePropertyNamesUncached(statement)
             if (statements.size >= MAX_REPLACED_STATEMENTS) {
                 statements.delete(statements.keys().next().value!)
             }
@@ -781,7 +781,7 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
         return replaced
     }
 
-    private replacePropertyNames(statement: string) {
+    private replacePropertyNamesUncached(statement: string) {
         const replacements: { [key: string]: { [key: string]: string } } = {}
 
         for (const alias of this.expressionMap.aliases) {
