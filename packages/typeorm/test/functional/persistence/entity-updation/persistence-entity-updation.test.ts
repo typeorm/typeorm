@@ -100,6 +100,36 @@ describe("persistence > entity updation", () => {
             }),
         ))
 
+    it("should update existing entities saved together with new ones", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                await dataSource.manager.save(PostMultiplePrimaryKeys, [
+                    { firstId: 1, secondId: 1, text: "first" },
+                    { firstId: 1, secondId: 2, text: "second" },
+                    { firstId: 2, secondId: 1, text: "third" },
+                ])
+
+                await dataSource.manager.save(PostMultiplePrimaryKeys, [
+                    { firstId: 2, secondId: 1, text: "third updated" },
+                    { firstId: 2, secondId: 2, text: "fourth" },
+                    { firstId: 1, secondId: 1, text: "first updated" },
+                ])
+
+                const posts = await dataSource.manager.find(
+                    PostMultiplePrimaryKeys,
+                    { order: { firstId: "ASC", secondId: "ASC" } },
+                )
+                posts
+                    .map((post) => post.text)
+                    .should.be.eql([
+                        "first updated",
+                        "second",
+                        "third updated",
+                        "fourth",
+                    ])
+            }),
+        ))
+
     it("should update even with embeddeds", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
