@@ -58,6 +58,14 @@ export interface ColumnOptions extends ColumnCommonOptions {
     onUpdate?: string
 
     /**
+     * Generates the value of a create or update date column in the application.
+     * The returned value is bound as a parameter on insert and on every update,
+     * instead of the database's current timestamp, and no column default is created.
+     * Works only for `@CreateDateColumn` and `@UpdateDateColumn`.
+     */
+    value?: () => unknown
+
+    /**
      * Indicates if this column is a primary key.
      * Same can be achieved when `@PrimaryColumn` decorator is used.
      */

@@ -695,7 +695,11 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                 )
                     updateColumnAndValues.push(
                         this.escape(metadata.updateDateColumn.databaseName) +
-                            " = CURRENT_TIMESTAMP",
+                            " = " +
+                            this.createDateValueExpression(
+                                metadata.updateDateColumn,
+                                "CURRENT_TIMESTAMP",
+                            ),
                     ) // todo: fix issue with CURRENT_TIMESTAMP(6) being used, can "DEFAULT" be used?!
             }
         } else {

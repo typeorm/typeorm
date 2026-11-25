@@ -470,6 +470,27 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
     }
 
     /**
+     * Creates the expression a create or update date column is set to: a parameter
+     * holding the value the column generates in the application, or the given SQL expression.
+     *
+     * @param column
+     * @param expression
+     */
+    protected createDateValueExpression(
+        column: ColumnMetadata,
+        expression: string,
+    ): string {
+        if (!column.value) return expression
+
+        return this.createParameter(
+            this.dataSource.driver.preparePersistentValue(
+                column.value(),
+                column,
+            ),
+        )
+    }
+
+    /**
      * Gets all parameters.
      */
     getParameters(): ObjectLiteral {

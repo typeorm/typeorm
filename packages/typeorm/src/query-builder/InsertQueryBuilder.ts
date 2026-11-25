@@ -614,6 +614,18 @@ export class InsertQueryBuilder<
                         query += ` ${conflictTarget} DO UPDATE SET `
 
                         if (this.expressionMap.mainAlias!.hasMetadata) {
+                            const isDefaultSupported = !(
+                                (this.dataSource.driver.options.type ===
+                                    "oracle" &&
+                                    this.getValueSets().length > 1) ||
+                                DriverUtils.isSQLiteFamily(
+                                    this.dataSource.driver,
+                                ) ||
+                                this.dataSource.driver.options.type === "sap" ||
+                                this.dataSource.driver.options.type ===
+                                    "spanner"
+                            )
+
                             updatePart.push(
                                 ...this.expressionMap
                                     .mainAlias!.metadata.columns.filter(
@@ -622,25 +634,17 @@ export class InsertQueryBuilder<
                                             !overwrite?.includes(
                                                 column.databaseName,
                                             ) &&
-                                            !(
-                                                (this.dataSource.driver.options
-                                                    .type === "oracle" &&
-                                                    this.getValueSets().length >
-                                                        1) ||
-                                                DriverUtils.isSQLiteFamily(
-                                                    this.dataSource.driver,
-                                                ) ||
-                                                this.dataSource.driver.options
-                                                    .type === "sap" ||
-                                                this.dataSource.driver.options
-                                                    .type === "spanner"
-                                            ),
+                                            (isDefaultSupported ||
+                                                !!column.value),
                                     )
                                     .map(
                                         (column) =>
                                             `${this.escape(
                                                 column.databaseName,
-                                            )} = DEFAULT`,
+                                            )} = ${this.createDateValueExpression(
+                                                column,
+                                                "DEFAULT",
+                                            )}`,
                                     ),
                             )
                         }
@@ -694,23 +698,25 @@ export class InsertQueryBuilder<
                         )
                     } else if (Array.isArray(overwrite)) {
                         query += " ON DUPLICATE KEY UPDATE "
-                        query += overwrite
-                            .map(
+                        query += [
+                            ...overwrite.map(
                                 (column) =>
                                     `${this.escape(
                                         column,
                                     )} = VALUES(${this.escape(column)})`,
-                            )
-                            .join(", ")
+                            ),
+                            ...this.createUpdateDateValueExpressions(overwrite),
+                        ].join(", ")
                         query += " "
                     } else if (Array.isArray(columns)) {
                         query += " ON DUPLICATE KEY UPDATE "
-                        query += columns
-                            .map(
+                        query += [
+                            ...columns.map(
                                 (column) =>
                                     `${this.escape(column)} = :${column}`,
-                            )
-                            .join(", ")
+                            ),
+                            ...this.createUpdateDateValueExpressions(columns),
+                        ].join(", ")
                         query += " "
                     }
                 }
@@ -1459,6 +1465,30 @@ export class InsertQueryBuilder<
      *
      * @param mainTableOrAlias
      */
+    /**
+     * Creates the ON DUPLICATE KEY UPDATE assignments of update date columns that
+     * generate their value in the application, since no ON UPDATE clause sets them.
+     *
+     * @param excluded
+     */
+    protected createUpdateDateValueExpressions(excluded: string[]): string[] {
+        if (!this.expressionMap.mainAlias!.hasMetadata) return []
+
+        return this.expressionMap
+            .mainAlias!.metadata.columns.filter(
+                (column) =>
+                    column.isUpdateDate &&
+                    !!column.value &&
+                    !excluded.includes(column.databaseName),
+            )
+            .map(
+                (column) =>
+                    `${this.escape(
+                        column.databaseName,
+                    )} = ${this.createDateValueExpression(column, "DEFAULT")}`,
+            )
+    }
+
     protected createUpsertConditionExpression(mainTableOrAlias: string) {
         if (!this.expressionMap.onUpdate.overwriteCondition) return ""
         const conditionsArray = []
@@ -1572,6 +1602,25 @@ export class InsertQueryBuilder<
         ) {
             value = RandomGenerator.uuidv4()
             expression += this.createParameter(value)
+
+            if (!(valueSetIndex in this.expressionMap.locallyGenerated)) {
+                this.expressionMap.locallyGenerated[valueSetIndex] = {}
+            }
+            column.setEntityValue(
+                this.expressionMap.locallyGenerated[valueSetIndex],
+                value,
+            )
+
+            // if a create or update date column generates its value in the application, insert that value
+        } else if (
+            (column.isCreateDate || column.isUpdateDate) &&
+            column.value &&
+            value === undefined
+        ) {
+            value = column.value()
+            expression += this.createParameter(
+                this.dataSource.driver.preparePersistentValue(value, column),
+            )
 
             if (!(valueSetIndex in this.expressionMap.locallyGenerated)) {
                 this.expressionMap.locallyGenerated[valueSetIndex] = {}
