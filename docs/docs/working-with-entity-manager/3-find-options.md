@@ -138,13 +138,25 @@ SELECT * FROM "user"
 ORDER BY "name" ASC, "id" DESC
 ```
 
-- `withDeleted` - include entities which have been soft deleted with `softDelete` or `softRemove`, e.g. have their `@DeleteDateColumn` column set. By default, soft deleted entities are not included.
+- `withDeleted` - include entities which have been soft deleted with `softDelete` or `softRemove`, e.g. have their `@DeleteDateColumn` column set. By default, soft deleted entities are not included. This option is **global** — it disables the soft-delete filter on the main entity and all eagerly loaded relations.
 
 ```typescript
 userRepository.find({
     withDeleted: true,
 })
 ```
+
+> **Tip:** If you need to include soft-deleted rows only on a **specific relation** (not globally), use QueryBuilder with `withDeletedJoin()` instead:
+>
+> ```typescript
+> const users = await dataSource
+>     .createQueryBuilder(User, "user")
+>     .leftJoinAndSelect("user.posts", "post")
+>     .withDeletedJoin() // only soft-deleted posts are included
+>     .getMany()
+> ```
+>
+> See the [Select QueryBuilder > Per-join soft-delete control](../query-builder/1-select-query-builder.md#per-join-soft-delete-control) section for details.
 
 `find*` methods which return multiple entities (`find`, `findBy`, `findAndCount`, `findAndCountBy`) also accept following options:
 
