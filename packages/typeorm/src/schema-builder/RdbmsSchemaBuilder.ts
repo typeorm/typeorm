@@ -857,8 +857,13 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 (column) => column.isPrimary,
             )
             if (
-                primaryTableColumns.length !== primaryMetadataColumns.length &&
-                primaryMetadataColumns.length > 1
+                (primaryTableColumns.length !== primaryMetadataColumns.length &&
+                    primaryMetadataColumns.length > 1) ||
+                this.isPrimaryKeyConstraintNameChanged(
+                    table,
+                    primaryTableColumns,
+                    primaryMetadataColumns,
+                )
             ) {
                 const changedPrimaryColumns = primaryMetadataColumns.map(
                     (primaryMetadataColumn) => {
@@ -876,6 +881,47 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 )
             }
         }
+    }
+
+    /**
+     * Checks if the primary key keeps its columns but its constraint name has changed.
+     *
+     * @param table
+     * @param primaryTableColumns
+     * @param primaryMetadataColumns
+     */
+    protected isPrimaryKeyConstraintNameChanged(
+        table: Table,
+        primaryTableColumns: TableColumn[],
+        primaryMetadataColumns: ColumnMetadata[],
+    ): boolean {
+        // only these drivers load custom primary key constraint names from the database
+        if (
+            !DriverUtils.isPostgresFamily(this.dataSource.driver) &&
+            this.dataSource.driver.options.type !== "mssql" &&
+            this.dataSource.driver.options.type !== "oracle"
+        )
+            return false
+
+        const columnNames = primaryTableColumns.map((column) => column.name)
+        if (
+            primaryTableColumns.length === 0 ||
+            primaryMetadataColumns.length !== columnNames.length ||
+            primaryMetadataColumns.some(
+                (column) => !columnNames.includes(column.databaseName),
+            )
+        )
+            return false
+
+        const defaultName = this.dataSource.namingStrategy.primaryKeyName(
+            table,
+            columnNames,
+        )
+        const tableName =
+            primaryTableColumns[0].primaryKeyConstraintName ?? defaultName
+        const metadataName =
+            primaryMetadataColumns[0].primaryKeyConstraintName ?? defaultName
+        return tableName !== metadataName
     }
 
     /**

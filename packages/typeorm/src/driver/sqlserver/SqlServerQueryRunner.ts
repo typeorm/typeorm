@@ -2347,6 +2347,52 @@ export class SqlServerQueryRunner
 
         // if table already have primary columns, we must drop them.
         const primaryColumns = clonedTable.primaryColumns
+        const newPkName =
+            columns[0]?.primaryKeyConstraintName ??
+            this.dataSource.namingStrategy.primaryKeyName(
+                clonedTable,
+                columnNames,
+            )
+
+        // if only the constraint name has changed, rename the existing primary key
+        if (
+            primaryColumns.length > 0 &&
+            primaryColumns.length === columnNames.length &&
+            primaryColumns.every((column) => columnNames.includes(column.name))
+        ) {
+            const oldPkName =
+                primaryColumns[0].primaryKeyConstraintName ??
+                this.dataSource.namingStrategy.primaryKeyName(
+                    clonedTable,
+                    columnNames,
+                )
+
+            if (oldPkName !== newPkName) {
+                upQueries.push(
+                    new Query(
+                        `EXEC sp_rename "${this.getTablePath(
+                            table,
+                        )}.${oldPkName}", "${newPkName}"`,
+                    ),
+                )
+                downQueries.push(
+                    new Query(
+                        `EXEC sp_rename "${this.getTablePath(
+                            table,
+                        )}.${newPkName}", "${oldPkName}"`,
+                    ),
+                )
+                primaryColumns.forEach((column) => {
+                    column.primaryKeyConstraintName =
+                        columns[0]?.primaryKeyConstraintName
+                })
+
+                await this.executeQueries(upQueries, downQueries)
+                this.replaceCachedTable(table, clonedTable)
+                return
+            }
+        }
+
         if (primaryColumns.length > 0) {
             const pkName =
                 primaryColumns[0].primaryKeyConstraintName ??
@@ -2380,14 +2426,9 @@ export class SqlServerQueryRunner
             .filter((column) => columnNames.indexOf(column.name) !== -1)
             .forEach((column) => {
                 column.isPrimary = true
+                column.primaryKeyConstraintName =
+                    columns[0]?.primaryKeyConstraintName
             })
-
-        const pkName =
-            primaryColumns[0].primaryKeyConstraintName ??
-            this.dataSource.namingStrategy.primaryKeyName(
-                clonedTable,
-                columnNames,
-            )
 
         const columnNamesString = columnNames
             .map((columnName) => `"${columnName}"`)
@@ -2397,14 +2438,14 @@ export class SqlServerQueryRunner
             new Query(
                 `ALTER TABLE ${this.escapePath(
                     table,
-                )} ADD CONSTRAINT "${pkName}" PRIMARY KEY (${columnNamesString})`,
+                )} ADD CONSTRAINT "${newPkName}" PRIMARY KEY (${columnNamesString})`,
             ),
         )
         downQueries.push(
             new Query(
                 `ALTER TABLE ${this.escapePath(
                     table,
-                )} DROP CONSTRAINT "${pkName}"`,
+                )} DROP CONSTRAINT "${newPkName}"`,
             ),
         )
 
