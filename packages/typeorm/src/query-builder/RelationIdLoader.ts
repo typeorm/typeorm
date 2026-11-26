@@ -396,6 +396,7 @@ export class RelationIdLoader {
             mainAlias,
             condition,
             fieldsToMetadata,
+            relatedEntities !== undefined,
         )
     }
 
@@ -578,6 +579,7 @@ export class RelationIdLoader {
             mainAlias,
             condition,
             fieldsToMetadata,
+            relatedEntities !== undefined,
         )
     }
 
@@ -743,6 +745,7 @@ export class RelationIdLoader {
             mainAlias,
             condition,
             fieldsToMetadata,
+            relatedEntities !== undefined,
         )
     }
 
@@ -755,6 +758,7 @@ export class RelationIdLoader {
      * @param mainAlias
      * @param condition
      * @param fieldsToMetadata
+     * @param withDeleted
      */
     private executeAndHydrateRaw(
         qb: SelectQueryBuilder<any>,
@@ -762,7 +766,12 @@ export class RelationIdLoader {
         mainAlias: string,
         condition: string,
         fieldsToMetadata: Map<string, ColumnMetadata>,
+        withDeleted: boolean,
     ): Promise<ObjectLiteral[]> {
+        // when the related entities are given, this query only pairs rows
+        // that are already loaded, so it must not drop soft-deleted ones
+        if (withDeleted) qb.withDeleted()
+
         return qb
             .from(target, mainAlias)
             .where(condition)
