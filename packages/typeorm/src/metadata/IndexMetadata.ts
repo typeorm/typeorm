@@ -192,7 +192,17 @@ export class IndexMetadata {
      */
     build(namingStrategy: NamingStrategyInterface): this {
         if (this.synchronize === false) {
-            this.name = this.givenName!
+            // https://github.com/typeorm/typeorm/issues/10348
+            if (!this.givenName) {
+                throw new TypeORMError(
+                    `Index on "${this.entityMetadata.name}" has "synchronize: false" but no explicit name was given. ` +
+                        `TypeORM can only recognize and skip an index with "synchronize: false" if it is given an explicit name that matches the ` +
+                        `manually managed index, otherwise it will be treated as removed and dropped. ` +
+                        `Provide a name, e.g. @Index("your_index_name", { synchronize: false }).`,
+                )
+            }
+
+            this.name = this.givenName
             return this
         }
 
