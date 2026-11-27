@@ -158,4 +158,30 @@ export class FindOperator<T> {
                       )
         }
     }
+
+    /**
+     * Returns a shallow copy of this FindOperator so callers can safely
+     * apply mutating operations like `transformValue` without affecting
+     * the original instance. The prototype is preserved so subclasses
+     * such as EqualOperator stay intact. Nested FindOperator children
+     * are cloned recursively, including FindOperator values inside
+     * arrays, and array values are copied so that in-place mutations on
+     * the clone's value do not leak back to the caller.
+     */
+    clone(): this {
+        const cloned = Object.assign(
+            Object.create(Object.getPrototypeOf(this)),
+            this,
+        ) as this
+
+        if (InstanceChecker.isFindOperator(this._value)) {
+            cloned._value = this._value.clone() as T | FindOperator<T>
+        } else if (Array.isArray(this._value)) {
+            cloned._value = this._value.map((value: any) =>
+                InstanceChecker.isFindOperator(value) ? value.clone() : value,
+            ) as T
+        }
+
+        return cloned
+    }
 }
