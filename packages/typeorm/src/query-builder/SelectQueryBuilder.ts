@@ -1920,13 +1920,29 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         const hasLimit =
             this.expressionMap.limit !== undefined &&
             this.expressionMap.limit !== null
-        if (this.expressionMap.joinAttributes.length > 0 && hasLimit) {
-            return undefined
-        }
-
         const hasTake =
             this.expressionMap.take !== undefined &&
             this.expressionMap.take !== null
+        const hasJoin = this.expressionMap.joinAttributes.length > 0
+
+        // A raw LIMIT on a joined query limits joined rows rather than root
+        // entities, so the loaded page size can never be trusted as the total.
+        if (hasJoin && hasLimit) {
+            return undefined
+        }
+
+        // `take` on a joined query loads entities through a separate distinct-ids
+        // subquery (see executeEntitiesAndRawResults). Any ordering value that is
+        // not functionally determined by the primary key is kept in the
+        // subquery's DISTINCT list, so a single root entity can occupy several
+        // LIMIT slots and the page is truncated below the number of matching
+        // roots — making the page size under-report the total. Only keep the
+        // lazy shortcut when every ordering is a plain main-alias column;
+        // otherwise fall back to a real count query.
+        // https://github.com/typeorm/typeorm/issues/11744
+        if (hasJoin && hasTake && !this.orderByIsPrimaryKeySafe()) {
+            return undefined
+        }
 
         // limit overrides take when no join is defined
         const maxResults = hasLimit
@@ -1966,6 +1982,51 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
               : 0
 
         return entitiesAndRaw.entities.length + previousResults
+    }
+
+    /**
+     * Returns true only when every ORDER BY criteria is provably a plain column
+     * of the main alias, whose value is functionally determined by the primary
+     * key and therefore never splits the pagination subquery's DISTINCT list.
+     *
+     * Used by lazyCount: for a paginated joined query the total may only be
+     * inferred from the loaded page size when the page cannot be truncated.
+     * Anything that is not a bare "mainAlias.col" reference (a joined column,
+     * an embedded path, or a select alias for a raw/computed expression such
+     * as addSelect("a.x || b.y", "k")) is treated as unsafe so the caller
+     * falls back to a real count query. A bare identifier that matches no
+     * select at all stays safe: it adds nothing to the pagination subquery's
+     * DISTINCT list (see createOrderByCombinedWithSelectExpression).
+     */
+    private orderByIsPrimaryKeySafe(): boolean {
+        const mainAliasName = this.expressionMap.mainAlias?.name
+
+        // matches exactly `mainAlias.column` — a single, unqualified column of
+        // the main table with no functions, operators or further path segments.
+        const isMainAliasColumn = (expression: string): boolean => {
+            const match = /^(\w+)\.(\w+)$/.exec(expression.trim())
+            return match !== null && match[1] === mainAliasName
+        }
+
+        return Object.keys(this.expressionMap.allOrderBys).every((criteria) => {
+            if (criteria.indexOf(".") !== -1) {
+                return isMainAliasColumn(criteria)
+            }
+
+            // a bare identifier may be a select alias
+            // (addSelect("players.name", "playerName").orderBy("playerName")):
+            // resolve it to the underlying selection and inspect that. A bare
+            // identifier that is not a select alias adds nothing to the DISTINCT
+            // list (see createOrderByCombinedWithSelectExpression) and is safe.
+            const matchedSelect = this.expressionMap.selects.find(
+                (select) =>
+                    select.aliasName === criteria ||
+                    select.selection === criteria,
+            )
+            return matchedSelect
+                ? isMainAliasColumn(matchedSelect.selection)
+                : true
+        })
     }
 
     /**
