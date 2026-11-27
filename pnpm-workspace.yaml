@@ -14,4 +14,5 @@ allowBuilds:
 autoInstallPeers: false
 engineStrict: true
 minimumReleaseAge: 4320 # 3 days
+nodeVersion: 22.23.5 # version for engine checks
 strictPeerDependencies: false

@@ -1,14 +1,10 @@
 {
   "compilerOptions": {
-    "target": "ES2023",
-    "module": "commonjs",
-    "lib": ["ES2023"],
+    "noEmit": true,
     "outDir": "dist",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "noEmit": true
+    "types": ["node", "mocha"]
   },
-  "include": ["src", "test"],
-  "exclude": ["node_modules", "dist", "test/transforms/v1/fixtures"]
+  "exclude": ["node_modules", "dist", "test/transforms/v1/fixtures"],
+  "extends": "@tsconfig/node20/tsconfig.json",
+  "include": ["src", "test"]
 }
