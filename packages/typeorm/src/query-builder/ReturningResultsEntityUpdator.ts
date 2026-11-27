@@ -2,9 +2,12 @@ import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { QueryRunner } from "../query-runner/QueryRunner"
 import type { QueryExpressionMap } from "./QueryExpressionMap"
 import type { ColumnMetadata } from "../metadata/ColumnMetadata"
+import type { EntityMetadata } from "../metadata/EntityMetadata"
+import type { EmbeddedMetadata } from "../metadata/EmbeddedMetadata"
 import type { UpdateResult } from "./result/UpdateResult"
 import type { InsertResult } from "./result/InsertResult"
 import { TypeORMError } from "../error"
+import { OrmUtils } from "../util/OrmUtils"
 
 /**
  * Updates entity with returning results in the entity insert and update operations.
@@ -143,7 +146,7 @@ export class ReturningResultsEntityUpdator {
     async insert(
         insertResult: InsertResult,
         entities: ObjectLiteral[],
-    ): Promise<void> {
+    ): Promise<ObjectLiteral[]> {
         const metadata = this.expressionMap.mainAlias!.metadata
         let insertionColumns = metadata.getInsertionReturningColumns()
 
@@ -157,7 +160,23 @@ export class ReturningResultsEntityUpdator {
             return needToCheckGenerated === true
         })
 
-        const generatedMaps = entities.map((entity, entityIndex) => {
+        // Upsert (orUpdate) must not mutate the caller's input objects. For
+        // drivers without RETURNING (e.g. mysql, sqlite) the generated primary
+        // key is fabricated from the driver insert id and merged back into each
+        // entity in place; on an ON DUPLICATE KEY UPDATE / ON CONFLICT DO UPDATE
+        // this writes a wrong id onto rows that were updated, silently
+        // corrupting the passed-in objects (issue #12094). When this is an
+        // upsert, work on clones so the originals are left untouched; the
+        // generated values are still surfaced via insertResult.generatedMaps and
+        // insertResult.identifiers.
+        const isUpsert = this.expressionMap.onUpdate != null
+        const targetEntities = isUpsert
+            ? entities.map((entity) =>
+                  this.cloneEntityForUpsert(entity, metadata),
+              )
+            : entities
+
+        const generatedMaps = targetEntities.map((entity, entityIndex) => {
             if (
                 Array.isArray(insertResult.raw) &&
                 this.expressionMap.extraReturningColumns.length > 0
@@ -222,7 +241,7 @@ export class ReturningResultsEntityUpdator {
                 "insert",
             )
         ) {
-            const entityIds = entities.map((entity) => {
+            const entityIds = targetEntities.map((entity) => {
                 const entityId = metadata.getEntityIdMap(entity)!
 
                 // We have to check for an empty `entityId` - if we don't, the query against the database
@@ -261,7 +280,7 @@ export class ReturningResultsEntityUpdator {
                 .setOption("create-pojo") // use POJO because created object can contain default values, e.g. property = null and those properties might be overridden by merge process
                 .getMany()
 
-            entities.forEach((entity, entityIndex) => {
+            targetEntities.forEach((entity, entityIndex) => {
                 this.queryRunner.manager.merge(
                     metadata.target as any,
                     generatedMaps[entityIndex],
@@ -276,11 +295,66 @@ export class ReturningResultsEntityUpdator {
             })
         }
 
-        entities.forEach((entity, entityIndex) => {
+        targetEntities.forEach((entity, entityIndex) => {
             const entityId = metadata.getEntityIdMap(entity)!
             insertResult.identifiers.push(entityId)
             insertResult.generatedMaps.push(generatedMaps[entityIndex])
         })
+
+        // Returns the entities carrying the generated values. For a plain insert
+        // these are the original input objects (mutated in place as before); for
+        // an upsert they are the clones, so callers never see their objects
+        // mutated while after-insert listeners still receive the generated values.
+        return targetEntities
+    }
+
+    /**
+     * Clones an entity for an upsert so the caller's object is never mutated.
+     * OrmUtils.cloneObject is shallow, so embedded objects would still be shared
+     * by reference and merged into in place; clone the embedded tree as well to
+     * keep the original fully untouched.
+     */
+    protected cloneEntityForUpsert(
+        entity: ObjectLiteral,
+        metadata: EntityMetadata,
+    ): ObjectLiteral {
+        const clone = OrmUtils.cloneObject(entity)
+        this.cloneEmbeddeds(clone, metadata.embeddeds)
+        return clone
+    }
+
+    /**
+     * Replaces each embedded object on the target with a shallow clone,
+     * recursing into nested embeddeds. Only the embedded tree is followed
+     * (never relations), so there is no risk of cyclic traversal.
+     */
+    protected cloneEmbeddeds(
+        target: ObjectLiteral,
+        embeddeds: EmbeddedMetadata[],
+    ): void {
+        for (const embedded of embeddeds) {
+            const value = target[embedded.propertyName]
+            if (
+                value != null &&
+                typeof value === "object" &&
+                !Array.isArray(value)
+            ) {
+                const embeddedClone = OrmUtils.cloneObject(value)
+                // Define an own data property rather than assigning through
+                // `target[propertyName] = ...`: the clone keeps the entity
+                // prototype, so a getter-only mapped embedded would make a
+                // plain assignment throw after the insert has already run.
+                Object.defineProperty(target, embedded.propertyName, {
+                    value: embeddedClone,
+                    writable: true,
+                    enumerable: true,
+                    configurable: true,
+                })
+                if (embedded.embeddeds.length > 0) {
+                    this.cloneEmbeddeds(embeddedClone, embedded.embeddeds)
+                }
+            }
+        }
     }
 
     /**
