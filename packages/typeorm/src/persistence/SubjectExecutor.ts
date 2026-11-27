@@ -396,7 +396,9 @@ export class SubjectExecutor {
                     // - when entity is a tree table, since tree tables require extra operation per each inserted row
                     // - when oracle is used, since oracle's bulk insertion is very bad
                     if (
-                        subject.changeMaps.length === 0 ||
+                        subject.changeMaps.every(
+                            (changeMap) => changeMap.column?.isInsert === false,
+                        ) ||
                         subject.metadata.treeType ||
                         this.queryRunner.dataSource.driver.options.type ===
                             "oracle" ||
