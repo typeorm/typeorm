@@ -122,6 +122,7 @@ export class Subject {
     updatedRelationMaps: {
         relation: RelationMetadata
         value: ObjectLiteral
+        valueSubject?: Subject
     }[] = []
 
     /**
@@ -244,7 +245,9 @@ export class Subject {
         const changeMapsWithoutValues: SubjectChangeMap[] = []
         const changeSet = this.changeMaps.reduce((updateMap, changeMap) => {
             let value = changeMap.value
+            let valueSubject: Subject | undefined
             if (InstanceChecker.isSubject(value)) {
+                valueSubject = value
                 // referenced columns can refer on values both which were just inserted and which were present in the model
                 // if entity was just inserted valueSets must contain all values from the entity and values just inserted in the database
                 // so, here we check if we have a value set then we simply use it as value to get our reference column values
@@ -284,6 +287,7 @@ export class Subject {
                     this.updatedRelationMaps.push({
                         relation: changeMap.relation,
                         value: relationId,
+                        valueSubject,
                     })
                 } else {
                     // value can be "null" or direct relation id here
