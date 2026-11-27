@@ -18,4 +18,16 @@ export class Item {
         },
     })
     score: number
+
+    @Column({
+        type: "varchar",
+        nullable: true,
+        default: null,
+        transformer: {
+            from: (value: string | null) => value ?? "none",
+            to: (value: string | null | undefined) =>
+                value === "none" ? null : value,
+        },
+    })
+    label: string
 }

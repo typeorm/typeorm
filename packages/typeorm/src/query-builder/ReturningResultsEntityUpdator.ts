@@ -282,7 +282,7 @@ export class ReturningResultsEntityUpdator {
                                     column.databaseName,
                                 )
                             ]
-                        return value === undefined
+                        return value === undefined || value === null
                             ? map
                             : OrmUtils.mergeDeep(
                                   map,
@@ -292,9 +292,12 @@ export class ReturningResultsEntityUpdator {
                     {} as ObjectLiteral,
                 )
 
+                // the persistence layer hydrates non-null generated values only,
+                // so null values keep their hydrated form
                 this.queryRunner.manager.merge(
                     metadata.target as any,
                     generatedMaps[entityIndex],
+                    returningResult[entityIndex],
                     rawGeneratedMap,
                 )
 
