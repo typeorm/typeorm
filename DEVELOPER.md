@@ -201,10 +201,10 @@ To run your tests you need the Database Management Systems (DBMS) installed on y
 
 TypeORM maintains two active branches:
 
-| Branch   | npm dist-tag (release) | npm dist-tag (nightly) | Purpose                        |
-| -------- | ---------------------- | ---------------------- | ------------------------------ |
-| `master` | `latest`               | `dev`                  | Current stable release         |
-| `v0`     | `legacy`               |                        | legacy v0.3.x branch           |
+| Branch   | npm dist-tag (release) | npm dist-tag (nightly) | Purpose               |
+| -------- | ---------------------- | ---------------------- | --------------------- |
+| `master` | `latest`               | `dev`                  | Current stable (v1.x) |
+| `v0`     | `legacy`               |                        | Old stable (v0.3.x)   |
 
 Publishing is handled by the `publish-package.yml` workflow using npm trusted publishing (OIDC). No npm tokens are needed.
 
