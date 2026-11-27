@@ -7,11 +7,17 @@ on:
         required: true
         type: number
 
+# Every `run` step below operates on the core package. Steps that need the
+# repository root (docker compose) override this individually.
+defaults:
+  run:
+    working-directory: packages/typeorm
+
 jobs:
   better-sqlite3:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
@@ -25,7 +31,7 @@ jobs:
           name: better-sqlite3-node-${{ inputs.node-version }}-linux
 
   cockroachdb:
-    if: ${{ inputs.node-version >= 24 }}
+    if: ${{ inputs.node-version >= 26 }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -46,7 +52,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
@@ -72,11 +78,11 @@ jobs:
     runs-on: ubuntu-latest
     services:
       mongodb:
-        image: mongo:8.2.5
+        image: mongo:9.0.8
         ports:
           - "27017:27017"
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
@@ -101,7 +107,7 @@ jobs:
           ACCEPT_EULA: Y
           MSSQL_PID: Express
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
@@ -127,7 +133,7 @@ jobs:
           MYSQL_PASSWORD: password
           MYSQL_DATABASE: typeorm
       mariadb:
-        image: mariadb:10.11.16
+        image: mariadb:10.11.19
         ports:
           - "3307:3306"
         env:
@@ -136,7 +142,7 @@ jobs:
           MYSQL_PASSWORD: password
           MYSQL_DATABASE: typeorm
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
@@ -158,7 +164,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       mysql:
-        image: mysql:9.5.0
+        image: mysql:26.10.0
         ports:
           - "3306:3306"
         env:
@@ -167,7 +173,7 @@ jobs:
           MYSQL_PASSWORD: password
           MYSQL_DATABASE: typeorm
       mariadb:
-        image: mariadb:12.2.2
+        image: mariadb:13.0.2
         ports:
           - "3307:3306"
         env:
@@ -176,7 +182,7 @@ jobs:
           MYSQL_PASSWORD: password
           MYSQL_DATABASE: typeorm
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
@@ -197,9 +203,10 @@ jobs:
   oracle:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - run: docker compose up oracle --detach
+        working-directory: ${{ github.workspace }}
 
       - uses: ./.github/actions/setup-node
         with:
@@ -208,7 +215,7 @@ jobs:
 
       - run: jq 'map(select(.type == "oracle"))' ormconfig.sample.json > ormconfig.json
       - run: docker compose up oracle --no-recreate --wait
-      - run: sleep 3 # wait for oracle to be fully ready
+        working-directory: ${{ github.workspace }}
       - run: pnpm exec c8 pnpm run test:ci
 
       - uses: ./.github/actions/upload-coverage
@@ -237,7 +244,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
@@ -253,9 +260,10 @@ jobs:
   sap:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - run: docker compose up hanaexpress --detach
+        working-directory: ${{ github.workspace }}
 
       - uses: ./.github/actions/setup-node
         with:
@@ -264,6 +272,7 @@ jobs:
 
       - run: jq 'map(select(.type == "sap"))' ormconfig.sample.json > ormconfig.json
       - run: docker compose up hanaexpress --no-recreate --wait
+        working-directory: ${{ github.workspace }}
       - run: pnpm exec c8 pnpm run test:ci
 
       - uses: ./.github/actions/upload-coverage
@@ -283,7 +292,7 @@ jobs:
           SPANNER_INSTANCE_ID: typeorm
           SPANNER_DATABASE_ID: typeorm
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}
@@ -300,10 +309,11 @@ jobs:
       - uses: ./.github/actions/upload-coverage
         with:
           name: spanner-node-${{ inputs.node-version }}-linux
+
   sqljs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-node
         with:
           node-version: ${{ inputs.node-version }}

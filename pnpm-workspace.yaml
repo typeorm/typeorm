@@ -1,0 +1,17 @@
+packages:
+    - "docs"
+    - "packages/*"
+    - "playground"
+allowBuilds:
+    "@sap/hana-client": false
+    better-sqlite3: false
+    core-js: false
+    cpu-features: false
+    libpq: false
+    oracledb: false
+    protobufjs: false
+    ssh2: false
+autoInstallPeers: false
+engineStrict: true
+minimumReleaseAge: 4320 # 3 days
+strictPeerDependencies: false

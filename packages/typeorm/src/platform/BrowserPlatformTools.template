@@ -1,0 +1,183 @@
+import { RandomGenerator } from "../util/RandomGenerator"
+
+/**
+ * Browser's implementation of the platform-specific tools.
+ *
+ * This file gonna replace PlatformTools for browser environment.
+ * For node.js environment this class is not getting packaged.
+ * Don't use methods of this class in the code, use PlatformTools methods instead.
+ */
+export class PlatformTools {
+    /**
+     * Type of the currently running platform.
+     */
+    static type: "browser" | "node" = "browser"
+
+    /**
+     * Gets global variable where global stuff can be stored.
+     */
+    static getGlobalVariable(): any {
+        if (typeof window !== "undefined") {
+            return window
+        }
+        if (typeof globalThis !== "undefined") {
+            return globalThis
+        }
+        // NativeScript uses global, not window
+        return global
+    }
+
+    /**
+     * Loads ("require"-s) given file or package.
+     * This operation only supports on node platform
+     */
+    static load(name: string): any {
+        /* eslint-disable @typescript-eslint/no-require-imports */
+        try {
+            // Use literal requires on purpose so bundlers can trace the client libraries.
+            // Wrapped in try-catch so bundlers can identify the libraries as optional dependencies.
+            switch (name) {
+                // Expo
+                case "expo-sqlite":
+                    return require("expo-sqlite")
+                // React Native
+                case "react-native-sqlite-storage":
+                    return require("react-native-sqlite-storage")
+                // sql.js
+                case "sql.js":
+                    return require("sql.js")
+                // redis
+                case "redis":
+                    return require("redis")
+                case "ioredis":
+                    return require("ioredis")
+            }
+        } catch (error) {
+            throw error
+        }
+        /* eslint-enable @typescript-eslint/no-require-imports */
+
+        throw new TypeError(`Invalid Package for PlatformTools.load: ${name}`)
+    }
+
+    /**
+     * @param input string to encode
+     * @returns the SHA-1 digest of the input string
+     */
+    static sha1(input: string): string {
+        return RandomGenerator.sha1(input)
+    }
+
+    /**
+     * Normalizes given path. Does "path.normalize".
+     */
+    static pathNormalize(pathStr: string): string {
+        if (this.type === "browser")
+            throw new Error(
+                `This option/function is not supported in the browser environment. Failed operation: path.normalize("${pathStr}").`,
+            )
+
+        return ""
+    }
+
+    /**
+     * Gets file extension. Does "path.extname".
+     */
+    static pathExtname(pathStr: string): string {
+        if (this.type === "browser")
+            throw new Error(
+                `This option/function is not supported in the browser environment. Failed operation: path.extname("${pathStr}").`,
+            )
+
+        return ""
+    }
+
+    /**
+     * Resolved given path. Does "path.resolve".
+     */
+    static pathResolve(...paths: string[]): string {
+        if (this.type === "browser")
+            throw new Error(
+                `This option/function is not supported in the browser environment. Failed operation: path.resolve("${paths.join('", "')}").`,
+            )
+
+        return ""
+    }
+
+    /**
+     * Synchronously checks if file exist. Does "fs.existsSync".
+     */
+    static fileExist(pathStr: string): boolean {
+        if (this.type === "browser")
+            throw new Error(
+                `This option/function is not supported in the browser environment. Failed operation: fs.existsSync("${pathStr}").`,
+            )
+
+        return false
+    }
+
+    static readFileSync(filename: string): any {
+        if (this.type === "browser")
+            throw new Error(
+                `This option/function is not supported in the browser environment. Failed operation: fs.readFileSync("${filename}").`,
+            )
+        return null
+    }
+
+    static appendFileSync(filename: string, data: any) {
+        if (this.type === "browser")
+            throw new Error(
+                `This option/function is not supported in the browser environment. Failed operation: fs.appendFileSync("${filename}").`,
+            )
+    }
+
+    static writeFile(path: string, data: any): Promise<void> {
+        if (this.type === "browser")
+            throw new Error(
+                `This option/function is not supported in the browser environment. Failed operation: fs.writeFile("${path}").`,
+            )
+        return Promise.reject(null)
+    }
+
+    /**
+     * Highlights sql string to be printed in the console.
+     */
+    static highlightSql(sql: string) {
+        return sql
+    }
+
+    /**
+     * Logging functions needed by AdvancedConsoleLogger (but here without ANSI colors)
+     */
+    static logInfo(prefix: string, info: any) {
+        console.info(prefix + " ", info)
+    }
+
+    static logError(prefix: string, error: any) {
+        console.error(prefix + " ", error)
+    }
+
+    static logWarn(prefix: string, warning: any) {
+        console.warn(prefix + " ", warning)
+    }
+
+    static log(message: string) {
+        console.log(message)
+    }
+
+    static warn(message: string) {
+        return message
+    }
+}
+
+/**
+ * These classes are needed for stream operations or
+ * in the mongodb driver. Both aren't supported in the browser.
+ */
+export class EventEmitter {}
+
+export class Readable {}
+
+export class Writable {}
+
+export interface ReadStream {}

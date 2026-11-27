@@ -11,9 +11,9 @@ services:
       MYSQL_PASSWORD: "password"
       MYSQL_DATABASE: "typeorm"
 
-  mysql-9:
-    image: "mysql:9.5.0"
-    container_name: "typeorm-mysql-9"
+  mysql-26:
+    image: "mysql:26.10.0"
+    container_name: "typeorm-mysql-26"
     ports:
       - "3306:3306"
     environment:
@@ -24,7 +24,7 @@ services:
 
   # mariadb
   mariadb-10:
-    image: "mariadb:10.11.16"
+    image: "mariadb:10.11.19"
     container_name: "typeorm-mariadb-10"
     ports:
       - "3307:3306"
@@ -34,9 +34,9 @@ services:
       MYSQL_PASSWORD: "password"
       MYSQL_DATABASE: "typeorm"
 
-  mariadb-12:
-    image: "mariadb:12.2.2"
-    container_name: "typeorm-mariadb-12"
+  mariadb-13:
+    image: "mariadb:13.0.2"
+    container_name: "typeorm-mariadb-13"
     ports:
       - "3307:3306"
     environment:
@@ -99,13 +99,22 @@ services:
 
     # oracle
   oracle:
-    image: "container-registry.oracle.com/database/free:23.7.0.0-lite"
+    image: "container-registry.oracle.com/database/free:23.26.3.0-lite"
     container_name: "typeorm-oracle"
     ports:
       - "1521:1521"
     environment:
       ORACLE_PWD: "oracle"
       ORACLE_SID: "FREE"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "echo 'EXIT' | sqlplus -L typeorm/oracle@localhost:1521/FREEPDB1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     volumes:
       # - oracle-data:/opt/oracle/oradata
       - ./docker/oracle/startup:/opt/oracle/scripts/startup:ro
@@ -152,7 +161,7 @@ services:
 
   # mongodb
   mongodb:
-    image: "mongo:8.2.5"
+    image: "mongo:9.0.8"
     container_name: "typeorm-mongodb"
     ports:
       - "27017:27017"

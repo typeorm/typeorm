@@ -5,7 +5,7 @@ inputs:
   node-version:
     description: Node.js version
     required: false
-    default: "24"
+    default: "26"
   working-directory:
     description: Working directory
     required: false
@@ -17,19 +17,17 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: pnpm/action-setup@b307475762933b98ed359c036b0e51f26b63b74b # v5.0.0
-
-    - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+    # Installs pnpm (version from `packageManager`), Node.js, restores the
+    # store cache and runs `pnpm install --frozen-lockfile`.
+    - uses: pnpm/setup@731dfb6463bbd11c11fd0ee11fe00ed0e36d48a1 # v3.2.0
       with:
-        node-version: ${{ inputs.node-version }}
-        cache: pnpm
-
-    - run: pnpm install --frozen-lockfile
-      shell: bash
-      working-directory: ${{ inputs.working-directory || '.' }}
+        runtime: node@${{ inputs.node-version }}
+        cache: true
+        require-lockfile: true
+        working-directory: ${{ inputs.working-directory || '.' }}
 
     - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
       if: inputs.download-build == 'true'
       with:
         name: build
-        path: build/
+        path: packages/typeorm/build/

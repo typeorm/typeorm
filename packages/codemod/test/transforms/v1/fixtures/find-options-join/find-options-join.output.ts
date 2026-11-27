@@ -40,4 +40,4 @@ const d = await repository.find({
         "alias": "post",
         "leftJoinAndSelect": { categories: "post.categories" },
     },
-});
+})

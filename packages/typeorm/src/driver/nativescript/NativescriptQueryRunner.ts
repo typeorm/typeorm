@@ -1,0 +1,139 @@
+import { DateUtils } from "../../util/DateUtils"
+import { NamedPlaceholdersNotSupportedError } from "../../error"
+import type { ObjectLiteral } from "../../common/ObjectLiteral"
+import { QueryFailedError } from "../../error/QueryFailedError"
+import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
+import { QueryResult } from "../../query-runner/QueryResult"
+import { Broadcaster } from "../../subscriber/Broadcaster"
+import { AbstractSqliteQueryRunner } from "../sqlite-abstract/AbstractSqliteQueryRunner"
+import type { NativescriptDriver } from "./NativescriptDriver"
+
+/**
+ * Runs queries on a single sqlite database connection.
+ */
+export class NativescriptQueryRunner extends AbstractSqliteQueryRunner {
+    /**
+     * Database driver used by connection.
+     */
+    driver: NativescriptDriver
+
+    // -------------------------------------------------------------------------
+    // Constructor
+    // -------------------------------------------------------------------------
+
+    constructor(driver: NativescriptDriver) {
+        super()
+        this.driver = driver
+        this.dataSource = driver.dataSource
+        this.broadcaster = new Broadcaster(this)
+    }
+
+    /**
+     * Called before migrations are run.
+     */
+    async beforeMigration(): Promise<void> {
+        await this.query(`PRAGMA foreign_keys = OFF`)
+    }
+
+    /**
+     * Called after migrations are run.
+     */
+    async afterMigration(): Promise<void> {
+        await this.query(`PRAGMA foreign_keys = ON`)
+    }
+
+    /**
+     * Executes a given SQL query.
+     *
+     * @param query
+     * @param parameters
+     * @param useStructuredResult
+     */
+    async query(
+        query: string,
+        parameters?: any[] | ObjectLiteral,
+        useStructuredResult = false,
+    ): Promise<any> {
+        if (this.isReleased) {
+            throw new QueryRunnerAlreadyReleasedError()
+        }
+        if (parameters && !Array.isArray(parameters))
+            throw new NamedPlaceholdersNotSupportedError()
+
+        const connection = this.driver.dataSource
+
+        const databaseConnection = await this.connect()
+
+        return new Promise((ok, fail) => {
+            const isInsertQuery = query.startsWith("INSERT INTO")
+            connection.logger.logQuery(query, parameters, this)
+
+            const handler = (err: any, raw: any) => {
+                // log slow queries if maxQueryExecution time is set
+                const maxQueryExecutionTime =
+                    this.driver.options.maxQueryExecutionTime
+                const queryEndTime = DateUtils.performanceNow()
+                const queryExecutionTime = queryEndTime - queryStartTime
+
+                if (
+                    maxQueryExecutionTime &&
+                    queryExecutionTime > maxQueryExecutionTime
+                ) {
+                    connection.logger.logQuerySlow(
+                        queryExecutionTime,
+                        query,
+                        parameters,
+                        this,
+                    )
+                }
+
+                if (err) {
+                    connection.logger.logQueryError(
+                        err,
+                        query,
+                        parameters,
+                        this,
+                    )
+                    fail(new QueryFailedError(query, parameters, err))
+                }
+
+                const result = new QueryResult()
+                result.raw = raw
+
+                if (!isInsertQuery && Array.isArray(raw)) {
+                    result.records = raw
+                }
+
+                if (useStructuredResult) {
+                    ok(result)
+                } else {
+                    ok(result.raw)
+                }
+            }
+            const queryStartTime = DateUtils.performanceNow()
+
+            if (isInsertQuery) {
+                databaseConnection.execSQL(query, parameters, handler)
+            } else {
+                databaseConnection.all(query, parameters, handler)
+            }
+        })
+    }
+
+    // -------------------------------------------------------------------------
+    // Protected Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Parametrizes given object of values. Used to create column=value queries.
+     *
+     * @param objectLiteral
+     * @param startIndex
+     */
+    protected parametrize(
+        objectLiteral: ObjectLiteral,
+        startIndex: number = 0,
+    ): string[] {
+        return Object.keys(objectLiteral).map((key, index) => `"${key}"` + "=?")
+    }
+}
