@@ -6,6 +6,7 @@ import {
 } from "../../../utils/test-utils"
 import type { DataSource } from "../../../../src/data-source/DataSource"
 import { Post } from "./entity/Post"
+import { VersionedPost } from "./entity/VersionedPost"
 import { expect } from "chai"
 import { MoreThan } from "../../../../src"
 
@@ -206,4 +207,74 @@ describe("query builder > insert > merge into", () => {
                 expect(builder.getSql).to.throw(Error)
             }),
         ))
+
+    it("should not emit WHEN MATCHED UPDATE clause when merge upsert has no non-conflict columns", () => {
+        dataSources.forEach((dataSource) => {
+            const post = new VersionedPost()
+            post.id = "post#1"
+
+            const sql = dataSource.manager
+                .createQueryBuilder()
+                .insert()
+                .into(VersionedPost)
+                .values(post)
+                .orUpdate(["id"], ["id"])
+                .disableEscaping()
+                .getSql()
+
+            expect(sql).to.include("MERGE INTO")
+            expect(sql).to.not.include("WHEN MATCHED")
+        })
+    })
+
+    it("should auto-increment version column in WHEN MATCHED clause when non-conflict columns exist", () => {
+        dataSources.forEach((dataSource) => {
+            const post = new VersionedPost()
+            post.id = "post#1"
+            post.title = "About post"
+
+            const sql = dataSource.manager
+                .createQueryBuilder()
+                .insert()
+                .into(VersionedPost)
+                .values(post)
+                .orUpdate(["title"], ["id"])
+                .setParameter("title", post.title)
+                .disableEscaping()
+                .getSql()
+
+            expect(sql).to.include("MERGE INTO")
+            expect(sql).to.include("WHEN MATCHED")
+            expect(sql).to.include(
+                "VersionedPost.version = VersionedPost.version + 1",
+            )
+        })
+    })
+
+    it("should not increment version column when version is in conflict target", () => {
+        dataSources.forEach((dataSource) => {
+            const post = new VersionedPost()
+            post.id = "post#1"
+            post.title = "About post"
+
+            const sql = dataSource.manager
+                .createQueryBuilder()
+                .insert()
+                .into(VersionedPost)
+                .values(post)
+                .orUpdate(["title"], ["id", "version"])
+                .setParameter("title", post.title)
+                .disableEscaping()
+                .getSql()
+
+            expect(sql).to.include("MERGE INTO")
+            expect(sql).to.include("WHEN MATCHED")
+            expect(sql).to.include(
+                "VersionedPost.title = mergeIntoSource.title",
+            )
+            expect(sql).to.not.include(
+                "VersionedPost.version = VersionedPost.version + 1",
+            )
+        })
+    })
 })
