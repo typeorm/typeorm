@@ -167,6 +167,10 @@ export function Index(
             sparse: options?.sparse ? true : false,
             background: options?.background ? true : false,
             concurrent: options?.concurrent ? true : false,
+            // Only allow this option when creating a unique index
+            nullsNotDistinct: options?.unique && options?.nullsNotDistinct
+                ? true
+                : false,
             expireAfterSeconds: options
                 ? options.expireAfterSeconds
                 : undefined,
