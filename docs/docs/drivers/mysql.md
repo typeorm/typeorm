@@ -78,6 +78,24 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 
 Additional options can be added to the `extra` object and will be passed directly to the client library. See more in the [mysql2 documentation](https://sidorares.github.io/node-mysql2/docs).
 
+## Replication node logging
+
+For `mysql` and `mariadb` replication, TypeORM logs PoolCluster node exclusion
+and removal at the `warn` level, and recovery at the `info` level. Enable these
+messages with `logging: ["warn", "info"]` in your data source options. They also
+use your custom TypeORM logger, if configured.
+
+Messages identify the node (`MASTER`, `SLAVE0`, etc.) and its role. Temporary
+exclusion logs include the first exclusion time. Recovery logs include that time,
+the recovery time, and `downtimeMs`. Repeated exclusions retain the original time
+until the node recovers or is removed.
+
+With a positive `replication.restoreNodeTimeout`, mysql2 temporarily excludes a
+node after it reaches `removeNodeErrorCount`. Recovery is logged only after a
+subsequent connection succeeds, not when the timeout expires. With the default
+`restoreNodeTimeout: 0`, mysql2 removes the node instead, producing a removal
+warning without a recovery log.
+
 ## Column Types
 
 `bit`, `int`, `integer`, `tinyint`, `smallint`, `mediumint`, `bigint`, `float`, `double`, `double precision`, `dec`, `decimal`, `numeric`, `fixed`, `bool`, `boolean`, `date`, `datetime`, `timestamp`, `time`, `year`, `char`, `nchar`, `national char`, `varchar`, `nvarchar`, `national varchar`, `text`, `tinytext`, `mediumtext`, `blob`, `longtext`, `tinyblob`, `mediumblob`, `longblob`, `enum`, `set`, `json`, `binary`, `varbinary`, `geometry`, `point`, `linestring`, `polygon`, `multipoint`, `multilinestring`, `multipolygon`, `geometrycollection`, `uuid`, `inet4`, `inet6`
