@@ -1078,6 +1078,7 @@ export class SqlServerDriver implements Driver {
      *
      * - If the value is a FindOperator containing an array, all elements are individually parametrized.
      * - If the value is a non-raw FindOperator, a transformation is applied to its internal value.
+     * - LIKE and ILIKE string parameters are widened when their patterns exceed the column length.
      * - Otherwise, the value is passed directly to parametrizeValue for wrapping.
      *
      * This ensures SQL Server receives properly typed parameters for queries involving operators like
@@ -1088,11 +1089,30 @@ export class SqlServerDriver implements Driver {
      */
     parametrizeValues(column: ColumnMetadata, value: any) {
         if (value instanceof FindOperator) {
-            if (value.type !== "raw") {
+            if (value.type === "and" || value.type === "or") {
+                value.value.forEach((operator: FindOperator<unknown>) =>
+                    this.parametrizeValues(column, operator),
+                )
+            } else if (value.child) {
+                this.parametrizeValues(column, value.child)
+            } else if (value.type !== "raw") {
                 value.transformValue({
                     to: (v) => this.parametrizeValues(column, v),
                     from: (v) => v,
                 })
+            }
+
+            const parameter = value.value
+            if (
+                (value.type === "like" || value.type === "ilike") &&
+                InstanceChecker.isMssqlParameter(parameter) &&
+                typeof parameter.value === "string" &&
+                (parameter.type === "varchar" ||
+                    parameter.type === "nvarchar") &&
+                Number(parameter.params[0]) < parameter.value.length
+            ) {
+                // Wildcards can make a pattern longer than its column.
+                parameter.params[0] = parameter.value.length
             }
 
             return value
