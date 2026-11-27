@@ -808,12 +808,16 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
                     column.databaseName
             }
 
-            // UPDATE/DELETE also accept unqualified conditions once aliased.
+            // UPDATE/DELETE also accept unqualified conditions once aliased,
+            // resolved against the main alias only.
             if (
                 replaceAliasNamePrefix &&
+                // compare by name: expressionMap.clone() copies `aliases`
+                // but keeps the original `mainAlias` instance
+                alias.name === this.expressionMap.mainAlias?.name &&
                 ["update", "delete"].includes(this.expressionMap.queryType)
             ) {
-                replacements[""] ??= replacements[replaceAliasNamePrefix]
+                replacements[""] = replacements[replaceAliasNamePrefix]
             }
         }
 

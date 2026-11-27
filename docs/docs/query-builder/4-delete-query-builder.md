@@ -32,8 +32,11 @@ await myDataSource
 Which will produce the following SQL query:
 
 ```sql
-DELETE FROM users user WHERE user.id = 1
+DELETE FROM "users" "user" WHERE "user"."id" = $1
 ```
+
+Once an alias is passed, PostgreSQL no longer accepts the real table name as a qualifier:
+conditions must use the alias or be unqualified (e.g. `"id = :id"`), not `"users"."id"`.
 
 On other database drivers `DELETE` doesn't support aliases, so `where()` conditions must stay
 unqualified (e.g. `"id = :id"`).

@@ -31,8 +31,12 @@ await dataSource
 Which will produce the following SQL query:
 
 ```sql
-UPDATE users user SET firstName = 'Timber', lastName = 'Saw' WHERE user.id = 1
+UPDATE "users" "user" SET "firstName" = $1, "lastName" = $2 WHERE "user"."id" = $3
 ```
+
+Once an alias is passed, PostgreSQL no longer accepts the real table name as a qualifier:
+conditions and `set()` expressions must use the alias or be unqualified (e.g. `"id = :id"`),
+not `"users"."id"`.
 
 On other database drivers `UPDATE` doesn't support aliases, so `where()` conditions must stay
 unqualified (e.g. `"id = :id"`).

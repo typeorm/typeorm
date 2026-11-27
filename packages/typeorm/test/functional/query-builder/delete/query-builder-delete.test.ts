@@ -331,6 +331,38 @@ describe("query builder > delete", () => {
             }),
         ))
 
+    it("should resolve unqualified where conditions against the main alias only on postgres family", () => {
+        for (const dataSource of dataSources) {
+            if (!DriverUtils.isPostgresFamily(dataSource.driver)) continue
+
+            // `team` only exists on User (as column "team_id"), not on Photo
+            const sql = dataSource
+                .createQueryBuilder(User, "u")
+                .delete()
+                .from(Photo, "p")
+                .where("team = :team", { team: 1 })
+                .getSql()
+
+            expect(sql).to.not.contain("team_id")
+        }
+    })
+
+    it("should allow setting the target via from() after createQueryBuilder with an empty alias", () => {
+        for (const dataSource of dataSources) {
+            const queryBuilder = dataSource
+                .getRepository(User)
+                .createQueryBuilder("")
+
+            expect(() =>
+                queryBuilder
+                    .delete()
+                    .from(User)
+                    .where("name = :name", { name: "Alex Messer" })
+                    .getSql(),
+            ).to.not.throw()
+        }
+    })
+
     it("should qualify the discriminator column with an explicit alias on postgres family", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
