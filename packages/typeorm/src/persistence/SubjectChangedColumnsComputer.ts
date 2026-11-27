@@ -105,7 +105,11 @@ export class SubjectChangedColumnsComputer {
                 }
 
                 // if both values are not null, normalize special values to make proper comparision
-                if (normalizedValue !== null && databaseValue !== null) {
+                if (
+                    normalizedValue !== null &&
+                    databaseValue !== null &&
+                    databaseValue !== undefined
+                ) {
                     switch (column.type) {
                         case "date":
                             normalizedValue = column.isArray
