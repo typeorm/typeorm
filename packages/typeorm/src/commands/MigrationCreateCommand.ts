@@ -2,7 +2,6 @@ import ansi from "ansis"
 import path from "path"
 import type yargs from "yargs"
 import { PlatformTools } from "../platform/PlatformTools"
-import { camelCase } from "../util/StringUtils"
 import { CommandUtils } from "./CommandUtils"
 
 /**
@@ -84,12 +83,14 @@ export class MigrationCreateCommand implements yargs.CommandModule {
      * @param timestamp
      */
     protected static getTemplate(name: string, timestamp: number): string {
+        const migrationName = CommandUtils.getMigrationClassName(
+            name,
+            timestamp,
+        )
+
         return `import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class ${camelCase(
-            name,
-            true,
-        )}${timestamp} implements MigrationInterface {
+export class ${migrationName} implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<void> {
     }
@@ -113,6 +114,10 @@ export class ${camelCase(
         timestamp: number,
         esm: boolean,
     ): string {
+        const migrationName = CommandUtils.getMigrationClassName(
+            name,
+            timestamp,
+        )
         const exportMethod = esm ? "export" : "module.exports ="
         return `/**
  * @typedef {import('typeorm').MigrationInterface} MigrationInterface
@@ -123,7 +128,7 @@ export class ${camelCase(
  * @class
  * @implements {MigrationInterface}
  */
-${exportMethod} class ${camelCase(name, true)}${timestamp} {
+${exportMethod} class ${migrationName} {
 
     /**
      * @param {QueryRunner} queryRunner
