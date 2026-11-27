@@ -119,7 +119,7 @@ function reactions(groups = []) {
 }
 
 const PING_RE = new RegExp(CONFIG.pingPattern, "i")
-const truncate = (s, n) => (s && s.length > n ? s.slice(0, n) + "…" : s ?? "")
+const truncate = (s, n) => (s && s.length > n ? s.slice(0, n) + "…" : (s ?? ""))
 
 function humanComments(nodes) {
     return nodes
@@ -283,7 +283,13 @@ function computeScope(files, title) {
     else if (areas.has("tests")) scope = "tests"
     else scope = "infra"
 
-    return { scope, drivers: driverList.sort(), srcLines, hasTests, areas: [...areas] }
+    return {
+        scope,
+        drivers: driverList.sort(),
+        srcLines,
+        hasTests,
+        areas: [...areas],
+    }
 }
 
 function conventionalType(title) {
@@ -439,19 +445,29 @@ function cmdFetch() {
                 .map((p) => p.author.login),
         ),
     ]
-    process.stderr.write(`Fetching contribution history for ${logins.length} authors\n`)
+    process.stderr.write(
+        `Fetching contribution history for ${logins.length} authors\n`,
+    )
     const authorStats = fetchAuthorStats(logins)
 
     const prs = raw.map((pr) =>
         normalizePr(pr, extraIssues, authorStats, openCounts),
     )
-    writeJson("prs.json", { fetchedAt: new Date().toISOString(), repo: REPO, prs })
+    writeJson("prs.json", {
+        fetchedAt: new Date().toISOString(),
+        repo: REPO,
+        prs,
+    })
     console.log(`Wrote ${prs.length} PRs to ${path.join(OUT, "prs.json")}`)
 }
 
 function ago(iso) {
     const days = Math.round((Date.now() - new Date(iso)) / 86400000)
-    return days < 60 ? `${days}d` : days < 730 ? `${Math.round(days / 30)}mo` : `${Math.round(days / 365)}y`
+    return days < 60
+        ? `${days}d`
+        : days < 730
+          ? `${Math.round(days / 30)}mo`
+          : `${Math.round(days / 365)}y`
 }
 
 function cmdDigest() {
@@ -473,7 +489,9 @@ function cmdDigest() {
                 return [
                     `## #${p.number} ${p.title}`,
                     `scope: ${p.scope}${p.drivers.length ? ` [${p.drivers.join(", ")}]` : ""} | src lines changed: ${p.srcLines} | tests: ${p.hasTests ? "yes" : "no"} | labels: ${p.labels.join(", ") || "none"}`,
-                    issues ? `linked issues:\n${issues}` : "linked issues: none",
+                    issues
+                        ? `linked issues:\n${issues}`
+                        : "linked issues: none",
                     "",
                     truncate(p.body, 900) || "(no description)",
                     "",
@@ -482,12 +500,18 @@ function cmdDigest() {
             .join("\n")
         const file = path.join(OUT, `digest-${n}.md`)
         fs.writeFileSync(file, text)
-        files.push({ file, judgments: path.join(OUT, `judgments-${n}.json`), prs: batch.map((p) => p.number) })
+        files.push({
+            file,
+            judgments: path.join(OUT, `judgments-${n}.json`),
+            prs: batch.map((p) => p.number),
+        })
     }
     writeJson("digest-index.json", files)
     console.log(`Wrote ${files.length} digest batches:`)
     for (const f of files)
-        console.log(`  ${f.file}  (${f.prs.length} PRs) -> write ${f.judgments}`)
+        console.log(
+            `  ${f.file}  (${f.prs.length} PRs) -> write ${f.judgments}`,
+        )
 }
 
 function cmdContext() {
@@ -499,16 +523,24 @@ function cmdContext() {
             continue
         }
         console.log(`\n==================== #${p.number} ${p.title}`)
-        console.log(`${p.url}\nauthor: ${p.author.login} (${p.author.association}, ${p.author.merged ?? "?"} merged)`)
+        console.log(
+            `${p.url}\nauthor: ${p.author.login} (${p.author.association}, ${p.author.merged ?? "?"} merged)`,
+        )
         console.log(`review: ${JSON.stringify(p.review)}`)
         console.log(`\n--- PR description\n${truncate(p.body, 1500)}`)
         console.log(`\n--- PR comments (humans only, ${p.comments.length})`)
         for (const c of p.comments.slice(-15))
-            console.log(`[${c.at.slice(0, 10)}] ${c.login}${c.maintainer ? " (maintainer)" : ""}: ${truncate(c.body, 600)}\n`)
+            console.log(
+                `[${c.at.slice(0, 10)}] ${c.login}${c.maintainer ? " (maintainer)" : ""}: ${truncate(c.body, 600)}\n`,
+            )
         for (const i of p.issues) {
-            console.log(`\n--- Issue #${i.number} "${i.title}" (+${i.reactions.positive} reactions, ${i.commentCount} comments)\n${truncate(i.body, 600)}`)
+            console.log(
+                `\n--- Issue #${i.number} "${i.title}" (+${i.reactions.positive} reactions, ${i.commentCount} comments)\n${truncate(i.body, 600)}`,
+            )
             for (const c of i.comments.slice(-12))
-                console.log(`[${c.at.slice(0, 10)}] ${c.login}${c.maintainer ? " (maintainer)" : ""}: ${truncate(c.body, 400)}\n`)
+                console.log(
+                    `[${c.at.slice(0, 10)}] ${c.login}${c.maintainer ? " (maintainer)" : ""}: ${truncate(c.body, 400)}\n`,
+                )
         }
     }
 }
@@ -517,7 +549,9 @@ function cmdContext() {
 
 function loadJudgments() {
     const all = {}
-    for (const f of fs.readdirSync(OUT).filter((f) => /^judgments.*\.json$/.test(f))) {
+    for (const f of fs
+        .readdirSync(OUT)
+        .filter((f) => /^judgments.*\.json$/.test(f))) {
         const data = readJson(f)
         for (const [k, v] of Object.entries(data))
             all[k] = { ...(all[k] ?? {}), ...v }
@@ -535,16 +569,28 @@ function slimPr(p) {
 }
 
 function writeHtml(prs, judgments, fetchedAt) {
-    const template = fs.readFileSync(path.join(SKILL_DIR, "scripts", "report-template.html"), "utf8")
+    const template = fs.readFileSync(
+        path.join(SKILL_DIR, "scripts", "report-template.html"),
+        "utf8",
+    )
     const scoring = fs
         .readFileSync(path.join(SKILL_DIR, "scripts", "scoring.mjs"), "utf8")
         .replace(/^export /gm, "")
-    const data = { repo: REPO, fetchedAt, config: CONFIG, judgments, prs: prs.map(slimPr) }
+    const data = {
+        repo: REPO,
+        fetchedAt,
+        config: CONFIG,
+        judgments,
+        prs: prs.map(slimPr),
+    }
     // Keep "</script>" inside JSON strings from closing the script tag
     const json = JSON.stringify(data).replace(/</g, "\\u003c")
+    // Prettier formats the template, so allow whitespace around the placeholders
     const html = template
         .replace("/*__SCORING__*/", () => scoring)
-        .replace("/*__DATA__*/null", () => json)
+        .replace(/\/\*__DATA__\*\/\s*null/, () => json)
+    if (html.includes("__DATA__") || html.includes("__SCORING__"))
+        throw new Error("report-template.html placeholders were not replaced")
     fs.writeFileSync(path.join(OUT, "report.html"), html)
 }
 
@@ -557,49 +603,104 @@ function cmdRank() {
 
     writeHtml(humanPrs, judgments, fetchedAt)
     writeJson("ranked.json", ranked)
-    const csvCols = ["rank", "number", "priority", "bucket", "value", "ease", "title", "author", "scope", "srcLines", "url"]
+    const csvCols = [
+        "rank",
+        "number",
+        "priority",
+        "bucket",
+        "value",
+        "ease",
+        "title",
+        "author",
+        "scope",
+        "srcLines",
+        "url",
+    ]
     fs.writeFileSync(
         path.join(OUT, "ranked.csv"),
-        [csvCols.join(","), ...ranked.map((r) => csvCols.map((c) => JSON.stringify(r[c] ?? "")).join(","))].join("\n"),
+        [
+            csvCols.join(","),
+            ...ranked.map((r) =>
+                csvCols.map((c) => JSON.stringify(r[c] ?? "")).join(","),
+            ),
+        ].join("\n"),
     )
 
     const unjudged = ranked.filter((r) => !r.judged).length
     const byBucket = Object.groupBy(ranked, (r) => r.bucket)
     const line = (r) =>
         `| ${r.rank} | [#${r.number}](${r.url}) | ${r.priority} | ${truncate(r.summary ?? r.title, 90)} | ${r.scope} | ${r.components.severity} | ${r.components.demandRaw} | @${r.author}${r.authorMerged != null ? ` (${r.authorMerged})` : ""} | ${r.srcLines} |`
-    const header = "| # | PR | prio | summary | scope | sev | demand | author (merged) | src lines |\n|---|---|---|---|---|---|---|---|---|"
+    const header =
+        "| # | PR | prio | summary | scope | sev | demand | author (merged) | src lines |\n|---|---|---|---|---|---|---|---|---|"
     const section = (title, bucket, n = top) => {
         const rows = (byBucket[bucket] ?? []).slice(0, n)
-        return rows.length ? `## ${title} (${byBucket[bucket].length})\n\n${header}\n${rows.map(line).join("\n")}\n` : ""
+        return rows.length
+            ? `## ${title} (${byBucket[bucket].length})\n\n${header}\n${rows.map(line).join("\n")}\n`
+            : ""
     }
-    const issueTitles = new Map(prs.flatMap((p) => p.issues.map((i) => [i.number, i])))
+    const issueTitles = new Map(
+        prs.flatMap((p) => p.issues.map((i) => [i.number, i])),
+    )
     const byNum = new Map(ranked.map((r) => [r.number, r]))
     const clusterSection = clusters.length
         ? `## Competing PRs (${clusters.length} groups)\n\nPRs that fix the same issue. Pick one, close the rest. The lead is the most mergeable${clusters.some((c) => c.preferredByAgent) ? " or the one the agent preferred" : ""}.\n\n` +
           clusters
               .map((c) => {
-                  const iss = c.issues.map((n) => { const i = issueTitles.get(n); return `#${n} "${truncate(i?.title, 70)}" (+${i?.reactions.positive ?? 0})` }).join(", ")
-                  const members = c.members.map((n) => byNum.get(n)).sort((a, b) => b.priority - a.priority)
-                  return `- ${iss}\n` + members.map((m) => `  - ${m.number === c.lead ? "**lead** " : ""}[#${m.number}](${m.url}) ${m.priority} ${m.bucket}${m.waitingOn.length ? ` (${m.waitingOn.join(", ")})` : ""}, @${m.author}, ${m.srcLines} src lines`).join("\n")
+                  const iss = c.issues
+                      .map((n) => {
+                          const i = issueTitles.get(n)
+                          return `#${n} "${truncate(i?.title, 70)}" (+${i?.reactions.positive ?? 0})`
+                      })
+                      .join(", ")
+                  const members = c.members
+                      .map((n) => byNum.get(n))
+                      .sort((a, b) => b.priority - a.priority)
+                  return (
+                      `- ${iss}\n` +
+                      members
+                          .map(
+                              (m) =>
+                                  `  - ${m.number === c.lead ? "**lead** " : ""}[#${m.number}](${m.url}) ${m.priority} ${m.bucket}${m.waitingOn.length ? ` (${m.waitingOn.join(", ")})` : ""}, @${m.author}, ${m.srcLines} src lines`,
+                          )
+                          .join("\n")
+                  )
               })
-              .join("\n") + "\n"
+              .join("\n") +
+          "\n"
         : ""
-    const nudge = (byBucket["waiting-on-author"] ?? []).filter((r) => r.value >= CONFIG.nudgeMinValue && !r.competing?.length)
+    const nudge = (byBucket["waiting-on-author"] ?? []).filter(
+        (r) => r.value >= CONFIG.nudgeMinValue && !r.competing?.length,
+    )
     const nudgeSection = nudge.length
         ? `## Worth a nudge (${nudge.length})\n\nHigh-value PRs stuck on the author: conflicts, failing CI or unaddressed review.\n\n| # | PR | prio | summary | stuck on | author |\n|---|---|---|---|---|---|\n` +
-          nudge.slice(0, top).map((r) => `| ${r.rank} | [#${r.number}](${r.url}) | ${r.priority} | ${truncate(r.summary ?? r.title, 90)} | ${r.waitingOn.join(", ")} | @${r.author} |`).join("\n") + "\n"
+          nudge
+              .slice(0, top)
+              .map(
+                  (r) =>
+                      `| ${r.rank} | [#${r.number}](${r.url}) | ${r.priority} | ${truncate(r.summary ?? r.title, 90)} | ${r.waitingOn.join(", ")} | @${r.author} |`,
+              )
+              .join("\n") +
+          "\n"
         : ""
     const closeSection = (rows) =>
         rows.length
             ? `## Close candidates (${rows.length})\n\n| PR | why | author |\n|---|---|---|\n` +
-              rows.map((r) => `| [#${r.number}](${r.url}) ${truncate(r.title, 70)} | ${r.closeReason ?? `no activity for ${r.staleDays} days, ${r.waitingOn.join(", ")}`} | @${r.author} |`).join("\n") + "\n"
+              rows
+                  .map(
+                      (r) =>
+                          `| [#${r.number}](${r.url}) ${truncate(r.title, 70)} | ${r.closeReason ?? `no activity for ${r.staleDays} days, ${r.waitingOn.join(", ")}`} | @${r.author} |`,
+                  )
+                  .join("\n") +
+              "\n"
             : ""
     writeJson("clusters.json", clusters)
     const md = [
         `# PR triage, ${REPO}`,
         `Data fetched ${fetchedAt}. ${ranked.length} open PRs. ${unjudged ? `**${unjudged} PRs have no agent judgment; their severity is a heuristic.**` : ""}`,
         "",
-        Object.entries(byBucket).map(([b, rs]) => `- ${b}: ${rs.length}`).join("\n"),
+        Object.entries(byBucket)
+            .map(([b, rs]) => `- ${b}: ${rs.length}`)
+            .join("\n"),
         "",
         section("Ready to merge", "ready-to-merge"),
         section("Review next", "needs-review"),
@@ -610,12 +711,24 @@ function cmdRank() {
         closeSection(byBucket["close-candidate"] ?? []),
     ].join("\n")
     fs.writeFileSync(path.join(OUT, "report.md"), md)
-    console.log(`Wrote report.html, ranked.json, ranked.csv, report.md to ${OUT}`)
-    if (unjudged) console.log(`${unjudged} PRs lack judgments (heuristic severity used)`)
-    console.log(Object.entries(byBucket).map(([b, rs]) => `${b}: ${rs.length}`).join(", "))
+    console.log(
+        `Wrote report.html, ranked.json, ranked.csv, report.md to ${OUT}`,
+    )
+    if (unjudged)
+        console.log(`${unjudged} PRs lack judgments (heuristic severity used)`)
+    console.log(
+        Object.entries(byBucket)
+            .map(([b, rs]) => `${b}: ${rs.length}`)
+            .join(", "),
+    )
 }
 
-const commands = { fetch: cmdFetch, digest: cmdDigest, context: cmdContext, rank: cmdRank }
+const commands = {
+    fetch: cmdFetch,
+    digest: cmdDigest,
+    context: cmdContext,
+    rank: cmdRank,
+}
 if (!commands[command]) {
     console.error("usage: triage.mjs fetch|digest|context|rank [--out DIR]")
     process.exit(1)

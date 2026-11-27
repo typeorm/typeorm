@@ -19,17 +19,17 @@ priority = 100 × value × (0.6 + 0.4 ease) × (0.6 + 0.4 trust)
 
 Value decides most of the order. Ease breaks ties, so a cheap PR beats an expensive one of similar value. Track record is its own multiplier: proven contributors are worth reviewing first. At similar value, a maintainer's PR (×1.0) or a regular contributor's (×0.92) ranks clearly above a first-timer's (×0.68). A newcomer's critical bug can still rank high.
 
-| Signal | Source |
-|---|---|
-| severity | Your judgment, 1 to 5 (`references/judging.md`). Without one, a guess from the conventional-commit type and labels. |
-| demand | Positive reactions on the PR and linked issues, distinct non-maintainer participants, and "+1 / any update?" comments. Bot comments (Qodo, Codex, pkg-pr-new and others) are ignored. Log-scaled. |
-| reach | Which code it touches. Core is 1.0; a driver uses its weight in `config.json` (postgres 0.85 … spanner 0.1). A driver named in the title scope, as in `fix(mysql): …`, wins over the touched paths. |
-| trust | Merged PRs by the author in this repo. Maintainers score 1. An author with several open PRs and none merged scores low. |
-| size | Changed lines under `src/`. Tests and docs do not count. |
-| readiness | CI, merge conflicts, tests present for fixes and features, a linked issue. A maintainer approval sets it to 1. |
+| Signal    | Source                                                                                                                                                                                              |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| severity  | Your judgment, 1 to 5 (`references/judging.md`). Without one, a guess from the conventional-commit type and labels.                                                                                 |
+| demand    | Positive reactions on the PR and linked issues, distinct non-maintainer participants, and "+1 / any update?" comments. Bot comments (Qodo, Codex, pkg-pr-new and others) are ignored. Log-scaled.   |
+| reach     | Which code it touches. Core is 1.0; a driver uses its weight in `config.json` (postgres 0.85 … spanner 0.1). A driver named in the title scope, as in `fix(mysql): …`, wins over the touched paths. |
+| trust     | Merged PRs by the author in this repo. Maintainers score 1. An author with several open PRs and none merged scores low.                                                                             |
+| size      | Changed lines under `src/`. Tests and docs do not count.                                                                                                                                            |
+| readiness | CI, merge conflicts, tests present for fixes and features, a linked issue. A maintainer approval sets it to 1.                                                                                      |
 
-Buckets, checked in this order:
-0. **close-candidate**: you set `close` because a maintainer said so on the PR or its issue.
+Buckets, checked in this order: 0. **close-candidate**: you set `close` because a maintainer said so on the PR or its issue.
+
 1. **blocked**: you set `sentiment: "blocked"`.
 2. **waiting-on-author**: draft, conflicts, failing CI, or a maintainer's change request with no commit since. Becomes **close-candidate** after 180 days without human activity if its value is low.
 3. **ready-to-merge**: approved by a maintainer, with no outstanding change request. Qodo approvals do not count.
@@ -49,10 +49,10 @@ Tune weights, driver reach and thresholds in `config.json`. They are guesses; ch
 3. **First rank.** `node scripts/triage.mjs rank --out <dir>`.
 
 4. **Deep pass.** Two jobs, which can run as parallel subagents:
-   - Take the top 15 of `needs-review`, `quick-win` and `ready-to-merge` from `ranked.json`. Run `node scripts/triage.mjs context <n> <n> …` (five at a time keeps the output readable) and write `judgments-deep-top.json` with `sentiment` and any corrections.
-   - Pick a lead for each competing group with three or more PRs, and for each group whose lead is in the top 15 (`clusters.json`, rules in `references/judging.md`). Give a group of ten or more PRs its own subagent. Write `judgments-deep-<name>.json`.
+    - Take the top 15 of `needs-review`, `quick-win` and `ready-to-merge` from `ranked.json`. Run `node scripts/triage.mjs context <n> <n> …` (five at a time keeps the output readable) and write `judgments-deep-top.json` with `sentiment` and any corrections.
+    - Pick a lead for each competing group with three or more PRs, and for each group whose lead is in the top 15 (`clusters.json`, rules in `references/judging.md`). Give a group of ten or more PRs its own subagent. Write `judgments-deep-<name>.json`.
 
-   `judgments-deep-*.json` files load after the batch files and override them field by field.
+    `judgments-deep-*.json` files load after the batch files and override them field by field.
 
 5. **Final rank.** Run `rank` again and read `report.md`.
 

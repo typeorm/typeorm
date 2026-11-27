@@ -27,10 +27,14 @@ function reachScore(p, override, C) {
     const combine = (ws) => clamp(1 - ws.reduce((acc, w) => acc * (1 - w), 1))
     if (override) {
         if (typeof r[override] === "number") return r[override]
-        const ds = override.split(",").map((s) => s.trim()).filter((d) => d in r.drivers)
+        const ds = override
+            .split(",")
+            .map((s) => s.trim())
+            .filter((d) => d in r.drivers)
         if (ds.length) return combine(ds.map((d) => r.drivers[d]))
     }
-    if (p.scope === "drivers") return combine(p.drivers.map((d) => r.drivers[d] ?? 0.2))
+    if (p.scope === "drivers")
+        return combine(p.drivers.map((d) => r.drivers[d] ?? 0.2))
     return r[p.scope] ?? 0.3
 }
 
@@ -38,7 +42,16 @@ function trustScore(a, C) {
     if (a.isMaintainer) return 1
     const t = C.trust
     const m = a.merged ?? 0
-    let s = m >= 20 ? t.merged20 : m >= 5 ? t.merged5 : m >= 2 ? t.merged2 : m === 1 ? t.merged1 : t.merged0
+    let s =
+        m >= 20
+            ? t.merged20
+            : m >= 5
+              ? t.merged5
+              : m >= 2
+                ? t.merged2
+                : m === 1
+                  ? t.merged1
+                  : t.merged0
     // Many open PRs and nothing merged yet: a burst of drive-by PRs
     if (m === 0 && a.openPrs >= t.burstOpenPrs) s = t.burst
     const closed = a.closedUnmerged ?? 0
@@ -48,7 +61,10 @@ function trustScore(a, C) {
 
 function score(p, j, C, now) {
     const w = C.weights
-    const issueReactions = p.issues.reduce((s, i) => s + i.reactions.positive, 0)
+    const issueReactions = p.issues.reduce(
+        (s, i) => s + i.reactions.positive,
+        0,
+    )
     const issueParticipants = p.issues.reduce((s, i) => s + i.participants, 0)
     const issuePings = p.issues.reduce((s, i) => s + i.pings, 0)
     const demandRaw =
@@ -67,13 +83,21 @@ function score(p, j, C, now) {
         reach: w.value.reach * reach,
         sentiment: sentimentAdj,
     }
-    const value = clamp(parts.severity + parts.demand + parts.reach + parts.sentiment)
+    const value = clamp(
+        parts.severity + parts.demand + parts.reach + parts.sentiment,
+    )
 
     const size = 1 / (1 + p.srcLines / w.sizeHalfPoint)
     const trust = trustScore(p.author, C)
-    const ciScore = { SUCCESS: 1, PENDING: 0.6, EXPECTED: 0.6, FAILURE: 0, ERROR: 0 }[p.ci] ?? 0.6
-    const mergeScore = { MERGEABLE: 1, UNKNOWN: 0.6, CONFLICTING: 0 }[p.mergeable] ?? 0.6
-    const needsTests = ["fix", "feat", "perf"].includes(p.type) && ["core", "drivers", "cli"].includes(p.scope)
+    const ciScore =
+        { SUCCESS: 1, PENDING: 0.6, EXPECTED: 0.6, FAILURE: 0, ERROR: 0 }[
+            p.ci
+        ] ?? 0.6
+    const mergeScore =
+        { MERGEABLE: 1, UNKNOWN: 0.6, CONFLICTING: 0 }[p.mergeable] ?? 0.6
+    const needsTests =
+        ["fix", "feat", "perf"].includes(p.type) &&
+        ["core", "drivers", "cli"].includes(p.scope)
     const testsScore = !needsTests || p.hasTests ? 1 : 0
     const readiness = p.review.approvedBy.length
         ? 1
@@ -81,24 +105,38 @@ function score(p, j, C, now) {
     const ease = clamp(w.ease.size * size + w.ease.readiness * readiness)
 
     // Track record is its own multiplier, not part of ease: proven contributors are worth reviewing first
-    const trackRecord = 1 - w.trackRecordInfluence + w.trackRecordInfluence * trust
-    const priority = 100 * value * (1 - w.easeInfluence + w.easeInfluence * ease) * trackRecord
+    const trackRecord =
+        1 - w.trackRecordInfluence + w.trackRecordInfluence * trust
+    const priority =
+        100 *
+        value *
+        (1 - w.easeInfluence + w.easeInfluence * ease) *
+        trackRecord
 
     // Whose move is it?
     const waitingOn = []
     if (p.isDraft) waitingOn.push("draft")
     if (p.mergeable === "CONFLICTING") waitingOn.push("merge conflicts")
     if (p.ci === "FAILURE" || p.ci === "ERROR") waitingOn.push("CI failing")
-    if (p.review.changesRequestedUnaddressed) waitingOn.push("changes requested")
+    if (p.review.changesRequestedUnaddressed)
+        waitingOn.push("changes requested")
 
     const staleDays = (now - new Date(p.lastHumanActivity)) / 86400000
     let bucket
     if (j.close) bucket = "close-candidate"
     else if (j.sentiment === "blocked") bucket = "blocked"
     else if (waitingOn.length)
-        bucket = staleDays > C.staleDays && value < C.closeCandidateMaxValue ? "close-candidate" : "waiting-on-author"
-    else if (p.review.approvedBy.length && !p.review.changesRequestedBy.length) bucket = "ready-to-merge"
-    else if (ease >= C.quickWin.minEase && p.srcLines <= C.quickWin.maxSrcLines && value >= C.quickWin.minValue)
+        bucket =
+            staleDays > C.staleDays && value < C.closeCandidateMaxValue
+                ? "close-candidate"
+                : "waiting-on-author"
+    else if (p.review.approvedBy.length && !p.review.changesRequestedBy.length)
+        bucket = "ready-to-merge"
+    else if (
+        ease >= C.quickWin.minEase &&
+        p.srcLines <= C.quickWin.maxSrcLines &&
+        value >= C.quickWin.minValue
+    )
         bucket = "quick-win"
     else bucket = "needs-review"
 
@@ -108,7 +146,9 @@ function score(p, j, C, now) {
         waitingOn,
         value: round(value),
         ease: round(ease),
-        parts: Object.fromEntries(Object.entries(parts).map(([k, v]) => [k, round(v, 3)])),
+        parts: Object.fromEntries(
+            Object.entries(parts).map(([k, v]) => [k, round(v, 3)]),
+        ),
         components: {
             severity: severityRaw,
             severitySource: j.severity != null ? "judged" : "heuristic",
@@ -131,10 +171,15 @@ function score(p, j, C, now) {
 function issueGroups(prs) {
     const issueToPrs = new Map()
     for (const p of prs)
-        for (const i of p.issues) issueToPrs.set(i.number, [...(issueToPrs.get(i.number) ?? []), p.number])
+        for (const i of p.issues)
+            issueToPrs.set(i.number, [
+                ...(issueToPrs.get(i.number) ?? []),
+                p.number,
+            ])
     const parent = new Map()
     const find = (x) => ((parent.get(x) ?? x) === x ? x : find(parent.get(x)))
-    for (const nums of issueToPrs.values()) for (const n of nums.slice(1)) parent.set(find(n), find(nums[0]))
+    for (const nums of issueToPrs.values())
+        for (const n of nums.slice(1)) parent.set(find(n), find(nums[0]))
     return new Map(prs.map((p) => [p.number, find(p.number)]))
 }
 
@@ -153,14 +198,18 @@ function applyClusters(ranked, groupOf, judgments) {
         const lead =
             preferred ??
             [...members].sort(
-                (a, b) => BUCKET_ORDER.indexOf(a.bucket) - BUCKET_ORDER.indexOf(b.bucket) || b.priority - a.priority,
+                (a, b) =>
+                    BUCKET_ORDER.indexOf(a.bucket) -
+                        BUCKET_ORDER.indexOf(b.bucket) ||
+                    b.priority - a.priority,
             )[0]
         const issues = [...new Set(members.flatMap((m) => m.issues))]
         for (const m of members) {
             m.competing = members.filter((o) => o !== m).map((o) => o.number)
             if (m === lead || m.bucket === "close-candidate") continue
             if (preferred) m.bucket = "superseded"
-            else if (["needs-review", "quick-win"].includes(m.bucket)) m.bucket = "competing"
+            else if (["needs-review", "quick-win"].includes(m.bucket))
+                m.bucket = "competing"
         }
         const allClosing = lead.bucket === "close-candidate"
         clusters.push({
@@ -182,13 +231,17 @@ export function rankAll(prs, judgments, C, now = Date.now()) {
     for (const p of prs) {
         const s = judgments[p.number]?.severity
         const g = groupOf.get(p.number)
-        if (s != null) groupSeverity.set(g, Math.max(groupSeverity.get(g) ?? 0, s))
+        if (s != null)
+            groupSeverity.set(g, Math.max(groupSeverity.get(g) ?? 0, s))
     }
     const ranked = prs
         .map((p) => {
             const own = judgments[p.number] ?? {}
             const shared = groupSeverity.get(groupOf.get(p.number))
-            const j = shared != null && own.severityLocked !== true ? { ...own, severity: shared } : own
+            const j =
+                shared != null && own.severityLocked !== true
+                    ? { ...own, severity: shared }
+                    : own
             return {
                 number: p.number,
                 title: p.title,
@@ -196,7 +249,9 @@ export function rankAll(prs, judgments, C, now = Date.now()) {
                 author: p.author.login,
                 authorMerged: p.author.merged,
                 type: p.type,
-                scope: p.scope + (p.drivers.length ? `:${p.drivers.join("+")}` : ""),
+                scope:
+                    p.scope +
+                    (p.drivers.length ? `:${p.drivers.join("+")}` : ""),
                 srcLines: p.srcLines,
                 issues: p.issues.map((i) => i.number),
                 summary: j.summary ?? null,
