@@ -23,6 +23,7 @@ import { Query } from "../Query"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { IsolationLevel } from "../types/IsolationLevel"
 import { validateIsolationLevel } from "../validate-isolation-level"
+import { DriverUtils } from "../DriverUtils"
 import { MetadataTableType } from "../types/MetadataTableType"
 import type { AuroraMysqlDriver } from "./AuroraMysqlDriver"
 
@@ -2482,16 +2483,9 @@ export class AuroraMysqlQueryRunner
                         tableColumn.type === "simple-enum" ||
                         tableColumn.type === "set"
                     ) {
-                        const colType = dbColumn["COLUMN_TYPE"]
-                        const items = colType
-                            .slice(
-                                colType.indexOf("(") + 1,
-                                colType.lastIndexOf(")"),
-                            )
-                            .split(",")
-                        tableColumn.enum = (items as string[]).map((item) => {
-                            return item.slice(1, -1)
-                        })
+                        tableColumn.enum = DriverUtils.parseMysqlEnumValues(
+                            dbColumn["COLUMN_TYPE"],
+                        )
                         tableColumn.length = ""
                     }
 
@@ -2979,7 +2973,7 @@ export class AuroraMysqlQueryRunner
 
         if (column.enum)
             c += ` (${column.enum
-                .map((value) => "'" + value + "'")
+                .map((value) => "'" + value.replaceAll("'", "''") + "'")
                 .join(", ")})`
         if (column.charset) c += ` CHARACTER SET "${column.charset}"`
         if (column.collation) c += ` COLLATE "${column.collation}"`
