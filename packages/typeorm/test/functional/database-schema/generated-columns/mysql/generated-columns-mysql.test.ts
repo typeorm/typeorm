@@ -61,7 +61,7 @@ describe("database schema > generated columns > mysql", () => {
 
                 nameHash.generatedType!.should.be.equal("VIRTUAL")
                 nameHash.asExpression!.should.be.equal(
-                    "md5(coalesce(`firstName`,0))",
+                    "SHA2(COALESCE(`firstName`, 0), 256)",
                 )
                 nameHash.length!.should.be.equal("255")
                 if (dataSource.driver.options.type !== "mariadb")
