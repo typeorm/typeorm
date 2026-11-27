@@ -506,6 +506,11 @@ export class SubjectExecutor {
                                 subject.generatedMap!,
                                 preparedValue,
                             )
+                            if (subject.insertedValueSet)
+                                column.setEntityValue(
+                                    subject.insertedValueSet,
+                                    preparedValue,
+                                )
                         }
                     })
                 }
