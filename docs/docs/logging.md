@@ -201,3 +201,15 @@ logQuery(query: string, parameters?: any[], queryRunner?: QueryRunner) {
     console.log(requestUrl + "executing query: " + query);
 }
 ```
+
+## CLI command output
+
+When a logger is configured in data source options (`logger`), the status messages of the `schema:sync`, `schema:drop`, `schema:log` and `cache:clear` commands are sent to that logger at the `info` level instead of being printed to the console. Without a `logger` option, they are printed to the console as before.
+
+Built-in loggers always receive these messages, since the commands enable `info` while they run. A custom logger applies its own level settings. If it extends `AbstractLogger`, enable `info` to see these messages:
+
+```typescript
+new MyCustomLogger(["error", "warn", "info"])
+```
+
+The SQL printed by `schema:log` is the command's result, so it is always printed to the console.

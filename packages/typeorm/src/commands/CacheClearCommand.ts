@@ -33,7 +33,7 @@ export class CacheClearCommand implements yargs.CommandModule {
                 synchronize: false,
                 migrationsRun: false,
                 dropSchema: false,
-                logging: ["schema"],
+                logging: ["schema", "info"],
             })
             await dataSource.initialize()
 
@@ -45,7 +45,11 @@ export class CacheClearCommand implements yargs.CommandModule {
             }
 
             await dataSource.queryResultCache.clear()
-            console.log(ansi.green`Cache was successfully cleared`)
+            CommandUtils.log(
+                dataSource,
+                "Cache was successfully cleared",
+                ansi.green`Cache was successfully cleared`,
+            )
 
             await dataSource.destroy()
         } catch (err) {

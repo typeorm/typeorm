@@ -128,4 +128,34 @@ export class CommandUtils {
             ? new Date(Number(timestampOptionArgument)).getTime()
             : Date.now()
     }
+
+    /**
+     * Writes a command's status message.
+     *
+     * When the DataSource has a logger configured (a built-in logger name or a
+     * custom `Logger` instance), the plain message is sent to it at the "info"
+     * level, so CLI output ends up wherever the application sends its logs.
+     * Commands that call this include "info" in their logging override so
+     * built-in loggers do not filter it out. A custom logger applies its own
+     * level settings, as it does for any other "info" message.
+     *
+     * When no logger is configured, the message is printed to the console as
+     * before, using the formatted (colored) version if given.
+     *
+     * @param dataSource DataSource the command is running against
+     * @param message plain text message, without any color codes
+     * @param formattedMessage optional colored version for console output
+     */
+    static log(
+        dataSource: DataSource | undefined,
+        message: string,
+        formattedMessage?: string,
+    ): void {
+        if (dataSource?.options.logger) {
+            dataSource.logger.log("info", message)
+            return
+        }
+
+        console.log(formattedMessage ?? message)
+    }
 }
