@@ -1758,6 +1758,23 @@ export class PostgresDriver implements Driver {
             options.extra ?? {},
         )
 
+        if (options.dateAsString) {
+            const DATE_OID = 1082
+            const DATE_ARRAY_OID = 1182
+            const TEXT_ARRAY_OID = 1009
+            const types = connectionOptions.types ?? this.postgres.types
+            connectionOptions.types = {
+                getTypeParser: (oid: number, format?: string) => {
+                    if (format !== "binary") {
+                        if (oid === DATE_OID) return String
+                        if (oid === DATE_ARRAY_OID)
+                            return types.getTypeParser(TEXT_ARRAY_OID)
+                    }
+                    return types.getTypeParser(oid, format)
+                },
+            }
+        }
+
         if (options.parseInt8 !== undefined) {
             if (
                 this.postgres.defaults &&
