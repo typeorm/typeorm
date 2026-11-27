@@ -59,6 +59,12 @@ export interface Driver {
     treeSupport: boolean
 
     /**
+     * Indicates if `createGeneratedMap` returns values already prepared with
+     * `prepareHydratedValue`, so they are not hydrated again after an insert.
+     */
+    generatedMapHydrated?: boolean
+
+    /**
      * Represent transaction support by this driver
      */
     transactionSupport: "simple" | "nested" | "none"

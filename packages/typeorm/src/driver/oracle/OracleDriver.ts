@@ -118,6 +118,12 @@ export class OracleDriver implements Driver {
     treeSupport = true
 
     /**
+     * Indicates if `createGeneratedMap` returns values already prepared with
+     * `prepareHydratedValue`, so they are not hydrated again after an insert.
+     */
+    generatedMapHydrated = true
+
+    /**
      * Represent transaction support by this driver
      */
     transactionSupport = "nested" as const
