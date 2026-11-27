@@ -284,6 +284,98 @@ describe(`OrmUtils`, () => {
                 ),
             ).to.equal(false)
         })
+
+        it("should deep-compare nested json-like objects", () => {
+            const build = () => ({
+                id: 1,
+                name: "item",
+                enabled: true,
+                tags: ["a", "b", "c"],
+                meta: { score: 1.5, nested: { level: 2, values: [1, 2, 3] } },
+            })
+            expect(OrmUtils.deepCompare(build(), build())).to.equal(true)
+        })
+
+        it("should detect a changed deeply nested value", () => {
+            const a = { meta: { nested: { values: [1, 2, 3] } } }
+            const b = { meta: { nested: { values: [1, 2, 4] } } }
+            expect(OrmUtils.deepCompare(a, b)).to.equal(false)
+        })
+
+        it("should compare arrays by length and position", () => {
+            expect(OrmUtils.deepCompare([1, 2, 3], [1, 2, 3])).to.equal(true)
+            expect(OrmUtils.deepCompare([1, 2, 3], [1, 2])).to.equal(false)
+            expect(OrmUtils.deepCompare([1, 2], [1, 2, 3])).to.equal(false)
+            expect(
+                OrmUtils.deepCompare(
+                    [{ a: 1 }, { b: 2 }],
+                    [{ a: 1 }, { b: 2 }],
+                ),
+            ).to.equal(true)
+            expect(
+                OrmUtils.deepCompare(
+                    [{ a: 1 }, { b: 2 }],
+                    [{ a: 1 }, { b: 3 }],
+                ),
+            ).to.equal(false)
+        })
+
+        it("should treat an array and a plain object as different", () => {
+            expect(OrmUtils.deepCompare([], {})).to.equal(false)
+        })
+
+        it("should not treat an array-like object as an equal array", () => {
+            // a non-array object whose constructor is Array must not slip
+            // through the array fast path as an empty/equal array
+            const arrayLike: any = { constructor: Array, length: 0 }
+            expect(OrmUtils.deepCompare([] as any, arrayLike)).to.equal(false)
+            expect(OrmUtils.deepCompare(arrayLike, [] as any)).to.equal(false)
+        })
+
+        it("should reject when one object has an extra key", () => {
+            expect(OrmUtils.deepCompare({ a: 1 }, { a: 1, b: 2 })).to.equal(
+                false,
+            )
+            expect(OrmUtils.deepCompare({ a: 1, b: 2 }, { a: 1 })).to.equal(
+                false,
+            )
+        })
+
+        it("should reject when a key is replaced by another of the same type", () => {
+            expect(OrmUtils.deepCompare({ a: 1 }, { b: 1 })).to.equal(false)
+        })
+
+        it("should compare Date and RegExp values", () => {
+            expect(
+                OrmUtils.deepCompare(
+                    new Date("2020-01-01T00:00:00Z"),
+                    new Date("2020-01-01T00:00:00Z"),
+                ),
+            ).to.equal(true)
+            expect(
+                OrmUtils.deepCompare(
+                    new Date("2020-01-01T00:00:00Z"),
+                    new Date("2021-01-01T00:00:00Z"),
+                ),
+            ).to.equal(false)
+            expect(OrmUtils.deepCompare(/ab+c/g, /ab+c/g)).to.equal(true)
+            expect(OrmUtils.deepCompare(/ab+c/g, /ab+c/i)).to.equal(false)
+        })
+
+        it("should treat null/undefined differences as not equal", () => {
+            expect(OrmUtils.deepCompare({ a: 1 }, null)).to.equal(false)
+            expect(OrmUtils.deepCompare({ a: null }, { a: 1 })).to.equal(false)
+            expect(OrmUtils.deepCompare(null, null)).to.equal(true)
+        })
+
+        it("should not loop forever on circular references", () => {
+            const a: any = { self: null }
+            a.self = a
+            const b: any = { self: null }
+            b.self = b
+            // circular chains are reported as not equal, but must terminate
+            expect(OrmUtils.deepCompare(a, b)).to.equal(false)
+        })
     })
 
     describe("normalizeWhereCriteria", () => {
