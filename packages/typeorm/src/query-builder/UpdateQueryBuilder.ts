@@ -141,12 +141,6 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
                 selectOutputSql = `SELECT * FROM @OutputTable`
             }
 
-            // A custom Oracle RETURNING clause defines its own output binds,
-            // so the result cannot be mapped back to entity columns.
-            const hasCustomOracleReturning =
-                this.dataSource.driver.options.type === "oracle" &&
-                typeof this.expressionMap.returning === "string"
-
             // execute update query
             const [updateSql, parameters] = this.getQueryAndParameters()
 
@@ -160,7 +154,6 @@ export class UpdateQueryBuilder<Entity extends ObjectLiteral>
 
             // if we are updating entities and entity updation is enabled we must update some of entity columns (like version, update date, etc.)
             if (
-                !hasCustomOracleReturning &&
                 this.expressionMap.updateEntity === true &&
                 this.expressionMap.mainAlias!.hasMetadata &&
                 this.expressionMap.whereEntities.length > 0
