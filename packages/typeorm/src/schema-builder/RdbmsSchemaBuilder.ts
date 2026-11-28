@@ -438,21 +438,19 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
             )
             if (!table) continue
 
-            const dropQueries = table.indices
-                .filter((tableIndex) => {
-                    const indexMetadata = metadata.indices.find(
-                        (index) => index.name === tableIndex.name,
-                    )
-                    return this.shouldDropIndices(indexMetadata, tableIndex)
-                })
-                .map(async (tableIndex) => {
-                    this.dataSource.logger.logSchemaBuild(
-                        `dropping an index: "${tableIndex.name}" from table ${table.name}`,
-                    )
-                    await this.queryRunner.dropIndex(table, tableIndex)
-                })
+            const indicesToDrop = table.indices.filter((tableIndex) => {
+                const indexMetadata = metadata.indices.find(
+                    (index) => index.name === tableIndex.name,
+                )
+                return this.shouldDropIndices(indexMetadata, tableIndex)
+            })
 
-            await Promise.all(dropQueries)
+            for (const tableIndex of indicesToDrop) {
+                this.dataSource.logger.logSchemaBuild(
+                    `dropping an index: "${tableIndex.name}" from table ${table.name}`,
+                )
+                await this.queryRunner.dropIndex(table, tableIndex)
+            }
         }
         if (this.dataSource.options.type === "postgres") {
             const postgresQueryRunner: PostgresQueryRunner = <
@@ -465,24 +463,19 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                 )
                 if (!view) continue
 
-                const dropQueries = view.indices
-                    .filter((tableIndex) => {
-                        const indexMetadata = metadata.indices.find(
-                            (index) => index.name === tableIndex.name,
-                        )
-                        return this.shouldDropIndices(indexMetadata, tableIndex)
-                    })
-                    .map(async (tableIndex) => {
-                        this.dataSource.logger.logSchemaBuild(
-                            `dropping an index: "${tableIndex.name}" from view ${view.name}`,
-                        )
-                        await postgresQueryRunner.dropViewIndex(
-                            view,
-                            tableIndex,
-                        )
-                    })
+                const indicesToDrop = view.indices.filter((tableIndex) => {
+                    const indexMetadata = metadata.indices.find(
+                        (index) => index.name === tableIndex.name,
+                    )
+                    return this.shouldDropIndices(indexMetadata, tableIndex)
+                })
 
-                await Promise.all(dropQueries)
+                for (const tableIndex of indicesToDrop) {
+                    this.dataSource.logger.logSchemaBuild(
+                        `dropping an index: "${tableIndex.name}" from view ${view.name}`,
+                    )
+                    await postgresQueryRunner.dropViewIndex(view, tableIndex)
+                }
             }
         }
     }

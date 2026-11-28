@@ -338,24 +338,45 @@ export class DbQueryResultCache implements QueryResultCache {
         queryRunner?: QueryRunner,
     ): Promise<void> {
         const _queryRunner: QueryRunner = queryRunner ?? this.getQueryRunner()
-        const removals = []
+        const driverType = this.dataSource.options.type
+        const sequential =
+            driverType === "postgres" || driverType === "cockroachdb"
+        const removals: Promise<unknown>[] = []
         try {
-            for (const identifier of identifiers) {
+            let firstError: unknown
+            let hasError = false
+            // Capture the identifiers before yielding on a single pg client.
+            for (const identifier of sequential
+                ? [...identifiers]
+                : identifiers) {
                 const qb = _queryRunner.manager.createQueryBuilder()
-                removals.push(
-                    qb
-                        .delete()
-                        .from(this.queryResultCacheTable)
-                        .where(`${qb.escape("identifier")} = :identifier`, {
-                            identifier,
-                        })
-                        .execute(),
-                )
+                const removal = qb
+                    .delete()
+                    .from(this.queryResultCacheTable)
+                    .where(`${qb.escape("identifier")} = :identifier`, {
+                        identifier,
+                    })
+                    .execute()
+                if (sequential) {
+                    try {
+                        await removal
+                    } catch (error) {
+                        if (!hasError) {
+                            firstError = error
+                            hasError = true
+                        }
+                    }
+                } else {
+                    removals.push(removal)
+                }
             }
-            await Promise.all(removals)
+            if (hasError) throw firstError
+            if (!sequential) await Promise.all(removals)
         } catch (error) {
             // A failed deletion can leave other queries using the same runner.
-            await Promise.allSettled(removals)
+            if (removals.length > 0) {
+                await Promise.allSettled(removals)
+            }
             if (!queryRunner) {
                 try {
                     await _queryRunner.release()
