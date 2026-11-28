@@ -14,6 +14,10 @@ import {
     StringEnum,
     StringNumericEnum,
 } from "./entity/EnumArrayEntity"
+import {
+    PunctuationEnum,
+    PunctuationEnumEntity,
+} from "./entity/PunctuationEnumEntity"
 
 describe("database schema > enum arrays", () => {
     let dataSources: DataSource[]
@@ -114,6 +118,34 @@ describe("database schema > enum arrays", () => {
                 ])
                 loadedEnumEntity.arrayDefinedNumericEnums.should.be.eql([
                     12, 13,
+                ])
+            }),
+        ))
+
+    it("should retrieve values with commas and null elements", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const repository = dataSource.getRepository(
+                    PunctuationEnumEntity,
+                )
+
+                await repository.save({
+                    id: 1,
+                    values: [
+                        PunctuationEnum.Comma,
+                        PunctuationEnum.CommaAndSpace,
+                        PunctuationEnum.NullWord,
+                        null,
+                    ],
+                })
+
+                const loaded = await repository.findOneByOrFail({ id: 1 })
+
+                loaded.values.should.be.eql([
+                    PunctuationEnum.Comma,
+                    PunctuationEnum.CommaAndSpace,
+                    PunctuationEnum.NullWord,
+                    null,
                 ])
             }),
         ))
