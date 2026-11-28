@@ -292,7 +292,7 @@ addColumn(table: Table|string, column: TableColumn): Promise<void>
 - `table` - Table object or name
 - `column` - new column
 
-Adds a new column.
+Adds a new column. A column with `isUnique: true` also gets a unique constraint, or a unique index on MySQL, MariaDB, SAP HANA and Spanner. Set `uniqueConstraintName` on the `TableColumn` to choose its name; otherwise the naming strategy generates one.
 
 ---
 
@@ -327,7 +327,7 @@ changeColumn(table: Table|string, oldColumn: TableColumn|string, newColumn: Tabl
 - `oldColumn` - old column. Accepts TableColumn object or column name
 - `newColumn` - new column. Accepts TableColumn object
 
-Changes a column in the table.
+Changes a column in the table. If only the new column has `isUnique: true`, a unique constraint is created as described for `addColumn`.
 
 ---
 

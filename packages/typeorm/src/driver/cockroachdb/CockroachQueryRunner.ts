@@ -1308,10 +1308,11 @@ export class CockroachQueryRunner
         // create unique constraint
         if (column.isUnique) {
             const uniqueConstraint = new TableUnique({
-                name: this.dataSource.namingStrategy.uniqueConstraintName(
-                    table,
-                    [column.name],
-                ),
+                name:
+                    column.uniqueConstraintName ??
+                    this.dataSource.namingStrategy.uniqueConstraintName(table, [
+                        column.name,
+                    ]),
                 columnNames: [column.name],
             })
             clonedTable.uniques.push(uniqueConstraint)
@@ -1886,10 +1887,12 @@ export class CockroachQueryRunner
             if (newColumn.isUnique !== oldColumn.isUnique) {
                 if (newColumn.isUnique) {
                     const uniqueConstraint = new TableUnique({
-                        name: this.dataSource.namingStrategy.uniqueConstraintName(
-                            table,
-                            [newColumn.name],
-                        ),
+                        name:
+                            newColumn.uniqueConstraintName ??
+                            this.dataSource.namingStrategy.uniqueConstraintName(
+                                table,
+                                [newColumn.name],
+                            ),
                         columnNames: [newColumn.name],
                     })
                     clonedTable.uniques.push(uniqueConstraint)
@@ -3929,10 +3932,12 @@ export class CockroachQueryRunner
                 if (!isUniqueExist)
                     table.uniques.push(
                         new TableUnique({
-                            name: this.dataSource.namingStrategy.uniqueConstraintName(
-                                table,
-                                [column.name],
-                            ),
+                            name:
+                                column.uniqueConstraintName ??
+                                this.dataSource.namingStrategy.uniqueConstraintName(
+                                    table,
+                                    [column.name],
+                                ),
                             columnNames: [column.name],
                         }),
                     )
