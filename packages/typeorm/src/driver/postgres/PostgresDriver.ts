@@ -765,6 +765,17 @@ export class PostgresDriver implements Driver {
         if (columnMetadata.type === Boolean) {
             return value === true ? 1 : 0
         } else if (columnMetadata.type === "date") {
+            // An array column holds one date per element: format each of them,
+            // because mixedDateToDateString() hands an array back untouched and
+            // the driver then serializes the Date objects itself, following the
+            // process time zone instead of the column's.
+            if (columnMetadata.isArray) {
+                return (value as any[]).map((date) =>
+                    DateUtils.mixedDateToDateString(date, {
+                        utc: columnMetadata.utc,
+                    }),
+                )
+            }
             return DateUtils.mixedDateToDateString(value, {
                 utc: columnMetadata.utc,
             })
