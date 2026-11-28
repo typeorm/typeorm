@@ -82,10 +82,17 @@ export class AuroraMysqlQueryRunner
      * Releases used database connection.
      * You cannot use query runner methods once its released.
      */
-    release(): Promise<void> {
-        this.isReleased = true
-        if (this.databaseConnection) this.databaseConnection.release()
-        return Promise.resolve()
+    async release(): Promise<void> {
+        try {
+            // never hand a pooled connection back with an open transaction:
+            // the next checkout would commit this unit of work's rows
+            if (this.isTransactionActive) {
+                await this.rollbackTransaction()
+            }
+        } finally {
+            this.isReleased = true
+            if (this.databaseConnection) this.databaseConnection.release()
+        }
     }
 
     /**

@@ -181,8 +181,16 @@ export class CockroachQueryRunner
      * Releases used database connection.
      * You cannot use query runner methods once its released.
      */
-    release(): Promise<void> {
-        return this.releaseConnection()
+    async release(): Promise<void> {
+        try {
+            // never hand a pooled connection back with an open transaction:
+            // the next checkout would commit this unit of work's rows
+            if (this.isTransactionActive) {
+                await this.rollbackTransaction()
+            }
+        } finally {
+            await this.releaseConnection()
+        }
     }
 
     /**
