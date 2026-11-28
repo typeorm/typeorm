@@ -490,18 +490,28 @@ export class SubjectExecutor {
                 }
             }
 
+            const driver = this.queryRunner.dataSource.driver
+            const generatedMapHydrated =
+                driver.generatedMapHydrated === true &&
+                driver.isReturningSqlSupported("insert")
+
             subjects.forEach((subject) => {
                 if (subject.generatedMap) {
                     subject.metadata.columns.forEach((column) => {
+                        const generatedLocally =
+                            column.isGenerated &&
+                            column.generationStrategy === "uuid" &&
+                            !driver.isUUIDGenerationSupported()
+                        if (generatedMapHydrated && !generatedLocally) return
+
                         const value = column.getEntityValue(
                             subject.generatedMap!,
                         )
                         if (value !== undefined && value !== null) {
-                            const preparedValue =
-                                this.queryRunner.dataSource.driver.prepareHydratedValue(
-                                    value,
-                                    column,
-                                )
+                            const preparedValue = driver.prepareHydratedValue(
+                                value,
+                                column,
+                            )
                             column.setEntityValue(
                                 subject.generatedMap!,
                                 preparedValue,
