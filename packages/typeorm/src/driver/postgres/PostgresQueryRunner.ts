@@ -3025,7 +3025,7 @@ export class PostgresQueryRunner
         tableOrName: Table | string,
         checkConstraints: TableCheck[],
     ): Promise<void> {
-        for (const checkConstraint of [...checkConstraints]) {
+        for (const checkConstraint of checkConstraints.filter(() => true)) {
             await this.createCheckConstraint(tableOrName, checkConstraint)
         }
     }
@@ -3073,7 +3073,7 @@ export class PostgresQueryRunner
         checkConstraints: TableCheck[],
         ifExists?: boolean,
     ): Promise<void> {
-        for (const checkConstraint of [...checkConstraints]) {
+        for (const checkConstraint of checkConstraints.filter(() => true)) {
             await this.dropCheckConstraint(
                 tableOrName,
                 checkConstraint,
@@ -3119,7 +3119,9 @@ export class PostgresQueryRunner
         tableOrName: Table | string,
         exclusionConstraints: TableExclusion[],
     ): Promise<void> {
-        for (const exclusionConstraint of [...exclusionConstraints]) {
+        for (const exclusionConstraint of exclusionConstraints.filter(
+            () => true,
+        )) {
             await this.createExclusionConstraint(
                 tableOrName,
                 exclusionConstraint,
@@ -3179,7 +3181,9 @@ export class PostgresQueryRunner
         exclusionConstraints: TableExclusion[],
         ifExists?: boolean,
     ): Promise<void> {
-        for (const exclusionConstraint of [...exclusionConstraints]) {
+        for (const exclusionConstraint of exclusionConstraints.filter(
+            () => true,
+        )) {
             await this.dropExclusionConstraint(
                 tableOrName,
                 exclusionConstraint,
@@ -3820,7 +3824,6 @@ export class PostgresQueryRunner
                     dbColumn["table_name"] === dbTable["table_name"] &&
                     dbColumn["table_schema"] === dbTable["table_schema"],
             )
-            const columns: TableColumn[] = []
             for (const dbColumn of tableDbColumns) {
                 const columnConstraints = dbConstraints.filter(
                     (dbConstraint) => {
@@ -4185,9 +4188,8 @@ export class PostgresQueryRunner
                     tableColumn.charset = dbColumn["character_set_name"]
                 if (dbColumn["collation_name"])
                     tableColumn.collation = dbColumn["collation_name"]
-                columns.push(tableColumn)
+                table.columns.push(tableColumn)
             }
-            table.columns = columns
 
             // find unique constraints of table, group them by constraint name and build TableUnique.
             const tableUniqueConstraints = OrmUtils.uniq(

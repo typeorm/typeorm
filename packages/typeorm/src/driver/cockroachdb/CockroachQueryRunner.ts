@@ -2745,7 +2745,7 @@ export class CockroachQueryRunner
         tableOrName: Table | string,
         checkConstraints: TableCheck[],
     ): Promise<void> {
-        for (const checkConstraint of [...checkConstraints]) {
+        for (const checkConstraint of checkConstraints.filter(() => true)) {
             await this.createCheckConstraint(tableOrName, checkConstraint)
         }
     }
@@ -2793,7 +2793,7 @@ export class CockroachQueryRunner
         checkConstraints: TableCheck[],
         ifExists?: boolean,
     ): Promise<void> {
-        for (const checkConstraint of [...checkConstraints]) {
+        for (const checkConstraint of checkConstraints.filter(() => true)) {
             await this.dropCheckConstraint(
                 tableOrName,
                 checkConstraint,
@@ -3369,7 +3369,6 @@ export class CockroachQueryRunner
                     dbColumn["table_name"] === dbTable["table_name"] &&
                     dbColumn["table_schema"] === dbTable["table_schema"],
             )
-            const columns: TableColumn[] = []
             for (const dbColumn of tableDbColumns) {
                 const columnConstraints = dbConstraints.filter(
                     (dbConstraint) => {
@@ -3693,9 +3692,8 @@ export class CockroachQueryRunner
                     }
                 }
 
-                columns.push(tableColumn)
+                table.columns.push(tableColumn)
             }
-            table.columns = columns
 
             // find unique constraints of table, group them by constraint name and build TableUnique.
             const tableUniqueConstraints = OrmUtils.uniq(

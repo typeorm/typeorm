@@ -87,7 +87,7 @@ describe("DbQueryResultCache > remove", () => {
     })
 
     for (const driverType of ["postgres", "cockroachdb"] as const) {
-        it(`should remove identifiers sequentially on ${driverType} to avoid concurrent pg client queries`, async () => {
+        it(`should remove the original identifiers sequentially on ${driverType}`, async () => {
             const dataSource = new DataSource(
                 driverType === "cockroachdb"
                     ? { type: "cockroachdb", timeTravelQueries: false }
@@ -108,9 +108,16 @@ describe("DbQueryResultCache > remove", () => {
             sinon.stub(dataSource, "createQueryRunner").returns(queryRunner)
             const cache = new DbQueryResultCache(dataSource)
 
-            await cache.remove(["first", "second", "third"])
+            const identifiers = ["first", "second", "third"]
+            const removal = cache.remove(identifiers)
+            identifiers[1] = "replacement"
+            await removal
 
-            expect(query.callCount).to.equal(3)
+            expect(query.getCalls().map((call) => call.args[1])).to.deep.equal([
+                ["first"],
+                ["second"],
+                ["third"],
+            ])
             expect(maxInFlight).to.equal(1)
         })
 

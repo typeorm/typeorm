@@ -69,6 +69,9 @@ describe("Postgres and CockroachDB > sequential queries on single runner", () =>
             }),
         ]
 
+        // The previous batch methods skipped empty slots in the input.
+        checks.length++
+        exclusions.length++
         await queryRunner.createCheckConstraints(table, checks)
         expect(tracker.getMaxInFlight()).to.equal(1)
         expect(table.checks).to.have.length(3)
@@ -80,6 +83,7 @@ describe("Postgres and CockroachDB > sequential queries on single runner", () =>
 
         // Passing table.checks directly verifies copying protects against in-place mutation.
         tracker.resetMax()
+        await queryRunner.dropCheckConstraints(table, checks)
         await queryRunner.dropCheckConstraints(table, table.checks)
         expect(tracker.getMaxInFlight()).to.equal(1)
         expect(table.checks).to.have.length(0)
@@ -94,6 +98,7 @@ describe("Postgres and CockroachDB > sequential queries on single runner", () =>
         expect(tracker.stub.callCount).to.equal(3)
 
         tracker.resetMax()
+        await queryRunner.dropExclusionConstraints(table, exclusions)
         await queryRunner.dropExclusionConstraints(table, table.exclusions)
         expect(tracker.getMaxInFlight()).to.equal(1)
         expect(table.exclusions).to.have.length(0)
@@ -121,6 +126,7 @@ describe("Postgres and CockroachDB > sequential queries on single runner", () =>
             new TableCheck({ name: "chk_c", expression: `"c" > 0` }),
         ]
 
+        checks.length++
         await queryRunner.createCheckConstraints(table, checks)
         expect(tracker.getMaxInFlight()).to.equal(1)
         expect(table.checks).to.have.length(3)
@@ -130,6 +136,7 @@ describe("Postgres and CockroachDB > sequential queries on single runner", () =>
         expect(tracker.stub.callCount).to.equal(3)
 
         tracker.resetMax()
+        await queryRunner.dropCheckConstraints(table, checks)
         await queryRunner.dropCheckConstraints(table, table.checks)
         expect(tracker.getMaxInFlight()).to.equal(1)
         expect(table.checks).to.have.length(0)
