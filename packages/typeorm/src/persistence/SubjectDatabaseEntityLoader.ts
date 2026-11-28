@@ -45,12 +45,19 @@ export class SubjectDatabaseEntityLoader {
             // prepare entity ids of the subjects we need to load
             const allIds: ObjectLiteral[] = []
             const allSubjects: Subject[] = []
+            const subjectsByIdKey = new Map<string, Subject[]>()
             subjectGroup.subjects.forEach((subject) => {
                 // we don't load if subject already has a database entity loaded
                 if (subject.databaseEntity || !subject.identifier) return
 
                 allIds.push(subject.identifier)
                 allSubjects.push(subject)
+
+                const idKey = this.getIdKey(subject.identifier)
+                if (idKey === undefined) return
+                const subjects = subjectsByIdKey.get(idKey)
+                if (subjects) subjects.push(subject)
+                else subjectsByIdKey.set(idKey, [subject])
             })
 
             // if there no ids found (means all entities are new and have generated ids) - then nothing to load there
@@ -130,13 +137,26 @@ export class SubjectDatabaseEntityLoader {
             // and insert that entity into database entity of the found subjects.
             // A single entity can be applied to many subjects as there might be duplicates.
             // This will likely result in the same row being updated multiple times during a transaction.
-            entities.forEach((entity) => {
-                const entityId = allSubjects[0].metadata.getEntityIdMap(entity)
-                allSubjects.forEach((subject) => {
+            const applyEntity = (
+                subjects: Subject[],
+                entity: ObjectLiteral,
+                entityId: ObjectLiteral | undefined,
+            ) => {
+                subjects.forEach((subject) => {
                     if (subject.databaseEntity) return
                     if (OrmUtils.compareIds(subject.identifier, entityId))
                         subject.databaseEntity = entity
                 })
+            }
+
+            entities.forEach((entity) => {
+                const entityId = allSubjects[0].metadata.getEntityIdMap(entity)
+                const idKey = entityId && this.getIdKey(entityId)
+                if (idKey === undefined) {
+                    applyEntity(allSubjects, entity, entityId)
+                    return
+                }
+                applyEntity(subjectsByIdKey.get(idKey) ?? [], entity, entityId)
             })
 
             // this way we tell what subjects we tried to load database entities of
@@ -162,6 +182,23 @@ export class SubjectDatabaseEntityLoader {
     // ---------------------------------------------------------------------
     // Protected Methods
     // ---------------------------------------------------------------------
+
+    /**
+     * Builds a key that is the same for ids that OrmUtils.compareIds can find equal.
+     * Returns undefined if the id has values other than strings and numbers.
+     *
+     * @param id
+     */
+    protected getIdKey(id: ObjectLiteral): string | undefined {
+        const entries: [string, string][] = []
+        for (const key of Object.keys(id).sort()) {
+            const value = id[key]
+            if (typeof value !== "string" && typeof value !== "number")
+                return undefined
+            entries.push([key, String(value)])
+        }
+        return JSON.stringify(entries)
+    }
 
     /**
      * Groups given Subject objects into groups separated by entity targets.
