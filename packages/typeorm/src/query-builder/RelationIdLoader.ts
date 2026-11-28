@@ -6,6 +6,7 @@ import type { SelectQueryBuilder } from "./SelectQueryBuilder"
 import { DriverUtils } from "../driver/DriverUtils"
 import { TypeORMError } from "../error/TypeORMError"
 import type { QueryRunner } from "../query-runner/QueryRunner"
+import { isUint8Array, uint8ArrayToHex } from "../util/Uint8ArrayUtils"
 
 /**
  * Loads relation ids for the given entities.
@@ -149,62 +150,189 @@ export class RelationIdLoader {
         } else {
         }
 
-        return entities.map((entity) => {
-            const group: { entity: E1; related?: E2 | E2[] } = {
-                entity: entity,
+        const inverseColumnAliases = inverseColumns.map((column) =>
+            DriverUtils.buildAlias(
+                this.dataSource.driver,
+                undefined,
+                column.entityMetadata.name + "_" + column.propertyAliasName,
+            ),
+        )
+        const columnAliases = columns.map((column) =>
+            DriverUtils.buildAlias(
+                this.dataSource.driver,
+                undefined,
+                column.entityMetadata.name +
+                    "_" +
+                    relation.propertyPath.replace(".", "_") +
+                    "_" +
+                    column.propertyPath.replace(".", "_"),
+            ),
+        )
+
+        const groups: { entity: E1; related?: E2 | E2[] }[] = entities.map(
+            (entity) => ({
+                entity,
                 related: isMany ? [] : undefined,
-            }
-
-            const entityRelationIds = relationIds.filter((relationId) => {
-                return inverseColumns.every((column) => {
-                    return column.compareEntityValue(
-                        entity,
-                        relationId[
-                            DriverUtils.buildAlias(
-                                this.dataSource.driver,
-                                undefined,
-                                column.entityMetadata.name +
-                                    "_" +
-                                    column.propertyAliasName,
-                            )
-                        ],
-                    )
-                })
-            })
-            if (!entityRelationIds.length) return group
-
-            relatedEntities.forEach((relatedEntity) => {
-                entityRelationIds.forEach((relationId) => {
-                    const relatedEntityMatched = columns.every((column) => {
-                        return column.compareEntityValue(
-                            relatedEntity,
-                            relationId[
-                                DriverUtils.buildAlias(
-                                    this.dataSource.driver,
-                                    undefined,
-                                    column.entityMetadata.name +
-                                        "_" +
-                                        relation.propertyPath.replace(
-                                            ".",
-                                            "_",
-                                        ) +
-                                        "_" +
-                                        column.propertyPath.replace(".", "_"),
-                                )
-                            ],
+            }),
+        )
+        const binaryAliases = new Map<string, boolean>()
+        const getEntityKey = (
+            entity: ObjectLiteral,
+            keyColumns: ColumnMetadata[],
+            aliases: string[],
+        ) => {
+            const values: unknown[] = []
+            for (let i = 0; i < keyColumns.length; i++) {
+                const value = keyColumns[i].getEntityValue(entity)
+                if (
+                    typeof value === "object" &&
+                    isUint8Array(value) &&
+                    "equals" in value &&
+                    typeof value.equals === "function"
+                ) {
+                    // Binary values compare by bytes only when both sides are binary.
+                    const alias = aliases[i]
+                    let allBinary = binaryAliases.get(alias)
+                    if (allBinary === undefined) {
+                        allBinary = relationIds.every((row) =>
+                            isUint8Array(row[alias]),
                         )
-                    })
-                    if (relatedEntityMatched) {
-                        if (isMany) {
-                            ;(group.related as E2[]).push(relatedEntity)
-                        } else {
-                            group.related = relatedEntity
-                        }
+                        binaryAliases.set(alias, allBinary)
                     }
-                })
-            })
-            return group
-        })
+                    if (!allBinary) return null
+                }
+                values.push(value)
+            }
+            return this.encodeLookupKey(values)
+        }
+        const groupsByEntityKey = new Map<string, typeof groups>()
+        const fallbackGroups: typeof groups = []
+        for (const group of groups) {
+            const key = getEntityKey(
+                group.entity,
+                inverseColumns,
+                inverseColumnAliases,
+            )
+            if (key !== null) {
+                let bucket = groupsByEntityKey.get(key)
+                if (!bucket) {
+                    bucket = []
+                    groupsByEntityKey.set(key, bucket)
+                }
+                bucket.push(group)
+            } else {
+                fallbackGroups.push(group)
+            }
+        }
+
+        const linkedRows: {
+            relationId: ObjectLiteral
+            groups: typeof groups
+        }[] = []
+        const relationIdsByRelatedKey = new Map<string, typeof linkedRows>()
+        for (const relationId of relationIds) {
+            const entityKey = this.encodeLookupKey(
+                inverseColumnAliases.map((alias) => relationId[alias]),
+            )
+            let matchedGroups =
+                entityKey === null
+                    ? undefined
+                    : groupsByEntityKey.get(entityKey)
+            if (fallbackGroups.length) {
+                const matches = fallbackGroups.filter((group) =>
+                    inverseColumns.every((column, index) =>
+                        column.compareEntityValue(
+                            group.entity,
+                            relationId[inverseColumnAliases[index]],
+                        ),
+                    ),
+                )
+                if (matches.length)
+                    matchedGroups = matchedGroups
+                        ? matchedGroups.concat(matches)
+                        : matches
+            }
+            if (!matchedGroups) continue
+            const entry = { relationId, groups: matchedGroups }
+            linkedRows.push(entry)
+            const relatedKey = this.encodeLookupKey(
+                columnAliases.map((alias) => relationId[alias]),
+            )
+            if (relatedKey !== null) {
+                let bucket = relationIdsByRelatedKey.get(relatedKey)
+                if (!bucket) {
+                    bucket = []
+                    relationIdsByRelatedKey.set(relatedKey, bucket)
+                }
+                bucket.push(entry)
+            }
+        }
+
+        if (!linkedRows.length) return groups
+
+        // Related entity order also determines the last match for to-one relations.
+        for (const relatedEntity of relatedEntities) {
+            const relatedKey = getEntityKey(
+                relatedEntity,
+                columns,
+                columnAliases,
+            )
+            const matchingRelationIds =
+                relatedKey !== null
+                    ? (relationIdsByRelatedKey.get(relatedKey) ?? [])
+                    : linkedRows.filter(({ relationId }) =>
+                          columns.every((column, index) =>
+                              column.compareEntityValue(
+                                  relatedEntity,
+                                  relationId[columnAliases[index]],
+                              ),
+                          ),
+                      )
+
+            for (const row of matchingRelationIds) {
+                for (const group of row.groups) {
+                    if (isMany) {
+                        ;(group.related as E2[]).push(relatedEntity)
+                    } else {
+                        group.related = relatedEntity
+                    }
+                }
+            }
+        }
+
+        return groups
+    }
+
+    /**
+     * Encodes column values into a collision-free string key that matches
+     * `ColumnMetadata.compareEntityValue` semantics. Returns `null` if any
+     * value requires `compareEntityValue` fallback (custom `.equals()`, `NaN`,
+     * or non-Uint8Array objects).
+     *
+     * @param values
+     */
+    protected encodeLookupKey(values: unknown[]): string | null {
+        if (values.length === 1) return this.encodeColumnValue(values[0])
+
+        const parts: string[] = []
+        for (const value of values) {
+            const part = this.encodeColumnValue(value)
+            if (part === null) return null
+            parts.push(part)
+        }
+        return JSON.stringify(parts)
+    }
+
+    private encodeColumnValue(value: unknown): string | null {
+        if (typeof value === "number")
+            return Number.isNaN(value) ? null : "n:" + value
+        if (typeof value === "string") return "s:" + value
+        if (value === null) return "null"
+        if (value === undefined) return "u"
+        if (typeof value === "bigint") return "b:" + value
+        if (typeof value === "boolean") return value ? "t" : "f"
+        if (isUint8Array(value)) return "x:" + uint8ArrayToHex(value)
+        return null
     }
 
     // -------------------------------------------------------------------------
