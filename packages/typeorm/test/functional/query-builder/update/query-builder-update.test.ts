@@ -9,6 +9,8 @@ import type { DataSource } from "../../../../src/data-source/DataSource"
 import { User } from "./entity/User"
 import { LimitOnUpdateNotSupportedError } from "../../../../src/error/LimitOnUpdateNotSupportedError"
 import { Photo } from "./entity/Photo"
+import { AliasedPost } from "./entity/AliasedPost"
+import { Student } from "./entity/Student"
 import { UpdateValuesMissingError } from "../../../../src/error/UpdateValuesMissingError"
 import { EntityPropertyNotFoundError } from "../../../../src/error/EntityPropertyNotFoundError"
 import { DriverUtils } from "../../../../src/driver/DriverUtils"
@@ -220,6 +222,285 @@ describe("query builder > update", () => {
                         .execute()
                         .should.be.rejectedWith(LimitOnUpdateNotSupportedError)
                 }
+            }),
+        ))
+
+    it("should not add an alias on unsupported dialects", () => {
+        for (const dataSource of dataSources) {
+            if (DriverUtils.isPostgresFamily(dataSource.driver)) continue
+
+            const sqlWithoutAlias = dataSource
+                .createQueryBuilder()
+                .update(User)
+                .set({ name: "Dima Zotov" })
+                .where("name = :name", { name: "Alex Messer" })
+                .getSql()
+
+            expect(sqlWithoutAlias).to.not.contain(" AS ")
+
+            const sqlWithAlias = dataSource
+                .getRepository(User)
+                .createQueryBuilder("u")
+                .update()
+                .set({ name: "Dima Zotov" })
+                .where("u.name = :name", { name: "Alex Messer" })
+                .getSql()
+
+            expect(sqlWithAlias).to.not.contain(" AS ")
+
+            const sqlFromRepository = dataSource
+                .getRepository(User)
+                .createQueryBuilder()
+                .update()
+                .set({ name: "Dima Zotov" })
+                .where("name = :name", { name: "Alex Messer" })
+                .getSql()
+
+            expect(sqlFromRepository).to.not.contain(" AS ")
+        }
+    })
+
+    it("should not add an alias when none was given explicitly", () => {
+        for (const dataSource of dataSources) {
+            if (!DriverUtils.isPostgresFamily(dataSource.driver)) continue
+
+            const sqlFromEntity = dataSource
+                .createQueryBuilder()
+                .update(User)
+                .set({ name: "Dima Zotov" })
+                .where("name = :name", { name: "Alex Messer" })
+                .getSql()
+
+            expect(sqlFromEntity).to.not.contain(" AS ")
+
+            const tableName = dataSource.getMetadata(User).tablePath
+            const sqlFromTableName = dataSource
+                .createQueryBuilder()
+                .update(tableName)
+                .set({ name: "Dima Zotov" })
+                .where("name = :name", { name: "Alex Messer" })
+                .getSql()
+
+            expect(sqlFromTableName).to.not.contain(" AS ")
+
+            const sqlFromRepository = dataSource
+                .getRepository(User)
+                .createQueryBuilder()
+                .update()
+                .set({ name: "Dima Zotov" })
+                .where("name = :name", { name: "Alex Messer" })
+                .getSql()
+
+            expect(sqlFromRepository).to.not.contain(" AS ")
+        }
+    })
+
+    it("should add an explicit alias on postgres family", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (!DriverUtils.isPostgresFamily(dataSource.driver)) return
+
+                const user1 = new User()
+                user1.name = "Alex Messer"
+                const user2 = new User()
+                user2.name = "Dima Zotov"
+                await dataSource.manager.save([user1, user2])
+
+                const queryBuilder = dataSource
+                    .getRepository(User)
+                    .createQueryBuilder("u")
+                    .update()
+                    .set({ name: "Muhammad Mirzoev" })
+                    .where("u.name = :name", { name: "Alex Messer" })
+
+                expect(queryBuilder.getSql()).to.contain('"user" "u"')
+
+                await queryBuilder.execute()
+
+                const loadedUser1 = await dataSource
+                    .getRepository(User)
+                    .findOneBy({ name: "Muhammad Mirzoev" })
+                expect(loadedUser1).to.exist
+
+                const loadedUser2 = await dataSource
+                    .getRepository(User)
+                    .findOneBy({ name: "Dima Zotov" })
+                expect(loadedUser2).to.exist
+
+                const queryBuilderFromEntity = dataSource
+                    .createQueryBuilder(User, "u")
+                    .update()
+                    .set({ name: "Brad Porter" })
+                    .where("u.name = :name", { name: "Dima Zotov" })
+
+                expect(queryBuilderFromEntity.getSql()).to.contain('"user" "u"')
+
+                await queryBuilderFromEntity.execute()
+
+                const loadedUser3 = await dataSource
+                    .getRepository(User)
+                    .findOneBy({ name: "Brad Porter" })
+                expect(loadedUser3).to.exist
+            }),
+        ))
+
+    it("should translate an alias-qualified where condition to its database column name on postgres family", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (!DriverUtils.isPostgresFamily(dataSource.driver)) return
+
+                const user1 = new User()
+                user1.name = "Alex Messer"
+                user1.team = 1
+                await dataSource.manager.save(user1)
+
+                const queryBuilder = dataSource
+                    .getRepository(User)
+                    .createQueryBuilder("tc")
+                    .update()
+                    .set({ team: 2 })
+                    .where("tc.team = :team", { team: 1 })
+
+                expect(queryBuilder.getSql()).to.not.contain("tc.team")
+
+                await queryBuilder.execute()
+
+                const loadedUser = await dataSource
+                    .getRepository(User)
+                    .findOneBy({ name: "Alex Messer" })
+                expect(loadedUser!.team).to.equal(2)
+            }),
+        ))
+
+    it("should still translate an unqualified where condition to its database column name when an explicit alias is set on postgres family", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (!DriverUtils.isPostgresFamily(dataSource.driver)) return
+
+                const user1 = new User()
+                user1.name = "Alex Messer"
+                user1.team = 1
+                await dataSource.manager.save(user1)
+
+                const queryBuilder = dataSource
+                    .getRepository(User)
+                    .createQueryBuilder("tc")
+                    .update()
+                    .set({ team: 2 })
+                    .where("team = :team", { team: 1 })
+
+                expect(queryBuilder.getSql()).to.not.contain(" team ")
+
+                await queryBuilder.execute()
+
+                const loadedUser = await dataSource
+                    .getRepository(User)
+                    .findOneBy({ name: "Alex Messer" })
+                expect(loadedUser!.team).to.equal(2)
+            }),
+        ))
+
+    it("should qualify the discriminator column with an explicit alias on postgres family", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (!DriverUtils.isPostgresFamily(dataSource.driver)) return
+
+                const student = new Student()
+                student.name = "Alex Messer"
+                student.faculty = "Economics"
+                await dataSource.manager.save(student)
+
+                const queryBuilder = dataSource
+                    .getRepository(Student)
+                    .createQueryBuilder("s")
+                    .update()
+                    .set({ faculty: "Physics" })
+                    .where("name = :name", { name: "Alex Messer" })
+
+                expect(queryBuilder.getSql()).to.contain('"s"."type"')
+
+                await queryBuilder.execute()
+
+                const loadedStudent = await dataSource
+                    .getRepository(Student)
+                    .findOneBy({ name: "Alex Messer" })
+                expect(loadedStudent!.faculty).to.equal("Physics")
+            }),
+        ))
+
+    it("should not add an alias when the entity's table name differs from its target name and no alias was given explicitly", () => {
+        for (const dataSource of dataSources) {
+            if (!DriverUtils.isPostgresFamily(dataSource.driver)) continue
+
+            const sqlFromEntity = dataSource
+                .createQueryBuilder()
+                .update(AliasedPost)
+                .set({ title: "Updated" })
+                .where("title = :title", { title: "Hello" })
+                .getSql()
+
+            expect(sqlFromEntity).to.not.contain(" AS ")
+
+            const sqlFromRepository = dataSource
+                .getRepository(AliasedPost)
+                .createQueryBuilder()
+                .update()
+                .set({ title: "Updated" })
+                .where("title = :title", { title: "Hello" })
+                .getSql()
+
+            expect(sqlFromRepository).to.not.contain(" AS ")
+        }
+    })
+
+    it("should add an explicit alias when the entity's table name differs from its target name on postgres family", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                if (!DriverUtils.isPostgresFamily(dataSource.driver)) return
+
+                const post1 = new AliasedPost()
+                post1.title = "Hello"
+                const post2 = new AliasedPost()
+                post2.title = "World"
+                await dataSource.manager.save([post1, post2])
+
+                const queryBuilder = dataSource
+                    .getRepository(AliasedPost)
+                    .createQueryBuilder("p")
+                    .update()
+                    .set({ title: "Updated Hello" })
+                    .where("p.title = :title", { title: "Hello" })
+
+                expect(queryBuilder.getSql()).to.contain('"post_table" "p"')
+
+                await queryBuilder.execute()
+
+                const loadedPost1 = await dataSource
+                    .getRepository(AliasedPost)
+                    .findOneBy({ title: "Updated Hello" })
+                expect(loadedPost1).to.exist
+
+                const loadedPost2 = await dataSource
+                    .getRepository(AliasedPost)
+                    .findOneBy({ title: "World" })
+                expect(loadedPost2).to.exist
+
+                const queryBuilderFromEntity = dataSource
+                    .createQueryBuilder(AliasedPost, "p")
+                    .update()
+                    .set({ title: "Updated World" })
+                    .where("p.title = :title", { title: "World" })
+
+                expect(queryBuilderFromEntity.getSql()).to.contain(
+                    '"post_table" "p"',
+                )
+
+                await queryBuilderFromEntity.execute()
+
+                const loadedPost3 = await dataSource
+                    .getRepository(AliasedPost)
+                    .findOneBy({ title: "Updated World" })
+                expect(loadedPost3).to.exist
             }),
         ))
 

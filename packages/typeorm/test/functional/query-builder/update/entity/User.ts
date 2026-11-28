@@ -12,4 +12,7 @@ export class User {
 
     @Column()
     likesCount: number = 0
+
+    @Column({ name: "team_id", nullable: true })
+    team: number
 }
