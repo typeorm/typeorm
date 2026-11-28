@@ -3725,30 +3725,16 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                     loadEagerRelations: this.findOptions.loadEagerRelations,
                 })
                 if (entities.length > 0) {
-                    const relatedEntityGroups: any[] =
+                    const relatedEntityGroups =
                         await queryStrategyRelationIdLoader.loadManyToManyRelationIdsAndGroup(
                             relation,
                             entities,
                             undefined,
                             queryBuilder,
                         )
-                    const relatedEntityGroupsByEntity = new Map<any, any>()
-                    for (const group of relatedEntityGroups) {
-                        if (!relatedEntityGroupsByEntity.has(group.entity)) {
-                            relatedEntityGroupsByEntity.set(group.entity, group)
-                        }
+                    for (const { entity, related } of relatedEntityGroups) {
+                        relation.setEntityValue(entity, related ?? null)
                     }
-                    entities.forEach((entity) => {
-                        const relatedEntityGroup =
-                            relatedEntityGroupsByEntity.get(entity)
-                        if (relatedEntityGroup) {
-                            const value =
-                                relatedEntityGroup.related === undefined
-                                    ? null
-                                    : relatedEntityGroup.related
-                            relation.setEntityValue(entity, value)
-                        }
-                    })
                 }
             }
 

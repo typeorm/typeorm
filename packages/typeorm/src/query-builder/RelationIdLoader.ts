@@ -175,16 +175,43 @@ export class RelationIdLoader {
                 related: isMany ? [] : undefined,
             }),
         )
-        const groupsByEntityKey = new Map<
-            string,
-            { entity: E1; related?: E2 | E2[] }[]
-        >()
-        const fallbackGroups: { entity: E1; related?: E2 | E2[] }[] = []
+        const binaryAliases = new Map<string, boolean>()
+        const getEntityKey = (
+            entity: ObjectLiteral,
+            keyColumns: ColumnMetadata[],
+            aliases: string[],
+        ) => {
+            const values: unknown[] = []
+            for (let i = 0; i < keyColumns.length; i++) {
+                const value = keyColumns[i].getEntityValue(entity)
+                if (
+                    typeof value === "object" &&
+                    isUint8Array(value) &&
+                    "equals" in value &&
+                    typeof value.equals === "function"
+                ) {
+                    // Binary values compare by bytes only when both sides are binary.
+                    const alias = aliases[i]
+                    let allBinary = binaryAliases.get(alias)
+                    if (allBinary === undefined) {
+                        allBinary = relationIds.every((row) =>
+                            isUint8Array(row[alias]),
+                        )
+                        binaryAliases.set(alias, allBinary)
+                    }
+                    if (!allBinary) return null
+                }
+                values.push(value)
+            }
+            return this.encodeLookupKey(values)
+        }
+        const groupsByEntityKey = new Map<string, typeof groups>()
+        const fallbackGroups: typeof groups = []
         for (const group of groups) {
-            const key = this.encodeLookupKey(
-                inverseColumns.map((column) =>
-                    column.getEntityValue(group.entity),
-                ),
+            const key = getEntityKey(
+                group.entity,
+                inverseColumns,
+                inverseColumnAliases,
             )
             if (key !== null) {
                 let bucket = groupsByEntityKey.get(key)
@@ -198,22 +225,36 @@ export class RelationIdLoader {
             }
         }
 
-        const relationIdsByRelatedKey = new Map<
-            string,
-            { relationId: any; entityKey: string | null }[]
-        >()
-        const encodedRelationIds: {
-            relationId: any
-            entityKey: string | null
+        const linkedRows: {
+            relationId: ObjectLiteral
+            groups: typeof groups
         }[] = []
+        const relationIdsByRelatedKey = new Map<string, typeof linkedRows>()
         for (const relationId of relationIds) {
-            const entry = {
-                relationId,
-                entityKey: this.encodeLookupKey(
-                    inverseColumnAliases.map((alias) => relationId[alias]),
-                ),
+            const entityKey = this.encodeLookupKey(
+                inverseColumnAliases.map((alias) => relationId[alias]),
+            )
+            let matchedGroups =
+                entityKey === null
+                    ? undefined
+                    : groupsByEntityKey.get(entityKey)
+            if (fallbackGroups.length) {
+                const matches = fallbackGroups.filter((group) =>
+                    inverseColumns.every((column, index) =>
+                        column.compareEntityValue(
+                            group.entity,
+                            relationId[inverseColumnAliases[index]],
+                        ),
+                    ),
+                )
+                if (matches.length)
+                    matchedGroups = matchedGroups
+                        ? matchedGroups.concat(matches)
+                        : matches
             }
-            encodedRelationIds.push(entry)
+            if (!matchedGroups) continue
+            const entry = { relationId, groups: matchedGroups }
+            linkedRows.push(entry)
             const relatedKey = this.encodeLookupKey(
                 columnAliases.map((alias) => relationId[alias]),
             )
@@ -227,17 +268,19 @@ export class RelationIdLoader {
             }
         }
 
-        // Iterate relatedEntities in order so each group's related array keeps
-        // the exact relatedEntities order and to-one last-match semantics in
-        // linear time without per-parent sorting or temporary arrays.
+        if (!linkedRows.length) return groups
+
+        // Related entity order also determines the last match for to-one relations.
         for (const relatedEntity of relatedEntities) {
-            const relatedKey = this.encodeLookupKey(
-                columns.map((column) => column.getEntityValue(relatedEntity)),
+            const relatedKey = getEntityKey(
+                relatedEntity,
+                columns,
+                columnAliases,
             )
             const matchingRelationIds =
                 relatedKey !== null
                     ? (relationIdsByRelatedKey.get(relatedKey) ?? [])
-                    : encodedRelationIds.filter(({ relationId }) =>
+                    : linkedRows.filter(({ relationId }) =>
                           columns.every((column, index) =>
                               column.compareEntityValue(
                                   relatedEntity,
@@ -246,32 +289,12 @@ export class RelationIdLoader {
                           ),
                       )
 
-            for (const { relationId, entityKey } of matchingRelationIds) {
-                if (entityKey !== null) {
-                    const matchedGroups = groupsByEntityKey.get(entityKey)
-                    if (matchedGroups) {
-                        for (const group of matchedGroups) {
-                            if (isMany) {
-                                ;(group.related as E2[]).push(relatedEntity)
-                            } else {
-                                group.related = relatedEntity
-                            }
-                        }
-                    }
-                }
-                for (const group of fallbackGroups) {
-                    const matched = inverseColumns.every((column, index) =>
-                        column.compareEntityValue(
-                            group.entity,
-                            relationId[inverseColumnAliases[index]],
-                        ),
-                    )
-                    if (matched) {
-                        if (isMany) {
-                            ;(group.related as E2[]).push(relatedEntity)
-                        } else {
-                            group.related = relatedEntity
-                        }
+            for (const row of matchingRelationIds) {
+                for (const group of row.groups) {
+                    if (isMany) {
+                        ;(group.related as E2[]).push(relatedEntity)
+                    } else {
+                        group.related = relatedEntity
                     }
                 }
             }
@@ -289,45 +312,27 @@ export class RelationIdLoader {
      * @param values
      */
     protected encodeLookupKey(values: unknown[]): string | null {
-        if (values.length === 0) return ""
-        if (values.length === 1) {
-            const value = values[0]
-            if (value === null) return "null"
-            if (value === undefined) return "u"
-            if (typeof value === "number") {
-                if (Number.isNaN(value)) return null
-                return "n:" + (Object.is(value, -0) ? "0" : String(value))
-            }
-            if (typeof value === "string") return "s:" + value
-            if (typeof value === "bigint") return "b:" + value.toString()
-            if (typeof value === "boolean") return value ? "t" : "f"
-            if (isUint8Array(value)) return "x:" + uint8ArrayToHex(value)
-            return null
-        }
+        if (values.length === 1) return this.encodeColumnValue(values[0])
 
-        const parts: unknown[] = new Array(values.length)
-        for (let i = 0; i < values.length; i++) {
-            const value = values[i]
-            if (value === null) {
-                parts[i] = 0
-            } else if (value === undefined) {
-                parts[i] = 1
-            } else if (typeof value === "boolean") {
-                parts[i] = value ? 2 : 3
-            } else if (typeof value === "number") {
-                if (Number.isNaN(value)) return null
-                parts[i] = [4, Object.is(value, -0) ? "0" : String(value)]
-            } else if (typeof value === "string") {
-                parts[i] = [5, value]
-            } else if (typeof value === "bigint") {
-                parts[i] = [6, value.toString()]
-            } else if (isUint8Array(value)) {
-                parts[i] = [7, uint8ArrayToHex(value)]
-            } else {
-                return null
-            }
+        const parts: string[] = []
+        for (const value of values) {
+            const part = this.encodeColumnValue(value)
+            if (part === null) return null
+            parts.push(part)
         }
         return JSON.stringify(parts)
+    }
+
+    private encodeColumnValue(value: unknown): string | null {
+        if (typeof value === "number")
+            return Number.isNaN(value) ? null : "n:" + value
+        if (typeof value === "string") return "s:" + value
+        if (value === null) return "null"
+        if (value === undefined) return "u"
+        if (typeof value === "bigint") return "b:" + value
+        if (typeof value === "boolean") return value ? "t" : "f"
+        if (isUint8Array(value)) return "x:" + uint8ArrayToHex(value)
+        return null
     }
 
     // -------------------------------------------------------------------------

@@ -160,6 +160,35 @@ describe("RelationIdLoader > loadManyToManyRelationIdsAndGroup", () => {
         expect(groups[5].related).to.deep.equal([bookCustom])
     })
 
+    it("should use binary IDs' custom equality when the raw column is a string", async () => {
+        class BinaryId extends Uint8Array {
+            equals(other: unknown) {
+                if (typeof other !== "string") {
+                    throw new TypeError("Expected a string ID")
+                }
+                return other === String(this[0])
+            }
+        }
+        const dataSource = await createOneToManyDataSource()
+        const relation = dataSource
+            .getMetadata("Author")
+            .findRelationWithPropertyPath("books")!
+        const loader = new RelationIdLoader(dataSource)
+        const author = { id: new BinaryId([1]) }
+        const book = { id: new BinaryId([2]) }
+        sinon.stub(loader, "load").resolves([
+            { Author_id: "1", Book_books_id: "2" },
+            { Author_id: "9", Book_books_id: 3 },
+        ])
+
+        const groups = await loader.loadManyToManyRelationIdsAndGroup(
+            relation,
+            author,
+            book,
+        )
+        expect(groups[0].related).to.deep.equal([book])
+    })
+
     it("should handle composite keys without collisions", async () => {
         interface ParentEntity {
             tenantId: string
