@@ -38,4 +38,22 @@ describe("other issues > entity listeners must work in embeddeds as well", () =>
                 loadedPost.text.should.be.equal("About this post")
             }),
         ))
+
+    // GitHub issue #10233 - async listeners in embeddeds are not awaited
+    it("should await async listeners in embeddeds", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                const post = new Post()
+                post.title = "Super title"
+                post.text = "About this post"
+                await dataSource.manager.save(post)
+
+                const loadedPost = await dataSource.manager.findOneByOrFail(
+                    Post,
+                    { id: post.id },
+                )
+
+                expect(loadedPost.information.counters.loaded).to.be.true
+            }),
+        ))
 })
