@@ -2530,8 +2530,11 @@ export class AuroraMysqlQueryRunner
                 (dbForeignKey) => {
                     const foreignKeys = dbForeignKeys.filter(
                         (dbFk) =>
+                            dbFk["TABLE_NAME"] === dbForeignKey["TABLE_NAME"] &&
+                            dbFk["TABLE_SCHEMA"] ===
+                                dbForeignKey["TABLE_SCHEMA"] &&
                             dbFk["CONSTRAINT_NAME"] ===
-                            dbForeignKey["CONSTRAINT_NAME"],
+                                dbForeignKey["CONSTRAINT_NAME"],
                     )
 
                     // if referenced table located in currently used db, we don't need to concat db name to table name.
