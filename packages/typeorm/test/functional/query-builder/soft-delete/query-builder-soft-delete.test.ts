@@ -66,6 +66,32 @@ describe("query builder > soft-delete", () => {
             }),
         ))
 
+    // Regression for #13076.
+    it("should refresh the original entities when the whereEntity input array is cleared", () =>
+        Promise.all(
+            dataSources.map(async (dataSource) => {
+                // Spanner does not support the RETURNING clause used by whereEntity.
+                if (dataSource.options.type === "spanner") return
+                const [first, second] = await dataSource.manager.save(User, [
+                    { name: "Alex", likesCount: 0 },
+                    { name: "Sam", likesCount: 0 },
+                ])
+                const users = [first]
+                users[2] = second // Leave an empty slot between the two users.
+                const softDelete = dataSource
+                    .createQueryBuilder()
+                    .softDelete()
+                    .from(User)
+                    .whereEntity(users)
+
+                users.length = 0
+                await softDelete.execute()
+
+                expect(first.deletedAt).to.be.instanceof(Date)
+                expect(second.deletedAt).to.be.instanceof(Date)
+            }),
+        ))
+
     it("should soft-delete and restore properties inside embeds as well", () =>
         Promise.all(
             dataSources.map(async (dataSource) => {
