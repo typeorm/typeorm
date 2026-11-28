@@ -1055,15 +1055,26 @@ export class SubjectExecutor {
                                 (column) => {
                                     if (column.isVirtual === true) return
 
+                                    const generatedMap =
+                                        updatedRelationMap.valueSubject
+                                            ?.generatedMap
+                                    const generatedValue = generatedMap
+                                        ? column.referencedColumn!.getEntityValue(
+                                              generatedMap,
+                                          )
+                                        : undefined
+
                                     column.setEntityValue(
                                         subject.entity!,
-                                        ObjectUtils.isObject(
-                                            updatedRelationMap.value,
-                                        )
-                                            ? column.referencedColumn!.getEntityValue(
-                                                  updatedRelationMap.value,
-                                              )
-                                            : updatedRelationMap.value,
+                                        generatedValue !== undefined
+                                            ? generatedValue
+                                            : ObjectUtils.isObject(
+                                                    updatedRelationMap.value,
+                                                )
+                                              ? column.referencedColumn!.getEntityValue(
+                                                    updatedRelationMap.value,
+                                                )
+                                              : updatedRelationMap.value,
                                     )
                                 },
                             )
