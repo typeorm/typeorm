@@ -19,3 +19,9 @@ See [Data Source Options](../data-source/2-data-source-options.md) for the commo
 ## Column Types
 
 `char`, `nchar`, `nvarchar2`, `varchar2`, `long`, `raw`, `long raw`, `number`, `numeric`, `float`, `dec`, `decimal`, `integer`, `int`, `smallint`, `real`, `double precision`, `date`, `timestamp`, `timestamp with time zone`, `timestamp with local time zone`, `interval year to month`, `interval day to second`, `bfile`, `blob`, `clob`, `nclob`, `rowid`, `urowid`
+
+## Oracle-specific behavior
+
+### Custom `UPDATE RETURNING` clauses
+
+When an update, soft-delete or restore query uses a SQL string such as `.returning('"version" INTO :version')` with an output bind, `UpdateResult.raw` contains the driver's output binds. For example, if one row returns version `2`, the raw result is `[[2]]`. TypeORM cannot map these binds to entity columns, so entities supplied to `whereEntity()` are refreshed with a separate `SELECT` by primary key instead (unless `updateEntity(false)` is set).
