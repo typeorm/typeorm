@@ -3732,10 +3732,15 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                             undefined,
                             queryBuilder,
                         )
+                    const relatedEntityGroupsByEntity = new Map<any, any>()
+                    for (const group of relatedEntityGroups) {
+                        if (!relatedEntityGroupsByEntity.has(group.entity)) {
+                            relatedEntityGroupsByEntity.set(group.entity, group)
+                        }
+                    }
                     entities.forEach((entity) => {
-                        const relatedEntityGroup = relatedEntityGroups.find(
-                            (group) => group.entity === entity,
-                        )
+                        const relatedEntityGroup =
+                            relatedEntityGroupsByEntity.get(entity)
                         if (relatedEntityGroup) {
                             const value =
                                 relatedEntityGroup.related === undefined

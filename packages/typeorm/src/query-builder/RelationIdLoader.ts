@@ -6,6 +6,7 @@ import type { SelectQueryBuilder } from "./SelectQueryBuilder"
 import { DriverUtils } from "../driver/DriverUtils"
 import { TypeORMError } from "../error/TypeORMError"
 import type { QueryRunner } from "../query-runner/QueryRunner"
+import { isUint8Array, uint8ArrayToHex } from "../util/Uint8ArrayUtils"
 
 /**
  * Loads relation ids for the given entities.
@@ -149,62 +150,184 @@ export class RelationIdLoader {
         } else {
         }
 
-        return entities.map((entity) => {
-            const group: { entity: E1; related?: E2 | E2[] } = {
-                entity: entity,
+        const inverseColumnAliases = inverseColumns.map((column) =>
+            DriverUtils.buildAlias(
+                this.dataSource.driver,
+                undefined,
+                column.entityMetadata.name + "_" + column.propertyAliasName,
+            ),
+        )
+        const columnAliases = columns.map((column) =>
+            DriverUtils.buildAlias(
+                this.dataSource.driver,
+                undefined,
+                column.entityMetadata.name +
+                    "_" +
+                    relation.propertyPath.replace(".", "_") +
+                    "_" +
+                    column.propertyPath.replace(".", "_"),
+            ),
+        )
+
+        const groups: { entity: E1; related?: E2 | E2[] }[] = entities.map(
+            (entity) => ({
+                entity,
                 related: isMany ? [] : undefined,
+            }),
+        )
+        const groupsByEntityKey = new Map<
+            string,
+            { entity: E1; related?: E2 | E2[] }[]
+        >()
+        const fallbackGroups: { entity: E1; related?: E2 | E2[] }[] = []
+        for (const group of groups) {
+            const key = this.encodeLookupKey(
+                inverseColumns.map((column) =>
+                    column.getEntityValue(group.entity),
+                ),
+            )
+            if (key !== null) {
+                let bucket = groupsByEntityKey.get(key)
+                if (!bucket) {
+                    bucket = []
+                    groupsByEntityKey.set(key, bucket)
+                }
+                bucket.push(group)
+            } else {
+                fallbackGroups.push(group)
             }
+        }
 
-            const entityRelationIds = relationIds.filter((relationId) => {
-                return inverseColumns.every((column) => {
-                    return column.compareEntityValue(
-                        entity,
-                        relationId[
-                            DriverUtils.buildAlias(
-                                this.dataSource.driver,
-                                undefined,
-                                column.entityMetadata.name +
-                                    "_" +
-                                    column.propertyAliasName,
-                            )
-                        ],
+        const relationIdsByRelatedKey = new Map<
+            string,
+            { relationId: any; entityKey: string | null }[]
+        >()
+        const encodedRelationIds: {
+            relationId: any
+            entityKey: string | null
+        }[] = []
+        for (const relationId of relationIds) {
+            const entry = {
+                relationId,
+                entityKey: this.encodeLookupKey(
+                    inverseColumnAliases.map((alias) => relationId[alias]),
+                ),
+            }
+            encodedRelationIds.push(entry)
+            const relatedKey = this.encodeLookupKey(
+                columnAliases.map((alias) => relationId[alias]),
+            )
+            if (relatedKey !== null) {
+                let bucket = relationIdsByRelatedKey.get(relatedKey)
+                if (!bucket) {
+                    bucket = []
+                    relationIdsByRelatedKey.set(relatedKey, bucket)
+                }
+                bucket.push(entry)
+            }
+        }
+
+        // Iterate relatedEntities in order so each group's related array keeps
+        // the exact relatedEntities order and to-one last-match semantics in
+        // linear time without per-parent sorting or temporary arrays.
+        for (const relatedEntity of relatedEntities) {
+            const relatedKey = this.encodeLookupKey(
+                columns.map((column) => column.getEntityValue(relatedEntity)),
+            )
+            const matchingRelationIds =
+                relatedKey !== null
+                    ? (relationIdsByRelatedKey.get(relatedKey) ?? [])
+                    : encodedRelationIds.filter(({ relationId }) =>
+                          columns.every((column, index) =>
+                              column.compareEntityValue(
+                                  relatedEntity,
+                                  relationId[columnAliases[index]],
+                              ),
+                          ),
+                      )
+
+            for (const { relationId, entityKey } of matchingRelationIds) {
+                if (entityKey !== null) {
+                    const matchedGroups = groupsByEntityKey.get(entityKey)
+                    if (matchedGroups) {
+                        for (const group of matchedGroups) {
+                            if (isMany) {
+                                ;(group.related as E2[]).push(relatedEntity)
+                            } else {
+                                group.related = relatedEntity
+                            }
+                        }
+                    }
+                }
+                for (const group of fallbackGroups) {
+                    const matched = inverseColumns.every((column, index) =>
+                        column.compareEntityValue(
+                            group.entity,
+                            relationId[inverseColumnAliases[index]],
+                        ),
                     )
-                })
-            })
-            if (!entityRelationIds.length) return group
-
-            relatedEntities.forEach((relatedEntity) => {
-                entityRelationIds.forEach((relationId) => {
-                    const relatedEntityMatched = columns.every((column) => {
-                        return column.compareEntityValue(
-                            relatedEntity,
-                            relationId[
-                                DriverUtils.buildAlias(
-                                    this.dataSource.driver,
-                                    undefined,
-                                    column.entityMetadata.name +
-                                        "_" +
-                                        relation.propertyPath.replace(
-                                            ".",
-                                            "_",
-                                        ) +
-                                        "_" +
-                                        column.propertyPath.replace(".", "_"),
-                                )
-                            ],
-                        )
-                    })
-                    if (relatedEntityMatched) {
+                    if (matched) {
                         if (isMany) {
                             ;(group.related as E2[]).push(relatedEntity)
                         } else {
                             group.related = relatedEntity
                         }
                     }
-                })
-            })
-            return group
-        })
+                }
+            }
+        }
+
+        return groups
+    }
+
+    /**
+     * Encodes column values into a collision-free string key that matches
+     * `ColumnMetadata.compareEntityValue` semantics. Returns `null` if any
+     * value requires `compareEntityValue` fallback (custom `.equals()`, `NaN`,
+     * or non-Uint8Array objects).
+     *
+     * @param values
+     */
+    protected encodeLookupKey(values: unknown[]): string | null {
+        if (values.length === 0) return ""
+        if (values.length === 1) {
+            const value = values[0]
+            if (value === null) return "null"
+            if (value === undefined) return "u"
+            if (typeof value === "number") {
+                if (Number.isNaN(value)) return null
+                return "n:" + (Object.is(value, -0) ? "0" : String(value))
+            }
+            if (typeof value === "string") return "s:" + value
+            if (typeof value === "bigint") return "b:" + value.toString()
+            if (typeof value === "boolean") return value ? "t" : "f"
+            if (isUint8Array(value)) return "x:" + uint8ArrayToHex(value)
+            return null
+        }
+
+        const parts: unknown[] = new Array(values.length)
+        for (let i = 0; i < values.length; i++) {
+            const value = values[i]
+            if (value === null) {
+                parts[i] = 0
+            } else if (value === undefined) {
+                parts[i] = 1
+            } else if (typeof value === "boolean") {
+                parts[i] = value ? 2 : 3
+            } else if (typeof value === "number") {
+                if (Number.isNaN(value)) return null
+                parts[i] = [4, Object.is(value, -0) ? "0" : String(value)]
+            } else if (typeof value === "string") {
+                parts[i] = [5, value]
+            } else if (typeof value === "bigint") {
+                parts[i] = [6, value.toString()]
+            } else if (isUint8Array(value)) {
+                parts[i] = [7, uint8ArrayToHex(value)]
+            } else {
+                return null
+            }
+        }
+        return JSON.stringify(parts)
     }
 
     // -------------------------------------------------------------------------
