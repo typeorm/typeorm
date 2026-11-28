@@ -36,6 +36,9 @@ export class AuroraPostgresQueryRunner
      */
     declare driver: AuroraPostgresDriver
 
+    // The Aurora Data API does not use a pg-query-stream cursor.
+    override readonly streamInTransaction = undefined
+
     protected client: any
 
     // -------------------------------------------------------------------------

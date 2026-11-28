@@ -23,6 +23,7 @@ import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
 import { VersionUtils } from "../../util/VersionUtils"
+import { streamInTransaction } from "../postgres/stream-in-transaction"
 import { Query } from "../Query"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { IsolationLevel } from "../types/IsolationLevel"
@@ -181,8 +182,8 @@ export class CockroachQueryRunner
      * Releases used database connection.
      * You cannot use query runner methods once its released.
      */
-    release(): Promise<void> {
-        return this.releaseConnection()
+    release(error?: Error): Promise<void> {
+        return this.releaseConnection(error)
     }
 
     /**
@@ -265,14 +266,15 @@ export class CockroachQueryRunner
             await this.query(
                 `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
             )
+            this.transactionDepth -= 1
         } else {
             this.storeQueries = false
             await this.query("ROLLBACK")
             this.queries = []
             this.isTransactionActive = false
             this.transactionRetries = 0
+            this.transactionDepth = 0
         }
-        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
@@ -421,6 +423,9 @@ export class CockroachQueryRunner
             await broadcasterResult.wait()
         }
     }
+
+    readonly streamInTransaction: QueryRunner["streamInTransaction"] =
+        streamInTransaction
 
     /**
      * Returns raw data stream.

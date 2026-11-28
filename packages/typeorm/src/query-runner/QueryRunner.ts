@@ -156,6 +156,16 @@ export interface QueryRunner extends AsyncDisposable {
     ): Promise<ReadStream>
 
     /**
+     * Streams a query in a new transaction using the driver's native stream lifecycle.
+     * Releases the runner after cleanup when releaseOnFinish is true.
+     */
+    streamInTransaction?(
+        query: string,
+        parameters: unknown[],
+        releaseOnFinish: boolean,
+    ): Promise<ReadStream>
+
+    /**
      * Returns all available database names including system databases.
      */
     getDatabases(): Promise<string[]>

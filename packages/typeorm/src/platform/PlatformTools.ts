@@ -2,8 +2,9 @@ import { format as sqlFormat } from "@sqltools/formatter"
 import { type Config as SqlFormatterConfig } from "@sqltools/formatter/lib/core/types"
 import ansi from "ansis"
 import crypto from "crypto"
-import fs from "fs"
+import fs, { type ReadStream } from "fs"
 import path from "path"
+import { Readable } from "stream"
 import { highlight } from "sql-highlight"
 import { type DatabaseType } from "../driver/types/DatabaseType"
 
@@ -19,6 +20,67 @@ export class PlatformTools {
      * Type of the currently running platform.
      */
     static type: "browser" | "node" = "node"
+
+    /**
+     * Wait for transaction finalization before exposing stream completion.
+     * PostgreSQL closes its cursor asynchronously on early destruction.
+     */
+    static wrapQueryStream(
+        cursor: ReadStream,
+        finalize: (commit: boolean) => Promise<void>,
+    ): ReadStream {
+        let finalization: Promise<void> | undefined
+        const commit = () => {
+            if (output.destroyed || finalization) return
+            finalization = finalize(true)
+            void finalization.then(
+                () => {
+                    if (!output.destroyed) output.push(null)
+                },
+                (error) => output.destroy(error),
+            )
+        }
+        cursor.pause()
+        const output = new Readable({
+            objectMode: true,
+            // The cursor already buffers rows. Pull them only as requested.
+            highWaterMark: 0,
+            read() {
+                cursor.resume()
+            },
+            destroy(error, callback) {
+                const afterClose = () => {
+                    finalization ??= finalize(false)
+                    finalization.then(
+                        () => callback(error),
+                        (failure) => callback(error ?? failure),
+                    )
+                }
+                if (cursor.closed) return afterClose()
+                cursor.once("close", afterClose)
+                cursor.destroy()
+            },
+        })
+        cursor.on("data", (row) => {
+            if (!output.push(row)) cursor.pause()
+        })
+        cursor.once("end", () => {
+            if (output.readableLength === 0) return commit()
+            // Observe buffered rows being read without resuming a paused stream.
+            const onRow = () => {
+                if (output.readableLength !== 0) return
+                output.removeListener("data", onRow)
+                queueMicrotask(commit)
+            }
+            output.prependListener("data", onRow)
+            output.once("close", () => output.removeListener("data", onRow))
+        })
+        cursor.once("error", (error) => output.destroy(error))
+        cursor.once("close", () => {
+            if (!cursor.readableEnded) output.destroy()
+        })
+        return output as ReadStream
+    }
 
     /**
      * @returns the platform-specific global variable

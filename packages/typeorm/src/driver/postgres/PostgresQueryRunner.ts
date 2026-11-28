@@ -24,6 +24,7 @@ import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
 import { VersionUtils } from "../../util/VersionUtils"
 import { DriverUtils } from "../DriverUtils"
+import { streamInTransaction } from "./stream-in-transaction"
 import { Query } from "../Query"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { IsolationLevel } from "../types/IsolationLevel"
@@ -163,8 +164,8 @@ export class PostgresQueryRunner
      * Releases used database connection.
      * You cannot use query runner methods once its released.
      */
-    release(): Promise<void> {
-        return this.releasePostgresConnection()
+    release(error?: Error): Promise<void> {
+        return this.releasePostgresConnection(error)
     }
 
     /**
@@ -238,11 +239,12 @@ export class PostgresQueryRunner
             await this.query(
                 `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
             )
+            this.transactionDepth -= 1
         } else {
             await this.query("ROLLBACK")
             this.isTransactionActive = false
+            this.transactionDepth = 0
         }
-        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
@@ -348,6 +350,9 @@ export class PostgresQueryRunner
             await broadcasterResult.wait()
         }
     }
+
+    readonly streamInTransaction: QueryRunner["streamInTransaction"] =
+        streamInTransaction
 
     /**
      * Returns raw data stream.
