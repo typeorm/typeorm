@@ -5,6 +5,8 @@ import type { ColumnMetadata } from "../metadata/ColumnMetadata"
 import type { UpdateResult } from "./result/UpdateResult"
 import type { InsertResult } from "./result/InsertResult"
 import { TypeORMError } from "../error"
+import { OrmUtils } from "../util/OrmUtils"
+import { DriverUtils } from "../driver/DriverUtils"
 
 /**
  * Updates entity with returning results in the entity insert and update operations.
@@ -214,6 +216,18 @@ export class ReturningResultsEntityUpdator {
             return generatedMap
         })
 
+        // drivers without RETURNING derive generated ids from the statement's insert id,
+        // which assumes every row was inserted; a multi-row upsert that updates some rows breaks that
+        if (
+            this.expressionMap.onUpdate &&
+            entities.length > 1 &&
+            !this.queryRunner.dataSource.driver.isReturningSqlSupported(
+                "insert",
+            )
+        ) {
+            await this.reloadUpsertedGeneratedIds(entities, generatedMaps)
+        }
+
         // for postgres and mssql we use returning/output statement to get values of inserted default and generated values
         // for other drivers we have to re-select this data from the database
         if (
@@ -262,16 +276,27 @@ export class ReturningResultsEntityUpdator {
                 .getMany()
 
             entities.forEach((entity, entityIndex) => {
+                // rows come back in database order, which can differ from the input order for upserts
+                const returningRow = this.expressionMap.onUpdate
+                    ? returningResult.find((row: ObjectLiteral) =>
+                          this.hasSameValues(
+                              metadata.primaryColumns,
+                              row,
+                              entity,
+                          ),
+                      )
+                    : returningResult[entityIndex]
+
                 this.queryRunner.manager.merge(
                     metadata.target as any,
                     generatedMaps[entityIndex],
-                    returningResult[entityIndex],
+                    returningRow,
                 )
 
                 this.queryRunner.manager.merge(
                     metadata.target as any,
                     entity,
-                    returningResult[entityIndex],
+                    returningRow,
                 )
             })
         }
@@ -281,6 +306,163 @@ export class ReturningResultsEntityUpdator {
             insertResult.identifiers.push(entityId)
             insertResult.generatedMaps.push(generatedMaps[entityIndex])
         })
+    }
+
+    /**
+     * Re-selects generated primary keys of upserted rows by their conflict columns
+     * and merges them into the entities and generated maps.
+     *
+     * @param entities - Upserted value sets, in input order.
+     * @param generatedMaps - Generated values per entity, updated in place.
+     */
+    protected async reloadUpsertedGeneratedIds(
+        entities: ObjectLiteral[],
+        generatedMaps: ObjectLiteral[],
+    ): Promise<void> {
+        const metadata = this.expressionMap.mainAlias!.metadata
+        const generatedPrimaryColumns = metadata.primaryColumns.filter(
+            (column) => column.isGenerated,
+        )
+        const conflict = this.expressionMap.onUpdate.conflict
+        const conflictColumns = (
+            typeof conflict === "string" ? [conflict] : (conflict ?? [])
+        ).map((databaseName) =>
+            metadata.findColumnWithDatabaseName(databaseName),
+        )
+
+        if (
+            generatedPrimaryColumns.length === 0 ||
+            conflictColumns.length === 0 ||
+            conflictColumns.some((column) => !column || column.relationMetadata)
+        )
+            return
+
+        const uniqueColumns = conflictColumns as ColumnMetadata[]
+
+        // MySQL's ON DUPLICATE KEY UPDATE fires on any unique key, so with several of them
+        // the conflict columns may not identify the row that was updated
+        const driver = this.queryRunner.dataSource.driver
+        if (
+            (DriverUtils.isMySQLFamily(driver) ||
+                driver.options.type === "aurora-mysql") &&
+            this.hasOtherUniqueKey(uniqueColumns)
+        )
+            return
+
+        // without a value for every conflict column the criteria could match unrelated rows
+        if (
+            entities.some((entity) =>
+                uniqueColumns.some(
+                    (column) => column.getEntityValue(entity) == null,
+                ),
+            )
+        )
+            return
+
+        // query builder applies transformers but not driver conversions (e.g. Date to a date
+        // string), so pass persisted values for columns without a transformer
+        const criteria = entities.map((entity) =>
+            uniqueColumns.reduce((map, column) => {
+                const value = column.getEntityValue(entity)
+                return OrmUtils.mergeDeep(
+                    map,
+                    column.createValueMap(
+                        column.transformer
+                            ? value
+                            : driver.preparePersistentValue(value, column),
+                    ),
+                )
+            }, {} as ObjectLiteral),
+        )
+
+        const selectRows = (
+            where: ObjectLiteral | ObjectLiteral[],
+        ): Promise<ObjectLiteral[]> =>
+            this.queryRunner.manager
+                .createQueryBuilder()
+                .select(
+                    [...generatedPrimaryColumns, ...uniqueColumns].map(
+                        (column) =>
+                            metadata.targetName + "." + column.propertyPath,
+                    ),
+                )
+                .from(metadata.target, metadata.targetName)
+                .where(where)
+                .withDeleted()
+                .setOption("create-pojo")
+                .getMany()
+
+        const rows = await selectRows(criteria)
+
+        for (const [entityIndex, entity] of entities.entries()) {
+            // a collation can match a stored value that differs from the input (case, accents,
+            // trailing spaces); only the database can tell, so ask it for that one row
+            const row =
+                rows.find((row) =>
+                    this.hasSameValues(uniqueColumns, row, entity),
+                ) ?? (await selectRows(criteria[entityIndex]))[0]
+            if (!row) continue
+
+            const ids = generatedPrimaryColumns.reduce(
+                (map, column) =>
+                    OrmUtils.mergeDeep(
+                        map,
+                        column.createValueMap(column.getEntityValue(row)),
+                    ),
+                {} as ObjectLiteral,
+            )
+            OrmUtils.mergeDeep(generatedMaps[entityIndex], ids)
+            this.queryRunner.manager.merge(metadata.target as any, entity, ids)
+        }
+    }
+
+    /**
+     * Checks whether a loaded row and an entity hold the same values for the given columns,
+     * comparing them in the form they are persisted in.
+     *
+     * @param columns - Columns to compare.
+     * @param row - Row loaded from the database.
+     * @param entity - Entity or value set passed by the caller.
+     */
+    protected hasSameValues(
+        columns: ColumnMetadata[],
+        row: ObjectLiteral,
+        entity: ObjectLiteral,
+    ): boolean {
+        const driver = this.queryRunner.dataSource.driver
+        const toComparable = (column: ColumnMetadata, value: unknown) => {
+            const persisted = driver.preparePersistentValue(value, column)
+            if (persisted instanceof Uint8Array)
+                return Array.prototype.join.call(persisted, ",")
+            if (persisted instanceof Date) return String(persisted.getTime())
+            return String(persisted)
+        }
+
+        return columns.every(
+            (column) =>
+                toComparable(column, column.getEntityValue(row)) ===
+                toComparable(column, column.getEntityValue(entity)),
+        )
+    }
+
+    /**
+     * Checks whether the entity has a unique key other than the given columns.
+     *
+     * @param columns - Columns of the unique key being upserted on.
+     */
+    protected hasOtherUniqueKey(columns: ColumnMetadata[]): boolean {
+        const metadata = this.expressionMap.mainAlias!.metadata
+        const toKey = (keyColumns: ColumnMetadata[]) =>
+            keyColumns
+                .map((column) => column.databaseName)
+                .sort()
+                .join(",")
+        const upsertKey = toKey(columns)
+
+        return [
+            ...metadata.uniques,
+            ...metadata.indices.filter((index) => index.isUnique),
+        ].some((unique) => toKey(unique.columns) !== upsertKey)
     }
 
     /**
