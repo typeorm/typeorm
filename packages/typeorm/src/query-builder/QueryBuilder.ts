@@ -50,6 +50,20 @@ import { escapeRegExp } from "../util/escapeRegExp"
 const WRITE_QUERY_TYPES = ["update", "delete", "soft-delete", "restore"]
 
 /**
+ * Statements with replaced property names, per data source. The replacement
+ * depends only on the statement, the aliases with their entity metadata and the
+ * prefixing and escaping options, so a statement which is built again does not
+ * need to be replaced again. The least recently used statement is evicted first.
+ * Longer statements, such as bulk inserts, rarely repeat and are not cached.
+ */
+const replacedStatements = new WeakMap<DataSource, Map<string, string>>()
+const MAX_REPLACED_STATEMENTS = 500
+const MAX_REPLACED_STATEMENT_LENGTH = 20_000
+
+const metadataIds = new WeakMap<EntityMetadata, number>()
+let nextMetadataId = 0
+
+/**
  * Allows to build complex sql queries in a fashion way and execute those queries.
  */
 export abstract class QueryBuilder<Entity extends ObjectLiteral> {
@@ -730,6 +744,44 @@ export abstract class QueryBuilder<Entity extends ObjectLiteral> {
      * @param statement
      */
     protected replacePropertyNamesForTheWholeQuery(statement: string) {
+        if (statement.length > MAX_REPLACED_STATEMENT_LENGTH) {
+            return this.replacePropertyNamesUncached(statement)
+        }
+
+        let statements = replacedStatements.get(this.dataSource)
+        if (!statements) {
+            statements = new Map()
+            replacedStatements.set(this.dataSource, statements)
+        }
+
+        let key =
+            (this.expressionMap.aliasNamePrefixingEnabled ? "1" : "0") +
+            (this.expressionMap.disableEscaping ? "1" : "0")
+        for (const alias of this.expressionMap.aliases) {
+            if (!alias.hasMetadata) continue
+            let metadataId = metadataIds.get(alias.metadata)
+            if (metadataId === undefined) {
+                metadataId = nextMetadataId++
+                metadataIds.set(alias.metadata, metadataId)
+            }
+            key += `\0${alias.name}\0${metadataId}`
+        }
+        key += `\0\0${statement}`
+
+        let replaced = statements.get(key)
+        if (replaced === undefined) {
+            replaced = this.replacePropertyNamesUncached(statement)
+            if (statements.size >= MAX_REPLACED_STATEMENTS) {
+                statements.delete(statements.keys().next().value!)
+            }
+        } else {
+            statements.delete(key)
+        }
+        statements.set(key, replaced)
+        return replaced
+    }
+
+    private replacePropertyNamesUncached(statement: string) {
         const replacements: { [key: string]: { [key: string]: string } } = {}
 
         for (const alias of this.expressionMap.aliases) {
