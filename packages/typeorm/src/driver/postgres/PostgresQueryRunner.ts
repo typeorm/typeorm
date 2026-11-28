@@ -795,6 +795,10 @@ export class PostgresQueryRunner
                 this.dropViewSql(view, ifExists),
             ],
             [
+                // dropping a materialized view drops its indices as well
+                ...view.indices.map((index) =>
+                    this.createViewIndexSql(view, index),
+                ),
                 await this.insertViewDefinitionSql(view),
                 this.createViewSql(view),
             ],
