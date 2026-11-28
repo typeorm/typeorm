@@ -252,6 +252,33 @@ export class EntityMetadataValidator {
             // todo: check if entity with duplicate names, some decorators exist
         })
 
+        // validate junction table foreign keys.
+        // their referential actions can also come from the join column options
+        // of the @JoinTable decorator, which are not covered by the relation checks above
+        if (entityMetadata.isJunction) {
+            entityMetadata.foreignKeys.forEach((foreignKey) => {
+                if (
+                    driver.supportedOnDeleteTypes &&
+                    foreignKey.onDelete &&
+                    !driver.supportedOnDeleteTypes.includes(foreignKey.onDelete)
+                ) {
+                    throw new TypeORMError(
+                        `OnDeleteType "${foreignKey.onDelete}" is not supported for ${driver.options.type}!`,
+                    )
+                }
+
+                if (
+                    driver.supportedOnUpdateTypes &&
+                    foreignKey.onUpdate &&
+                    !driver.supportedOnUpdateTypes.includes(foreignKey.onUpdate)
+                ) {
+                    throw new TypeORMError(
+                        `OnUpdateType "${foreignKey.onUpdate}" is not valid for ${driver.options.type}!`,
+                    )
+                }
+            })
+        }
+
         // make sure cascade remove is not set for both sides of relationships (can be set in OneToOne decorators)
         entityMetadata.relations.forEach((relation) => {
             const isCircularCascadeRemove =
