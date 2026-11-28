@@ -34,15 +34,22 @@ export class ReturningResultsEntityUpdator {
         entities: ObjectLiteral[],
     ): Promise<void> {
         const metadata = this.expressionMap.mainAlias!.metadata
+        const driver = this.queryRunner.dataSource.driver
+
+        // A custom Oracle RETURNING clause defines its own output binds, so the
+        // result cannot be mapped back to entity columns. The raw result is left
+        // untouched and the entities are reloaded with a separate query instead.
+        const canUseReturningResult =
+            driver.isReturningSqlSupported("update") &&
+            !(
+                driver.options.type === "oracle" &&
+                typeof this.expressionMap.returning === "string"
+            )
 
         await Promise.all(
             entities.map(async (entity, entityIndex) => {
                 // if database supports returning/output statement then we already should have updating values in the raw data returned by insert query
-                if (
-                    this.queryRunner.dataSource.driver.isReturningSqlSupported(
-                        "update",
-                    )
-                ) {
+                if (canUseReturningResult) {
                     if (
                         this.queryRunner.dataSource.driver.options.type ===
                             "oracle" &&
@@ -78,7 +85,7 @@ export class ReturningResultsEntityUpdator {
                         updateResult.generatedMaps.push(returningColumns)
                     }
                 } else {
-                    // for driver which do not support returning/output statement we need to perform separate query and load what we need
+                    // for driver which do not support returning/output statement (or when its result cannot be mapped) we need to perform separate query and load what we need
                     const updationColumns =
                         this.expressionMap.extraReturningColumns
                     if (updationColumns.length > 0) {
