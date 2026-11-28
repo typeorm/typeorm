@@ -2958,7 +2958,7 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
                                 // See https://mariadb.com/kb/en/library/information-schema-columns-table/
                                 tableColumn.default = dbColumn["COLUMN_DEFAULT"]
                             } else {
-                                tableColumn.default = `'${dbColumn["COLUMN_DEFAULT"]}'`
+                                tableColumn.default = `'${dbColumn["COLUMN_DEFAULT"].replaceAll("'", "''")}'`
                             }
 
                             if (dbColumn["EXTRA"].indexOf("on update") !== -1) {

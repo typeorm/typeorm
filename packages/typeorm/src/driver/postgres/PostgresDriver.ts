@@ -1225,7 +1225,7 @@ export class PostgresDriver implements Driver {
                 typeof defaultValue === "string") &&
             defaultValue !== undefined
         ) {
-            return `'${defaultValue}'`
+            return `'${String(defaultValue).replaceAll("'", "''")}'`
         }
 
         if (typeof defaultValue === "boolean") {
