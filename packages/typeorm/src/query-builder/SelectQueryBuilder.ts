@@ -2032,9 +2032,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         sql: string,
         parameters: unknown[],
     ): Promise<ReadStream> {
+        const ownsQueryRunner = queryRunner !== this.queryRunner
         const release = (error?: unknown) => {
-            if (queryRunner === this.queryRunner || queryRunner.isReleased)
-                return
+            if (!ownsQueryRunner || queryRunner.isReleased) return
             if (!queryRunner.isTransactionActive) return queryRunner.release()
             // A failed rollback or a subscriber can leave the client in a transaction.
             return queryRunner.release(

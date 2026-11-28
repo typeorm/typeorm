@@ -69,6 +69,17 @@ describe("SelectQueryBuilder > PostgreSQL transactional streams", () => {
         })
     }
 
+    it("should retain a supplied runner when the builder switches runners", async () => {
+        const { builder, cursor, release } = setup(true)
+        const stream = await builder.useTransaction(true).stream()
+        const other = new DataSource({ type: "postgres" }).createQueryRunner()
+        builder.setQueryRunner(other)
+        stream.resume()
+        cursor.push(null)
+        await finished(stream)
+        expect(release.called).to.equal(false)
+    })
+
     for (const active of [false, true]) {
         it(`should clean up a rejected start with transaction active=${active}`, async () => {
             const { builder, runner, start, rollback, release } = setup()
