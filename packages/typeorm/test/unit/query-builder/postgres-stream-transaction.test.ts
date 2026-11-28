@@ -41,6 +41,19 @@ describe("SelectQueryBuilder > PostgreSQL transactional streams", () => {
         }
     }
 
+    it("should leave Aurora Data API streams on the default lifecycle", () => {
+        const dataSource = new DataSource({
+            type: "aurora-postgres",
+            database: "test",
+            region: "us-east-1",
+            secretArn: "test",
+            resourceArn: "test",
+            driver: { pg: class {} },
+        })
+        expect(dataSource.createQueryRunner().streamInTransaction).to.be
+            .undefined
+    })
+
     for (const supplied of [false, true]) {
         it(`should roll back failed stream setup (supplied=${supplied})`, async () => {
             const { builder, open, rollback, release } = setup(supplied)

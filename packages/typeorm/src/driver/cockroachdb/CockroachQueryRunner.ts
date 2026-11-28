@@ -23,6 +23,7 @@ import { BroadcasterResult } from "../../subscriber/BroadcasterResult"
 import { InstanceChecker } from "../../util/InstanceChecker"
 import { OrmUtils } from "../../util/OrmUtils"
 import { VersionUtils } from "../../util/VersionUtils"
+import { streamInTransaction } from "../postgres/stream-in-transaction"
 import { Query } from "../Query"
 import type { ColumnType } from "../types/ColumnTypes"
 import type { IsolationLevel } from "../types/IsolationLevel"
@@ -422,6 +423,9 @@ export class CockroachQueryRunner
             await broadcasterResult.wait()
         }
     }
+
+    readonly streamInTransaction: QueryRunner["streamInTransaction"] =
+        streamInTransaction
 
     /**
      * Returns raw data stream.
