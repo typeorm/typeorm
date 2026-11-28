@@ -1,17 +1,17 @@
+import { expect } from "chai"
+import path from "node:path"
 import "reflect-metadata"
+import type { DataSource } from "../../../../src"
+import type { BetterSqlite3DataSourceOptions } from "../../../../src/driver/better-sqlite3/BetterSqlite3DataSourceOptions"
 import {
     closeTestingConnections,
     createTestingConnections,
     reloadTestingDatabases,
 } from "../../../utils/test-utils"
-import { expect } from "chai"
-import { join } from "path"
-import type { DataSource } from "../../../../src"
-import type { BetterSqlite3DataSourceOptions } from "../../../../src/driver/better-sqlite3/BetterSqlite3DataSourceOptions"
 
-const pathToBetterSqliteNode = join(
-    __dirname,
-    "../../../../../../node_modules/better-sqlite3/build/Release/better_sqlite3.node",
+const pathToBetterSqliteNode = path.resolve(
+    require.resolve("better-sqlite3"),
+    `../../prebuilds/${process.platform}-${process.arch}.node`,
 )
 
 describe("option nativeBinding for better-sqlite3", () => {

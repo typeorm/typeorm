@@ -38,7 +38,7 @@ export class Post {
 
     @Column({
         generatedType: "VIRTUAL",
-        asExpression: "md5(coalesce(`firstName`,0))",
+        asExpression: "SHA2(COALESCE(`firstName`, 0), 256)",
         type: "varchar",
         length: 255,
         nullable: true,

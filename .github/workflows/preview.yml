@@ -40,6 +40,10 @@ jobs:
               - *ci
               - packages/codemod/**
 
+            legacy-naming-strategies:
+              - *ci
+              - packages/legacy-naming-strategies/**
+
   preview:
     needs: detect-changes
     if: needs.detect-changes.outputs.changes != '[]'
@@ -64,6 +68,14 @@ jobs:
           pnpm run build
           echo "PACKAGES=${{ env.PACKAGES }} ./packages/codemod" >> "$GITHUB_ENV"
         working-directory: packages/codemod
+
+      # @typeorm/legacy-naming-strategies
+      - name: build legacy-naming-strategies
+        if: contains(needs.detect-changes.outputs.changes, 'legacy-naming-strategies')
+        run: |
+          pnpm run build
+          echo "PACKAGES=${{ env.PACKAGES }} ./packages/legacy-naming-strategies" >> "$GITHUB_ENV"
+        working-directory: packages/legacy-naming-strategies
 
       # publish
       - run: pnpm exec pkg-pr-new publish ${{ env.PACKAGES }} --template='./playground'
