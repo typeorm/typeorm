@@ -294,6 +294,9 @@ export class QueryExpressionMap {
      */
     whereEntities: ObjectLiteral[] = []
 
+    /** Original integer identities, independent of later entity and parameter changes. */
+    whereEntityIdentity?: { column: ColumnMetadata; ids: readonly number[] }
+
     /**
      * Indicates if entity must be updated after insertion / updation.
      * This may produce extra query or use RETURNING / OUTPUT statement (depend on database).
@@ -530,6 +533,7 @@ export class QueryExpressionMap {
             ? this.insertFromSelect.clone()
             : undefined
         map.whereEntities = this.whereEntities
+        map.whereEntityIdentity = this.whereEntityIdentity
         map.updateEntity = this.updateEntity
         map.callListeners = this.callListeners
         map.useTransaction = this.useTransaction

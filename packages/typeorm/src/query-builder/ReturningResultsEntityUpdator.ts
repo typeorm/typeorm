@@ -6,6 +6,12 @@ import type { UpdateResult } from "./result/UpdateResult"
 import type { InsertResult } from "./result/InsertResult"
 import { TypeORMError } from "../error"
 
+export interface ReturningIdentity {
+    column: ColumnMetadata
+    ids: readonly number[]
+    implicit: boolean
+}
+
 /**
  * Updates entity with returning results in the entity insert and update operations.
  */
@@ -28,12 +34,29 @@ export class ReturningResultsEntityUpdator {
      *
      * @param updateResult
      * @param entities
+     * @param identity Bound integer identities for soft-delete and restore.
+     * @param metadata Metadata for the target used to build the update.
      */
     async update(
         updateResult: UpdateResult,
         entities: ObjectLiteral[],
+        identity?: ReturningIdentity,
+        metadata = this.expressionMap.mainAlias!.metadata,
     ): Promise<void> {
-        const metadata = this.expressionMap.mainAlias!.metadata
+        let rowsById: Map<number, ObjectLiteral> | undefined
+        if (identity && Array.isArray(updateResult.raw)) {
+            const key = identity.column.databaseName
+            rowsById = new Map()
+            for (const row of updateResult.raw as ObjectLiteral[]) {
+                const id = row[key]
+                if (identity.implicit) delete row[key]
+                if (!rowsById) continue
+                // Fall back for the whole result if a custom parser changes the ID type.
+                if (Number.isSafeInteger(id)) rowsById.set(id, row)
+                else rowsById = undefined
+            }
+        }
+
         const driver = this.queryRunner.dataSource.driver
 
         // A custom Oracle RETURNING clause defines its own output binds, so the
@@ -68,19 +91,29 @@ export class ReturningResultsEntityUpdator {
                             {} as ObjectLiteral,
                         )
                     }
-                    const result = Array.isArray(updateResult.raw)
-                        ? updateResult.raw[entityIndex]
-                        : updateResult.raw
+                    const result =
+                        rowsById && identity
+                            ? rowsById.get(identity.ids[entityIndex])
+                            : Array.isArray(updateResult.raw)
+                              ? updateResult.raw[entityIndex]
+                              : updateResult.raw
                     const returningColumns =
                         this.queryRunner.dataSource.driver.createGeneratedMap(
                             metadata,
                             result,
                         )
                     if (returningColumns) {
+                        let entityColumns = returningColumns
+                        if (rowsById && identity && !identity.implicit) {
+                            // An explicitly returned ID belongs in generatedMaps,
+                            // but must not overwrite an ID changed on the entity.
+                            entityColumns = { ...returningColumns }
+                            delete entityColumns[identity.column.propertyName]
+                        }
                         this.queryRunner.manager.merge(
                             metadata.target as any,
                             entity,
-                            returningColumns,
+                            entityColumns,
                         )
                         updateResult.generatedMaps.push(returningColumns)
                     }
@@ -90,10 +123,7 @@ export class ReturningResultsEntityUpdator {
                         this.expressionMap.extraReturningColumns
                     if (updationColumns.length > 0) {
                         // get entity id by which we will get needed data
-                        const entityId =
-                            this.expressionMap.mainAlias!.metadata.getEntityIdMap(
-                                entity,
-                            )
+                        const entityId = metadata.getEntityIdMap(entity)
                         if (!entityId)
                             throw new TypeORMError(
                                 `Cannot update entity because entity id is not set in the entity.`,
@@ -319,5 +349,29 @@ export class ReturningResultsEntityUpdator {
                 )
             },
         )
+    }
+
+    /**
+     * @returns Original integer identities when the returning projection supports matching.
+     */
+    getReturningIdentity(): ReturningIdentity | undefined {
+        const {
+            whereEntityIdentity: identity,
+            mainAlias,
+            returning,
+            extraReturningColumns,
+        } = this.expressionMap
+        if (!identity || typeof returning === "string") return
+        const primary = mainAlias!.metadata.primaryColumns
+        if (
+            primary.length !== 1 ||
+            primary[0] !== identity.column ||
+            extraReturningColumns.includes(identity.column)
+        )
+            return
+        return {
+            ...identity,
+            implicit: !returning?.includes(identity.column.propertyPath),
+        }
     }
 }
