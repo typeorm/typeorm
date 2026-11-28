@@ -342,6 +342,52 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
         })
     }
 
+    async streamInTransaction(
+        query: string,
+        parameters: unknown[],
+        releaseOnFinish: boolean,
+    ): Promise<ReadStream> {
+        const release = () => {
+            if (!releaseOnFinish || this.isReleased) return
+            // A transaction subscriber can open another transaction before release.
+            return this.release(this.isTransactionActive)
+        }
+        let stream: ReadStream | undefined
+        try {
+            await this.startTransaction()
+
+            let finishQuery!: (error?: Error) => void
+            // A command may fail while a BeforeTransactionCommit subscriber is pending.
+            const result = new Promise<Error | undefined>((resolve) => {
+                finishQuery = resolve
+            })
+            stream = await this.stream(
+                query,
+                parameters,
+                () => finishQuery(),
+                finishQuery,
+            )
+            // The caller only receives the native readable after commit.
+            stream.once("error", finishQuery)
+            await this.commitTransaction(result)
+            await release()
+            stream.removeListener("error", finishQuery)
+            return stream
+        } catch (error) {
+            // Destroy resumes mysql2's socket so rollback can run behind an unread SELECT.
+            stream?.destroy()
+            if (this.isTransactionActive) {
+                try {
+                    await this.rollbackTransaction()
+                } catch {}
+            }
+            try {
+                await release()
+            } catch {}
+            throw error
+        }
+    }
+
     /**
      * Returns all available database names including system databases.
      */

@@ -4,7 +4,6 @@ import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
 import { DriverUtils } from "../driver/DriverUtils"
 import type { MysqlDriver } from "../driver/mysql/MysqlDriver"
-import type { MysqlQueryRunner } from "../driver/mysql/MysqlQueryRunner"
 import type { ReactNativeDriver } from "../driver/react-native/ReactNativeDriver"
 import type { AbstractSqliteDriver } from "../driver/sqlite-abstract/AbstractSqliteDriver"
 import type { SqlServerDriver } from "../driver/sqlserver/SqlServerDriver"
@@ -1969,53 +1968,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         return entitiesAndRaw.entities.length + previousResults
     }
 
-    private async streamMysqlTransaction(
-        queryRunner: MysqlQueryRunner,
-        sql: string,
-        parameters: unknown[],
-    ): Promise<ReadStream> {
-        const ownsQueryRunner = queryRunner !== this.queryRunner
-        const release = () => {
-            if (!ownsQueryRunner || queryRunner.isReleased) return
-            // A transaction subscriber can open another transaction before release.
-            return queryRunner.release(queryRunner.isTransactionActive)
-        }
-        let stream: ReadStream | undefined
-        try {
-            await queryRunner.startTransaction()
-
-            let finishQuery!: (error?: Error) => void
-            // A command may fail while a BeforeTransactionCommit subscriber is pending.
-            const result = new Promise<Error | undefined>((resolve) => {
-                finishQuery = resolve
-            })
-            stream = await queryRunner.stream(
-                sql,
-                parameters,
-                () => finishQuery(),
-                finishQuery,
-            )
-            // The caller only receives the native readable after commit.
-            stream.once("error", finishQuery)
-            await queryRunner.commitTransaction(result)
-            await release()
-            stream.removeListener("error", finishQuery)
-            return stream
-        } catch (error) {
-            // Destroy resumes mysql2's socket so rollback can run behind an unread SELECT.
-            stream?.destroy()
-            if (queryRunner.isTransactionActive) {
-                try {
-                    await queryRunner.rollbackTransaction()
-                } catch {}
-            }
-            try {
-                await release()
-            } catch {}
-            throw error
-        }
-    }
-
     /**
      * Executes built SQL query and returns raw data stream.
      */
@@ -2023,18 +1975,6 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         this.expressionMap.queryEntity = false
         const [sql, parameters] = this.getQueryAndParameters()
         const queryRunner = this.obtainQueryRunner()
-        if (
-            this.expressionMap.useTransaction === true &&
-            !queryRunner.isTransactionActive &&
-            (this.dataSource.options.type === "mysql" ||
-                this.dataSource.options.type === "mariadb")
-        ) {
-            return this.streamMysqlTransaction(
-                queryRunner as MysqlQueryRunner,
-                sql,
-                parameters,
-            )
-        }
         let transactionStartedByUs: boolean = false
         try {
             // start transaction if it was enabled
@@ -2042,6 +1982,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 this.expressionMap.useTransaction === true &&
                 queryRunner.isTransactionActive === false
             ) {
+                if (queryRunner.streamInTransaction) {
+                    return queryRunner.streamInTransaction(
+                        sql,
+                        parameters,
+                        queryRunner !== this.queryRunner,
+                    )
+                }
                 await queryRunner.startTransaction()
                 transactionStartedByUs = true
             }
