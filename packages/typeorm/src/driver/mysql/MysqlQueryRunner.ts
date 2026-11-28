@@ -103,9 +103,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Releases used database connection.
      * You cannot use query runner methods once its released.
      */
-    release(): Promise<void> {
+    release(discard = false): Promise<void> {
         this.isReleased = true
-        if (this.databaseConnection) this.databaseConnection.release()
+        if (this.databaseConnection) {
+            if (discard) this.databaseConnection.destroy()
+            else this.databaseConnection.release()
+        }
         return Promise.resolve()
     }
 
@@ -149,10 +152,18 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
      * Commits transaction.
      * Error will be thrown if transaction was not started.
      */
-    async commitTransaction(): Promise<void> {
+    async commitTransaction(
+        streamResult?: Promise<Error | undefined>,
+    ): Promise<void> {
         if (!this.isTransactionActive) throw new TransactionNotStartedError()
 
         await this.broadcaster.broadcast("BeforeTransactionCommit")
+
+        // mysql2 would otherwise execute a queued COMMIT even if the SELECT failed.
+        if (streamResult) {
+            const error = await streamResult
+            if (error) throw error
+        }
 
         if (this.transactionDepth > 1) {
             await this.query(
@@ -180,11 +191,12 @@ export class MysqlQueryRunner extends BaseQueryRunner implements QueryRunner {
             await this.query(
                 `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
             )
+            this.transactionDepth -= 1
         } else {
             await this.query("ROLLBACK")
             this.isTransactionActive = false
+            this.transactionDepth = 0
         }
-        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
