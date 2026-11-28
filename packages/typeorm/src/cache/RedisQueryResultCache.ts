@@ -4,6 +4,7 @@ import { PlatformTools } from "../platform/PlatformTools"
 import type { DataSource } from "../data-source/DataSource"
 import type { QueryRunner } from "../query-runner/QueryRunner"
 import { TypeORMError } from "../error/TypeORMError"
+import { hash } from "../util/StringUtils"
 
 /**
  * Caches query result into Redis database.
@@ -127,7 +128,8 @@ export class RedisQueryResultCache implements QueryResultCache {
     ): Promise<QueryResultCacheOptions | undefined> {
         const identifier =
             options.identifier === "" ? undefined : options.identifier
-        const key = identifier ?? options.query
+        const key =
+            identifier ?? (options.query ? hash(options.query) : undefined)
         if (!key) return undefined
 
         const result = await this.client.get(key)
@@ -157,7 +159,8 @@ export class RedisQueryResultCache implements QueryResultCache {
     ): Promise<void> {
         const identifier =
             options.identifier === "" ? undefined : options.identifier
-        const key = identifier ?? options.query
+        const key =
+            identifier ?? (options.query ? hash(options.query) : undefined)
         if (!key) return
 
         const value = JSON.stringify(options)

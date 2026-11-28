@@ -126,6 +126,8 @@ Example:
 
 If storing cache in a single database table is not effective for you,
 you can change the cache type to "redis" or "ioredis" and TypeORM will store all cached records in redis instead.
+
+Without an explicit cache identifier, Redis cache keys are SHA-1 hashes of the query and its parameters. Explicit identifiers are used unchanged. Upgrading from raw query keys causes a cache miss until the new keys are populated; old entries expire normally.
 Example:
 
 ```typescript
