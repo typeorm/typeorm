@@ -1976,6 +1976,7 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
         const [sql, parameters] = this.getQueryAndParameters()
         const queryRunner = this.obtainQueryRunner()
         let transactionStartedByUs: boolean = false
+        let ownsQueryRunner = false
         try {
             // start transaction if it was enabled
             if (
@@ -1986,10 +1987,9 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 transactionStartedByUs = true
             }
 
+            ownsQueryRunner = queryRunner !== this.queryRunner
             const releaseFn = () => {
-                if (queryRunner !== this.queryRunner)
-                    // means we created our own query runner
-                    return queryRunner.release()
+                if (ownsQueryRunner) return queryRunner.release()
                 return
             }
             const results = queryRunner.stream(
@@ -2002,15 +2002,24 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             // close transaction if we started it
             if (transactionStartedByUs) {
                 await queryRunner.commitTransaction()
+                return results
             }
 
-            return results
+            return await results
         } catch (error) {
             // rollback transaction if we started it
             if (transactionStartedByUs) {
                 try {
                     await queryRunner.rollbackTransaction()
                 } catch (rollbackError) {}
+            } else if (
+                ownsQueryRunner &&
+                !queryRunner.isTransactionActive &&
+                !queryRunner.isReleased
+            ) {
+                try {
+                    await queryRunner.release()
+                } catch {}
             }
             throw error
         }
