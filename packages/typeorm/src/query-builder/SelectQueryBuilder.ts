@@ -1982,6 +1982,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 this.expressionMap.useTransaction === true &&
                 queryRunner.isTransactionActive === false
             ) {
+                if (queryRunner.streamInTransaction) {
+                    return queryRunner.streamInTransaction(
+                        sql,
+                        parameters,
+                        queryRunner !== this.queryRunner,
+                    )
+                }
                 await queryRunner.startTransaction()
                 transactionStartedByUs = true
             }
