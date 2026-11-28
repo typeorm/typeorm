@@ -369,13 +369,17 @@ export class SubjectExecutor {
                     if (subject.metadata.createDateColumn && subject.entity) {
                         subject.entity[
                             subject.metadata.createDateColumn.databaseName
-                        ] = new Date()
+                        ] =
+                            subject.metadata.createDateColumn.value?.() ??
+                            new Date()
                     }
 
                     if (subject.metadata.updateDateColumn && subject.entity) {
                         subject.entity[
                             subject.metadata.updateDateColumn.databaseName
-                        ] = new Date()
+                        ] =
+                            subject.metadata.updateDateColumn.value?.() ??
+                            new Date()
                     }
 
                     subject.createValueSetAndPopChangeMap()
@@ -541,7 +545,9 @@ export class SubjectExecutor {
                 if (subject.metadata.updateDateColumn?.propertyName) {
                     partialEntity[
                         subject.metadata.updateDateColumn.propertyName
-                    ] = new Date()
+                    ] =
+                        subject.metadata.updateDateColumn.value?.() ??
+                        new Date()
                 }
 
                 const manager = this.queryRunner.manager as MongoEntityManager
@@ -754,7 +760,9 @@ export class SubjectExecutor {
                 if (subject.metadata.updateDateColumn?.propertyName) {
                     partialEntity[
                         subject.metadata.updateDateColumn.propertyName
-                    ] = new Date()
+                    ] =
+                        subject.metadata.updateDateColumn.value?.() ??
+                        new Date()
                 }
 
                 if (subject.metadata.deleteDateColumn?.propertyName) {
@@ -865,7 +873,9 @@ export class SubjectExecutor {
                 if (subject.metadata.updateDateColumn?.propertyName) {
                     partialEntity[
                         subject.metadata.updateDateColumn.propertyName
-                    ] = new Date()
+                    ] =
+                        subject.metadata.updateDateColumn.value?.() ??
+                        new Date()
                 }
 
                 if (subject.metadata.deleteDateColumn?.propertyName) {

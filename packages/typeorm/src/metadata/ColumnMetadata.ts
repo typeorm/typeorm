@@ -252,6 +252,11 @@ export class ColumnMetadata {
     query?: (alias: string) => string
 
     /**
+     * Generates the value of a create or update date column in the application.
+     */
+    value?: () => unknown
+
+    /**
      * Indicates if column is discriminator. Discriminator columns are not mapped to the entity.
      */
     isDiscriminator: boolean = false
@@ -396,6 +401,7 @@ export class ColumnMetadata {
             this.default = options.args.options.default
         if (options.args.options.onUpdate)
             this.onUpdate = options.args.options.onUpdate
+        if (options.args.options.value) this.value = options.args.options.value
         if (options.args.options.generatedIdentity)
             this.generatedIdentity = options.args.options.generatedIdentity
         if (
@@ -479,7 +485,8 @@ export class ColumnMetadata {
         if (this.isTreeLevel) this.type = driver.mappedDataTypes.treeLevel
         if (this.isCreateDate) {
             if (!this.type) this.type = driver.mappedDataTypes.createDate
-            this.default ??= () => driver.mappedDataTypes.createDateDefault
+            if (!this.value)
+                this.default ??= () => driver.mappedDataTypes.createDateDefault
             // skip precision if it was explicitly set to "null" in column options. Otherwise use default precision if it exist.
             if (
                 this.precision === undefined &&
@@ -490,8 +497,10 @@ export class ColumnMetadata {
         }
         if (this.isUpdateDate) {
             if (!this.type) this.type = driver.mappedDataTypes.updateDate
-            this.default ??= () => driver.mappedDataTypes.updateDateDefault
-            this.onUpdate ??= driver.mappedDataTypes.updateDateDefault
+            if (!this.value) {
+                this.default ??= () => driver.mappedDataTypes.updateDateDefault
+                this.onUpdate ??= driver.mappedDataTypes.updateDateDefault
+            }
             // skip precision if it was explicitly set to "null" in column options. Otherwise use default precision if it exist.
             if (
                 this.precision === undefined &&

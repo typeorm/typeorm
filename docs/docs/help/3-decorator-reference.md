@@ -291,6 +291,29 @@ export class User {
 }
 ```
 
+Both columns take their value from the database clock by default. To generate it in the application instead,
+pass `value`. TypeORM binds the returned value on insert and on every update, soft delete, restore and upsert,
+and creates the column without a default:
+
+```typescript
+@Entity()
+export class User {
+    @CreateDateColumn({
+        type: "varchar",
+        length: 24,
+        value: () => new Date().toISOString(),
+    })
+    createdDate: string
+
+    @UpdateDateColumn({
+        type: "varchar",
+        length: 24,
+        value: () => new Date().toISOString(),
+    })
+    updatedDate: string
+}
+```
+
 #### `@DeleteDateColumn`
 
 Special column that is automatically set to the entity's delete time each time you call soft-delete of entity manager or repository. You don't need to set this column - it will be automatically set.
