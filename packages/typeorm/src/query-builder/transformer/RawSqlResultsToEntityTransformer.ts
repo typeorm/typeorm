@@ -238,8 +238,21 @@ export class RawSqlResultsToEntityTransformer {
             metadata,
         )
         // if we have at least one selected column then return this entity
-        // since entity must have at least primary columns to be really selected and transformed into entity
-        if (hasColumns) return entity
+        // since entity must have at least primary columns to be really selected and transformed into entity;
+        // when every selected column is null, a non-null primary key still tells a real row from a missing join
+        if (
+            hasColumns ||
+            (this.getColumnsToProcess(alias.name, metadata).some(
+                ([key]) => rawResults[0][key] !== undefined,
+            ) &&
+                metadata.primaryColumns.some(
+                    (column) =>
+                        rawResults[0][
+                            this.buildAlias(alias.name, column.databaseName)
+                        ] != null,
+                ))
+        )
+            return entity
 
         // if we don't have any selected column we should not return entity,
         // except for the case when entity only contain a primary column as a relation to another entity
