@@ -1,13 +1,11 @@
+import { expect } from "chai"
 import "reflect-metadata"
 
+import type { DataSource } from "../../../src/data-source/DataSource"
 import {
     closeTestingConnections,
     createTestingConnections,
 } from "../../utils/test-utils"
-
-import type { DataSource } from "../../../src/data-source/DataSource"
-import { afterEach } from "mocha"
-import { expect } from "chai"
 
 describe("github issues > #4956 create typeorm_metatable when running migrations.", () => {
     let dataSources: DataSource[]

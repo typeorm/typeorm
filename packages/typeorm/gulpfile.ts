@@ -30,13 +30,7 @@ async function execAsync(command: string) {
 
 function browserCopySources() {
     return gulp
-        .src([
-            "./src/**/*.ts",
-            "!./src/commands/*.ts",
-            "!./src/cli.ts",
-            "!./src/typeorm.ts",
-            "!./src/typeorm-model-shim.ts",
-        ])
+        .src(["./src/**/*.ts", "!./src/commands/*.ts", "!./src/cli*.ts"])
         .pipe(gulp.dest("./build/browser/src"))
 }
 

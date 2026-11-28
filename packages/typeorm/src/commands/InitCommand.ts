@@ -721,9 +721,9 @@ Steps to run this project:
 
         packageJson.devDependencies ??= {}
         packageJson.devDependencies = {
-            "@types/node": ourPackageJson.devDependencies["@types/node"],
-            "ts-node": ourPackageJson.devDependencies["ts-node"],
-            typescript: ourPackageJson.devDependencies.typescript,
+            "@types/node": `^${process.versions.node.split(".").at(0)}`,
+            "ts-node": "^10.9.2",
+            typescript: "^5.9.3",
             ...packageJson.devDependencies,
         }
 
@@ -768,8 +768,8 @@ Steps to run this project:
         }
 
         if (express) {
-            packageJson.dependencies["express"] = "^4.21.2"
-            packageJson.dependencies["body-parser"] = "^1.20.3"
+            packageJson.dependencies["express"] = "^4.22.3"
+            packageJson.dependencies["body-parser"] = "^1.20.9"
         }
 
         packageJson.scripts ??= {}

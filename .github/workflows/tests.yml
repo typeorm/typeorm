@@ -38,6 +38,7 @@ jobs:
               - pr_compliance_checklist.yaml
 
             docs: &docs
+              - *package-json
               - docs/**/*
 
             src: &src
@@ -68,8 +69,7 @@ jobs:
               - packages/**
 
             codemod:
-              - pnpm-lock.yaml
-              - pnpm-workspace.yaml
+              - *package-json
               - packages/codemod/**/*
 
             legacy-naming-strategies:
@@ -102,7 +102,7 @@ jobs:
       - run: pnpm run compile
       - run: pnpm run package
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: build
           path: packages/typeorm/build/
@@ -135,7 +135,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [20, 24]
+        node-version: [22, 26]
     uses: ./.github/workflows/tests-linux.yml
     with:
       node-version: ${{matrix.node-version}}
@@ -145,7 +145,7 @@ jobs:
     needs: [detect-changes, build]
     uses: ./.github/workflows/tests-windows.yml
     with:
-      node-version: 22
+      node-version: 26
 
   tests-codemod:
     if: contains(needs.detect-changes.outputs.changes, 'codemod')
@@ -158,7 +158,7 @@ jobs:
       - uses: ./.github/actions/setup-node
       - run: pnpm exec c8 pnpm test
         working-directory: packages/codemod
-      - uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v8.3.0
+      - uses: SonarSource/sonarqube-scan-action@59202af334b4ba7b5db01b701b8e79f8b3bef0f4 # v8.5.0
         if: needs.detect-changes.outputs.sonar == 'true'
         with:
           projectBaseDir: packages/codemod
@@ -182,7 +182,7 @@ jobs:
           download-build: true
       - run: pnpm exec c8 pnpm test
         working-directory: packages/legacy-naming-strategies
-      - uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v8.3.0
+      - uses: SonarSource/sonarqube-scan-action@59202af334b4ba7b5db01b701b8e79f8b3bef0f4 # v8.5.0
         if: needs.detect-changes.outputs.sonar == 'true'
         with:
           projectBaseDir: packages/legacy-naming-strategies
@@ -205,7 +205,7 @@ jobs:
           pattern: coverage-*
           path: packages/typeorm/coverage/
 
-      - uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v8.3.0
+      - uses: SonarSource/sonarqube-scan-action@59202af334b4ba7b5db01b701b8e79f8b3bef0f4 # v8.5.0
         if: needs.detect-changes.outputs.sonar == 'true'
         with:
           projectBaseDir: packages/typeorm

@@ -3,6 +3,7 @@
     "inlineSources": true,
     "lib": ["es2023", "dom"],
     "outDir": "build/package/browser",
+    "rootDir": "build/browser/src",
     "sourceRoot": "../build/browser/src"
   },
   "exclude": ["node_modules"],
