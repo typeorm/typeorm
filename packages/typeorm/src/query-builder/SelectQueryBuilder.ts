@@ -2,6 +2,8 @@ import type { QueryResultCacheOptions } from "../cache/QueryResultCacheOptions"
 import type { EntityTarget } from "../common/EntityTarget"
 import type { ObjectLiteral } from "../common/ObjectLiteral"
 import type { AuroraMysqlDriver } from "../driver/aurora-mysql/AuroraMysqlDriver"
+import type { CockroachQueryRunner } from "../driver/cockroachdb/CockroachQueryRunner"
+import type { PostgresQueryRunner } from "../driver/postgres/PostgresQueryRunner"
 import { DriverUtils } from "../driver/DriverUtils"
 import type { MysqlDriver } from "../driver/mysql/MysqlDriver"
 import type { ReactNativeDriver } from "../driver/react-native/ReactNativeDriver"
@@ -26,7 +28,7 @@ import type { OrderByCondition } from "../find-options/OrderByCondition"
 import type { ColumnMetadata } from "../metadata/ColumnMetadata"
 import type { EntityMetadata } from "../metadata/EntityMetadata"
 import type { RelationMetadata } from "../metadata/RelationMetadata"
-import type { ReadStream } from "../platform/PlatformTools"
+import { PlatformTools, type ReadStream } from "../platform/PlatformTools"
 import type { QueryRunner } from "../query-runner/QueryRunner"
 import { ApplyValueTransformers } from "../util/ApplyValueTransformers"
 import { InstanceChecker } from "../util/InstanceChecker"
@@ -1982,6 +1984,15 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 this.expressionMap.useTransaction === true &&
                 queryRunner.isTransactionActive === false
             ) {
+                const driver = this.dataSource.options.type
+                if (driver === "postgres" || driver === "cockroachdb") {
+                    return this.streamPostgresTransaction(
+                        queryRunner as
+                            PostgresQueryRunner | CockroachQueryRunner,
+                        sql,
+                        parameters,
+                    )
+                }
                 await queryRunner.startTransaction()
                 transactionStartedByUs = true
             }
@@ -2013,6 +2024,59 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
                 } catch (rollbackError) {}
             }
             throw error
+        }
+    }
+
+    private async streamPostgresTransaction(
+        queryRunner: PostgresQueryRunner | CockroachQueryRunner,
+        sql: string,
+        parameters: unknown[],
+    ): Promise<ReadStream> {
+        const release = (error?: unknown) => {
+            if (queryRunner === this.queryRunner || queryRunner.isReleased)
+                return
+            if (!queryRunner.isTransactionActive) return queryRunner.release()
+            // A failed rollback or a subscriber can leave the client in a transaction.
+            return queryRunner.release(
+                error instanceof Error
+                    ? error
+                    : new Error("Transaction is still active"),
+            )
+        }
+        const rollback = async () => {
+            if (queryRunner.isTransactionActive) {
+                try {
+                    await queryRunner.rollbackTransaction()
+                } catch (error) {
+                    try {
+                        await release(error)
+                    } catch {}
+                    throw error
+                }
+            }
+            await release()
+        }
+        const fail = async (error: unknown): Promise<never> => {
+            try {
+                await rollback()
+            } catch {}
+            throw error
+        }
+        try {
+            await queryRunner.startTransaction()
+            // pg queues COMMIT behind the cursor, so expose rows before committing.
+            const cursor = await queryRunner.stream(sql, parameters)
+            return PlatformTools.wrapQueryStream(cursor, async (commit) => {
+                if (!commit) return rollback()
+                try {
+                    await queryRunner.commitTransaction()
+                } catch (error) {
+                    return fail(error)
+                }
+                await release()
+            })
+        } catch (error) {
+            return fail(error)
         }
     }
 

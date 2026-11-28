@@ -13,6 +13,13 @@ export class PlatformTools {
      */
     static type: "browser" | "node" = "browser"
 
+    static wrapQueryStream(
+        _cursor: ReadStream,
+        _finalize: (commit: boolean) => Promise<void>,
+    ): ReadStream {
+        throw new TypeError("Query streaming is not supported in the browser.")
+    }
+
     /**
      * Gets global variable where global stuff can be stored.
      */

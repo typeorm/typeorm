@@ -181,8 +181,8 @@ export class CockroachQueryRunner
      * Releases used database connection.
      * You cannot use query runner methods once its released.
      */
-    release(): Promise<void> {
-        return this.releaseConnection()
+    release(error?: Error): Promise<void> {
+        return this.releaseConnection(error)
     }
 
     /**
@@ -265,14 +265,15 @@ export class CockroachQueryRunner
             await this.query(
                 `ROLLBACK TO SAVEPOINT typeorm_${this.transactionDepth - 1}`,
             )
+            this.transactionDepth -= 1
         } else {
             this.storeQueries = false
             await this.query("ROLLBACK")
             this.queries = []
             this.isTransactionActive = false
             this.transactionRetries = 0
+            this.transactionDepth = 0
         }
-        this.transactionDepth -= 1
 
         await this.broadcaster.broadcast("AfterTransactionRollback")
     }
