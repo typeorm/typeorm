@@ -338,24 +338,54 @@ export class DbQueryResultCache implements QueryResultCache {
         queryRunner?: QueryRunner,
     ): Promise<void> {
         const _queryRunner: QueryRunner = queryRunner ?? this.getQueryRunner()
-        const removals = []
+        const driverType = this.dataSource.options.type
+        const sequential =
+            driverType === "postgres" || driverType === "cockroachdb"
+        const removals: Promise<unknown>[] = []
         try {
-            for (const identifier of identifiers) {
-                const qb = _queryRunner.manager.createQueryBuilder()
-                removals.push(
-                    qb
-                        .delete()
-                        .from(this.queryResultCacheTable)
-                        .where(`${qb.escape("identifier")} = :identifier`, {
-                            identifier,
-                        })
-                        .execute(),
-                )
+            if (sequential) {
+                // Avoid concurrent queries on the same pg client; see #12238.
+                // CockroachDB uses the pg package over a single connection too.
+                let firstError: unknown
+                let hasError = false
+                for (const identifier of identifiers) {
+                    const qb = _queryRunner.manager.createQueryBuilder()
+                    try {
+                        await qb
+                            .delete()
+                            .from(this.queryResultCacheTable)
+                            .where(`${qb.escape("identifier")} = :identifier`, {
+                                identifier,
+                            })
+                            .execute()
+                    } catch (error) {
+                        if (!hasError) {
+                            firstError = error
+                            hasError = true
+                        }
+                    }
+                }
+                if (hasError) throw firstError
+            } else {
+                for (const identifier of identifiers) {
+                    const qb = _queryRunner.manager.createQueryBuilder()
+                    removals.push(
+                        qb
+                            .delete()
+                            .from(this.queryResultCacheTable)
+                            .where(`${qb.escape("identifier")} = :identifier`, {
+                                identifier,
+                            })
+                            .execute(),
+                    )
+                }
+                await Promise.all(removals)
             }
-            await Promise.all(removals)
         } catch (error) {
             // A failed deletion can leave other queries using the same runner.
-            await Promise.allSettled(removals)
+            if (removals.length > 0) {
+                await Promise.allSettled(removals)
+            }
             if (!queryRunner) {
                 try {
                     await _queryRunner.release()

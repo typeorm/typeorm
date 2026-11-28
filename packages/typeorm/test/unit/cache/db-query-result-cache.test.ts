@@ -53,7 +53,7 @@ describe("DbQueryResultCache > remove", () => {
     }
 
     it("should settle pending deletions before releasing the runner after an error", async () => {
-        const dataSource = new DataSource({ type: "postgres" })
+        const dataSource = new DataSource({ type: "mysql" })
         const queryRunner = dataSource.createQueryRunner()
         const firstError = new Error("first delete failed")
         const query = sinon.stub(queryRunner, "query")
@@ -85,6 +85,59 @@ describe("DbQueryResultCache > remove", () => {
         expect(await removal).to.equal(firstError)
         expect(release.callCount).to.equal(1)
     })
+
+    for (const driverType of ["postgres", "cockroachdb"] as const) {
+        it(`should remove identifiers sequentially on ${driverType} to avoid concurrent pg client queries`, async () => {
+            const dataSource = new DataSource(
+                driverType === "cockroachdb"
+                    ? { type: "cockroachdb", timeTravelQueries: false }
+                    : { type: "postgres" },
+            )
+            const queryRunner = dataSource.createQueryRunner()
+            let inFlight = 0
+            let maxInFlight = 0
+            const query = sinon
+                .stub(queryRunner, "query")
+                .callsFake(async () => {
+                    inFlight++
+                    if (inFlight > maxInFlight) maxInFlight = inFlight
+                    await new Promise((resolve) => setImmediate(resolve))
+                    inFlight--
+                    return new QueryResult()
+                })
+            sinon.stub(dataSource, "createQueryRunner").returns(queryRunner)
+            const cache = new DbQueryResultCache(dataSource)
+
+            await cache.remove(["first", "second", "third"])
+
+            expect(query.callCount).to.equal(3)
+            expect(maxInFlight).to.equal(1)
+        })
+
+        it(`should still attempt remaining deletions and rethrow the first error on ${driverType}`, async () => {
+            const dataSource = new DataSource(
+                driverType === "cockroachdb"
+                    ? { type: "cockroachdb", timeTravelQueries: false }
+                    : { type: "postgres" },
+            )
+            const queryRunner = dataSource.createQueryRunner()
+            const firstError = new Error("first delete failed")
+            const query = sinon.stub(queryRunner, "query")
+            query.onFirstCall().rejects(firstError)
+            query.onSecondCall().resolves(new QueryResult())
+            query.onThirdCall().resolves(new QueryResult())
+            sinon.stub(dataSource, "createQueryRunner").returns(queryRunner)
+            const release = sinon.spy(queryRunner, "release")
+            const cache = new DbQueryResultCache(dataSource)
+
+            await expect(
+                cache.remove(["first", "second", "third"]),
+            ).to.be.rejectedWith(firstError)
+
+            expect(query.callCount).to.equal(3)
+            expect(release.callCount).to.equal(1)
+        })
+    }
 
     for (const deletionFails of [false, true]) {
         for (const releaseThrows of [false, true]) {
