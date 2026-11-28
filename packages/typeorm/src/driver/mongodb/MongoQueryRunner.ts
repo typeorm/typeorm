@@ -100,6 +100,12 @@ export class MongoQueryRunner implements QueryRunner {
     isTransactionActive = false
 
     /**
+     * Current depth of nested transactions.
+     * Always 0 for mongodb since mongodb does not support transactions.
+     */
+    transactionDepth = 0
+
+    /**
      * Stores temporarily user data.
      * Useful for sharing data with subscribers.
      */

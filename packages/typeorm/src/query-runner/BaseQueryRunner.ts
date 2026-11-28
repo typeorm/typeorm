@@ -106,7 +106,7 @@ export abstract class BaseQueryRunner implements AsyncDisposable {
      * current depth of transaction.
      * for transactionDepth > 0 will use SAVEPOINT to start and commit/rollback transaction blocks
      */
-    protected transactionDepth = 0
+    transactionDepth = 0
 
     private cachedTablePaths: Record<string, string> = {}
 
