@@ -334,7 +334,11 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                         return (
                             tableColumn.name === column.databaseName &&
                             tableColumn.type ===
-                                this.dataSource.driver.normalizeType(column) &&
+                                this.dataSource.driver.normalizeType(
+                                    column.resolveDriverColumn(
+                                        this.dataSource.driver,
+                                    ),
+                                ) &&
                             tableColumn.isNullable === column.isNullable &&
                             tableColumn.isUnique ===
                                 this.dataSource.driver.normalizeIsUnique(column)
@@ -353,8 +357,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
                     return (
                         !column.isVirtualProperty &&
                         column.databaseName === tableColumn.name &&
-                        this.dataSource.driver.normalizeType(column) ===
-                            tableColumn.type &&
+                        this.dataSource.driver.normalizeType(
+                            column.resolveDriverColumn(this.dataSource.driver),
+                        ) === tableColumn.type &&
                         column.isNullable === tableColumn.isNullable &&
                         this.dataSource.driver.normalizeIsUnique(column) ===
                             tableColumn.isUnique
@@ -892,7 +897,9 @@ export class RdbmsSchemaBuilder implements SchemaBuilder {
 
             const changedColumns = this.dataSource.driver.findChangedColumns(
                 table.columns,
-                metadata.columns,
+                metadata.columns.map((column) =>
+                    column.resolveDriverColumn(this.dataSource.driver),
+                ),
             )
             if (changedColumns.length === 0) continue
 

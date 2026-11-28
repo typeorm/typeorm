@@ -3018,7 +3018,13 @@ export class SelectQueryBuilder<Entity extends ObjectLiteral>
             ).wrapWithJsonFunction(selectionPath, column, false)
         }
 
-        if (this.dataSource.driver.spatialTypes.indexOf(column.type) !== -1) {
+        const physicalColumn = column.resolveDriverColumn(
+            this.dataSource.driver,
+        )
+        if (
+            this.dataSource.driver.spatialTypes.indexOf(physicalColumn.type) !==
+            -1
+        ) {
             if (
                 (DriverUtils.isMySQLFamily(this.dataSource.driver) ||
                     this.dataSource.driver.options.type === "aurora-mysql") &&
