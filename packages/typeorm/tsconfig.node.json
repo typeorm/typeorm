@@ -1,7 +1,9 @@
 {
   "compilerOptions": {
     "inlineSources": true,
-    "outDir": "build/package"
+    "outDir": "build/package",
+    "rootDir": "src",
+    "types": ["node"]
   },
   "extends": "./tsconfig.json",
   "include": ["src"]
