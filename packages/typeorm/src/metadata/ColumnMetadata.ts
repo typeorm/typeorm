@@ -676,17 +676,14 @@ export class ColumnMetadata {
         } else {
             // no embeds - no problems. Simply return column property name and its value of the entity
             /**
-             * Object.getOwnPropertyDescriptor checks if the relation is lazy, in which case value is a Promise
+             * relationMetadata.isLazy checks if the relation is lazy, in which case value is a Promise
              * DO NOT use `entity[
              this.relationMetadata.propertyName] instanceof Promise`, which will invoke property getter and make unwanted DB request
              * refer: https://github.com/typeorm/typeorm/pull/8676#issuecomment-1049906331
              */
             if (
                 this.relationMetadata &&
-                !Object.getOwnPropertyDescriptor(
-                    entity,
-                    this.relationMetadata.propertyName,
-                )?.get &&
+                !this.relationMetadata.isLazy &&
                 entity[this.relationMetadata.propertyName] &&
                 ObjectUtils.isObject(entity[this.relationMetadata.propertyName])
             ) {

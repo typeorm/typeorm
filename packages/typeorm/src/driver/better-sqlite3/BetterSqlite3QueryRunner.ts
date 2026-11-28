@@ -1,3 +1,4 @@
+import { DateUtils } from "../../util/DateUtils"
 import { QueryFailedError } from "../../error/QueryFailedError"
 import { QueryRunnerAlreadyReleasedError } from "../../error/QueryRunnerAlreadyReleasedError"
 import { QueryResult } from "../../query-runner/QueryResult"
@@ -111,7 +112,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
             query,
             normalizedParameters,
         )
-        const queryStartTime = Date.now()
+        const queryStartTime = DateUtils.performanceNow()
 
         try {
             const stmt = await this.getStmt(query)
@@ -135,7 +136,7 @@ export class BetterSqlite3QueryRunner extends AbstractSqliteQueryRunner {
             // log slow queries if maxQueryExecution time is set
             const maxQueryExecutionTime =
                 this.driver.options.maxQueryExecutionTime
-            const queryEndTime = Date.now()
+            const queryEndTime = DateUtils.performanceNow()
             const queryExecutionTime = queryEndTime - queryStartTime
             if (
                 maxQueryExecutionTime &&

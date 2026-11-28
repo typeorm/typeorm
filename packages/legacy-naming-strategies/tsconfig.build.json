@@ -3,7 +3,8 @@
     "rootDir": "src",
     "noEmit": false,
     "declaration": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "types": ["node"]
   },
   "exclude": ["node_modules", "dist"],
   "extends": "./tsconfig.json",

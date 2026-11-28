@@ -264,7 +264,7 @@ In this situation we have Action.ts and Person.ts importing each other for a man
 We use import type so that we can use the type information without any JavaScript code being generated.
 
 ```typescript
-import { Entity, PrimaryColumn, Column, ManytoMany } from "typeorm"
+import { Entity, PrimaryColumn, Column, ManyToMany } from "typeorm"
 import type { Person } from "./Person"
 
 @Entity()
@@ -284,7 +284,7 @@ export class ActionLog {
 ```
 
 ```typescript
-import { Entity, PrimaryColumn, ManytoMany } from "typeorm"
+import { Entity, PrimaryColumn, ManyToMany } from "typeorm"
 import type { ActionLog } from "./Action"
 
 @Entity()

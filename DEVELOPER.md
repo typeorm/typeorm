@@ -201,10 +201,10 @@ To run your tests you need the Database Management Systems (DBMS) installed on y
 
 TypeORM maintains two active branches:
 
-| Branch   | npm dist-tag (release) | npm dist-tag (nightly) | Purpose         |
-| -------- | ---------------------- | ---------------------- | --------------- |
-| `master` | `latest`               | `dev`                  | v1.x (stable)   |
-| `v0`     | `legacy`               | `nightly`              | v0.3.x (legacy) |
+| Branch   | npm dist-tag (release) | npm dist-tag (nightly) | Purpose               |
+| -------- | ---------------------- | ---------------------- | --------------------- |
+| `master` | `latest`               | `dev`                  | Current stable (v1.x) |
+| `v0`     | `legacy`               |                        | Old stable (v0.3.x)   |
 
 Publishing is handled by the `publish-package.yml` workflow using npm trusted publishing (OIDC). No npm tokens are needed.
 
@@ -214,17 +214,8 @@ Publishing is handled by the `publish-package.yml` workflow using npm trusted pu
 2. Update the version in `package.json`.
 3. Run `pnpm run changelog` to generate the changelog.
 4. Commit the changes and create a pull request targeting the release branch.
-5. Once merged, create a GitHub Release with a matching tag (e.g. `0.3.32` or `1.1.1`).
+5. Once merged, create a GitHub Release with a matching tag (e.g. `1.0.1`).
 6. The workflow triggers on the `release: published` event and publishes to npm. The dist-tag is determined automatically: `latest` if the version is greater than the current latest on npm, otherwise `legacy`.
-
-### Pre-release (v1.0)
-
-1. Create a branch from `master` (e.g. `release-1.0.0-alpha.2`).
-2. Update the version in `package.json` (use a prerelease identifier, e.g. `1.0.0-alpha.2`).
-3. Run `pnpm run changelog` to generate the changelog.
-4. Commit the changes and create a pull request targeting `master`.
-5. Once merged, create a GitHub Release from `master` with a matching tag and mark it as a **pre-release**.
-6. The workflow publishes to npm with the `next` dist-tag (any version containing a prerelease identifier like `-alpha` or `-beta` is automatically tagged `next`).
 
 ### Nightly builds
 

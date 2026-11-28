@@ -10,6 +10,19 @@ export class DateUtils {
     // -------------------------------------------------------------------------
 
     /**
+     * @returns a timestamp in milliseconds suitable for measuring elapsed time.
+     *
+     * Prefers the monotonic, higher-resolution `performance.now()` where the
+     * runtime provides it, and falls back to `Date.now()` where it does not —
+     * `performance` is not guaranteed in every browser-like target (Cordova,
+     * React Native, NativeScript). Only ever use the returned value to compute
+     * a duration: its time origin is not the Unix epoch.
+     */
+    static performanceNow(): number {
+        return globalThis.performance?.now() ?? Date.now()
+    }
+
+    /**
      * Normalizes date object hydrated from the database.
      *
      * @param mixedDate
